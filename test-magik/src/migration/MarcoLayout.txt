@@ -1,0 +1,80 @@
+MarcoLayout.tsx — Migración de marco_layout.magik
+==================================================
+
+Origen
+------
+Fichero Magik: adiciones_layout/source/marco_layout.magik
+Clase:         marco_layout (extends :layout_element)
+Autor orig.:   llruiz / SIGMA TAO (01/10/2004)
+
+Propósito
+---------
+Dibujar el "marco" perimetral de un plano de layout. El marco consiste en:
+  · Rectángulo exterior (bounds).
+  · Ticks interiores (separadores de módulos / columnas / filas).
+  · Cuatro "esquinas" del plano (en forma de L) cuando se usa una
+    configuración de plano nombrada (Distritos1..Topologico3).
+
+Modos
+-----
+1) CONFIG NORMAL  (plano = "")
+   - paper_width  = sello + 100 + num_mod * MODULO_WIDTH  (MODULO_WIDTH  = 2160)
+   - paper_height = altura  * MODULO_HEIGHT + 400         (MODULO_HEIGHT = 2790)
+   - bounds       = bbox interior con margen 100/100/100/300.
+   - Se trazan ticks azules en los bordes superior e inferior, en cada
+     límite de módulo (num_mod-1 divisores). Longitud = LONGITUD_VERTICAL (100).
+   - Se trazan ticks rojos en los bordes izquierdo y derecho cada
+     MODULO_HEIGHT, longitud = 2 × LONGITUD_VERTICAL.
+
+2) CONFIG PLANO   (plano ∈ {Distritos1, Distritos2, Distritos3, Itinerario1..3,
+                            Construccion1, Empalmes, Topologico1..3, ...})
+   - Cada tipo trae un arreglo fijo de anchos y altos (PLANO_CONFIGS).
+   - paper = (Σ anchos + SANGRIA_HOR_A=300) × (Σ altos + SANGRIA_VER_A=300).
+   - bounds con sangría interior SANGRIA_HOR=150.
+   - Para Distritos1/2 se fuerza num_mod=6, altura=3 (override del _if Magik).
+   - Para cada ancho/alto, se dibuja un tick de 50u en los 4 bordes.
+   - Finaliza llamando a esquinas_plano() — 8 segmentos (2 por esquina).
+
+Equivalencia técnica Magik → TypeScript
+---------------------------------------
+  sector.new() + sector.add(coord) + sector.draw_on(window, line_style)
+       → ol/Feature(LineString) + VectorSource + Style(Stroke).
+
+  bounding_box.new(xmin, ymin, xmax, ymax)
+       → Bounds { xmin, ymin, xmax, ymax } (Turf bboxPolygon expuesto).
+
+  layout_page.set_paper_size(w, h)
+       → PaperSize { width, height } + View extent.
+
+  line_style.called(:blue|:red)
+       → constantes hex BLUE = '#1e6fff', RED = '#d33b3b'.
+
+  layout_attribute_definition (num_mod, altura, sello, plano)
+       → MarcoAttributes en el constructor.
+
+  marco_layout.nombre_plano (rope de 13 strings)
+       → PLANO_OPTIONS readonly[].
+
+API pública
+-----------
+  class MarcoLayout
+    constructor(attrs?: Partial<MarcoAttributes>)
+    initialiseForPage()             → calcula paper + bounds modo normal.
+    draw(): MarcoSegment[]          → segmentos a dibujar (autoselecciona modo).
+    toGeoJSON()                     → segments como GeoJSON LineStrings (Turf).
+    marcoBBoxGeoJSON()              → bbox del marco como Polygon (Turf).
+
+  function MarcoLayoutUI(): JSX.Element
+    Render OpenLayers v10 (Vector layers + Stroke styles) con controles
+    para num_mod, altura, sello y plano. Override de num_mod/altura
+    cuando el tipo de plano lo impone (input disabled).
+
+Notas de migración
+------------------
+· El método draw_content_on() original mezcla cálculo + I/O (draw_on window).
+  Se separa: MarcoLayout calcula segmentos puros; el componente UI dispara
+  los Feature/VectorSource.
+· La rama "Construccion2" no aparecía en el _elif original — se mantiene
+  como alias de "Empalmes" para coherencia con PLANO_OPTIONS.
+· "Topologico2" del original tenía 5 anchos (no 6 como sus hermanos);
+  se respeta tal cual aparece en el código Magik.

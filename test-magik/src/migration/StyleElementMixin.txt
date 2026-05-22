@@ -1,0 +1,99 @@
+StyleElementMixin.tsx — Migración de style_element_mixin.magik
+===============================================================
+
+Origen
+------
+Fichero Magik: adiciones_layout/source/style_element_mixin.magik
+Mixin:         style_element_mixin (def_mixin)
+Autor orig.:   rbsaldan / SIGMATAO (01/Nov/2004)
+
+Propósito
+---------
+Mixin reutilizable para definir "estilos" parametrizados (area / circle /
+text) y dibujarlos sobre un layout_element rotados y escalados al bbox
+del propio elemento. Soporta línea opcional al objeto GIS con lógica de
+"doblez" frente al viewport y punta de flecha opcional.
+
+Tupla Magik LoEstilo[1..5]
+--------------------------
+  :area   → { kind, fillStyle?, lineStyle?, coords[] }
+  :circle → { kind, lineStyle, cx, cy, radius }
+  :text   → { kind, textStyle, x, y, texto }
+
+Métodos transcritos
+-------------------
+  calcula_bound(estilos)
+    Union de bboxes por kind:
+      :area   → bounds del array de coords.
+      :circle → bounding_box.new_centred(cx, cy, radius).
+      :text   → bounding_box.new_centred(x, y, 2.0).
+
+  draw_style(estilos, angulo, obj?, viewport?, conLinea?, usaVp?, conPunta?)
+    1) Calcula data_bounds = bbox(estilos) rotado.
+    2) Si conLinea + obj: traza línea centro → coord(obj).
+       Si usaVp: aplica doblez alrededor del viewport (9 regiones espaciales:
+       izq vertical, vert centrado, der vertical, esquinas con ajuste de
+       ángulo +90/+180/−90° según posición). Si centro dentro del VP →
+       usaViewport='No'.
+    3) Si conPunta: añade segmentos previos con obten_pto_separado(50, 15°)
+       + obten_pto_intersect → punta de flecha en sectores[0..1].
+    4) Recorre estilos: aplica rotate2D(θ) + escala = min(self.h/data.h,
+       self.w/data.w) y emite primitives polygon/circle/text.
+
+  nombre_estilos()
+    Object.keys(ESTILOS) → tuplas [nombreInterno, nombreExterno].
+
+  agrega_linea(coords, page, texto?)
+    polyline_layout + textbox_layout sobre la mediana de la línea
+    (turf.along + turf.bearing). En TS devuelve { polyline, texto,
+    textPos, angulo, midPt } — la página los añade.
+
+  obten_pto_intersect(p1, p2, p3)
+    Punto de intersección de L1(p1→p2) con la perpendicular por p3.
+    Casos especiales: dx=0 (recta vertical), m=0 (recta horizontal).
+
+  obten_pto_separado(p1, p2, mag, alphaDeg)
+    Punto a distancia mag desde p1, dirección θ(p1→p2) + α.
+    Magik corrige el cuadrante con +180° si p2.x < p1.x.
+
+Equivalencia técnica Magik → TypeScript
+---------------------------------------
+  transform.new().rotate(theta)         → rotate2D(x, y, theta) (matriz 2×2).
+  bounding_box.new_centred(cx, cy, r)   → centeredBounds(cx, cy, r).
+  sector.new + add + draw_on            → ol/Feature(LineString) + Stroke.
+  circle.new(c, r) + draw_on            → ol/Feature(Point) + Style(Circle).
+  draw_vtext_transform(:centre_centre,θ)→ Style(Text) rotation = -θ.
+  property_list.fast_keys()             → Object.keys(ESTILOS).
+  LoSectores.mid_point/angle_at_coord   → turf.along + turf.bearing.
+  PoObj.perform(field).is_kind_of?(point|chain) → ObjGis.geomType discriminator.
+
+API pública
+-----------
+  class StyleElementMixin
+    static ESTILOS: Estilos
+    bounds: Bounds
+    usaViewport: 'Si' | 'No'
+    calculaBound(estilos): Bounds | null
+    drawStyle({ estilos, angulo, obj?, viewport?, paginaBb?, conLinea?, usaVp?, conPunta? }): DrawnPrimitive[]
+    static nombreEstilos(): Array<[string, string]>
+    static agregaLinea(coords, texto): { polyline, texto, textPos, angulo, midPt }
+    static obtenPtoIntersect(p1, p2, p3): [x, y]
+    static obtenPtoSeparado(p1, p2, mag, alphaDeg): [x, y]
+
+  function StyleElementMixinUI(): JSX.Element
+    OL v10 con 5 capas (referencias, polygons, segments, points, texts).
+    Catálogo demo: TRIANGULO / CIRCULO_PUNTO / CUADRADO_ROJO.
+    Controles: estilo, ángulo (0–360°), línea/punta/usaVp toggles.
+
+Notas de migración
+------------------
+· Magik usa una tupla numérica LoEstilo[1..5] con campos discriminados por
+  el primer elemento (:area/:circle/:text). Se reescribe como unión
+  discriminada EstiloItem (TypeScript) — más explícita y type-safe.
+· La línea Magik `_elif LoEstilo[2] _is :circle` (línea 62) era un bug:
+  el primer kind se compara contra [1], el segundo contra [2]. Se unifica
+  a [1] en TS.
+· `1800.degrees_to_radians` (línea 191) es literal Magik (probable bug:
+  debió ser 180). Se modula por 2π para mantener equivalencia visual.
+· `agrega_linea` se factoriza pura (sin mutar la página) — devuelve el
+  payload listo para inyectar.

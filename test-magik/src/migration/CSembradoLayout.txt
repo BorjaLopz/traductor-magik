@@ -1,0 +1,76 @@
+CSembradoLayout.tsx — Migración de c_sembrado_layout.magik
+===========================================================
+
+Origen
+------
+Fichero Magik: adiciones_layout/source/c_sembrado_layout.magik
+Clase:         c_sembrado_layout (extends :layout_element)
+Autor orig.:   hramirea / SIGMA TAO (Feb-2004)
+
+Propósito
+---------
+Plantilla de plano de detalle ("sembrado"). El elemento se monta SOBRE un
+marco_layout ya existente en la página: lo localiza con
+  c_larguillos_layout.busca_elemento(layout_page, "marco_layout")
+y hereda sus bounds. A partir de ahí compone:
+  · 2 textos verticales "REFERENCIA AL PLANO NO. " (izq + der), 9pt.
+  · 2 textos verticales de copyright TELMEX al borde derecho, 2pt.
+  · 1 cuadro "Detalles de escala" (500×250) en la esquina inferior-izq.
+  · Rejilla "Detalles Fibra Óptica" — 6 cuadros sobre coords LoP1..LoP15.
+  · Rejilla "Detalles Obra Civil"  — 6 cuadros (mismo patrón, +ΔY −280).
+  · viewport_layout "Larguillo" con ace_name="CENTRALES", view_scale=50000
+    y view_angle = bearing(last_coord → first_coord) del cable de enlace.
+
+Equivalencia técnica Magik → TypeScript
+---------------------------------------
+  sector.new_with(p1,p2) + draw_on(window, :black)
+       → ol/Feature(LineString) + Style(Stroke).
+
+  bounding_box.new(x1,y1,x2,y2)
+       → Bounds { xmin, ymin, xmax, ymax }.
+
+  draw_vtext_transform(:center_center, 90°)
+       → Style(Text) con rotation = π/2.
+
+  viewport_layout.new_with(:bounds, …)
+  + .view_angle / .view_scale / .ace_name / .name
+       → ViewportConfig { bounds, viewAngle, viewScale, aceName, name, ... }.
+
+  LoCable.last_coord.angle_to(first_coord).radians_to_degrees
+       → turf.bearing(point(last), point(first)).
+
+  c_larguillos_layout.busca_elemento(page, name)
+       → mockLarguillosLayout.buscaElemento(elements, name) → { found, element }.
+
+  c_larguillos_layout.genera_canalizacion_unica()
+       → mockLarguillosLayout.generaCanalizacionUnica(): Cable.
+
+API pública
+-----------
+  class CSembradoLayout
+    bounds: Bounds
+    initialiseForPage(busca: BuscaElementoResult): void
+    drawContentOn(busca: BuscaElementoResult, cable: Cable | null): SembradoRender
+    cuadrosToGeoJSON(cuadros): GeoJSONFeature<LineString>[]
+
+  function CSembradoLayoutUI(): JSX.Element
+    Render OpenLayers v10 con 4 capas (marco, cuadros, textos, viewport),
+    proyección plana en mm. Controles: width/height del marco y toggle
+    para alimentar el cable (view_angle del viewport).
+
+Notas de migración
+------------------
+· initialise_for_page() y draw_content_on() comparten el guard
+  busca_elemento → LbBandera. En la versión TS, drawContentOn() devuelve
+  un SembradoRender vacío si no encuentra marco_layout (no throw).
+· El método traza_cuadro() del original se factoriza como
+  trazaCuadroSegments(bounds) → 4 segmentos (izq, inf, der, sup).
+· El método datos_del_plano() del original sólo dibuja TÍTULO en el
+  borde izq del bbox (xmin+120, ymin) con rotación 90° — se replica como
+  buildVText(bb, texto, fontSize) → TextoVert { x, y, texto, fontSize, rotation }.
+· La línea Magik
+    LoMvp.set_fill_colour(_unset) / set_colour(_unset)
+  se traduce a ViewportConfig { fillColour: null, colour: null }.
+· Los bloques de fibra óptica / obra civil tenían en el Magik 16 puntos
+  intermedios (LoP1..LoP16) usados con redundancia; aquí se simplifican
+  como 6 cuadros (Bounds) por bloque conservando posiciones efectivas.

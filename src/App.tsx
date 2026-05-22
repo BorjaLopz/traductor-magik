@@ -1030,12 +1030,6 @@ const DEMO_ITEMS: DemoItem[] = [
     render: () => <SelloNotasSctInstPuenteTnUI />,
   },
   {
-    id: '26-sello-notas-sct-inst-puente-tn',
-    label: '[26] c_sello_notas_sct_inst_puente_tn',
-    description: 'Notas SCT instalación puente TN — variante túnel/nodo de tabla notas instalación lateral.',
-    render: () => <SelloNotasSctInstPuenteTnUI />,
-  },
-  {
     id: '27-sello-notas-sct-marg-aereo',
     label: '[27] c_sello_notas_sct_marg_aereo',
     description: 'Notas SCT instalación marginal aérea — tabla notas para tendido marginal en poste.',
@@ -1275,7 +1269,6 @@ const DEMO_ITEMS: DemoItem[] = [
     description: 'Plano desmontaje Caja Distribución — genera_plano() compone marco(3×1) + sello_proyecto_canalizacion + viewport_layout. Escala por ratio bounds o view_scale si ángulo > 0.1°.',
     render: () => <PlanoDesmontajeCdUI />,
   },
-  // ── [26] c_plano_desmontaje_cd — anterior último componente migrado ─────────
 
   // =============================================================================
   // [27] Demo inline — c_sello_estandar_construccion

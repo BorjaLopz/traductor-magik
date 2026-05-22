@@ -1,0 +1,109 @@
+================================================================================
+CLASE: TextoLineaGrafico
+ORIGEN: c_texto_linea_grafico.magik  —  Sigma Tao SIGC11 / dsanchez / 2004
+HEREDA: c_texto_grafico  (stub en TextoLineaGrafico.tsx — pendiente migración)
+FICHERO TS: TextoLineaGrafico.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Elemento de texto que, además de renderizar su contenido textual (heredado de
+c_texto_grafico), dibuja una línea horizontal al pie de su bounding box (oArea).
+
+Uso típico: celdas de tabla o cabeceras en planos de croquis/layout donde
+el texto necesita una línea separadora inferior visible al imprimir.
+
+── DIFERENCIA RESPECTO A c_texto_grafico ───────────────────────────────────────
+
+  c_texto_grafico        → solo texto en oArea
+  c_texto_linea_grafico  → texto + línea horizontal en la parte inferior
+
+── MÉTODO TRANSCRITO ──────────────────────────────────────────────────────────
+
+Magik: c_texto_linea_grafico.Despliega()
+TS:    desplega(area: BoundingBox): React.ReactNode
+
+  Paso 1 — Herencia:
+    Magik: _super.Despliega()
+    TS:    super.desplega(area)  → <text> centrado en bbox
+
+  Paso 2 — Estilo de línea:
+    Magik: line_style.new_with_properties(:foreground_colour, colour.called("black"), :width, 2)
+    TS:    stroke="black" strokeWidth={2}  (props SVG directas)
+
+  Paso 3 — Coordenadas de la línea:
+    Magik: coords_vector.new(2)
+           coords[1] = coordinate.new(oArea.Xmin + 1,  oArea.Ymin + 10)
+           coords[2] = coordinate.new(oArea.Xmax - 10, oArea.Ymin + 10)
+    TS:    x1={xMin+1} x2={xMax-10}  y1=y2={yMax-10}
+
+    NOTA COORDENADAS: Magik usa Y-up (GIS standard) — oArea.Ymin es el borde
+    inferior del bbox. SVG usa Y-down — yMax es el borde inferior.
+    Equivalencia: Magik (yMin+10) ≡ SVG (yMax-10).
+
+  Paso 4 — Dibujo:
+    Magik: _self.oVentana.draw_line_transform(LoEstilo_Linea, LoCoordenada)
+    TS:    <line x1=... y1=... x2=... y2=... stroke="black" strokeWidth={2} />
+
+── MÁRGENES HARDCODEADOS ───────────────────────────────────────────────────────
+
+  LnMargIzq = 1   → inicio de línea: xMin + 1
+  LnMargDer = 10  → fin   de línea:  xMax - 10
+  LnMargInf = 10  → altura de línea desde borde inferior
+
+  No son slots — están hardcodeados en el cuerpo del método Magik.
+  En TypeScript se definen como constantes estáticas privadas de la clase.
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                     TypeScript
+  ────────────────────────────────────────────────────────────────────────────
+  _super.Despliega()                        super.desplega(area)
+  line_style.new_with_properties(...)       props SVG: stroke / strokeWidth
+  coords_vector.new(2)                      coordenadas inline en <line>
+  coordinate.new(x, y)                      atributos x1/y1/x2/y2
+  oVentana.draw_line_transform(...)         <line .../> JSX declarativo
+  oArea.Ymin + LnMargInf  (Y-up)           yMax - MARG_INF  (Y-down SVG)
+
+── CLASE BASE stub ─────────────────────────────────────────────────────────────
+
+TextoGrafico (stub en el mismo fichero) expone:
+  texto      : string         — contenido textual a renderizar
+  nTamanio   : number         — factor de tamaño de fuente
+  nMargenSup : number         — margen superior dentro de oArea
+  nMargenInf : number         — margen inferior dentro de oArea
+  desplega(area): ReactNode   — renderiza <text> centrado en bbox
+
+Cuando se migre c_texto_grafico.magik, reemplazar el stub por el import.
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- Registro de clase en el framework Smallworld.
+- Alineación específica del texto (c_texto_grafico puede tener :centre_left etc.
+  según contexto de uso — el stub usa centrado horizontal por defecto).
+- Interacción con el sistema de impresión/layout de Smallworld
+  (oVentana, coordenadas en sistema proyectado real).
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+El componente React <TextoLineaGraficoUI /> muestra:
+  - Tabla con 4 celdas de distintas dimensiones renderizadas como SVG.
+  - Columna "lineY (SVG)" muestra el valor y = yMax - 10 de la línea.
+  - Última fila editable: input de texto actualiza la celda en tiempo real.
+  - Borde discontinuo en la celda editable para distinguirla de las fijas.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const elem = new TextoLineaGrafico();
+  elem.texto    = 'Circuito Norte';
+  elem.nTamanio = 28;
+
+  const area: BoundingBox = { xMin: 0, xMax: 220, yMin: 0, yMax: 50 };
+
+  // En JSX:
+  <svg width={220} height={50}>
+    {elem.desplega(area)}
+    {/* Renderiza: <text> centrado + <line> en y=40 (yMax-10) */}
+  </svg>
+
+================================================================================

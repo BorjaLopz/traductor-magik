@@ -1,0 +1,103 @@
+================================================================================
+CLASE: Sectores (CSectores)
+ORIGEN: croquis.magik / c_sectores  —  SIGC11 / aegijon / 2004
+HEREDA: layout_element, viewport_layout_mixin (Smallworld)
+FICHERO TS: Sectores.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Pre-procesado geométrico obligatorio antes de cualquier operación sobre rutas
+de cable: une segmentos sueltos (tramos de canalización) en cadenas continuas
+conectando extremos coincidentes.
+
+Problema de dominio:
+  Los segmentos de una canalización se almacenan desordenados en la BD.
+  Una query devuelve un sector_rope con N tramos sin orden garantizado.
+  Este algoritmo los encadena en polilíneas continuas físicamente conectadas.
+
+Resultado:
+  - armaSector: lista de LineStrings encadenadas (sector_rope ordenado).
+  - dibujaTrazo: buffer circular sobre esas cadenas → trail visual en mapa.
+    Usado en planos de croquis para mostrar el corredor del trazado.
+
+── ALGORITMO (ordenamiento + armaSector) ───────────────────────────────────────
+
+ordenamiento(rope, chain):
+  Una pasada sobre rope. Intenta conectar cada segmento al extremo de chain:
+    segFirst == chainLast  → append   (add_all_last)
+    segLast  == chainFirst → prepend  (add_all_first)
+    segFirst == chainFirst → skip     (dirección duplicada)
+    segLast  == chainLast  → skip     (extremo final duplicado)
+    ninguno                → skip     (no conectado en esta pasada)
+  Si chain vacía: siembra con el primer segmento encontrado y continúa.
+  Muta rope (splice) y chain (push/unshift) en sitio.
+
+armaSector(tCanaliz):
+  Loop que ejecuta ordenamiento() hasta agotar el rope.
+  Si una pasada no reduce el rope (LoTini === LoTfin → sin progreso):
+    → finaliza cadena actual, arranca nueva cadena (segmentos desconectados).
+  Maneja redes con múltiples tramos físicamente separados.
+
+Ejemplo:
+  Entrada (desordenada): B→C, D→E, A→B, C→D, F→G
+  Salida:  cadena 1: A→B→C→D→E
+           cadena 2: F→G  (sin conexión con cadena 1)
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_sectores.ordenamiento(RoSecRope, RoSector_a)
+TS:    ordenamiento(rope, chain)   [función pura exportada]
+
+  Transcripción directa de los 4 casos de conexión del Magik original.
+  Modificación: iteración backward-safe con while+splice (Magik itera
+  y borra en el mismo loop; en TS se hace con índice explícito).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sectores.arma_sector(LoTCanaliz)
+TS:    armaSector(tCanaliz)   [función pura exportada]
+
+  Loop con LoTini/LoTfin → currSize/prevSize.
+  Condición de nueva cadena: prevSize !== undefined && currSize === prevSize.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sectores.dibuja_trazo(LoSec_Rope, LoRadio)
+TS:    CSectores.dibujaTrazo(secRope, radio): void
+
+  armaSector → turf.buffer(radio, {units:'meters'}) → SectoresGisService.
+  Magik: LoSector_aux.buffer(LoRadio, :circular) + LoMapa.set_trail_from_geometry
+
+── ABSTRACCIÓN SectoresGisService ──────────────────────────────────────────────
+
+  smallworld_product.pni_application().plugin(:map_plugin).current_map
+  → abstraído como SectoresGisService:
+
+  setTrailFromGeometry(geom)  <- LoMapa.set_trail_from_geometry(LoBuffer)
+  fitView?(geom)              <- opcional, ajusta vista al extent
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- define_shared_constant(:activate_properties_dialog_on_insert?, _false)
+  define_shared_constant(:allowed_on_menu?, _false)
+  → Metadatos del framework Smallworld. Sin equivalente React.
+
+- defined_attributes() / viewport_attribute_definition
+  → Atributos del viewport layout de Smallworld. No aplica en React.
+
+- turf.buffer espera WGS84. Si coords son UTM/proyectadas, transformar antes.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Uso directo del algoritmo (sin mapa):
+  const cadenas = armaSector([seg1, seg2, seg3, ...]);
+
+  // Con mapa OL (dibuja buffer):
+  const c = new CSectores(gisService);
+  c.setMap(olMap);
+  c.dibujaTrazo([seg1, seg2, ...], 10);  // radio 10 m
+
+  // Componente demo React:
+  <SectoresUI />   // datos de prueba embebidos, botón "Ejecutar armaSector()"
+================================================================================

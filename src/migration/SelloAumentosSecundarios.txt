@@ -1,0 +1,143 @@
+================================================================================
+COMPONENTE: SelloAumentosSecundarios
+Fichero:    SelloAumentosSecundarios.tsx
+Origen:     c_sello_aumentos_secundarios.magik
+Empresa:    Ten Sails Consulting — Elena Sainero — Noviembre 2005
+================================================================================
+
+1. PROPÓSITO
+────────────
+El componente genera un cuadro de leyenda (sello) que muestra los datos de
+aumento de red telefónica secundaria para un distrito concreto. Se usa en el
+Plano de Estudio de Conjunto. En Magik heredaba de layout_element y se
+insertaba dentro de un layout de plano; en TypeScript es un componente React
+que renderiza el sello como SVG inline.
+
+
+2. QUÉ SE HA TRANSCRITO DEL CÓDIGO MAGIK
+─────────────────────────────────────────
+
+2.1  def_slotted_exemplar → clase SelloAumentosSecundarios
+  Magik define 4 slots: distrito, oCoordOrigen, oWindow, oTablas.
+  En TypeScript se convierten en propiedades de clase:
+    · idDistrito    (string | null)   ← layout_attribute_definition :id_distrito
+    · oCoordOrigen  (Coord)           ← coordenada de origen del sello
+    · tabla         (Tabla | null)    ← representa la única tabla interna (tbl_aumento)
+    · distrito      (RegistroDistrito | null)  ← datos del distrito cargados de GIS
+
+2.2  post_initialisation() → postInicializacion()
+  En Magik se ejecuta automáticamente tras new(). Llama a inicializa con
+  coordenada (0,0). En TypeScript se expone como método async que puede
+  llamarse manualmente o en el montaje del componente.
+
+2.3  inicializa(RoCoord) → async inicializa(coord, service?)
+  Método principal de construcción del sello. Lógica transcrita:
+    a) Asigna oCoordOrigen.
+    b) Si hay id_distrito: consulta el dataset landbase para obtener el
+       registro del distrito (nombre, es_red_directa?, pares de usuario).
+       En TypeScript: llamada async a IGisDistritoService.fetchDistrito().
+    c) Llama a crearSelloSecundario(coord, redDirecta).
+    d) Calcula el área total (oTablas.area_total() → getAreaTotal()).
+    e) Llama a llenarCeldas(redDirecta).
+
+2.4  crea_sello_secundario(RoCoord, red_directa?) → crearSelloSecundario()
+  Crea la tabla tbl_aumento con estas dimensiones:
+    · num_filas = 3 si red_directa?, 2 si no.
+    · 5 columnas de 15 unidades Magik cada una.
+    · Todas las filas con altura 4 unidades Magik.
+    · Si red_directa?: la fila 1 NO dibuja bordes verticales internos
+      (bDibuja_renglones_internos_dcha?(1, _false)). En TypeScript se
+      almacena en el Set sinBordeDchaPorFila y el SVG omite esas líneas.
+
+2.5  llena_celdas(red_directa?) → llenarCeldas()
+  Rellena las celdas con objetos c_texto_grafico. Lógica exacta:
+
+  Si red_directa? = true:
+    · Celda(1,3)   = "RED DIRECTA"  tamaño 30, negro
+    · fila_tit     = fila 2
+    · fila_valor   = fila 3
+
+  Si red_directa? = false:
+    · fila_tit     = fila 1
+    · fila_valor   = fila 2
+
+  Cabeceras (tamaño 20, negro) en fila_tit:
+    Col 1: "DTO."
+    Col 2: "CONECT."
+    Col 3: "AUMENTO"
+    Col 4: "L. PLAZO"
+    Col 5: "TOTAL"
+
+  Valores (tamaño 30) en fila_valor:
+    Col 1: nombre del distrito           → color negro
+    Col 2: pares existentes              → color verde  (ParExist.scolor = "green")
+    Col 3: pares proyectados             → color rojo   (ParProy.scolor = "red")
+    Col 4: pares largo plazo             → color naranja (ParLP.scolor = "orange")
+    Col 5: proyectado + existente + LP   → color negro
+
+  Fuente de datos: .distrito.rwo.obtener_numero_pares()
+    → devuelve { existente, proyectado, largo_plazo }
+  En TypeScript: RegistroDistrito.pares (mock async).
+
+2.6  draw_content_on(window) → render SVG en SelloAumentosSecundariosUI
+  En Magik desplegaba la tabla sobre un canvas/ventana GIS.
+  En TypeScript el render del SVG está integrado directamente en el
+  componente React: itera filasAlto y colsAncho, dibuja bordes y textos
+  teniendo en cuenta sinBordeDchaPorFila para omitir separadores.
+
+
+3. QUÉ NO SE HA TRANSCRITO
+────────────────────────────
+  · defined_attributes() / define_attributes(): atributos de layout para
+    el plano de impresión. En TypeScript no hay sistema de planos, por lo
+    que se omiten estas definiciones de metadatos de impresión.
+  · c_tablas / oTablas (clase auxiliar de tablas Magik): simplificado en
+    la propia clase; no existe clase c_tablas separada en la migración.
+  · set_fill_colour(colour.called("white")): el fondo blanco se aplica
+    directamente en el SVG mediante fill="#fff" en el elemento raíz.
+  · oWindow: ya no es necesario; el render es declarativo en React.
+  · gis_program_manager / cached_dataset: reemplazado por la interfaz
+    IGisDistritoService con implementación mock (MOCK_DISTRITOS).
+
+
+4. ESTRUCTURA DEL FICHERO TypeScript
+──────────────────────────────────────
+  · Interfaces de datos:  Coord, NumeroPares, RegistroDistrito,
+                          IGisDistritoService, CeldaTexto, Tabla
+  · Constantes de layout: ROW_H=4u, COL_W=15u, NUM_COLS=5
+  · Mock GIS:             MOCK_DISTRITOS (D01, D02, D03)
+                          mockGisDistritoService (Promise con 300ms delay)
+  · Clase principal:      SelloAumentosSecundarios
+      postInicializacion(), inicializa(), crearSelloSecundario(),
+      llenarCeldas(), setCelda(), getCelda(), getTabla(), getAreaTotal()
+  · Componente React:     SelloAumentosSecundariosUI
+      Estado: idStr, loading, error, sello
+      Render: controles de carga + SVG del sello + tabla de atributos Magik
+
+
+5. CÓMO SE INTEGRA EN App.tsx
+──────────────────────────────
+  Importado en la línea:
+    import { SelloAumentosSecundariosUI } from './migration/SelloAumentosSecundarios';
+
+  Registrado como entrada [25] en el array DEMO_ITEMS:
+    id:    '25-sello-aumentos-secundarios'
+    label: '[25] c_sello_aumentos_secundarios'
+    render: () => <SelloAumentosSecundariosUI />
+
+  La versión de invocación directa (DemoSelloAumentosSecundarios) queda
+  comentada en App.tsx como referencia del patrón de demo inline.
+
+
+6. DATOS DE PRUEBA (mock)
+──────────────────────────
+  D01 — DISTRITO 01 NORTE · Red directa: SÍ  → 3 filas, "RED DIRECTA" en fila 1
+        Existente: 1200 · Proyectado: 450 · L.Plazo: 300 · Total: 1950
+
+  D02 — DISTRITO 02 SUR   · Red directa: NO  → 2 filas
+        Existente: 850  · Proyectado: 220 · L.Plazo: 180 · Total: 1250
+
+  D03 — DISTRITO 03 CENTRO · Red directa: SÍ  → 3 filas, "RED DIRECTA" en fila 1
+        Existente: 3400 · Proyectado: 780 · L.Plazo: 560 · Total: 4740
+
+================================================================================

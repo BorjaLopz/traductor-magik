@@ -1,0 +1,218 @@
+================================================================================
+CLASE: SelloEstandarCtl
+ORIGEN: c_sello_estandar_ctl.magik  —  Sigma Tao / dsanchez / Alejandro Díaz — 01-Enero-2005
+HEREDA: c_sello_estandar_base  (stub SelloEstandarBase en el mismo fichero .tsx)
+FICHERO TS: SelloEstandarCtl.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Sello estándar para planos de Centrales Telefónicas (CTL).
+
+Extiende el sello estándar base añadiendo dos tablas a la derecha de las
+tablas base (tbl_compania, tbl_FecDibRev, tbl_Escala):
+
+  ┌──────────────┬──────────────────┬──────────────┬────────────────────────────────────────────────────┐
+  │ tbl_compania │ tbl_FecDibRev    │ tbl_Escala   │ tbl_CeldaA (70mm)    │ tbl_CeldaB (45mm)           │
+  │   (stub)     │   (stub)         │   (stub)     │ row1 7mm: POBLACION  │ row1 15mm: Cve Ctl          │
+  │              │                  │              │ row2 8mm: CENTRAL    │                              │
+  └──────────────┴──────────────────┴──────────────┴──────────────────────┴──────────────────────────────┘
+
+Los textos "POBLACION", "CENTRAL", "Cve Ctl" son valores por defecto (placeholders).
+En ejecución real se reemplazan por los atributos localidad, nombre_central,
+siglas_central cargados desde el proyecto GIS (oProyecto).
+
+── ATRIBUTOS (defined_attributes) ──────────────────────────────────────────────
+
+  3 atributos de layout (todos :string, :allowed_on_properties_page? = _true):
+    :Localidad       → "Población"             — nombre de la ciudad/localidad
+    :Nombre_Central  → "Nombre de la central"  — nombre completo de la central
+    :Siglas_Central  → "Siglas de la central"  — código/clave corta de la central
+
+  Todos heredan del rope de _super.defined_attributes.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_sello_estandar_ctl.draw_content_on(window)
+TS:    drawContentOn(): void
+
+  Antes de llamar a _super, empuja los 3 atributos hacia las celdas de la tabla:
+    _self.poblacion_tbl      << _self.localidad      → setCeldaTexto('tbl_CeldaA', 1, 1)
+    _self.Nombre_central_tbl << _self.nombre_central → setCeldaTexto('tbl_CeldaA', 2, 1)
+    _self.siglas_central_tbl << _self.siglas_central → setCeldaTexto('tbl_CeldaB', 1, 1)
+
+  Si los atributos están vacíos (""), la celda mantiene el placeholder.
+  Llamada con: sello.drawContentOn() después de configurar y llenar.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_estandar_ctl.prvCrea_Cfg_Tablas(RoCoord)  [privado]
+TS:    crearCfgTablas(origen): void
+
+  1. Llama _super.prvCrea_Cfg_Tablas(RoCoord) → crea tablas base
+     TS: superCrearCfgTablas(origen) → 3 stubs: tbl_compania, tbl_FecDibRev, tbl_Escala
+
+  2. Calcula offset X:
+     LnLong << Longitud_total_Columnas({:tbl_compania, :tbl_FecDibRev, :tbl_Escala})
+     TS: longitudTotalColumnas([...]) → 120mm (suma de anchos de tablas base)
+
+  3. Crea tablas CTL en la posición offset:
+     TS: crearCfgTblNomPobNomCtlCveCtl({ x: origen.x + 120, y: origen.y })
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_estandar_ctl.prvCrea_Cfg_Tbl_NomPob_NomCtl_CveCtl(RoCoord)
+TS:    crearCfgTblNomPobNomCtlCveCtl(coord): void
+
+  tbl_CeldaA:
+    Magik: oTablas.crea_tabla(2,1,:tbl_CeldaA)
+    Dimensiones:
+      bDibuja_Columnas_Internas? = _false → lineasInternas: false
+      bDibuja_Renglones_Internos? = _false → sin líneas de fila
+      oRenglones.elemento(1).nLongitud = 7   → rowHeights: [7, 8] mm
+      oRenglones.elemento(2).nLongitud = 8
+      oColumnas.elemento(1).nLongitud  = 70  → colWidths: [70] mm
+    Origen: coord (= x + 120mm, y)
+
+  tbl_CeldaB:
+    Magik: LnLong << Longitud_total_Columnas({:tbl_CeldaA})
+           crea_tabla(1,1,:tbl_CeldaB) en (RoCoord.x + LnLong, RoCoord.y)
+    Dimensiones:
+      bDibuja_Columnas/Renglones_Internos? = _false → lineasInternas: false
+      oRenglones.elemento(1).nLongitud = 15  → rowHeights: [15] mm
+      oColumnas.elemento(1).nLongitud  = 45  → colWidths: [45] mm
+    Origen: (coord.x + 70, coord.y) = (190mm, coord.y)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_estandar_ctl.prvLlena_Celdas()  [privado]
+TS:    llenarCeldas(): void
+
+  1. _super.prvLlena_celdas() → llena celdas de tablas base con stubs
+  2. prvLlena_Tbl_NomPob_NomCtl_CveCtl():
+     LoPob    = c_texto_grafico.new("POBLACION");  LoPob.nTamanio = 35
+     LoNomCtl = c_texto_grafico.new("CENTRAL");    LoNomCtl.nTamanio = 35
+     LoCveCtl = c_texto_grafico.new("Cve Ctl");    LoCveCtl.nTamanio = 35
+     TS: CeldaCtl { texto, tamanio: 35 } en cada celda
+
+  NOTA: prvLlena_Tbl_NomPob_NomCtl_CveCtl está definido en c_sello_estandar_base
+  en el Magik original (pattern inusual — base implementa método de la subclase).
+  En TS se implementa directamente en SelloEstandarCtl como método privado.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: getters/setters — Poblacion_tbl, Nombre_central_tbl, Siglas_central_tbl
+TS:    get/set poblacionTbl, nombreCentralTbl, siglasCentralTbl
+
+  Cada par getter/setter accede a la celda correspondiente:
+    poblacionTbl    ← oTablas.elemento(:tbl_CeldaA).oCeldas.Celda(1,1).oElemento.sTexto
+    nombreCentralTbl ← oTablas.elemento(:tbl_CeldaA).oCeldas.Celda(2,1).oElemento.sTexto
+    siglasCentralTbl ← oTablas.elemento(:tbl_CeldaB).oCeldas.Celda(1,1).oElemento.sTexto
+
+  TS: getCelda/setCeldaTexto sobre Map<CellKey, CeldaCtl> por tablaId
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_estandar_ctl.lee_datos_BdeD()
+TS:    async leeDatosBdeD(service, idProyecto): Promise<void>
+
+  1. _super.lee_datos_BdeD() → carga datos base (no modelado)
+  2. _if _self.oProyecto.existe? _then
+       _self.localidad      << _self.oProyecto.localidad
+       _self.nombre_central << _self.oProyecto.central
+       _self.siglas_central << _self.oProyecto.cve_central
+     _endif
+
+  TS:
+    - IProyectoService.fetchProyecto(id) → ProyectoGis | null
+    - Si proyecto.existe: carga los 3 atributos
+    - Se hace async porque la BD real en producción requeriría I/O
+
+  Mock IDs disponibles: GDL, MTY, MEX, TIJ
+
+── FLUJO DE RENDER COMPLETO ─────────────────────────────────────────────────────
+
+  // 1. Crear instancia
+  const sello = new SelloEstandarCtl();
+
+  // 2. Crear configuración de tablas (coordenadas de posición)
+  sello.crearCfgTablas({ x: 0, y: 0 });
+
+  // 3. Llenar celdas con valores por defecto ("POBLACION", "CENTRAL", "Cve Ctl")
+  sello.llenarCeldas();
+
+  // 4. Cargar datos del proyecto (opcional)
+  await sello.leeDatosBdeD(mockProyectoService, 'GDL');
+  // sello.localidad      = 'GUADALAJARA'
+  // sello.nombreCentral  = 'CENTRAL NORTE'
+  // sello.siglasCentral  = 'GDL-N'
+
+  // 5. Renderizar: empuja atributos → celdas (equivale a draw_content_on)
+  sello.drawContentOn();
+  // sello.poblacionTbl      = 'GUADALAJARA'
+  // sello.nombreCentralTbl  = 'CENTRAL NORTE'
+  // sello.siglasCentralTbl  = 'GDL-N'
+
+  // 6. Acceder al contenido final de las celdas
+  const celda1 = sello.poblacionTbl;    // 'GUADALAJARA'
+  const celda2 = sello.nombreCentralTbl;// 'CENTRAL NORTE'
+  const celda3 = sello.siglasCentralTbl;// 'GDL-N'
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ─────────────────────────────────────────────────────────────────────────────
+  c_sello_estandar_base                         SelloEstandarBase (stub)
+  oTablas.crea_tabla(f,c,:id)                   tablas.set(id, TablaCtl{...})
+  oTablas.Longitud_total_Columnas({:id,...})     longitudTotalColumnas(ids[])
+  LoTblA.bDibuja_Columnas_Internas? = _false    lineasInternas: false
+  LoTblA.oRenglones.elemento(n).nLongitud = v   rowHeights[n-1] = v  (mm)
+  LoTblA.oColumnas.elemento(1).nLongitud  = v   colWidths[0] = v    (mm)
+  LoTblA.oCoordenada_Origen << coord            origen = { x, y }
+  c_texto_grafico.new("POBLACION").nTamanio=35  CeldaCtl { texto:'POBLACION', tamanio:35 }
+  oCeldas.Celda(1,1).oElemento << LoPob         celdas.get('tbl_CeldaA')!.set('1-1', el)
+  oCeldas.Celda(1,1).oElemento.sTexto << v      setCeldaTexto('tbl_CeldaA', 1, 1, v)
+  oProyecto.existe?                             proyecto?.existe === true
+  oProyecto.localidad / central / cve_central   ProyectoGis.localidad/central/cveCentral
+  coordinate.new(x+LnLong, y)                  { x: coord.x + offset, y: coord.y }
+
+── STUB DE c_sello_estandar_base ────────────────────────────────────────────────
+
+  SelloEstandarBase aporta:
+    tablas: Map<string, TablaCtl>           — registro de tablas
+    celdas: Map<string, Map<CellKey, CeldaCtl>> — contenido per-celda
+    superCrearCfgTablas()                   — crea stubs tbl_compania/FecDibRev/Escala
+    superLlenarCeldas()                     — rellena celdas base con etiquetas
+    longitudTotalColumnas(ids[])            — suma anchos de columnas por tabla
+    getCelda(tablaId, f, c)                 — acceso lectura a celda
+    setCeldaTexto(tablaId, f, c, texto)     — acceso escritura a celda
+
+  Tablas base stubbed (40+50+30 = 120mm total):
+    tbl_compania  : 40mm × 15mm stub
+    tbl_FecDibRev : 50mm × 15mm stub
+    tbl_Escala    : 30mm × 15mm stub
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+  <SelloEstandarCtlUI /> muestra:
+    - Toggle modo "manual" vs "lee_datos_BdeD"
+    - Modo BD: selector de proyecto + botón "lee_datos_BdeD()" con latencia mock (300ms)
+    - Modo manual: 3 inputs para localidad, nombre_central, siglas_central
+    - SVG del sello completo (235×30px a escala 2px/mm):
+        Tablas base como stubs gris claro
+        tbl_CeldaA 2 filas: verde claro cuando tiene datos, gris cuando placeholder
+        tbl_CeldaB 1 fila: azul claro cuando tiene datos, gris cuando placeholder
+    - Tabla de atributos con nombre Magik, valor actual y celda destino
+    - Tabla de tablas CTL con dimensiones y lineasInternas
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+  - c_sello_estandar_base completo (tablas base con contenido real).
+  - Integración con el motor de planos de Smallworld.
+  - oProyecto real (objeto de proyecto GIS de Smallworld PNI).
+  - _super.lee_datos_BdeD() (carga de datos base del sello).
+  - Renderizado real del sello en el canvas del plano (window).
+  - Lógica de bDibuja_Columnas/Renglones_Internos en el motor de render.
+  - El contenido real de tbl_compania, tbl_FecDibRev, tbl_Escala.
+
+================================================================================

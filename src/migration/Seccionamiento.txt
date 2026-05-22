@@ -1,0 +1,109 @@
+================================================================================
+CLASE: Seccionamiento
+ORIGEN: c_seccionamiento.magik  —  SIGC11
+FICHERO TS: Seccionamiento.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Algoritmo recursivo de particionado espacial. Dado un cable/canalización
+(LineString), determina cómo dividirlo en "vistas de plano" (viewports),
+calculando el menor número de módulos (viewports) necesario para contener
+cada tramo. Resultado: lista de bounding boxes rotadas (Vista[]) listas
+para imprimir en plano.
+
+Flujo principal (doSeccionamiento):
+  1. getLineaMaximaAjustada: recorta la geometría hasta que cabe en nMaxModulos.
+  2. getAreaReducida: reduce módulos de nMax a nMin mientras la geom siga cabiendo.
+  3. Guarda la vista resultante {área, geom, ángulo, módulos} en collVistas.
+  4. Si queda resto de geometría → recursión sobre el tramo restante.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_seccionamiento.new(...) + .init(...)
+TS:    constructor(nEscala, nMinModulos, nMaxModulos, nDefModAncho, nDefModAlto)
+
+  Inicializa slots con parámetros opcionales.
+  Magik: _clone.init(...) + rope.new() para collVistas.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: get_area(PnModulos, PoCentro?, PfAngle?)
+TS:    getArea(PnModulos, PoCentro?, PfAngle?): Feature<Polygon>
+
+  Crea bounding box rotado de (nModulos * nDefModAncho * nEscala) × (nDefModAlto * nEscala).
+  Magik: bounding_box.new + transform.rotate_about
+  TS:    createRotatedRect() — aritmética plana (rotación 2D manual).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: get_area_reducida(geom, centro, ángulo, módulos)   [recursivo]
+TS:    getAreaReducida(...): {area, modulos}
+
+  Si la geometría cabe en el área → intenta con un módulo menos (recursión).
+  Si no cabe → sube un módulo.
+  Condición de parada: modulos <= nMinModulos.
+  Magik: .sectors.within?(LoArea) → turf.booleanWithin
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: get_linea_maxima_ajustada(geom, módulos)   [recursivo]
+TS:    getLineaMaximaAjustada(geom, módulos): {geom, area, centro, angulo}
+
+  Si la geometría sobresale del área (overlaps) → recorta con cut_to_length
+  y vuelve a probar sobre el tramo recortado.
+  Magik: geometry.overlaps?(area) + cut_to_length
+  TS:    lineOverlapsPolygon() + cutToLength()
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: do_seccionamiento(geom)   [MÉTODO PRINCIPAL, recursivo]
+TS:    doSeccionamiento(geom): void
+
+  Combina getLineaMaximaAjustada + getAreaReducida → push en collVistas →
+  recursión sobre el resto.
+  Magik: .collVistas.add({LoArea, LoGeom1, LfAngulo, LnModulos})
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: test_vista(vista, conGoto?)
+TS:    testVista(vista, conGoto?): void
+
+  Dibuja la geometría en el mapa OL como trail.
+  Magik: map_trail.new + set_trail_from_geometry + current_map_view.goto
+  TS:    VectorSource.addFeature(OLFeature) + map.getView().fit(extent)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: get_seccionamiento()
+TS:    getSeccionamiento(): Vista[]
+
+  Stub — devuelve copia de collVistas. Vacío en el fuente Magik original.
+
+── HELPERS GEOMÉTRICOS (reimplementados — no existen en Turf.js para coords planas) ──
+
+  lineLength(line)              <- geometry.line_length        (Pitágoras acumulado)
+  cutToLength(line, length)     <- geometry.cut_to_length      (corte en punto exacto)
+  midPointAlongLine(line)       <- sector_rope.mid_point       (punto medio recorrido)
+  sectorFromEndpoints(line)     <- sector.new(first, last)     (LineString extremos)
+  angleAtEndpoint(line)         <- angle_at_coordinate         (atan2 del último segmento)
+  createRotatedRect(w,h,c,deg)  <- bounding_box + rotate_about (rectángulo rotado 2D)
+  lineWithinPolygon(line, poly) <- geometry.sectors.within?    (turf.booleanWithin)
+  lineOverlapsPolygon(l, poly)  <- geometry.overlaps?          (!Within && Intersects)
+
+  NOTA: Magik trabaja en coords proyectadas (cm/m). Turf.js espera WGS84.
+  Estas helpers usan aritmética plana — válidas solo para datos proyectados.
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- testVista con mapa OL real requiere setMap(map) — no usado en el demo.
+- get_seccionamiento() estaba vacío en el fuente original.
+- Transformación de proyección necesaria si datos en WGS84.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const sec = new Seccionamiento(500, 1, 5, 0.297, 0.210);
+  sec.doSeccionamiento(turf.lineString([[x0,y0], [x1,y1], ...]));
+  const vistas = sec.getSeccionamiento();
+  // vistas[i] = { area: Polygon, geom: LineString, angulo: number, modulos: number }
+================================================================================

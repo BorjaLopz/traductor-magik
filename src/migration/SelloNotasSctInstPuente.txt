@@ -1,0 +1,171 @@
+================================================================================
+CLASE: SelloNotasSctInstPuente
+ORIGEN: c_sello_notas_sct_inst_puente.magik  —  _package user
+HEREDA: c_sello_notas_sct  (stub en SelloNotasSctInstPuente.tsx — pendiente migración)
+FICHERO TS: SelloNotasSctInstPuente.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Sello de notas SCT (Secretaría de Comunicaciones y Transportes) para planos de
+instalación lateral de cable en puente. Se compone de:
+  1. Tabla 2×1 (tbl_notas_grales):
+       fila 1 (10mm)  — franja de título
+       fila 2 (170mm) — área de notas
+       col 1  (165mm) — ancho del sello
+  2. Texto de notas 1-11:
+       notas 1-4 heredadas de c_sello_notas_sct (_super)
+       notas 5-11 propias de instalación lateral en puente
+
+── SLOTS ────────────────────────────────────────────────────────────────────────
+
+  sTipoCable  string  → Magik: .s_tipo_cable
+    Tipo de cable (p.ej. "FIBRA ÓPTICA", "CABLE DE COBRE").
+    Interpolado en notas 5, 6 y 7.
+
+  sEstado     string  → Magik: .s_estado
+    Entidad federativa (p.ej. "JALISCO").
+    Interpolado en notas 5 y 9.
+
+  oTablas     GestorTablas
+    Modelo del sistema de tablas Magik (oTablas).
+    Ver sección GESTOR DE TABLAS más abajo.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_sello_notas_sct_inst_puente.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+TS:    private prvCrearCfgTblNotasGrales(coord: Coordenada): void
+
+  Crea la tabla con id 'tbl_notas_grales' (2 filas × 1 columna):
+
+  Magik:
+    LoTblTitulo << _self.oTablas.crea_tabla(2, 1, :tbl_notas_grales)
+    LoTblTitulo.oCoordenada_Origen << RoCoord
+    LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+    LoTblTitulo.oRenglones.elemento(2).nLongitud << 170
+    LoTblTitulo.oColumnas.elemento(1).nLongitud  << 165
+
+  TS equivalente:
+    const tbl = this.oTablas.crearTabla(2, 1, 'tbl_notas_grales')
+    tbl.origen = { ...coord }
+    tbl.renglones[0].longitud = 10
+    tbl.renglones[1].longitud = 170
+    tbl.columnas[0].longitud  = 165
+
+  Expuesto públicamente como:
+    inicializarTabla(coord = { x:0, y:0 }): void
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_notas_sct_inst_puente.prvAsignaTexto()
+TS:    prvAsignarTexto(): void
+
+  1. Llama _super.prvAsignaTexto() — agrega notas 1-4 a celda(2,1).sTexto
+  2. Construye texto de notas 5-11 interpolando .s_tipo_cable y .s_estado
+  3. Magik: oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+     TS:    celda('tbl_notas_grales', 2, 1).sTexto += texto
+
+  Notas propias de c_sello_notas_sct_inst_puente (5-11):
+    5 — Verificación de ubicación en campo por la Residencia en ${sEstado}
+    6 — Instalación sin interrumpir tránsito (cable ${sTipoCable})
+    7 — Canaleta fijada con barrenanclas en resina epóxica, sin pistola explosiva
+    8 — Protección con pintura anticorrosiva
+    9 — Trabajos según especificaciones generales SCT y Residencia en ${sEstado}
+   10 — Reparación de daños al pavimento por cuenta de TELMEX
+   11 — Señalización permanente: Manual SCT 1986
+
+  Flujo completo:
+    generar(coord): inicializarTabla(coord) + prvAsignarTexto()
+
+── GESTOR DE TABLAS ─────────────────────────────────────────────────────────────
+
+  GestorTablas modela el slot .oTablas de Magik.
+  Mantiene Map<id, TablaNota>.
+
+  crearTabla(nFilas, nCols, id)     → TablaNota con celdas pre-pobladas en Map
+  elemento(id)                      → TablaNota | undefined
+  celda(tablaId, fila, col)         → CeldaNota | undefined  (key: "fila,col")
+
+  TablaNota:
+    id        : string
+    renglones : RenglonLayout[]   (index 0-based, Magik elemento(N) es 1-based)
+    columnas  : ColumnaLayout[]
+    celdas    : Map<string, CeldaNota>
+    origen    : Coordenada
+
+  CeldaNota:
+    sTexto: string    → Magik: oCeldas.Celda(f,c).oElemento.sTexto
+
+── BASE — c_sello_notas_sct  (stub) ────────────────────────────────────────────
+
+  SelloNotasSct provee:
+    oTablas      GestorTablas
+    sTipoCable   string
+    sEstado      string
+    prvAsignarTexto(): agrega notas 1-4 a celda('tbl_notas_grales',2,1).sTexto
+
+  Notas 1-4 (stub representativo del contenido SCT estándar):
+    1 — Materiales y mano de obra: especificaciones SCT vigentes
+    2 — Permisos ante autoridades competentes
+    3 — Señalización según normas SCT
+    4 — Responsabilidad del contratista ante terceros
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                              TypeScript
+  ─────────────────────────────────────────────────────────────────────────────
+  character.newLine                                  '\n'
+  LsTexto << character.newLine                       let texto = '\n'
+  LsTexto +<< "cadena"                               texto += 'cadena'
+  .s_tipo_cable                                      this.sTipoCable
+  .s_estado                                          this.sEstado
+  .oTablas.crea_tabla(2,1,:tbl_notas_grales)         oTablas.crearTabla(2,1,'tbl_notas_grales')
+  LoTbl.oCoordenada_Origen << RoCoord                tbl.origen = { ...coord }
+  LoTbl.oRenglones.elemento(N).nLongitud << mm       tbl.renglones[N-1].longitud = mm
+  LoTbl.oColumnas.elemento(1).nLongitud  << mm       tbl.columnas[0].longitud = mm
+  .oCeldas.Celda(2,1).oElemento.sTexto +<< texto     celda('tbl_notas_grales',2,1).sTexto += texto
+  _super.prvAsignaTexto()                            super.prvAsignarTexto()
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+  <SelloNotasSctInstPuenteUI /> muestra:
+    - Dropdown .s_tipo_cable (FIBRA ÓPTICA / CABLE DE COBRE / COAXIAL / ADSS)
+    - Dropdown .s_estado (6 estados mexicanos)
+    - Inputs para coordenada de origen X/Y
+    - Checkbox "Mostrar notas 1-4 de _super": revela bloque heredado en azul
+    - Diagrama SVG del layout tbl_notas_grales (fila 1=10mm, fila 2=170mm, col=165mm)
+    - Vista documento: franja título "NOTAS GENERALES" + texto pre-wrap de las notas
+      · notas 1-4 en gris (badge azul "_super.prvAsignaTexto()")
+      · notas 5-11 en negro (badge verde "c_sello_notas_sct_inst_puente")
+    - Contadores de caracteres: total / super / puente
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const sello = new SelloNotasSctInstPuente();
+  sello.sTipoCable = 'FIBRA ÓPTICA';
+  sello.sEstado    = 'JALISCO';
+  sello.generar({ x: 0, y: 0 });      // crea tabla + asigna notas 1-11
+
+  // Acceso a la tabla:
+  const tbl = sello.getTablaNota();
+  // tbl.renglones[0].longitud  === 10
+  // tbl.renglones[1].longitud  === 170
+  // tbl.columnas[0].longitud   === 165
+  // tbl.origen                 === { x: 0, y: 0 }
+
+  // Acceso al texto:
+  const texto = sello.getTextoNotas();
+  // Comienza con notas 1-4 (super) + notas 5-11 interpolando
+  //   "FIBRA ÓPTICA" y "JALISCO"
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+  - Clase completa c_sello_notas_sct (solo se creó stub con notas 1-4 representativas).
+    Las notas 1-4 reales pueden diferir del original Magik.
+  - Integración con el sistema de planos/ventanas de Smallworld.
+  - Renderizado vectorial real (Smallworld canvas) — sustituido por pre-wrap HTML.
+  - Otros métodos del sello si los hay en el fichero .magik completo.
+  - Método defined_attributes() / shared_constants: boilerplate Smallworld,
+    sin lógica de negocio, no transcritos.
+
+================================================================================

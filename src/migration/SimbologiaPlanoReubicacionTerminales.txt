@@ -1,0 +1,142 @@
+================================================================================
+CLASE: CSimbologiaPlanoReubicacionTerminales
+ORIGEN: c_simbologia_plano_reubicacion_terminales.magik  —  Sigma Tao
+HEREDA: symbol_layout  (stub interno en el mismo fichero .tsx)
+FICHERO TS: SimbologiaPlanoReubicacionTerminales.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Elemento de simbología configurable para planos de reubicación de terminales.
+No es una tabla fija como los sellos: es un símbolo gráfico individual que
+se puede configurar con:
+  - Nombre del símbolo (seleccionado de un catálogo)
+  - Color de relleno (override del color base)
+  - Ángulo de rotación
+  - Volteo vertical (flip)
+  - Espejo horizontal (mirror)
+
+En Smallworld, el símbolo se carga desde la base de datos de estilos GIS
+(sw_gis!gis_point_style). En TypeScript, se reemplaza por un catálogo de
+funciones SVG inline.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_simbologia_plano_reubicacion_terminales.defined_attributes
+TS:    CSimbologiaPlanoReubicacionTerminales.DEFINED_ATTRIBUTES (constante estática)
+
+  5 atributos de layout:
+    :name          :string  default "simbologia_reubicacion_term"  :enum_method :symbol_names
+    :colour        :colour  default _unset
+    :angle         :float   default 0.0
+    :flip          :boolean default _false
+    :mirror        :boolean default _false
+
+  allowed_on_menu? = _false → ALLOWED_ON_MENU = false (constante de clase)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_simbologia_plano_reubicacion_terminales.symbol_names
+TS:    symbolNames(): string[]
+
+  Magik: abre symbol_bundle_table de LdsEstilosSigc (base de datos de estilos),
+         extrae nombres en sorted_collection, devuelve como simple_vector.
+  TS:    Object.keys(SYMBOL_CATALOG).sort()
+         SYMBOL_CATALOG contiene 5 símbolos SVG inline (ver catálogo).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_simbologia_plano_reubicacion_terminales.draw_content_on(window)
+TS:    drawContentOn(): DrawResult
+
+  Lógica completa:
+    1. Si name vacío → { tipo: 'incompleto', mensaje: 'Seleccione un símbolo' }
+       Magik: _if _self.name _is _unset _orif _self.name.size _is 0
+    2. Busca renderer en catálogo SVG
+       Magik: sym << LoDsSimbolos.collections[:sw_gis!gis_point_style].new_detached_record()
+    3. Si no encontrado → { tipo: 'incompleto', mensaje: 'Símbolo desconocido: ...' }
+       Magik: _if sym.actual_geoms _is _unset
+    4. Calcula color CSS desde colour (RGB 0-255)
+       Magik: col_vec << _self.colour.scaled_rgb_vector(100.0) → RGB 0-100
+    5. Devuelve parámetros de renderizado: renderer, fillColor, rotacion, scaleX, scaleY
+       Magik: sym.draw_sample(window, bounds, :rotate, angle, :flipped?, flip, :mirror?, mirror)
+
+  Transformaciones:
+    angle   → rotacion = -angle  (Magik: angle << -angle.degrees_to_radians)
+    flip    → scaleY(-1)         (Magik: :flipped? en draw_sample)
+    mirror  → scaleX(-1)         (Magik: :mirror? en draw_sample)
+
+  outline_style = white (Magik: _self.outline_style << line_style.new(colour.called(:white)))
+  TS: SVG filter feMorphology (dilate) + feFlood(white) → halo blanco alrededor del símbolo.
+  El fondo gris del SVG demo hace visible el halo.
+
+── CATÁLOGO DE SÍMBOLOS SVG ────────────────────────────────────────────────────
+
+  Símbolo                      Descripción
+  ─────────────────────────────────────────────────────────────────────────────
+  simbologia_reubicacion_term  Caja terminal + flecha diagonal de reubicación
+                               + conector inferior con punto
+  terminal_fibra_optica        Círculo con 4 fibras radiales y núcleo central
+  caja_empalme                 Rectángulo con conectores laterales y división
+  poste_red                    Poste vertical + 2 brazos horizontales + terminales
+  armario_distribucion         Armario con panel interior + filas de módulos + manija
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ─────────────────────────────────────────────────────────────────────────────
+  symbol_layout                                  clase base TS (stub implícito)
+  define_shared_constant(:allowed_on_menu?,_false) ALLOWED_ON_MENU = false
+  layout_attribute_definition.new(:name,:string) DEFINED_ATTRIBUTES[0] = { nombre, tipo, ...}
+  :enum_method, :symbol_names                    enumMethod: 'symbolNames'
+  symbol_bundle_table.open(LdsEstilos)           Object.keys(SYMBOL_CATALOG)
+  sorted_collection.new() + fast_elements        .sort()
+  gis_point_style.new_detached_record()          SYMBOL_CATALOG[name]
+  sym.actual_geoms _is _unset                    renderer === undefined
+  colour.scaled_rgb_vector(100.0) → [0-100]      RGB 0-255 → css rgb(r,g,b)
+  outline_style = line_style.new(white)          SVG filter feMorphology + feFlood(white)
+  angle.degrees_to_radians (negado)              SVG rotate(-angle) en grados
+  :flipped? → sim.draw_sample                    scaleY(-1) en SVG transform
+  :mirror?  → sim.draw_sample                    scaleX(-1) en SVG transform
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+  <SimbologiaPlanoReubicacionTerminalesUI /> muestra:
+    - Selector de símbolo (enum de symbolNames())
+    - Color picker con toggle "usar color" (simula colour _unset vs valor)
+    - Input de ángulo (-180..180°)
+    - Checkboxes flip / mirror
+    - Slider de tamaño (50..200px)
+    - SVG con fondo gris para visualizar el halo blanco (outline_style=white)
+    - Tabla de atributos con tipo Magik, valor actual y default
+    - Tabla de transformaciones: Magik → SVG equivalente
+    - Tabla del catálogo de símbolos disponibles
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+  - symbol_layout completo (base Smallworld no modelada).
+  - Acceso real a sw_gis!gis_point_style y symbol_bundle_table.
+  - Símbolos gráficos reales de Smallworld (sustituidos por SVG inline).
+  - Gestión de bounds reales del plano (tamaño del símbolo en plano).
+  - Otros atributos que pueda tener symbol_layout como base.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const inst = new CSimbologiaPlanoReubicacionTerminales();
+  inst.atributos.name   = 'terminal_fibra_optica';
+  inst.atributos.colour = [0, 128, 0];   // verde, RGB 0-255
+  inst.atributos.angle  = 45;
+  inst.atributos.flip   = false;
+  inst.atributos.mirror = true;
+
+  const nombres = inst.symbolNames(); // → ['armario_distribucion', 'caja_empalme', ...]
+  const result  = inst.drawContentOn();
+
+  if (result.tipo === 'simbolo') {
+    // result.renderer(fill, stroke) → ReactElement SVG
+    // result.rotacion → -45
+    // result.scaleX   → -1  (mirror activo)
+    // result.scaleY   →  1  (flip inactivo)
+  }
+
+================================================================================

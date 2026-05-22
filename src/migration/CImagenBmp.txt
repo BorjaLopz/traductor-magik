@@ -1,0 +1,216 @@
+================================================================================
+CLASE: CImagenBmp
+ORIGEN: c_imagen_bmp.magik  —  Sigma Tao / dsanchez — 9-Marzo-2005
+HEREDA: c_base_layout  (stub CBaseLayout en el mismo fichero .tsx)
+FICHERO TS: CImagenBmp.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Contenedor de imagen BMP para celdas de planos de layout.
+Wrappea un elemento bitmap_layout de Smallworld y expone:
+  - El archivo de imagen a mostrar (nombre/ruta local)
+  - Flip horizontal (bVoltear_H) — espeja la imagen de izquierda a derecha
+  - Flip vertical / mirror (bVoltear_V) — espeja la imagen de arriba a abajo
+  - Ajuste de imagen (bfit_image) — si la imagen se escala para encajar en el área
+
+Tiene dos constructores:
+  new(nombre)           — crea un contenedor nuevo con el archivo dado
+  new_from(obj, nombre?) — crea una copia de otro CImagenBmp (con conversión de márgenes)
+
+Se utiliza para incrustar imágenes de planos (fachadas, detalles de obra, logos)
+dentro de las celdas de un plano de layout de red.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_imagen_bmp.new(RsNombre)
+TS:    static nuevo(nombre: string): CImagenBmp
+
+  1. Crea bounding_box 100×100 (placeholder; los valores definitivos los asigna Despliega)
+     TS: BitmapLayout con bounds { xMin:0, yMin:0, xMax:100, yMax:100 }
+  2. Crea bitmap_layout con ese bounding_box
+     TS: new BitmapLayout()
+  3. Asigna sNombre_Grafico → bitmap.filename = nombre
+  4. Quita bordes y relleno: outline_style=_unset, set_fill_colour(_unset)
+     TS: outlineStyle=null, fillColour=null
+  5. Pone todos los flags a false: bVoltear_H, bVoltear_V, bfit_image = _false
+  6. Retorna _clone (Magik) → retorna la instancia (TS)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_imagen_bmp.new_from(RoObjeto, optional RsTexto)
+TS:    static newFrom(obj: CImagenBmp, nombre?: string): CImagenBmp
+
+  1. Valida el tipo:
+     Magik: _if RoObjeto.is_kind_of?(c_imagen_bmp)  → instanceof
+     Magik: condition.raise(:warning, ...) → throw TypeError
+  2. Crea bitmap_layout nuevo con bounds 100×100
+  3. Asigna filename:
+     Si RsTexto = _unset → copia sNombre_Grafico del origen
+     Si RsTexto dado → usa el nuevo nombre
+     TS: nombre !== undefined ? nombre : obj.sNombreGrafico
+  4. Copia las propiedades de flip/fit del objeto origen
+  5. Copia los márgenes DIVIDIDOS POR 10:
+     nMargen_inf = RoObjeto.nMargen_inf / 10
+     nMargen_sup = RoObjeto.nMargen_sup / 10
+     nMargen_izq = RoObjeto.nMargen_izq / 10
+     nMargen_der = RoObjeto.nMargen_der / 10
+     NOTA: la división por 10 es una conversión de unidad (probablemente de
+     décimas de milímetro a milímetros, o de unidades de plot a px de pantalla).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_imagen_bmp.Despliega()
+TS:    despliega(): void
+
+  Asigna el área de la celda al bitmap:
+    _self.oImagen_BMP.bounds << _self.oArea
+    TS: this._imagenBMP.bounds = { ...this.oArea }
+
+  Este método posiciona y dimensiona la imagen dentro del espacio de la celda
+  del plano. Se llama cuando el layout engine resuelve el área disponible.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_imagen_bmp.Obten_Elemento_captura
+TS:    obtenElementoCaptura(): BitmapLayout
+
+  Devuelve la referencia al bitmap_layout subyacente.
+  Se usa para que el sistema de captura/edición del plano pueda acceder
+  al elemento nativo directamente.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: sNombre_Grafico getter/setter
+TS:    get/set sNombreGrafico: string
+
+  Getter: _return _self.oImagen_BMP.filename     → return this._imagenBMP.filename
+  Setter: _self.oImagen_BMP.filename << RsValor  → this._imagenBMP.filename = valor
+
+  El nombre/ruta del archivo BMP se almacena en el bitmap_layout subyacente,
+  no en el slot directo del objeto.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: bVoltear_H? getter/setter
+TS:    get/set bVoltearH: boolean
+
+  Getter: _return _self.oImagen_BMP.flip_image
+  Setter: _self.oImagen_BMP.flip_image << RbValor
+  CSS equivalente: transform: scaleX(-1)
+  Efecto: espeja la imagen horizontalmente (derecha-izquierda)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: bVoltear_V? getter/setter
+TS:    get/set bVoltearV: boolean
+
+  Getter: _return _self.oImagen_BMP.mirror_image
+  Setter: _self.oImagen_BMP.mirror_image << RbValor
+  CSS equivalente: transform: scaleY(-1)
+  Efecto: espeja la imagen verticalmente (arriba-abajo)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: bfit_image? getter/setter
+TS:    get/set bFitImage: boolean
+
+  Getter: _return _self.oImagen_BMP.bfit_image
+  Setter: _self.oImagen_BMP.fit_image << RbValor
+  CSS equivalente: object-fit: contain (true) / fill (false)
+  Efecto: si activo, la imagen se escala proporcionalmente para encajar en el área
+
+── STUBS CREADOS ────────────────────────────────────────────────────────────────
+
+  BitmapLayout (stub para bitmap_layout de Smallworld):
+    bounds       : BoundingBox → área de visualización en el plano
+    filename     : string      → ruta/nombre del archivo BMP
+    flipImage    : boolean     → flip_image (voltear horizontal)
+    mirrorImage  : boolean     → mirror_image (voltear vertical)
+    fitImage     : boolean     → fit_image (ajustar a bounds)
+    outlineStyle : null        → outline_style = _unset (sin borde)
+    fillColour   : null        → set_fill_colour(_unset) (sin relleno)
+
+  CBaseLayout (stub para c_base_layout de Smallworld):
+    oArea        : BoundingBox → área asignada por el layout engine a la celda
+    nMargenInf/Sup/Izq/Der     → márgenes en unidades de layout
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ─────────────────────────────────────────────────────────────────────────────
+  c_base_layout                                  CBaseLayout (stub)
+  bitmap_layout.new_with(:bounds, LoCaja)        new BitmapLayout()
+  oImagen_BMP.outline_style << _unset            outlineStyle = null
+  oImagen_BMP.set_fill_colour(_unset)            fillColour = null
+  oImagen_BMP.filename << valor                  bitmap.filename = valor
+  oImagen_BMP.flip_image                         bitmap.flipImage → scaleX(-1)
+  oImagen_BMP.mirror_image                       bitmap.mirrorImage → scaleY(-1)
+  oImagen_BMP.fit_image                          bitmap.fitImage → object-fit: contain
+  oImagen_BMP.bounds << _self.oArea              bitmap.bounds = { ...oArea }
+  _self.is_kind_of?(c_imagen_bmp)               obj instanceof CImagenBmp
+  condition.raise(:warning, :string, "...")     throw new TypeError("...")
+  nMargen_xxx / 10                               conversión de unidad en copia
+  _return _clone                                 return inst (nueva instancia)
+
+── NOTA SOBRE ARCHIVOS BMP EN WEB ──────────────────────────────────────────────
+
+  En Smallworld, sNombre_Grafico es una ruta al sistema de archivos local
+  (p.ej. "/imagenes/red/mapa_fachada.bmp"). En web esta ruta no es accesible.
+
+  En producción TS/web se puede usar:
+    - URL.createObjectURL(file) para archivos seleccionados por el usuario
+    - Una URL de servidor que sirva el archivo de imagen
+    - Base64 data URL para imágenes incrustadas
+
+  En el demo: se usa un SVG data URL como placeholder que muestra
+  el nombre del archivo y etiqueta "bitmap_layout".
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+  <CImagenBmpUI /> muestra:
+    - Input de sNombre_Grafico (nombre/ruta del archivo)
+    - Checkboxes bVoltear_H, bVoltear_V, bfit_image
+    - Inputs numéricos para oArea (ancho × alto) y 4 márgenes
+    - Selector de constructor: new(RsNombre) vs new_from(RoObjeto)
+    - Preview de imagen con CSS transform en vivo:
+        transform: scaleX(-1)  si flipH activo
+        transform: scaleY(-1)  si flipV activo
+        object-fit: contain    si fitImage activo
+        padding CSS            para simular márgenes de layout
+    - Preview de la copia (new_from) con márgenes /10 si está activo
+    - Tabla de propiedades del BitmapLayout
+    - Tabla de márgenes original vs copia en new_from
+    - Tabla de equivalencias de métodos Magik → TS
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+  - Clase completa c_base_layout (solo stub mínimo).
+  - Acceso real a archivos .bmp locales (limitación del contexto web).
+  - Métodos de c_base_layout que no se usan en c_imagen_bmp directamente.
+  - Integración con el sistema de celdas/captura de planos de Smallworld.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Constructor principal
+  const img = CImagenBmp.nuevo('/imagenes/fachada.bmp');
+  img.bVoltearH = true;
+  img.bFitImage = true;
+  img.oArea = { xMin: 10, xMax: 210, yMin: 20, yMax: 170 };
+  img.despliega();  // bitmap.bounds = { xMin:10, xMax:210, yMin:20, yMax:170 }
+  const bmp = img.obtenElementoCaptura();  // → BitmapLayout
+
+  // Constructor de copia
+  const copia = CImagenBmp.newFrom(img);
+  // copia.sNombreGrafico = '/imagenes/fachada.bmp'  (copiado)
+  // copia.bVoltearH      = true                     (copiado)
+  // copia.nMargenInf     = img.nMargenInf / 10      (convertido)
+
+  // Validación de tipo en new_from:
+  try {
+    const invalido = CImagenBmp.newFrom({ noEsImagen: true } as unknown as CImagenBmp);
+  } catch (e) {
+    // TypeError: 'El objeto que se proporcionó no es de tipo c_imagen_bmp'
+  }
+
+================================================================================

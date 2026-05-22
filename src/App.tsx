@@ -185,6 +185,16 @@ import { CPlacaPrincipalesUI } from './migration/CPlacaPrincipales';
 import { CPlacaSecundariosUI } from './migration/CPlacaSecundarios';
 // [91] c_resumen_optico
 import { CResumenOpticoUI } from './migration/CResumenOptico';
+// [92] tabla_cables_proy
+import { CTablaCablesProyUI } from './migration/CTablaCablesProy';
+// [93] c_lista_materiales_esquema_red
+import { CListaMaterialesEsquemaRedUI } from './migration/CListaMaterialesEsquemaRed';
+// [94] c_vp_plano_proy_can
+import { CVpPlanoProjCanUI } from './migration/CVpPlanoProjCan';
+import { CElementosUI } from './migration/CElementos';
+import { CFilasUI } from './migration/CFilas';
+import { CCentralEUI } from './migration/CCentralE';
+import { CCfgBloqueTitdetEditableMixinUI } from './migration/CCfgBloqueTitdetEditableMixin';
 // [85] textbox_layout
 import { TextboxLayoutUI } from './migration/TextboxLayout';
 // [86] c_placa_larga_distancia
@@ -1690,6 +1700,75 @@ const DEMO_ITEMS: DemoItem[] = [
     label: '[91] c_resumen_optico',
     description: 'Sello RESUMEN ÓPTICO para CEDO. Recorre divisores→terminales, acumula carga/puerto. SENCILLA: suma directa. DOBLE: 1ª→8, 2ª→(carga-8). Verde=EXISTENTE, rojo=PROYECTO. DIVISOR_EQUIVALENCIA A-S→1-16.',
     render: () => <CResumenOpticoUI />,
+  },
+  // =============================================================================
+  // [92] Demo — tabla_cables_proy
+  // =============================================================================
+  // function DemoCTablaCablesProy() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>tabla_cables_proy</h3>
+  //       <p style={s.desc}>
+  //         Tabla de layout que lista copper_cable EXISTENTE agrupados por spec_id.
+  //         Columnas: Capacidad (size+" Ps."), Tipo, Calibre, Cantidad (mts, 2 decimales).
+  //         buscar_elementos() filtra geometry_set del viewport. agrupar_elementos() acumula
+  //         measured_length ?? calculated_length por spec_id en hash_table.
+  //       </p>
+  //       <CTablaCablesProyUI />
+  //     </section>
+  //   );
+  // }
+  {
+    id: '92-tabla-cables-proy',
+    label: '[92] tabla_cables_proy',
+    description: 'Tabla copper_cable EXISTENTE agrupados por spec_id. Columnas: Capacidad/Tipo/Calibre/Cantidad(mts). buscar_elementos() filtra viewport GIS. agrupar_elementos() acumula longitud medida o calculada.',
+    render: () => <CTablaCablesProyUI />,
+  },
+  // =============================================================================
+  // [93] Demo — c_lista_materiales_esquema_red
+  // =============================================================================
+  // function DemoCListaMaterialesEsquemaRed() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_lista_materiales_esquema_red</h3>
+  //       <p style={s.desc}>
+  //         Sello lista de materiales para esquemáticos fibra óptica. Slot .tipo = :red/:estructuras.
+  //         selectFromMap() filtra PROYECTADO del ACE esquema. 5 prioridades de descripción:
+  //         sheath+spec → cables; spec_id → CEDOs; tipo_conexion → fusiones;
+  //         key split → ductos/terminales; fallback external_name. Metros acumula, pzas cuenta.
+  //       </p>
+  //       <CListaMaterialesEsquemaRedUI />
+  //     </section>
+  //   );
+  // }
+  {
+    id: '93-lista-materiales-esquema-red',
+    label: '[93] c_lista_materiales_esquema_red',
+    description: 'Sello LISTA DE MATERIALES para esquemático fibra óptica. Slot .tipo (:red/:estructuras). PROYECTADO del ACE. Agrupa por clave collection|spec. 5 prioridades de descripción. Metros acumulados o pzas contadas.',
+    render: () => <CListaMaterialesEsquemaRedUI />,
+  },
+  // =============================================================================
+  // [94] Demo — c_vp_plano_proy_can
+  // =============================================================================
+  // function DemoCVpPlanoProjCan() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_vp_plano_proy_can</h3>
+  //       <p style={s.desc}>
+  //         Viewport de layout para planos de canalización de cobre. Secciona la ruta
+  //         (c_seccionamiento 1:200, A4) con turf.lineSliceAlong. Marcas Z de continuación
+  //         (bracket 3 segmentos, letras A/B/C) con turf.bearing+destination. Línea U
+  //         entre pozos. objetos_visibles filtra por bbox de sección.
+  //       </p>
+  //       <CVpPlanoProjCanUI />
+  //     </section>
+  //   );
+  // }
+  {
+    id: '94-vp-plano-proy-can',
+    label: '[94] c_vp_plano_proy_can',
+    description: 'Viewport layout planos canalización cobre. Secciona ruta (40m/plano). Marcas Z continuación con letras A/B/C (bracket 3 segmentos, turf.destination). Línea U entre pozos. objetos_visibles por bbox.',
+    render: () => <CVpPlanoProjCanUI />,
   },
   {
     id: '85-textbox-layout',

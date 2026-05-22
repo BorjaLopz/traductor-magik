@@ -12,353 +12,521 @@ Aquí está el código Magik:
 
 _package user
 $
-def_slotted_exemplar(:c_resumen_optico,
-                      {
-			 {:oCedo,_unset,:writable},
-			 {:tabla,_unset,:writable},
-			 {:capacidad_divisor,_unset,:writable},
-			 {:cuentas_principal,_unset,:writable},
-			 {:oRenglones,1,:writable},
-			 {:oConectividad,c_servicios_conectividad.Singleton(),:writable},
-			 {:oDatos,_unset,:writable}
-                      }, :c_base_sello_fibra)
+def_slotted_exemplar(:c_vp_plano_proy_can,
+		     {
+			     {:oGeometria,_unset,:writable,:public},
+			     {:iIndicePlano,_unset,:writable,:public},
+			     {:iNumeroSecciones,_unset,:writable,:public},
+			     {:oWindows,_unset,:writable,:public}
+		     },:viewport_layout)
 $
-c_resumen_optico.define_shared_constant(:divisor_equivalencia,
-				  property_list.new_with(:|A|,1,:|B|,2,:|C|,3,:|D|,4,:|E|,5,:|F|,6,
-							 :|G|,7,:|H|,8,:|J|,9,:|K|,10,:|L|,11,:|M|,12,
-							 :|O|,13,:|P|,14,:|R|,15,:|S|,16),
-				  :public)
+c_vp_plano_proy_can.define_shared_constant(:allowed_on_menu?,_false,:public)
 $
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_resumen_optico.configura_tabla()
-	_local LoColorVerde << rope.new_with(0.2,0.6,0)	
-	_local LoColorRojo  << rope.new_with(255,0,0)
-	_local LfDesplazaY
-
-	#----------------------------------------------------------
-	# Tabla Datos NCo , Dto
-	#-----------------------------------------------------------
-	LoTblTitulo_nco<<property_list.new_with_properties(:ren,{6},:col,{50,26 })
-	LoTbl<<.o_tablas.crea_tabla(1,2,:tbl_titulo_nco)
-	LoTbl.ocoordenada_origen << .o_coord_inicio
-	LoTbl.color_linea << LoColorVerde
-	_self.asigna_medidas_tabla(LoTbl, LoTblTitulo_nco)
-	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo_nco})
-
-	
-	#----------------------------------------------------------
-	# Tabla Datos
-	#-----------------------------------------------------------
-	LoTblTitulo<<property_list.new_with_properties(:ren,{6},:col,{76})
-	LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_titulo)
-	#LoTbl.ocoordenada_origen << .o_coord_inicio
-	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)
-	LoTbl.color_linea << LoColorVerde
-	_self.asigna_medidas_tabla(LoTbl, LoTblTitulo)
-	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo_nco,:tbl_titulo})
-	#----------------------------------------------------------
-	# Tabla Servicios
-	#-----------------------------------------------------------
-	lodimen << _self.dimensiona_tabla()
-	LoTblContenido << property_list.new_with_properties(:ren,lodimen,#{6,6,6,6,6,6,6},
-							    :col,{8,4,4,4,4,4,4,4,4,13,8,15})
-
-	
-	LoTbl <<.o_tablas.crea_tabla(lodimen.size,12, :tbl_contenido)
-	
-	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)
-	LoTbl.color_linea << LoColorVerde
-	_self.asigna_medidas_tabla(LoTbl, LoTblContenido)
-	LfDesplazaY << LfDesplazaY+.o_tablas.longitud_total_renglones({ :tbl_contenido})
-	#----------------------------------------------------------
-	# Tabla total
-	#-----------------------------------------------------------
-	LoTblTotal<<property_list.new_with_properties(:ren,{6},:col,{76})
-	LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_total)
-	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)	
-	LoTbl.color_linea << LoColorVerde
-	_self.asigna_medidas_tabla(LoTbl, LoTblTotal)
-_endmethod
-$
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_resumen_optico.dimensiona_tabla()
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_proy_can.defined_attributes
 	## 
 	## 
-	_local lo_tabla << rope.new()
-	lo_tabla.add(6)
-	_for i _over range(1,.oRenglones)
-	_loop
-		lo_tabla.add(4)
-	_endloop
-	_return lo_tabla
+	attribs << rope.new_from(_super.defined_attributes)
+	## Propiedad que indica si el viewport se ajusta al marco.
+	attribs.add(layout_attribute_definition.new(:ajusta_al_marco, :string,
+						    :description, "Ajustar al Marco",
+						    :default_value, "Si",
+						    :allowed_on_properties_page?, _true,
+						    :enum_method, :val_falso_verdadero,
+						    :editor, _unset))
+
+	attribs.add(layout_attribute_definition.new(:Indice, :integer,
+						    :description, "Indica el indice del plano",
+						    :default_value, 0,
+						    :allowed_on_properties_page?, _true,
+						    :editor, _unset))
+	
+	attribs.add(layout_attribute_definition.new(:pozo, :string,
+						    :description, "Indica si contiene el pozo inicial o final o ambos.",
+						    :default_value, "Ninguno",
+						    :allowed_on_properties_page?, _true,
+						    :enum_method, :val_falso_verdadero,
+						    :editor, _unset))
+	attribs.add(layout_attribute_definition.new(:xMin, :float,
+						    :description, "xmin",
+						    :default_value, 0.0,
+						    :allowed_on_properties_page?, _true,
+						    :editor, _unset))
+	attribs.add(layout_attribute_definition.new(:yMin, :float,
+						    :description, "ymin.",
+						    :default_value, 0.0,
+						    :allowed_on_properties_page?, _true,
+						    :editor, _unset))
+	attribs.add(layout_attribute_definition.new(:xMax, :float,
+						    :description, "xmax",
+						    :default_value, 0.0,
+						    :allowed_on_properties_page?, _true,
+						    :editor, _unset))
+	attribs.add(layout_attribute_definition.new(:yMax, :float,
+						    :description, "ymax",
+						    :default_value, 0.0,
+						    :allowed_on_properties_page?, _true,
+						    :editor, _unset))
+	
+	>> attribs
 _endmethod
 $
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_resumen_optico.etiqueta_celdas()
+c_vp_plano_proy_can.define_attributes()
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_proy_can.DibujaLineaEntrePozoIniYFin(PoWindow,PoPlano)
+	## 
+	## 
+	_local LoPlanoIni
+	_local LoPlanoFin
+	_local LcollPlanos
+	_local LcollLinea
+	_if _self.pozo="Inicial"
+	_then
+		LoPlanoIni<<PoPlano
+		
+		#Buscar el viewport con el pozo final
+		LcollPlanos<<LoPlanoIni.layout_page.all_elements_of(c_vp_plano_proy_can)
+		_for LoPln _over LcollPlanos.fast_elements()
+		_loop
+			_if LoPln.pozo="Final"
+			_then
+				LoPlanoFin<<LoPln	
+			_endif
+		_endloop
+		_if LoPlanoIni _isnt _unset _and LoPlanoFin _isnt _unset 
+		_then
+			LoColor<<colour.new_from_dec("0,0,0")
+			
+			LoLineStyle << line_style.new_with_properties(
+					       :foreground_colour,LoColor,
+					       :width, 1)
+			
+			LcollLinea<<sector.new()
+
+			LoTransGisVp1<<LoPlanoIni.transform
+			LoTransGisVp2<<LoPlanoFin.transform
+
+			_if (LoOE<<_self.layout_document.user!_oe) _isnt _unset
+			_then
+				LoTramoCobre<<LoOE.user!_tramo_cobre
+				_if (LoPozo1<<LoTramoCobre.pozo1) _isnt _unset 
+				_then
+					_if (LoPozo2<<LoTramoCobre.pozo2) _isnt _unset 
+					_then
+						LoCoordPozo1<<LoPozo1.location.coord.transformed(LoTransGisVp1)
+						LoCoordPozo2<<LoPozo2.location.coord.transformed(LoTransGisVp2)
+						
+						LcollLinea.add(LoCoordPozo1)
+						LoY<<LoPlanoIni.layout_page.height-LoCoordPozo1.y-200
+						LcollLinea.add(LoCoordPozo1+coordinate(0,LoY))
+
+						LoY<<LoPlanoIni.layout_page.height-LoCoordPozo2.y-200
+						LcollLinea.add(LoCoordPozo2+coordinate(0,LoY))
+						LcollLinea.add(LoCoordPozo2)
+						
+						LcollLinea.draw_on(PoWindow,LoLineStyle)
+					_endif
+				_endif
+			_endif
+			
+		_endif
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_proy_can.DibujarMarcasDeContinuacion(PoWindow,PiIndice,PoGeom)
+	## 
+	## 
+_Local LsABC<<"ABCDEFGHIjk"
+
+	LoColor<<colour.new_from_dec("175,175,93")
+	LoLineStyle << line_style.new_with_properties(
+			       :foreground_colour,LoColor,
+			       :width, 2)
+	
+	LoFontBold << font.new_with_properties(:type,:logical,
+					       :name,"bold",
+					       :point_size,30,
+					       :orientation,:left_right)
+	
+	LoTextStyle<<text_style.new_with_properties(:colour,colour.new_from_dec("175,175,93"),
+						    :font,LoFontBold)
+	
+	
+	_if _self.iIndicePlano=1
+	_then
+		#Derecha
+		LoSectorRopeLimite<<sector_rope.new()
+		
+		LoSegmento<<PoGeom.segment(.oGeometria.n_segments)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(10*100,-90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(8*100,-90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(4*100,-90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(4*100,90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(8*100,90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(10*100,90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+
+		LoSectorRopeLimite.as_sector().transformed(_self.transform).draw_on(PoWindow,LoLineStyle)
+		
+		LoAngulo<<LoSectorRopeLimite.first_coord.angle_to(LoSectorRopeLimite.last_coord)-_self.view_angle.degrees_to_radians
+		LoCoord<<LoSectorRopeLimite.first_coord.transformed(_self.transform)
+		
+		PoWindow.draw_vtext_transform(LoTextStyle,
+					      LoCoord.x,LoCoord.y,
+					      LsABC[PiIndice].write_string,
+					       _unset, _unset, _unset, LoAngulo, :bottom_centre )
+
+		LoCoord<<LoSectorRopeLimite.last_coord.transformed(_self.transform)
+		PoWindow.draw_vtext_transform(LoTextStyle,
+					      LoCoord.x,LoCoord.y,
+					      LsABC[PiIndice].write_string,
+					       _unset, _unset, _unset, LoAngulo, :bottom_centre )
+		
+	_elif _self.iIndicePlano=_self.iNumeroSecciones
+	_then
+		#Izquierda
+		LoSectorRopeLimite<<sector_rope.new()
+		
+		LoSegmento<<PoGeom.segment(1).reversed()
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(10*100,90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(8*100,90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(7*100,90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(7*100,-90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(8*100,-90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(10*100,-90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorRopeLimite.as_sector().transformed(_self.transform).draw_on(PoWindow,LoLineStyle)
+
+		LoAngulo<<LoSectorRopeLimite.first_coord.angle_to(LoSectorRopeLimite.last_coord)-_self.view_angle.degrees_to_radians
+		LoCoord<<LoSectorRopeLimite.first_coord.transformed(_self.transform)
+		PoWindow.draw_vtext_transform(LoTextStyle,
+					      LoCoord.x,LoCoord.y,
+					      LsABC[PiIndice-1].write_string,
+					       _unset, _unset, _unset, LoAngulo, :bottom_centre )
+
+		LoCoord<<LoSectorRopeLimite.last_coord.transformed(_self.transform)
+		PoWindow.draw_vtext_transform(LoTextStyle,
+					      LoCoord.x,LoCoord.y,
+					      LsABC[PiIndice-1].write_string,
+					       _unset, _unset, _unset, LoAngulo, :bottom_centre )
+	_else
+		# Derecho
+		LoSectorRopeLimite<<sector_rope.new()
+		
+		LoSegmento<<PoGeom.segment(.oGeometria.n_segments)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(10*100,-90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(8*100,-90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(4*100,-90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(4*100,90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(8*100,90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(10*100,90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+
+		LoSectorRopeLimite.as_sector().transformed(_self.transform).draw_on(PoWindow,LoLineStyle)
+
+		LoAngulo<<LoSectorRopeLimite.first_coord.angle_to(LoSectorRopeLimite.last_coord)-_self.view_angle.degrees_to_radians
+		LoCoord<<LoSectorRopeLimite.first_coord.transformed(_self.transform)
+		
+		PoWindow.draw_vtext_transform(LoTextStyle,
+					      LoCoord.x,LoCoord.y,
+					      LsABC[PiIndice].write_string,
+					       _unset, _unset, _unset, LoAngulo, :bottom_centre )
+
+		LoCoord<<LoSectorRopeLimite.last_coord.transformed(_self.transform)
+		PoWindow.draw_vtext_transform(LoTextStyle,
+					      LoCoord.x,LoCoord.y,
+					      LsABC[PiIndice].write_string,
+					       _unset, _unset, _unset, LoAngulo, :bottom_centre )
+		
+		#Izquierdo
+		LoSectorRopeLimite<<sector_rope.new()
+
+		LoSegmento<<PoGeom.segment(1).reversed()
+
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(10*100,90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(8*100,90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(7*100,90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(7*100,-90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+		
+		LoSectorLimite<<sector.new()
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(8*100,-90))
+		LoSectorLimite.add(LoSegmento.obten_pto_separado(10*100,-90))
+		LoSectorRopeLimite.add(LoSectorLimite)
+
+		LoSectorRopeLimite.as_sector().transformed(_self.transform).draw_on(PoWindow,LoLineStyle)
+
+		LoAngulo<<LoSectorRopeLimite.first_coord.angle_to(LoSectorRopeLimite.last_coord)-_self.view_angle.degrees_to_radians
+		LoCoord<<LoSectorRopeLimite.first_coord.transformed(_self.transform)
+		
+		PoWindow.draw_vtext_transform(LoTextStyle,
+					      LoCoord.x,LoCoord.y,
+					      LsABC[PiIndice-1].write_string,
+					       _unset, _unset, _unset, LoAngulo, :bottom_centre )
+
+		LoCoord<<LoSectorRopeLimite.last_coord.transformed(_self.transform)
+		PoWindow.draw_vtext_transform(LoTextStyle,
+					      LoCoord.x,LoCoord.y,
+					      LsABC[PiIndice-1].write_string,
+					       _unset, _unset, _unset, LoAngulo, :bottom_centre )
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_proy_can.draw_content_on(windows)
 	## 
 	##
+_local LoBoundTrans
+_local LsMsg<<"PLANO NUMERO : "+_self.iIndicePlano.write_string
+_local LoOE
+_local LoTramoCobre
+_local LcollCanalizacion
+# START CHANGE
+# (09/08/25 ahernan) :  se inicializa arreglo con un sector.
+#
+_local  LoSector<<sector.new()
+#
+# END CHANGE
 
-        sch  << swg_dsn_admin_engine.active_scheme
-	nodo << sch.project.user!_central.building
-	dto_titulo << "DTO: " + sch.user!_distrito_optico.user!_distrito
-	LoNombreNCO << ""
-	LoNCOsiglas << ""
+
+	.oWindows<<windows
 	
-	_if nodo  _isnt _unset 
+	# Asignar el indice del plano
+	_if _self.Indice>0
 	_then
-		(LoNombreNCO,LoNCOsiglas)  <<    nodo.datos_nco
+		_self.iIndicePlano<<_self.Indice
+	_else
+		_self.iIndicePlano<<0
 	_endif
 
+	# Generar la geometria.
+         _dynamic !current_coordinate_system! << _unset
 
-	 nco_titulo << "NCO" + %space + LoNCOsiglas + %( + LoNombreNCO + %)
-	
-	_local LoColorVerde << rope.new_with(0.2,0.6,0)
-	_local LoColorRojo << rope.new_with(1,0,0)
-	_local LoColorOro << rope.new_with(0.8,0.8,0.2)
-	_local LoColorNco << rope.new_with(1,0.3,0.8)
-	_self.asigna_texto_celda(:tbl_titulo_nco,1,1,nco_titulo.uppercase,20, :centre_centre,0,LoColorNco)
-	_self.asigna_texto_celda(:tbl_titulo_nco,1,2,dto_titulo ,20, :centre_centre,0,LoColorOro)
-	_self.asigna_texto_celda(:tbl_titulo,1,1,"RESUMEN OPTICO",40, :centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,1,"TER",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,2,"1",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,3,"2",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,4,"3",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,5,"4",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,6,"5",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,7,"6",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,8,"7",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,9,"8",35,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,10,"Total de Clientes" + %newline + "a Atender",15,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,11,"No.Fibra" + %newline + "Principal",    15,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_contenido,1,12,"Capacidad de" + %newline + "Servicios en divisor" ,15,:centre_centre,0,LoColorVerde)
-	_self.asigna_texto_celda(:tbl_total,1,1,"Total de servicios Opticos a atender      ",    30, :centre_left,0,LoColorRojo)
-
-	
-_endmethod
-$
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_resumen_optico.llena_datos_celdas()
-  ## 
-  ##
-	_local LoColorVerde << rope.new_with(0.2,0.6,0)
-	_local LoColorRojo << rope.new_with(1,0,0)	
-	_local renglon << 0
-	_local t_serv << 0
-	_local texto << ""
-	_local t_total << 0
-
-	_self.calcula_datos_celdas()
-
-	_for iterRenglones _over .oDatos.elements()
-	_loop
-		_self.asigna_texto_celda(:tbl_contenido,renglon+2,1,iterRenglones[:terminal].write_string,30,:centre_centre,0,LoColorVerde)
-
-		_for itColumna _over range(1,8)
-		_loop
-			_if iterRenglones[(itColumna.write_string + "_edo_constr").as_symbol()] = "E"
-			_then
-				
-				_self.asigna_texto_celda(:tbl_contenido,renglon+2,itColumna+1,
-							 iterRenglones[(itColumna.write_string).as_symbol()].write_string,
-							 30,:centre_centre,0,LoColorVerde)
-			_else
-				_self.asigna_texto_celda(:tbl_contenido,renglon+2,itColumna+1,
-							 iterRenglones[(itColumna.write_string).as_symbol()].write_string,
-							 30,:centre_centre,0,LoColorRojo)
-			_endif
-			t_serv +<< iterRenglones[(itColumna.write_string).as_symbol()].as_number().default(0)
-		_endloop
+	 _if swg_dsn_admin_engine.active_scheme.project.job_type = "Cobre"
+	 _then
+		 LoOE << _self.layout_document.user!_oe
+		 
+	 _elif swg_dsn_admin_engine.active_scheme.project.job_type ="Fibra_local"
+	 _then
+		 LoOE << _self.layout_document.oe_lo
+	 _endif
+	 
+	 _if LoOE _isnt _unset
+	 _then
+		 
+		 LoTramoCobre<<LoOE.user!_tramo_cobre
+		 LcollCanalizacion<<LoTramoCobre.obtener_canalizacion()
+		 LoSector<<sector.new()
+		 _for LoRec _over LcollCanalizacion.fast_elements()
+		 _loop
+			 _for LoSec _over LoRec.route.sectors.fast_elements()
+			 _loop
+				 _for LoCoord _over LoSec.fast_elements()
+				 _loop
+					 LoSector.add_coord(LoCoord)
+				 _endloop
+			 _endloop
+		 _endloop
+	 _endif
+	 # Generar seccionamiento.
+	 _if LoSector.size>0
+	 _then
+		LoSeccionamiento<<c_seccionamiento.new(200,1,10,21,18)
+		LoSeccionamiento.do_seccionamiento(LoSector)
+		LoSecciones<<LoSeccionamiento.get_vistas()
+	 _endif
+	 
+	# Asignar la seccion i-esima al viewport y el agulo de rotacion
+	# del vieport.
+	 _if LoSecciones _isnt _unset _andif LoSecciones.size>0
+	 _then
+		 _self.iNumeroSecciones<<LoSecciones.size
+		 _if _self.iIndicePlano _isnt _unset _andif
+		     _self.iIndicePlano>0 _andif
+		     _self.iIndicePlano<=LoSecciones.size
+		 _then
+			_self.oGeometria<<LoSecciones[_self.iIndicePlano][2]
+			_self.view_angle<<LoSecciones[_self.iIndicePlano][3].radians_to_degrees
+			
+#			LoCentro<<_self.bounds.centre
+#			write("1",LoCentro)
+#			_self.bounds<<bounding_box.new(0,0,2159*LoSecciones[_self.iIndicePlano][4],2794)
+#			write("2",_self.bounds.centre)
+#			_self.bounds.centre<<LoCentro
+#			write("3",_self.bounds.centre)
+		 _endif
+	 _else
+		 # START CHANGE
+		 # (09/08/25 ahernan) : Por lo menos es un tramo.
+		 #
+		 _self.iNumeroSecciones<<1
+		 _self.iIndicePlano<<1
+		 #
+		 # END CHANGE
+		 
+	 _endif
+	 
+	 LsMsg<<"PLANO NUMERO : "+_self.iIndicePlano.default(1).write_string+" de "+_self.iNumeroSecciones.default(1).write_string
+	 
+	 _super.draw_content_on(windows)
+	 
+	 # Dibujar solo la canalizacion correspondiente a cada seccion.
+	 _if .oGeometria _isnt _unset _and _self.mapped?
+	 _then
+		 LoAppPNI<<smallworld_product.pni_application()
+		 LoMapView<<LoAppPNI.plugin(:map_plugin).current_map_view
+		 ss << rwo_style_system.new("Default",LoMapView.current_display_style_name.write_string)
+		 gs << dbv[:underground_route].an_element().route.style_in(ss).actual_gis_style
+		 
+		.oGeometria.transformed(_self.transform).draw_on(.oWindows,gs)
 		
-		_self.asigna_texto_celda(:tbl_contenido,renglon+2,10,
-					 iterRenglones[:serv].write_string,30,:centre_centre,0,LoColorRojo)
-		_self.asigna_texto_celda(:tbl_contenido,renglon+2,11,
-					 iterRenglones[:fib].write_string,28,:centre_centre,0,LoColorRojo)
-		_self.asigna_texto_celda(:tbl_contenido,renglon+2,12,
-					 iterRenglones[:tot].write_string,30,:centre_centre,0,LoColorRojo)
-
-		t_total +<< iterRenglones[:tot].as_number().default(0)
-
-		renglon +<< 1
-	_endloop
-
-	#texto << "TOTAL SERVICIOS OPTICOS       " + t_serv.write_string + "                           " + t_total.write_string
-	texto << "Total de servicios Opticos a atender " + t_serv.write_string 
-	_self.asigna_texto_celda(:tbl_total,1,1,texto,30, :centre_left,0,LoColorRojo)
-	
-	
+		# Dibujar las Marcas de Continuacion.
+		_if _self.iNumeroSecciones>1 _and _self.iIndicePlano>0
+		_then
+			_self.DibujarMarcasDeContinuacion(.oWindows,_self.iIndicePlano,_self.oGeometria)
+		_endif
+	 _endif
+	 # Dibujar Linea entre pozos inicial y final
+	 _self.DibujaLineaEntrePozoIniYFin(.oWindows,_self)
+	 
+	 #-------
+	 LoFontBold << font.new_with_properties(:type,:logical,
+					       :name,"bold",
+					       :point_size,50,
+					       :orientation,:left_right)
+	 
+	 LoTextStyle<<text_style.new_with_properties(:colour,colour.new_from_dec("175,175,93"),
+						     :font,LoFontBold)
+	 
+#	 .oWindows.draw_vtext_transform(LoTextStyle,_self.bounds.centre.x,_self.bounds.ymin-75,LsMsg,
+#					_unset, _unset, _unset, _unset, :bottom_centre )
 _endmethod
 $
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_resumen_optico.calcula_datos_celdas()
+_pragma(classify_level=restricted)
+_method c_vp_plano_proy_can.geometry_set_for_render
 	## 
-	##1
-
+	## Returns the geometry set which is used in the rendering
+	## code. Based the the visibility attribute the geometry set
+	## needs to get its own TableControl from either the Ace, the
+	## CurrentObjectControl or it has one already.
+	##	
+	result_set<<_super.geometry_set_for_render
 	
-	_local LoCont << 1
-	.odatos << rope.new() 
-	
-	_if _self.elementos_bd_gis _isnt _unset _andif
-	    _self.elementos_bd_gis.size > 0
+        _if result_set _isnt _unset 
 	_then
-		.oCedo << _self.obtener_elementos_bd_gis()[1]
+		result_set<<_self.objetos_visibles(result_set)
 	_endif
 	
-	##   LoTerminales <<dto.obten_terminales_fo(.ocedo.id)   
+	>> result_set
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_proy_can.initialise_for_page(a_layout_page)
+	## 
+	## 
+	_self.selection<<_false
+	_self.trail<<_false
+	_self.set_fill_colour(_unset)
+	_self.outline_style<<_unset
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_proy_can.objetos_visibles(PcollResultSet)
+	## 
+	##
+_local LoResultSet
+_local LoBuffer
+
+
+        # Seleccionar los elementos que interactuan con el bound.
+        LcollResulSet<<PcollResultSet
+	LoBound<<bounding_box.new(_self.xMin,_self.yMin,_self.xMax,_self.yMax)
+	LcollResulSet<<LcollResulSet.select(:bounds_interacting_with,LoBound)
+
 	
+#	_if .oGeometria _isnt _unset  _and _false#  quitar. and false
+#	_then
+#		LoAppPNI<<smallworld_product.pni_application()
+#		
+#		# Crear un buffer a 50 mts.
+#		LoBuffer<<.oGeometria.buffer(15*100)
+#		#LoBuffer<<LoBuffer.transformed(_self.transform)
+#		#LoBuffer.draw_on(.oWindows,colour.called(:red))
+#		
+#		LoPseudoChain<<pseudo_chain.new(.oGeometria)
+#		#LoPseudoChain<<LoPseudoChain.transformed(_self.transform)
+#		#LoPseudoChain.draw_on(.oWindows,colour.called(:yellow))
+#
+#		# Elementos que deben aparecer en el plano.
+#		LoPredMan<<predicate.interacts(:user!_limite, {LoBuffer})
+#		LoPredLot<<predicate.interacts(:user!_limite, {LoBuffer})
+#		LoPredUub<<predicate.interacts(:location, {LoPseudoChain})
+#		LoPredUgr<<predicate.overlays(:route, {LoPseudoChain})
+#		LoPredTer<<predicate.within(:location,{LoBuffer})
+#		LoPredCll<<predicate.interacts(:user!_posicion,{LoBuffer})
+#		
+#		LoResultSet<<LcollResulSet.select(:predicate,{:user!_lote,LoPredMan,
+#							      :mit_terminal_enclosure,LoPredTer,
+#							      :uub,LoPredUub,
+#							      :user!_eje_calle,LoPredCll})
+#							      #:underground_route, LoPredUgr})
+#		LcollResulSet<< LoResultSet
+#	_endif
 	
-	LoCriterio << _proc(elemento1,elemento2)
-			      _if elemento1.name > elemento2.name
-			      _then
-				      _return _false
-			      _endif
-			      _return _true
-		 _endproc
-	
-	_Local LoNumDiv << 0
-	_local loContadorCables << 1
-	
-	_for iterDivisor _over .ocedo.obtener_divisores().as_sorted_collection(LoCriterio).elements()
-	_loop   
-		LoNumDiv << LoNumDiv + 1
-		LoRenglon << property_list.new_with(:terminal,"FO" + iterDivisor.name,
-					       :|1|,"R",:|1_edo_constr|,"P",
-					       :|2|,"R",:|2_edo_constr|,"P",
-					       :|3|,"R",:|3_edo_constr|,"P",
-					       :|4|,"R",:|4_edo_constr|,"P",
-					       :|5|,"R",:|5_edo_constr|,"P",
-					       :|6|,"R",:|6_edo_constr|,"P",
-					       :|7|,"R",:|7_edo_constr|,"P",
-					       :|8|,"R",:|8_edo_constr|,"P",
-					       :serv,0,
-					       :fib,0,
-					       :tot,iterDivisor.output_ports().size * 8)
-		
+	>>LcollResulSet
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_proy_can.val_falso_verdadero
+## Objetivo: Regresar un arreglo con los  valores "Inicial",
+## "Final", "Ambos"
+## Parametros de Salida: Ninguno
+## Regresa: LcollUbicPozo
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
 
-		   # Obtiene puerto de entrada de cada divisor
-		   LoPuertoEntrada << IterDivisor.input_ports()[1]		   
-		   # Obtiene una lista de lineas conectadas al puerto de entrada
-		   LoFibraEntrada << LoPuertoEntrada.location.connected_chains()
+_local LcollUbicPozo    ##Arreglo con los valores "Inicial", "Final", "Ambos"
+	LcollUbicPozo<<rope.new()
 
-		   ##validar LoFibraEntrada.
-		   
-		   # Obtiene la fibra conectada al puerto de entrada
-		   LoFibras << LoFibraEntrada.an_element()
+	## Agrega los valores "Si", "No"
+	LcollUbicPozo.add("Ninguno")
+	LcollUbicPozo.add("Inicial")
+	LcollUbicPozo.add("Final")
+	LcollUbicPozo.add("Ambos")
 
-		   _if LoFibras _isnt _unset 
-		   _then
-
-
-		   # Obtiene la lista de pines conectados a la fibra
-		   LoPines << LoFibras.connected_pins_of_types({:mit_fiber_pin})					   
-		   # Obtiene el Pin Conectado al divisor
-		   LoPin << LoPines.an_element()			
-		   # Obtiene todos los pines conectados abajo del Pin de entrada
-		   LoPinesAbajo << .oConectividad.obten_pines_conectividad_abajo(LoPin)
-		   
-		   # Obtiene todas las terminales de fibra conectadas a los pines
-		   # y las agrega a una lista general de terminales
-		   LoTerminales  << .oConectividad.obten_terminales_de_pines(LoPinesAbajo)
-		
-                   _for itert _over Loterminales.fast_elements()
-		   _loop
-			   LoCarga << 0
-			   LoCargaReal  << 0
-			   
-			   
-			           identifica_ter << itert.user!_nombre.write_string.substitute_string("FO","")
-				   
-				   _if identifica_ter.size > 0 _andif itert.user!_conexion = "SENCILLA"
-				   _then
-					   clave << identifica_ter
-					   
-				   _elif identifica_ter.size > 0 _andif itert.user!_conexion = "DOBLE" 
-				   _then
-					   clave << identifica_ter.split_by(".").an_element()
-				   _endif 
-				   
-				   numero_en_clave << clave.numbers_and_strings[2].write_string
-				   letra_en_clave  << clave.numbers_and_strings[1].write_string
-				   
-				   _if itert.construction_status = "EXISTENTE"
-				   _then
-					   LoRenglon[(numero_en_clave.write_string + "_edo_constr" ).as_symbol()] << "E"
-				   _endif
-
-				   #write("@valido", iterdivisor.name = letra_en_clave)
-				   
-				   _if itert.limite_fo _isnt _unset  _andif
-				       itert.limite_fo.user!_carga_corto_pla_cal _isnt _unset _andif
-				       itert.limite_fo.user!_carga_corto_pla_cal > 0 _andif
-				       iterdivisor.name = letra_en_clave
-				   _then					   
-					   # des_daniel Octubre 2022
-					   # Para Obtener la carga de una terminal se divide la carga
-					   # calculada del limite de terminal entre el numero de
-					   # terminales contenidas en el limite
-					   
-					   limTer << itert.limite_fo
-					   LoCarga << limTer.user!_carga_corto_pla_cal.default(0)
-					   LoCarga << loCarga _div limTer.terminal_distribucions.size
-					   
-				   
-					   _if itert.user!_conexion = "DOBLE"
-					   _then
-						   ## Obtener primera Terminal
-						   LoPriT << itert.user!_nombre.slice(4,4)
-						   LuUbi  << numero_en_clave.write_string
-						   
-						   _if LoPriT = LuUbi
-						   _then
-							   ## Es la primera de las terminales
-							   LoRenglon[numero_en_clave.as_symbol()] << "8"
-							   LoCargaReal << LoCargaReal + 8
-						   _else
-							   LoRenglon[numero_en_clave.as_symbol()] << (LoCarga - 8).write_string
-							   LoCargaReal << LoCargaReal + (LoCarga - 8)
-						   _endif
-					   _else
-
-						  
-						   LoRenglon[numero_en_clave.as_symbol()] << LoCargaReal.write_string
-						   LoCargaReal << LoCargaReal + LoCarga 
-						   
-					   _endif
-					   
-		
-					   LoRenglon[:serv] +<< LoCargaReal.default(0)
-					   LoRenglon[numero_en_clave.as_symbol()] << LoCargaReal.write_string	   
-				   _endif
-
-
-				   #show(iterdivisor.name,:indice,numero_en_clave,letra_en_clave, identifica_ter,:acumulado, LoRenglon[:serv] ,:carga, LoCarga,:real, LoCargaReal  )
-				   
-				   
-				   
-				   
-				   
-		   _endloop
-		   
-		   ##obtiene lacuenta del cable principal
-		   
-		   LoPinPrin << .oConectividad.obten_objeto_extremo(IterDivisor.input_ports()[1])
-		   
-		   _if LoPinPrin _isnt _unset 
-		   _then
-			   (LoCabPrin,LoAtrPrin) << LoPinPrin.get_cab_and_fiber_attribute
-			   cuenta_principal << LoAtrPrin.user!_cuenta
-			   LoRenglon[:fib] <<  cuenta_principal
-		   _endif	   
-
-
-		   .oDatos.add_last(LoRenglon)
-		   
-		   LoCont +<< 1	
-			   
-		   _endif
-
-		   
-	_endloop
-	
+	>> LcollUbicPozo
 _endmethod
 $
 
@@ -381,7 +549,11 @@ _endmethod
 
 
 
+<<<<<<< HEAD
 Ubicación: Clase c_dto_pronostico | Fichero: c_dto_pronostico.magik
+=======
+Ubicación: Clase c_vp_plano_proy_can | Fichero: c_vp_plano_proy_can.magik
+>>>>>>> 8b9194af9bcc9e3fcc4e784f9ba1a3747975d7f7
 
 ---
 

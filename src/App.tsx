@@ -175,6 +175,8 @@ import { CFactoryPlanosUI }                        from './migration/CFactoryPla
 import { CSelloNotasAdicionalesSctUI }              from './migration/CSelloNotasAdicionalesSct';
 // [83] c_sello_notas_sct
 import { CSelloNotasSctUI }                         from './migration/CSelloNotasSct';
+// [84] c_dto_pronostico
+import { CDtoPronosticoUI }                         from './migration/CDtoPronostico';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -1389,6 +1391,33 @@ const DEMO_ITEMS: DemoItem[] = [
     description: 'Sello layout GIS: Notas SCT. 4 atributos: estado (texto libre sin enum), tipo_cable, procedimiento, instalacion. Solo "estado" (uppercase) aparece en el texto — 4 notas numeradas fijas, nota 3 dinámica. Tabla 2×1: 10mm título + 55mm cuerpo × 155mm ancho.',
     render     : () => <DemoCSelloNotasSct />,
   },
+  // ── [83] c_sello_notas_sct — anterior último componente migrado ─────────────
+
+  // =============================================================================
+  // [84] Demo inline — c_dto_pronostico
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoCDtoPronostico() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_dto_pronostico</h3>
+  //       <p style={s.meta}>
+  //         Sello layout "Resumen de materiales" — 3 sub-tablas apiladas verticalmente.
+  //         tbl_Titulo(2×2,10mm) + tbl_pares(3×2,9mm) + tbl_pronosticos(3×3,9mm).
+  //         Guard lazy bTablas_creadas. Celdas c_Captura_Texto editables.
+  //       </p>
+  //       <CDtoPronosticoUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id         : '84-cdto-pronostico',
+    label      : '[84] c_dto_pronostico',
+    description: 'Sello layout "Resumen de materiales" (red pares cobre) — tbl_Titulo(2×2,sin bordes,borde-inf celda1,2) + tbl_pares(3×2,bordes ext+rens) + tbl_pronosticos(3×3,todos bordes). Guard lazy bTablas_creadas en drawContentOn().',
+    render     : () => <CDtoPronosticoUI />,
+  },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];
 
@@ -1396,25 +1425,54 @@ const DEMO_ITEMS: DemoItem[] = [
 // App
 // =============================================================================
 function App() {
-  // Por defecto muestra la migración más reciente
   const [activeId, setActiveId] = useState(DEMO_ITEMS[DEMO_ITEMS.length - 1].id);
-  const active = DEMO_ITEMS.find(item => item.id === activeId) ?? DEMO_ITEMS[DEMO_ITEMS.length - 1];
+  const [query,    setQuery]    = useState('');
+
+  // Filtra por label o description (case-insensitive)
+  const filtered = query.trim() === ''
+    ? DEMO_ITEMS
+    : DEMO_ITEMS.filter(item =>
+        item.label.toLowerCase().includes(query.toLowerCase()) ||
+        item.description.toLowerCase().includes(query.toLowerCase()),
+      );
+
+  // Si el activo queda fuera del filtro, usa el primero visible
+  const visibleIds = new Set(filtered.map(i => i.id));
+  const resolvedId = visibleIds.has(activeId) ? activeId : (filtered[0]?.id ?? activeId);
+  const active     = DEMO_ITEMS.find(item => item.id === resolvedId) ?? DEMO_ITEMS[DEMO_ITEMS.length - 1];
 
   return (
     <div style={s.root}>
       <h2 style={s.title}>Test — Migración Magik → TypeScript</h2>
 
       <div style={s.menuBar}>
+        {/* Buscador — filtra label y description en tiempo real */}
+        <input
+          type="search"
+          placeholder="Buscar componente…"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          style={s.searchInput}
+          aria-label="Buscar componente"
+        />
+        <span style={s.searchCount}>
+          {filtered.length}/{DEMO_ITEMS.length}
+        </span>
+
         <label htmlFor="demo-select" style={s.menuLabel}>Componente:</label>
         <select
           id="demo-select"
-          value={activeId}
+          value={resolvedId}
           onChange={e => setActiveId(e.target.value)}
           style={s.select}
+          size={1}
         >
-          {DEMO_ITEMS.map(item => (
-            <option key={item.id} value={item.id}>{item.label}</option>
-          ))}
+          {filtered.length === 0
+            ? <option disabled value="">Sin resultados</option>
+            : filtered.map(item => (
+                <option key={item.id} value={item.id}>{item.label}</option>
+              ))
+          }
         </select>
         <span style={s.menuHint}>{active.description}</span>
       </div>
@@ -1437,7 +1495,9 @@ const s: Record<string, React.CSSProperties> = {
   menuBar: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 20, padding: '10px 14px', background: '#f0f4f8', borderRadius: 6, border: '1px solid #dde' },
   menuLabel: { fontSize: 12, color: '#555', fontWeight: 'bold' },
   select: { padding: '5px 10px', borderRadius: 5, border: '1px solid #b0bec5', fontSize: 13, minWidth: 320 },
-  menuHint: { fontSize: 12, color: '#666', fontStyle: 'italic' },
+  menuHint   : { fontSize: 12, color: '#666', fontStyle: 'italic' },
+  searchInput: { padding: '5px 10px', borderRadius: 5, border: '1px solid #b0bec5', fontSize: 13, minWidth: 200 },
+  searchCount: { fontSize: 11, color: '#888', whiteSpace: 'nowrap' as const },
   demoArea: { minHeight: 200 },
   section: { marginBottom: 0, border: '1px solid #ddd', borderRadius: 6, padding: 16 },
   h3: { margin: '0 0 8px', fontSize: 15, fontWeight: 'bold' },

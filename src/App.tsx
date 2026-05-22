@@ -171,6 +171,14 @@ import { CFactoryPlanosUI }                        from './migration/CFactoryPla
 import { CSelloNotasAdicionalesSctUI }              from './migration/CSelloNotasAdicionalesSct';
 // [83] c_sello_notas_sct
 import { CSelloNotasSctUI }                         from './migration/CSelloNotasSct';
+// [74] c_elementos
+import { CElementosUI }                           from './migration/CElementos';
+// [75] c_filas
+import { CFilasUI }                               from './migration/CFilas';
+// [76] c_central_e
+import { CCentralEUI }                            from './migration/CCentralE';
+// [77] c_cfg_bloque_titdet_editable_mixin (v2, prefijo C)
+import { CCfgBloqueTitdetEditableMixinUI }        from './migration/CCfgBloqueTitdetEditableMixin';
 // [74] c_preview_symbol_dialog
 import { PreviewSymbolDialogUI }                    from './migration/PreviewSymbolDialog';
 // [75] c_elemento_entidad_g
@@ -718,6 +726,8 @@ function DemoPreviewSymbolPlugin() {
 }
 
 // ── [31] preview_symbol_plugin — anterior último componente ──────────────────
+// Demo anterior — comentado para llevar control histórico de migraciones.
+// Se mantiene activo en DEMO_ITEMS para poder seleccionarlo desde el dropdown.
 function DemoCCeldas() {
   return (
     <section style={s.section}>
@@ -793,6 +803,52 @@ function DemoCResumenMateriales() {
     <section style={s.section}>
       <h3 style={s.h3}>c_resumen_materiales</h3>
       <CResumenMaterialesUI />
+    </section>
+  );
+}
+
+// ── [76] c_celdas — anterior último componente ───────────────────────────────
+// Demo anterior — comentado para llevar control histórico de migraciones.
+// Se mantiene activo en DEMO_ITEMS para poder seleccionarlo desde el dropdown.
+function DemoCElementos() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_elementos</h3>
+      <CElementosUI />
+    </section>
+  );
+}
+
+// ── [77] c_elementos — anterior último componente ────────────────────────────
+// Demo anterior — comentado para llevar control histórico de migraciones.
+// Se mantiene activo en DEMO_ITEMS para poder seleccionarlo desde el dropdown.
+function DemoCFilas() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_filas</h3>
+      <CFilasUI />
+    </section>
+  );
+}
+
+// ── [78] c_filas — anterior último componente ────────────────────────────────
+// Demo anterior — comentado para llevar control histórico de migraciones.
+// Se mantiene activo en DEMO_ITEMS para poder seleccionarlo desde el dropdown.
+function DemoCCentralE() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_central_e</h3>
+      <CCentralEUI />
+    </section>
+  );
+}
+
+// ── [79] c_central_e — anterior último componente ────────────────────────────
+function DemoCCfgBloqueTitdetEditableMixin() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_cfg_bloque_titdet_editable_mixin</h3>
+      <CCfgBloqueTitdetEditableMixinUI />
     </section>
   );
 }
@@ -1280,6 +1336,30 @@ const DEMO_ITEMS: DemoItem[] = [
     label      : '[76] c_celdas',
     description: 'Contenedor de cuadrícula 2D: new(RnRen,RnCol) llena collCeldas con Map<pos,CCelda>; celda(ren,col) accede por índice lineal nNumCol*(ren−1)+col; serial_slots/new_from_serial; validación > 0 en setters.',
     render     : () => <DemoCCeldas />,
+  },
+  {
+    id         : '84-c-elementos',
+    label      : '[84] c_elementos',
+    description: 'Contenedor de c_elemento_grafico: Agregar_elemento(elem,nombre)+nTotal_Elementos++, obten_elemento(nombre), Despliega() async propaga oVentana(ol/source/Vector) + oArea(bbox Turf) a cada hijo y dispara Actualiza_Area_Elemento()+Despliega(). Serialización slotted.',
+    render     : () => <DemoCElementos />,
+  },
+  {
+    id         : '85-c-filas',
+    label      : '[85] c_filas',
+    description: 'Contenedor 1D de c_fila: new(N) crea N CFila(10), elemento(i) acceso 1-based, Inicia_Elemento(N) acumula offset Y (suma 1..N-1), Longitud_Total() suma alturas, setter nTotal_Filas valida >0, serial_slots con echo nLong/10. Bug AND→OR original replicado.',
+    render     : () => <DemoCFilas />,
+  },
+  {
+    id         : '86-c-central-e',
+    label      : '[86] c_central_e',
+    description: 'Entidad central/nodo: setSiglas(s) async dispara doble lookup BD GIS paralelo (Promise.all) → oCtl (gis.building) + oLimite (landbase.user!_central). Getters tipo/nombre/localidad/municipio_delegacion con fallback a oValorPorDefecto.',
+    render     : () => <DemoCCentralE />,
+  },
+  {
+    id         : '87-c-cfg-bloque-titdet-editable-mixin-v2',
+    label      : '[87] c_cfg_bloque_titdet_editable_mixin (v2)',
+    description: 'Mixin de bordes (variante prefijo C, snake_case 1:1): cfg_tbl_titulo (3×5 contorno "a modo" + celda (3,3) abierta) y cfg_tbl_detalle (marco rectangular cols {3..6} + líneas internas en col {5}). 8 métodos. Render SVG dual before/after.',
+    render     : () => <DemoCCfgBloqueTitdetEditableMixin />,
   },
 
   // ── [76] c_celdas — anterior último componente ───────────────────────────────

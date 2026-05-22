@@ -177,6 +177,18 @@ import { CSelloNotasAdicionalesSctUI } from './migration/CSelloNotasAdicionalesS
 import { CSelloNotasSctUI } from './migration/CSelloNotasSct';
 // [84] c_dto_pronostico
 import { CDtoPronosticoUI } from './migration/CDtoPronostico';
+// [88] c_sello_reconcentracion
+import { CSelloReconcentracionUI } from './migration/CSelloReconcentracion';
+// [89] c_placa_principales
+import { CPlacaPrincipalesUI } from './migration/CPlacaPrincipales';
+// [90] c_placa_secundarios
+import { CPlacaSecundariosUI } from './migration/CPlacaSecundarios';
+// [91] c_resumen_optico
+import { CResumenOpticoUI } from './migration/CResumenOptico';
+import { CElementosUI } from './migration/CElementos';
+import { CFilasUI } from './migration/CFilas';
+import { CCentralEUI } from './migration/CCentralE';
+import { CCfgBloqueTitdetEditableMixinUI } from './migration/CCfgBloqueTitdetEditableMixin';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -1482,6 +1494,110 @@ const DEMO_ITEMS: DemoItem[] = [
     label: '[84] c_dto_pronostico',
     description: 'Sello layout "Resumen de materiales" (red pares cobre) — tbl_Titulo(2×2,sin bordes,borde-inf celda1,2) + tbl_pares(3×2,bordes ext+rens) + tbl_pronosticos(3×3,todos bordes). Guard lazy bTablas_creadas en drawContentOn().',
     render: () => <CDtoPronosticoUI />,
+  },
+  // ── [84] c_dto_pronostico — anterior último componente migrado ──────────────
+
+  // =============================================================================
+  // [88] Demo inline — c_sello_reconcentracion
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoCSelloReconcentracion() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_sello_reconcentracion</h3>
+  //       <p style={s.meta}>
+  //         Sello "TABLA DE BAJANTES" — 11f×8c, 4 secciones, conteos UC por tipo.
+  //         ucs() → filtro por distrito + costeo. llena_datos_celdas() → LcollTotalUcs.
+  //         Bordes ocultos: fila 1 título fusionado, fila 2 secciones span 2 cols.
+  //       </p>
+  //       <CSelloReconcentracionUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '88-sello-reconcentracion',
+    label: '[88] c_sello_reconcentracion',
+    description: 'Sello TABLA DE BAJANTES (red cobre) — 11f×8c(13mm). Fila1 título fusionado (bBorde_Der?=false cols 1-7). 4 secciones: Precableado/Reconcentración/Reconexión(2 tipos)/Rehabilitación. ucs()→fetchUcs async→buildDataMatrix LcollTotalUcs[4][8].',
+    render: () => <CSelloReconcentracionUI />,
+  },
+  // ── [88] c_sello_reconcentracion — anterior último componente migrado ────────
+
+  // =============================================================================
+  // [89] Demo inline — c_placa_principales
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoCPlacaPrincipales() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_placa_principales</h3>
+  //       <p style={s.meta}>
+  //         Placa de identificación para principales — 6 tablas posicionadas.
+  //         tbl_1/2/3 marco+logo. tbl_4/5/6: filas label|valor (bordes izq/inf/sup ocultos).
+  //         8 atributos: sgl_ctl, cable, capacidad, calibre, cuenta, indicador, fecha, constructor.
+  //         Fondo rgb(0.82,0.91,1) azul claro.
+  //       </p>
+  //       <CPlacaPrincipalesUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '89-placa-principales',
+    label: '[89] c_placa_principales',
+    description: 'Placa id principales (fibra) — 6 tablas posicionadas: tbl_1(130×50) marco + tbl_3 logo + tbl_4/5(1×6,7.5mm) + tbl_6(1×4,7.5mm). Bordes bBorde_Izq/Inf/Sup?=false en cols label→visual label|valor. Fondo rgb(209,232,255).',
+    render: () => <CPlacaPrincipalesUI />,
+  },
+  // ── [89] c_placa_principales — anterior último componente migrado ────────────
+
+  // =============================================================================
+  // [90] Demo inline — c_placa_secundarios
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoCPlacaSecundarios() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_placa_secundarios</h3>
+  //       <p style={s.meta}>
+  //         Placa de identificación para secundarios — layout idéntico a c_placa_principales.
+  //         Diferencias: DISTRITO (no CAPACIDAD), dos CALIBRE (calibre1+calibre2), datos 22pt.
+  //         8 atributos: sgl_ctl, distrito, cable, calibre1, calibre2, cuenta, fecha, constructor.
+  //       </p>
+  //       <CPlacaSecundariosUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '90-placa-secundarios',
+    label: '[90] c_placa_secundarios',
+    description: 'Placa id secundarios (fibra) — layout idéntico a [89]. Δ: tbl_4 col3→DISTRITO, tbl_5→CALIBRE+CALIBRE+CUENTA (dos calibres), datos 22pt. Atributos: sgl_ctl/distrito/cable/calibre1/calibre2/cuenta/fecha/constructor.',
+    render: () => <CPlacaSecundariosUI />,
+  },
+  // =============================================================================
+  // [91] Demo — c_resumen_optico
+  // =============================================================================
+  // function DemoCResumenOptico() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_resumen_optico</h3>
+  //       <p style={s.desc}>
+  //         Sello RESUMEN ÓPTICO para planos de CEDO. Recorre divisores → terminales →
+  //         acumula carga por puerto (1-8). SENCILLA: cargaReal+=carga. DOBLE: 1ª→"8", 2ª→(carga-8).
+  //         Verde=EXISTENTE, rojo=PROYECTO. 4 tablas: tbl_titulo_nco, tbl_titulo, tbl_contenido, tbl_total.
+  //       </p>
+  //       <CResumenOpticoUI />
+  //     </section>
+  //   );
+  // }
+  {
+    id: '91-resumen-optico',
+    label: '[91] c_resumen_optico',
+    description: 'Sello RESUMEN ÓPTICO para CEDO. Recorre divisores→terminales, acumula carga/puerto. SENCILLA: suma directa. DOBLE: 1ª→8, 2ª→(carga-8). Verde=EXISTENTE, rojo=PROYECTO. DIVISOR_EQUIVALENCIA A-S→1-16.',
+    render: () => <CResumenOpticoUI />,
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

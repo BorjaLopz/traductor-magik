@@ -1,0 +1,187 @@
+================================================================================
+  CLASE MIGRADA: CCatalogoDeplacasPlugin
+  Fichero origen:  c_catalogo_de_placas_plugin.magik
+  Fichero destino: CCatalogoDeplacasPlugin.tsx
+  Jerarquía Magik: c_catalogo_de_placas_plugin  extends  :plugin
+  Autor original:  lgranados, 09/12/2010 (Sigma Tao Software, S.A. de C.V.)
+================================================================================
+
+PROPÓSITO
+---------
+Plugin del framework GUI de Smallworld que gestiona la generación de "placas"
+(sellos de cabecera de plano) para los diferentes tipos de red de fibra óptica.
+
+Sus responsabilidades son:
+  · Registrar 8 sw_action en init_actions()
+  · Habilitar/deshabilitar las 7 acciones de generación mediante manage_actions()
+  · Obtener la página activa del motor de layout (obtiene_pagina())
+  · Crear el elemento de placa correspondiente (c_placa_*.new_with) y añadirlo
+    a la página activa (LoPage.add_element())
+
+
+ACCIONES REGISTRADAS (init_actions)
+-------------------------------------
+  :catalogo_de_placas           → abre diálogo de catálogo (sin action_message)
+  :genera_placa_principales     → generaPlacaPrincipales()
+  :genera_placa_secundarios     → generaPlacaSecundarios()
+  :genera_placa_troncal_zonal   → generaPlacaTroncalZonal()
+  :genera_placa_rda_rof         → generaPlacaRdaRof()
+  :genera_placa_troncal         → generaPlacaTroncal()
+  :genera_placa_larga_distancia → generaPlacaLargaDistancia()
+  :genera_placa_banda_ancha     → generaPlacaBandaAncha()
+
+Todas se inicializan con :enabled? = _true.
+La acción :catalogo_de_placas no tiene :action_message — es una apertura de
+diálogo gestionada directamente por el framework.
+
+
+BOUNDING BOXES POR TIPO DE PLACA
+----------------------------------
+Cada c_placa_*.new_with(:bounds, bounding_box.new(a, b, c, d)):
+  (El primer argumento varía por tipo; los tres restantes son fijos = 900, 450, 1250)
+
+  c_placa_principales     → bounding_box.new(750, 900, 450, 1250)
+  c_placa_secundarios     → bounding_box.new(600, 900, 450, 1250)
+  c_placa_troncal_zonal   → bounding_box.new(500, 900, 450, 1250)
+  c_placa_rda_rof         → bounding_box.new(400, 900, 450, 1250)
+  c_placa_troncal         → bounding_box.new(300, 900, 450, 1250)
+  c_placa_larga_distancia → bounding_box.new(200, 900, 450, 1250)
+  c_placa_banda_ancha     → bounding_box.new(100, 900, 450, 1250)
+
+El primer argumento decrece de 750 a 100 en pasos variables — representa la
+posición y-offset de la placa en el plano de layout (coordenadas en mm).
+Los valores fijos (900, 450, 1250) definen el área común de todas las placas.
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  No hay def_slotted_exemplar con slots explícitos (la clase solo declara {},
+  heredando de :plugin).
+
+  En TS se añaden los campos de gestión necesarios:
+    actions: ActionState   — enabled/disabled de las 7 acciones de generación
+    _page:   LayoutPage    — mock de LoLayoutManager.current_page
+
+
+MÉTODOS MIGRADOS (10 en total)
+--------------------------------
+
+1. initActions()
+   Magik: init_actions() → add_action(sw_action.new(...)) × 8
+   Registra las 8 acciones con enabled?=true.
+   En TS: inicializa ActionState con todos los tipos en true.
+
+2. manageActions(activar?)
+   Magik: manage_actions(_optional PbActivar?)
+   Lee PbActivar? y lo asigna a .enabled? de las 7 acciones de generación.
+   NOTA: :catalogo_de_placas NO está en la lista — nunca se deshabilita.
+   En TS: recorre TIPOS_PLACA[] y actualiza actions[tipo] = activar.
+
+3. obtienePagina()
+   Magik: obtiene_pagina() — navega la cadena de plugins:
+     pni_application() → plugin(:layout_plugin)
+     → start_layout_designer()
+     → plugin(:layout_manager)
+     → current_page
+   También obtiene plugin(:viewport_mapper) aunque no se usa en los métodos.
+   En TS: devuelve la LayoutPage mock interna.
+
+4-10. generaPlaca*(tipo)
+   Magik: genera_placa_*(()
+     LoPage  << _self.obtiene_pagina()
+     LoSello << c_placa_*.new_with(:bounds, bounding_box.new(...))
+     LoPage.add_element(LoSello)
+   En TS: factoría privada _generaPlaca(tipo) que:
+     1) Obtiene config del PLACA_CONFIGS[tipo]
+     2) Llama obtienePagina()
+     3) Crea PageElement con bounds
+     4) Hace push en page.elements (equivale a add_element)
+     5) Devuelve el elemento creado
+
+
+TIPOS DE DATOS CLAVE
+---------------------
+TipoPlaca:
+  'principales' | 'secundarios' | 'troncal_zonal' | 'rda_rof' |
+  'troncal' | 'larga_distancia' | 'banda_ancha'
+
+BoundingBox: { a, b, c, d }
+  Equivale a bounding_box.new(a, b, c, d) — coordenadas en mm del plano.
+
+PageElement: { tipo, clase, label, bounds, addedAt }
+  Equivale al objeto LoSello tras new_with(:bounds, ...).
+
+LayoutPage: { elements: PageElement[] }
+  Equivale al LoPage = LoLayoutManager.current_page.
+
+ActionState: Record<TipoPlaca, boolean>
+  Equivale a sw_action.enabled? por cada acción registrada.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  :plugin (extends)                    → clase TypeScript normal
+  _self.add_action(sw_action.new(...)) → initActions() → ActionState
+  :action_message, :genera_placa_*|()| → método del objeto (no sw_action real)
+  :enabled?, _true                     → actions[tipo] = true
+  .action(:xxx).enabled? << val        → manageActions(val) → actions[tipo] = val
+  smallworld_product.pni_application() → mock interno
+  LoLayoutPlugin.start_layout_designer()→ mock interno
+  LoLayoutDesigner.plugin(:layout_manager)→ mock interno
+  LoLayoutManager.current_page         → _page: LayoutPage
+  c_placa_*.new_with(:bounds, bb)      → { tipo, clase, label, bounds, addedAt }
+  bounding_box.new(a, b, c, d)         → BoundingBox { a, b, c, d }
+  LoPage.add_element(LoSello)          → _page.elements.push(elem)
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· :plugin (framework Smallworld) no está migrado. Las acciones son estado React
+  (ActionState) y los botones reflejan enabled/disabled.
+
+· sw_action con :image → en TS los botones no tienen icono de módulo; el estado
+  ON/OFF se representa con color y badge.
+
+· :catalogo_de_placas (la 1ª acción) no tiene :action_message en el original —
+  se trata como apertura de un diálogo modal en TS.
+
+· start_layout_designer() / current_page → la cadena de plugins del layout
+  designer se sustituye por una LayoutPage mock interna.
+
+· c_placa_principales / c_placa_secundarios / etc. → los tipos de placa son
+  mocks (PageElement con metadata); no hay implementación real de las clases
+  c_placa_* en este módulo.
+
+· PLACA_CONFIGS centraliza la configuración de cada tipo (clase, label, bounds,
+  descripción) que en Magik estaba repartida entre los métodos genera_placa_*.
+
+· La factoría privada _generaPlaca(tipo) factoriza el patrón repetido de los
+  7 métodos genera_placa_*() — en Magik cada método era explícito.
+
+· El componente UI añade:
+  - Grid de 7 tarjetas de acción con estado ON/OFF
+  - Botones manage_actions(true/false)
+  - Catálogo de placas (modal simplificado con la info de PLACA_CONFIGS)
+  - Panel "LayoutPage" que lista los elementos añadidos con sus bounds
+
+
+USO DESDE App.tsx
+------------------
+  import { CCatalogoDeplacasPluginUI } from './migration/CCatalogoDeplacasPlugin';
+
+  function DemoCCatalogoDeplacasPlugin() {
+    return (
+      <section>
+        <h3>c_catalogo_de_placas_plugin</h3>
+        <CCatalogoDeplacasPluginUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '80-catalogo-de-placas-plugin', label: '[80] c_catalogo_de_placas_plugin', ... }
+
+
+================================================================================
+  Fin del documento — CCatalogoDeplacasPlugin.txt
+================================================================================

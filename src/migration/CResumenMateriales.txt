@@ -1,0 +1,195 @@
+================================================================================
+  CLASE MIGRADA: CResumenMateriales
+  Fichero origen:  c_resumen_materiales.magik
+  Fichero destino: CResumenMateriales.tsx
+  Jerarquía Magik: c_resumen_materiales  extends  :layout_element
+  Autor original:  — (sin fecha indicada)
+================================================================================
+
+PROPÓSITO
+---------
+Elemento de layout del motor de planos GIS (fibra óptica) que genera una tabla
+de "Resumen de Materiales" para planos de construcción. Contiene 5 secciones:
+
+  · ZONA URBANA     — 13 filas de materiales (B.D.F.O., Escalerilla, Cables…)
+  · ZONA SUBURBANA  — 21 filas (Ductos enterrados, Cables subterráneos…)
+  · TRAMO           — 11 filas
+  · DERIVACIONES    —  8 filas (SDV existente/proyectada, Cajas de empalme…)
+  · PERMISOS        — 15 filas (Instalaciones márgenes, Cruces de autovías…)
+
+Cuando el atributo sTipo = "SEMBRADO", solo se crean las 3 primeras secciones
+(ZONA URBANA, ZONA SUBURBANA, TRAMO). Las secciones DERIVACIONES y PERMISOS
+se omiten completamente.
+
+Cada sección consta de:
+  · Título (1×1): nombre de la sección
+  · Cuerpo ((N+1)×2): cabecera DESCRIPCION|CANTIDAD + N filas de datos
+    - Columna DESCRIPCION: c_texto_grafico (solo lectura, fijo)
+    - Columna CANTIDAD:    c_captura_texto (editable por el usuario)
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  sTipo            → sTipo: TipoPlan ('COMPLETO' | 'SEMBRADO')
+                     Determina cuántas secciones se crean.
+
+  bTablas_Creadas  → bTablas_Creadas: boolean
+                     Bandera que impide re-inicialización si ya está creado.
+
+  Tablas por sección (equivale a c_tabla slots):
+    tablaZonaUrbana    : TablaSeccion | null
+    tablaZonaSubUrbana : TablaSeccion | null
+    tablaTramo         : TablaSeccion | null
+    tablaDerivaciones  : TablaSeccion | null  (null si sTipo = 'SEMBRADO')
+    tablaPermisos      : TablaSeccion | null  (null si sTipo = 'SEMBRADO')
+
+
+MÉTODOS MIGRADOS (7 en total)
+-------------------------------
+
+1. inicializa(tipo?)
+   Magik: inicializa(pCoord?) → secuencia init: prvCreaCfgTablas() + prvLlenaCeldas()
+   Guarda coord (posición en el plano), luego crea y llena las tablas.
+   En TS: inicializa(tipo) → llama _prvCreaCfgTablas() + _prvLlenaCeldas().
+   Respeta bTablas_Creadas — si ya creado, no vuelve a inicializar.
+
+2. _prvCreaCfgTablas()
+   Magik: prvCreaCfgTablas() — construye objetos c_tabla con dimensiones fijas.
+   Crea tablaZonaUrbana(13), tablaZonaSubUrbana(21), tablaTramo(11).
+   Si sTipo ≠ 'SEMBRADO': también tablaDerivaciones(8) y tablaPermisos(15).
+   En TS: cada tabla = { nombre, filas[][], cols:2, numRows }.
+
+3. _prvLlenaCeldas()
+   Magik: prvLlenaCeldas() → llama prvLlena_Columna para cada sección.
+   Rellena la columna 0 (DESCRIPCION) con c_texto_grafico.new_from(lista[i]).
+   La columna 1 (CANTIDAD) queda vacía — se llenará con c_captura_texto.
+   En TS: llama _llenaColumna(tabla, lista) para cada sección creada.
+
+4. _llenaColumna(tabla, lista)
+   Magik: prvLlena_Columna(p_tabla, p_totRen, p_base, p_lista, p_col)
+   Itera range(1, totRen) asignando c_texto_grafico.new_from(lista[i]) a cada celda.
+   En TS: loop for i=0..lista.length-1, asigna tabla.filas[i+1][0].texto = lista[i].
+
+5. cantidades_ZonaUrbana(list) / cantidades_ZonaSubUrbana / cantidades_Tramo /
+   cantidades_Derivaciones / cantidades_Permisos
+   Magik: Cantidades_ZonaUrbana(pList), etc.
+   Permiten inyectar valores de cantidad desde código externo (p.ej. engine de planos).
+   En TS: escriben en filas[i+1][1].texto (columna CANTIDAD de cada sección).
+
+6. getSecciones()
+   Sin equivalente directo en Magik (acceso por slot).
+   Devuelve array con las secciones no-null en orden: ZonaUrbana, ZonaSubUrbana,
+   Tramo, Derivaciones?, Permisos?.
+
+7. reset()
+   Sin equivalente directo — permite destruir y recrear la tabla.
+   Pone bTablas_Creadas = false y nulifica todas las tablas.
+
+
+JERARQUÍA DE DATOS
+-------------------
+TablaSeccion
+  ├── nombre: string           (ZONA URBANA / ZONA SUBURBANA / …)
+  ├── cols:   2
+  ├── numRows: N               (sin cabecera)
+  └── filas: CeldaTexto[][]
+        ├── fila[0] = cabecera: [{texto:'DESCRIPCION'}, {texto:'CANTIDAD'}]
+        └── fila[1..N]
+              ├── col[0]: { texto: desc, editable: false }   ← c_texto_grafico
+              └── col[1]: { texto: '',   editable: true  }   ← c_captura_texto
+
+
+DESCRIPCIONES POR SECCIÓN
+---------------------------
+ZONA URBANA (13):
+  'B.D.F.O.', 'DISTRIB. OPTICO', 'ECALERILLA P/F. O.', 'ESCALERILLA EXIST.',
+  'ESCALERILLA PROY.', 'PROT. MECÁNICA', 'COND. METALICO', 'MANGUERA',
+  'COND. AÉREO', 'COND. AÉREO TREN.', 'CABLE FACHADERO', 'VARILLA AEREA', 'VARIOS'
+
+ZONA SUBURBANA (21):
+  'DUCTO DE P. ENTERR.', 'DUCT. ENTERR DERIV.', 'DUCT. ENTERR BACKET',
+  'DUCT. BAJO CALZADA', 'DUCTO AEREO', 'DUCTO PUENTE', 'T.C. EXISTENTE',
+  'T.C. PROYECTADA', 'REF. T.C. EXISTENTE', 'COND. SUBTERR.', 'TUBO ACERO',
+  'TUBO P.V.C.', 'CABLE TIERRA', 'CABLE COBRE', 'PROT. MANGUERA',
+  'PROT. M.C. AEREO', 'PROT. HORMIGON', 'PROT. MADERA', 'PROT. HIERRO',
+  'CRUCE ESPECIAL', 'VARIOS'
+
+TRAMO (11):
+  '', 'ESCALERILLA EXIST.', 'ESCALERILLA PROY.', 'COND. METALICO', 'MANGUERA',
+  'COND. AÉREO', 'COND. AÉREO TREN.', 'CABLE FACHADERO', 'VARILLA AEREA',
+  'B.D.F.O.', 'VARIOS'
+
+DERIVACIONES (8, solo si sTipo ≠ SEMBRADO):
+  'S.D.V. EXISTENTE', 'S.D.V. PROYECTADA', 'S.D.V. PROY. ESPEC.',
+  'CAJA EMPALME EXIST.', 'CAJA EMPALME PROY.', 'CAJA EMPALM ESPEC.',
+  'TUBO AÉREO', 'VARIOS'
+
+PERMISOS (15, solo si sTipo ≠ SEMBRADO):
+  'INST. MARG. AUTOP.', 'INST. MARG. FEDERAL', 'INST. MARG. PROV.',
+  'INST. MARG. MUNIC.', 'INST. VIA FÉRREA', 'CRUCE AUTOP.', 'CRUCE FEDERAL',
+  'CRUCE PROV.', 'CRUCE MUNIC.', 'CRUCE VIA FÉRREA', 'CRUCE CANAL',
+  'CRUCE RIO', 'INST. ESPACIO VERDE', 'CRUCE ESPECIAL', 'VARIOS'
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (:layout_element) → class CResumenMateriales
+  def_property :sTipo                    → sTipo: TipoPlan = 'COMPLETO'
+  def_property :bTablas_Creadas          → bTablas_Creadas: boolean = false
+  c_tabla.new(rows, cols)                → { nombre, filas[][], cols, numRows }
+  c_texto_grafico.new_from(texto)        → { texto, editable: false }
+  c_captura_texto.new_from(texto)        → { texto, editable: true }
+  range(1, N)                            → for (let i = 0; i < N; i++)
+  _self _isnt _unset                     → tabla !== null
+  pList[i]                               → list[i]
+  Cantidades_ZonaUrbana(pList)           → cantidades_ZonaUrbana(list: string[])
+  get_downstream_cables()                → mock en UI (no aplica aquí)
+  condition.raise(:user_error)           → no aplica (no hay validaciones críticas)
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· :layout_element (framework Smallworld) no está migrado. La clase TypeScript
+  gestiona las tablas directamente sin framework de layout.
+
+· coordinate.new(x, y) → no aplicable en React; la posición del componente
+  es gestionada por CSS del contenedor.
+
+· c_tabla con dimensiones absolutas (rowcol) → estructura de datos JS pura
+  (TablaSeccion), renderizada como <table> HTML.
+
+· styled_string / font.new_logical → estilos CSS inline.
+
+· La columna DESCRIPCION (c_texto_grafico) es solo lectura en la UI.
+  La columna CANTIDAD (c_captura_texto) es un <input> editable.
+
+· prvLlena_Columna toma p_base (offset de fila inicial) en Magik.
+  En TS simplificado: base siempre = 1 (la fila 0 es cabecera).
+
+· El componente UI añade:
+  - Selector de sTipo (COMPLETO / SEMBRADO) con feedback visual
+  - Botón "Cargar cantidades ejemplo" para verificar Cantidades_Xxx()
+  - Acumulador total de cantidades numéricas
+  - Indicador de estado bTablas_Creadas
+
+
+USO DESDE App.tsx
+------------------
+  import { CResumenMaterialesUI } from './migration/CResumenMateriales';
+
+  function DemoCResumenMateriales() {
+    return (
+      <section>
+        <h3>c_resumen_materiales</h3>
+        <CResumenMaterialesUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '78-resumen-materiales', label: '[78] c_resumen_materiales', ... }
+
+
+================================================================================
+  Fin del documento — CResumenMateriales.txt
+================================================================================

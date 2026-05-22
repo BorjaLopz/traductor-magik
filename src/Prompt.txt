@@ -10,505 +10,362 @@ Reglas:
 
 Aquí está el código Magik:
 
-#----------------------------------------------------------------
-# Nobre de la empresa: Sigma Tao
-# Traza: Planos
-# Objetivo: Genera la tabla Resumen de materiales
-# Autor: dsanchez
-# Fecha de creacion: 03-Abril-2005
-# 
-# ---------------- Revision History -----------------
-# Ult Mod.
-# 03/04/05 DSB 14:00 * ya puede seleccionar el txt desde diseño
-# 03/04/05 DSB 13:30 * Pronosticos
-# 03/04/05 DSB 13:10 * Pares
-# 03/04/05 DSB 12:00 * Titulo
-
-# Reviso.
-#  DSB 
-# -------------- end revision history ---------------
-
 _package user
-#remex(:c_dto_pronostico)
-
 $
-def_slotted_exemplar(:c_dto_pronostico,
-                     {
-		        {:otablas,               _unset}, # Alamcena un objeto tablas
-			{:oCoordOrigen,          _unset}, # Coord donde inicia el sello
-	    		{:oWindow,               _unset}, # canvas en el que se desplegara el sello
-	     		{:bTablas_Creadas,       _false}  # Indica si las tabals ya fueron creadas
-		     },
-		      :layout_element 
-)
+def_slotted_exemplar(:c_resumen_optico,
+                      {
+			 {:oCedo,_unset,:writable},
+			 {:tabla,_unset,:writable},
+			 {:capacidad_divisor,_unset,:writable},
+			 {:cuentas_principal,_unset,:writable},
+			 {:oRenglones,1,:writable},
+			 {:oConectividad,c_servicios_conectividad.Singleton(),:writable},
+			 {:oDatos,_unset,:writable}
+                      }, :c_base_sello_fibra)
 $
-c_dto_pronostico.define_shared_constant(:allowed_on_menu?, _false, :public)
+c_resumen_optico.define_shared_constant(:divisor_equivalencia,
+				  property_list.new_with(:|A|,1,:|B|,2,:|C|,3,:|D|,4,:|E|,5,:|F|,6,
+							 :|G|,7,:|H|,8,:|J|,9,:|K|,10,:|L|,11,:|M|,12,
+							 :|O|,13,:|P|,14,:|R|,15,:|S|,16),
+				  :public)
 $
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.configura_tabla()
+	_local LoColorVerde << rope.new_with(0.2,0.6,0)	
+	_local LoColorRojo  << rope.new_with(255,0,0)
+	_local LfDesplazaY
 
+	#----------------------------------------------------------
+	# Tabla Datos NCo , Dto
+	#-----------------------------------------------------------
+	LoTblTitulo_nco<<property_list.new_with_properties(:ren,{6},:col,{50,26 })
+	LoTbl<<.o_tablas.crea_tabla(1,2,:tbl_titulo_nco)
+	LoTbl.ocoordenada_origen << .o_coord_inicio
+	LoTbl.color_linea << LoColorVerde
+	_self.asigna_medidas_tabla(LoTbl, LoTblTitulo_nco)
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo_nco})
 
-c_dto_pronostico.define_slot_access(:oTablas,              :writable, :public)
-c_dto_pronostico.define_slot_access(:oCoordOrigen,         :writable, :public)
-c_dto_pronostico.define_slot_access(:oWindow,              :writable, :public)
-c_dto_pronostico.define_slot_access(:bTablas_creadas,      :writable, :public)
+	
+	#----------------------------------------------------------
+	# Tabla Datos
+	#-----------------------------------------------------------
+	LoTblTitulo<<property_list.new_with_properties(:ren,{6},:col,{76})
+	LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_titulo)
+	#LoTbl.ocoordenada_origen << .o_coord_inicio
+	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)
+	LoTbl.color_linea << LoColorVerde
+	_self.asigna_medidas_tabla(LoTbl, LoTblTitulo)
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo_nco,:tbl_titulo})
+	#----------------------------------------------------------
+	# Tabla Servicios
+	#-----------------------------------------------------------
+	lodimen << _self.dimensiona_tabla()
+	LoTblContenido << property_list.new_with_properties(:ren,lodimen,#{6,6,6,6,6,6,6},
+							    :col,{8,4,4,4,4,4,4,4,4,13,8,15})
+
+	
+	LoTbl <<.o_tablas.crea_tabla(lodimen.size,12, :tbl_contenido)
+	
+	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)
+	LoTbl.color_linea << LoColorVerde
+	_self.asigna_medidas_tabla(LoTbl, LoTblContenido)
+	LfDesplazaY << LfDesplazaY+.o_tablas.longitud_total_renglones({ :tbl_contenido})
+	#----------------------------------------------------------
+	# Tabla total
+	#-----------------------------------------------------------
+	LoTblTotal<<property_list.new_with_properties(:ren,{6},:col,{76})
+	LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_total)
+	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)	
+	LoTbl.color_linea << LoColorVerde
+	_self.asigna_medidas_tabla(LoTbl, LoTblTotal)
+_endmethod
 $
-
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_dto_pronostico.defined_attributes
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.dimensiona_tabla()
+	## 
+	## 
+	_local lo_tabla << rope.new()
+	lo_tabla.add(6)
+	_for i _over range(1,.oRenglones)
+	_loop
+		lo_tabla.add(4)
+	_endloop
+	_return lo_tabla
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.etiqueta_celdas()
 	## 
 	##
 
-	attribs << rope.new_from (_super.defined_attributes)
-
-	>> attribs
+        sch  << swg_dsn_admin_engine.active_scheme
+	nodo << sch.project.user!_central.building
+	dto_titulo << "DTO: " + sch.user!_distrito_optico.user!_distrito
+	LoNombreNCO << ""
+	LoNCOsiglas << ""
 	
-_endmethod
-$
-
-_pragma(classify_level=restricted, usage={redefinable})
-c_dto_pronostico.define_attributes()
-
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_dto_pronostico.draw_content_on(window)
-
-	_self.oWindow << window
-
-	_if _self.bTablas_Creadas = _false  
+	_if nodo  _isnt _unset 
 	_then
-
-	   _local LoPAF << smallworld_product.pni_application()
-	   _local LoLYP << LoPAF.plugin(:layout_plugin)	
-	   _local LoLYD << LoLYP.start_layout_designer()
-	   _local LoLYM << LoLYD.plugin(:layout_manager)	
-	   
-           _self.inicializa(coordinate.new(0,0))	
-
-   	   _self.Agrega_LYM(LoLYM)
-	   LoLYM.current_document.current_page.send_to_back(_self )
-
+		(LoNombreNCO,LoNCOsiglas)  <<    nodo.datos_nco
 	_endif
 
-	 _self.oTablas.Despliega(window)
-	 
+
+	 nco_titulo << "NCO" + %space + LoNCOsiglas + %( + LoNombreNCO + %)
+	
+	_local LoColorVerde << rope.new_with(0.2,0.6,0)
+	_local LoColorRojo << rope.new_with(1,0,0)
+	_local LoColorOro << rope.new_with(0.8,0.8,0.2)
+	_local LoColorNco << rope.new_with(1,0.3,0.8)
+	_self.asigna_texto_celda(:tbl_titulo_nco,1,1,nco_titulo.uppercase,20, :centre_centre,0,LoColorNco)
+	_self.asigna_texto_celda(:tbl_titulo_nco,1,2,dto_titulo ,20, :centre_centre,0,LoColorOro)
+	_self.asigna_texto_celda(:tbl_titulo,1,1,"RESUMEN OPTICO",40, :centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,1,"TER",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,2,"1",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,3,"2",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,4,"3",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,5,"4",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,6,"5",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,7,"6",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,8,"7",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,9,"8",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,10,"Total de Clientes" + %newline + "a Atender",15,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,11,"No.Fibra" + %newline + "Principal",    15,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,12,"Capacidad de" + %newline + "Servicios en divisor" ,15,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_total,1,1,"Total de servicios Opticos a atender      ",    30, :centre_left,0,LoColorRojo)
+
+	
 _endmethod
 $
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.llena_datos_celdas()
+  ## 
+  ##
+	_local LoColorVerde << rope.new_with(0.2,0.6,0)
+	_local LoColorRojo << rope.new_with(1,0,0)	
+	_local renglon << 0
+	_local t_serv << 0
+	_local texto << ""
+	_local t_total << 0
 
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_dto_pronostico.inicializa(_optional RoCoord)
+	_self.calcula_datos_celdas()
 
-##  Objetivo: Manda llamar todos los metodos que crean e
-##            inicializan las tablas
-##  Parámetros de entrada: 
-##    coordinate - RoCoord -
-##                 Coordenada donde iniciara el resumen de
-##                 materiales dentro del layout
-##  Parámetros de salida:   NA
-##  Regresa: NA
-## Fecha de última modificación: 03/04/2005
-## Autor de la modificación : dsanchez
-## Descripción de la modificación: Se creo
+	_for iterRenglones _over .oDatos.elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_contenido,renglon+2,1,iterRenglones[:terminal].write_string,30,:centre_centre,0,LoColorVerde)
 
-	# Configuracion del sello transparente
-	_self.set_fill_colour(_unset )
+		_for itColumna _over range(1,8)
+		_loop
+			_if iterRenglones[(itColumna.write_string + "_edo_constr").as_symbol()] = "E"
+			_then
+				
+				_self.asigna_texto_celda(:tbl_contenido,renglon+2,itColumna+1,
+							 iterRenglones[(itColumna.write_string).as_symbol()].write_string,
+							 30,:centre_centre,0,LoColorVerde)
+			_else
+				_self.asigna_texto_celda(:tbl_contenido,renglon+2,itColumna+1,
+							 iterRenglones[(itColumna.write_string).as_symbol()].write_string,
+							 30,:centre_centre,0,LoColorRojo)
+			_endif
+			t_serv +<< iterRenglones[(itColumna.write_string).as_symbol()].as_number().default(0)
+		_endloop
+		
+		_self.asigna_texto_celda(:tbl_contenido,renglon+2,10,
+					 iterRenglones[:serv].write_string,30,:centre_centre,0,LoColorRojo)
+		_self.asigna_texto_celda(:tbl_contenido,renglon+2,11,
+					 iterRenglones[:fib].write_string,28,:centre_centre,0,LoColorRojo)
+		_self.asigna_texto_celda(:tbl_contenido,renglon+2,12,
+					 iterRenglones[:tot].write_string,30,:centre_centre,0,LoColorRojo)
+
+		t_total +<< iterRenglones[:tot].as_number().default(0)
+
+		renglon +<< 1
+	_endloop
+
+	#texto << "TOTAL SERVICIOS OPTICOS       " + t_serv.write_string + "                           " + t_total.write_string
+	texto << "Total de servicios Opticos a atender " + t_serv.write_string 
+	_self.asigna_texto_celda(:tbl_total,1,1,texto,30, :centre_left,0,LoColorRojo)
 	
-	_if RoCoord _is _unset 
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.calcula_datos_celdas()
+	## 
+	##1
+
+	
+	_local LoCont << 1
+	.odatos << rope.new() 
+	
+	_if _self.elementos_bd_gis _isnt _unset _andif
+	    _self.elementos_bd_gis.size > 0
 	_then
-		RoCoord << coordinate.new(0,0)
+		.oCedo << _self.obtener_elementos_bd_gis()[1]
 	_endif
-
-	_self.oCoordOrigen << RoCoord
 	
-	# sepasa como parametro el layout
-	# Crea el objeto que contiene todas las tablas del sello estandar
-	_self.oTablas << c_tablas.new(_self)
-
-	#Crea y configura cada una de las tablas 
-	_self.prvCrea_Cfg_Tablas()
-
-	#Se conoce el area de la tabla dibujada
-	LoArea << _self.oTablas.area_total()
-
-	#Se ajustan los limites del layout de acuerdo  a las tablas definidas
-	_self.bounds << LoArea
-
-	#Crea a los objetos que tendra c/u de las tablas
-	_self.prvLlena_Celdas_de_tablas()
-
-	#Indica que los objetos tabla ya fueron creados 
-	_self.bTablas_creadas << _true
-
-_endmethod
-$
-
-
-_pragma(classify_level=restricted, usage={redefinable})
-_private _method c_dto_pronostico.prvCrea_Cfg_Tablas()
-
-##  Objetivo: Manda llamar los metodos que crean y configuran 
-##            las tablas 
-##  Parámetros de entrada: 
-##    coordinate - RoCoord -
-##                 Coordenada donde iniciara el resumen de
-##                 materiales dentro del layout
-##  Parámetros de salida:   NA
-##  Regresa: NA
-## Fecha de última modificación: 03/04/2005
-## Autor de la modificación : dsanchez
-## Descripción de la modificación: Se creo
-
-	_local LnAltura << 1
-	LnAltura << _self.prvCreaCfgTbl_titulo(_self.oCoordOrigen)
-
-	#se calcula la coordenada donde se dibujara la siguiente tabla,
-	# pero incluyendo el desplazamianto en y "LnAltura" de la tabla anterior
-	LoCoord  << coordinate.new(_self.oCoordOrigen.x, _self.oCoordOrigen.y - LnAltura)
-	LnAltura << _self.PrvCreaCfgTbl_pares(LoCoord)
-
-	#se calcula la coordenada donde se dibujara la siguiente tabla,
-	# pero incluyendo el desplazamianto en y "LnAltura" de la tabla anterior	
-	LoCoord << coordinate.new(_self.oCoordOrigen.x, LoCoord.y - LnAltura)
-        LnAltura << _self.PrvCreaCfgTbl_Pronostico(LoCoord)
-
-_endmethod
-$
-
-_pragma(classify_level=restricted, usage={redefinable})
-_private _method c_dto_pronostico.prvLlena_Celdas_de_tablas()
-
-##  Objetivo: Manda llamar los metodos que llenan las celdas de 
-##            las tablas 
-##  Parámetros de entrada: NA
-##  Parámetros de salida:   NA
-##  Regresa: NA
-##  Fecha de última modificación: 03/04/2005
-##  Autor de la modificación : dsanchez
-##  Descripción de la modificación: Se creo
-
-	_self.prvLlenaTbl_titulo()
-        _self.prvLlenaTbl_pares()
-	_self.prvLlenaTbl_Pronostico()
-
-_endmethod
-$
-
-_pragma(classify_level=restricted, usage={redefinable})
-_private _method c_dto_pronostico.PrvCreaCfgTbl_titulo(RoCoord)
-
-##  Objetivo: Crea y configura los objetos necesarios para la
-##            tabla titulo
-##  Parámetros de entrada:
-##   RoCoord. Coordenada donde iniciara a dibujarse la tabla 
-##  Parámetros de salida:   NA
-##  Regresa: NA
-##  Fecha de última modificación: 03/04/2005
-##  Autor de la modificación : dsanchez
-##  Descripción de la modificación: Se creo	
-	
-	_local LoTblTitulo
-	_local LoTblCuerpo
-	
-	LoTblTitulo << _self.oTablas.crea_tabla(2,2,:tbl_Titulo)
-
-	#lineas internas de la tabla no se dibujaran
-	LoTblTitulo.bDibuja_bordes? << _false 
-	LoTblTitulo.bDibuja_Columnas_Internas?  << _false
-	LoTblTitulo.bDibuja_Renglones_Internos? << _false
-
-	#Coordenada donde iniciara la tabla
-	LoTblTitulo.oCoordenada_Origen << RoCoord
-
-	#longitudes de los renglones de la tabla, esta dada en mm 
-	LoTblTitulo.oRenglones.elemento(1).nLongitud << 5
-	LoTblTitulo.oRenglones.elemento(2).nLongitud << 5
-
-	#longitud de las columnas, esta dada en mm 
-	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 10
-	LoTblTitulo.oColumnas.elemento(2).nLongitud  << 23
-
-	# configura que el borde inf se active
-	LoCelda << LoTblTitulo.oCeldas.Celda(1,2).oElementos.obten_elemento(:bordes_celda)
-	LoCelda.bBorde_inf? << _true	
-
-	
-	LnAltura << _self.oTablas.Longitud_total_renglones({:tbl_titulo})
-	_return LnAltura
-_endmethod
-$
-
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_dto_pronostico.prvLlenaTbl_titulo()
-##  Objetivo: Asigna el objeto que contendra cada celda de la tabla
-##  Parámetros de entrada: NA
-##  Parámetros de salida:   NA
-##  Regresa: NA
-##  Fecha de última modificación: 03/04/2005
-##  Autor de la modificación : dsanchez
-##  Descripción de la modificación: Se creo
-
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	# Texto de fijos columna 1
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	#se crean los objetos que almacenara la tabla
-	LoTit1  << c_texto_grafico.new("DTO.")
-        LoTit1.sAlineacion << :centre_left
-	LoTit1.nTamanio << 26
-	
-	LoTit2  << c_texto_grafico.new("D.A O.C.")
-        LoTit2.sAlineacion << :centre_left
-	LoTit2.nTamanio << 26
-
-	#asigna los objetos creados a su correspondiente celda
-	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(1,1).oElemento << LoTit1
-	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(2,1).oElemento << LoTit2
-
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	# Texto de captura columna 2
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	#Se crea el objeto que se tomara como base para el resto de los objetos
-	
-	LoCapTxt1 << c_Captura_Texto.new("LJC-1")
-	LoCapTxt1.nTamanio << 4
-	LoCapTxt1.sAlineacion << :centre_left
-	
-	LoCapTxt2 << c_Captura_Texto.new("538.3 MTS")
-	LoCapTxt2.nTamanio << 4
-	LoCapTxt2.sAlineacion << :centre_left
+	##   LoTerminales <<dto.obten_terminales_fo(.ocedo.id)   
 	
 	
-	#asigna los objetos creados a su correspondiente celda
-	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(1,2).oElemento << LoCapTxt1
-	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(2,2).oElemento << LoCapTxt2
-
-_endmethod
-$
-
-
-_pragma(classify_level=restricted, usage={redefinable})
-_private _method c_dto_pronostico.prvCreaCfgTbl_Pares(RoCoord)
-
-#  Objetivo: Crea y configura lso objetos necesarios para la
-#            tabla pares
-#  Parámetros de entrada:
-#   RoCoord. Coordenada donde iniciara a dibujarse la tabla
-#  Parámetros de salida:   NA
-#  Regresa: NA
-#  Fecha de última modificación: 03/05/2005
-#  Autor de la modificación : dsanchez
-#  Descripción de la modificación: Se creo
-
-	_local LoTbl
+	LoCriterio << _proc(elemento1,elemento2)
+			      _if elemento1.name > elemento2.name
+			      _then
+				      _return _false
+			      _endif
+			      _return _true
+		 _endproc
+	
+	_Local LoNumDiv << 0
+	_local loContadorCables << 1
+	
+	_for iterDivisor _over .ocedo.obtener_divisores().as_sorted_collection(LoCriterio).elements()
+	_loop   
+		LoNumDiv << LoNumDiv + 1
+		LoRenglon << property_list.new_with(:terminal,"FO" + iterDivisor.name,
+					       :|1|,"R",:|1_edo_constr|,"P",
+					       :|2|,"R",:|2_edo_constr|,"P",
+					       :|3|,"R",:|3_edo_constr|,"P",
+					       :|4|,"R",:|4_edo_constr|,"P",
+					       :|5|,"R",:|5_edo_constr|,"P",
+					       :|6|,"R",:|6_edo_constr|,"P",
+					       :|7|,"R",:|7_edo_constr|,"P",
+					       :|8|,"R",:|8_edo_constr|,"P",
+					       :serv,0,
+					       :fib,0,
+					       :tot,iterDivisor.output_ports().size * 8)
 		
-	LoTbl << _self.oTablas.crea_tabla(3,2,:tbl_pares)
 
-	#lineas internas de la tabla no se dibujaran
-	LoTbl.bDibuja_bordes? << _true 
-	LoTbl.bDibuja_Columnas_Internas?  << _false
-	LoTbl.bDibuja_Renglones_Internos? << _true
-	
-	#Coordenada donde iniciara la tabla
-	LoTbl.oCoordenada_Origen << RoCoord
+		   # Obtiene puerto de entrada de cada divisor
+		   LoPuertoEntrada << IterDivisor.input_ports()[1]		   
+		   # Obtiene una lista de lineas conectadas al puerto de entrada
+		   LoFibraEntrada << LoPuertoEntrada.location.connected_chains()
 
-	#longitudes de los renglones de la tabla, esta dada en mm 
-	LoTbl.oRenglones.elemento(1).nLongitud << 3
-	LoTbl.oRenglones.elemento(2).nLongitud << 3
-	LoTbl.oRenglones.elemento(3).nLongitud << 3
+		   ##validar LoFibraEntrada.
+		   
+		   # Obtiene la fibra conectada al puerto de entrada
+		   LoFibras << LoFibraEntrada.an_element()
 
-	#longitud de las columnas, esta dada en mm 
-	LoTbl.oColumnas.elemento(1).nLongitud  << 15
-	LoTbl.oColumnas.elemento(2).nLongitud  << 18
+		   _if LoFibras _isnt _unset 
+		   _then
 
 
-	LnAltura << _self.oTablas.Longitud_total_renglones({:tbl_pares})
-
-	_return LnAltura
-	
-_endmethod
-$
-
-
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_dto_pronostico.prvLlenaTbl_pares()
-
-##  Objetivo: Asigna el objeto que le corresponde a cada una de
-##            las celdas
-##  Parámetros de entrada: NA
-##  Parámetros de salida:   NA
-##  Regresa: NA
-##  Fecha de última modificación: 03/04/2005
-##  Autor de la modificación : dsanchez
-##  Descripción de la modificación: Se creo
-
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	# Texto de fijos columna 1
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	#se crean los objetos que almacenara la tabla
-	# LoTit1 es la base para los otros titulos
-	LoTit1  << c_texto_grafico.new("P.PRINC.")
-	LoTit1.sAlineacion << :centre_left
-	LoTit1.nTamanio << 18
-	
-	LoTit2  << c_texto_grafico.new_from(LoTit1, "P.SEC")
-	LoTit3  << c_texto_grafico.new_from(LoTit1, "ABNS. EXIST.")
-
-	#asigna los objetos creados a su correspondiente celda
-	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(1,1).oElemento << LoTit1
-	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(2,1).oElemento << LoTit2
-	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(3,1).oElemento << LoTit3
-
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	# Texto de captura columna 2
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	#Se crea el objeto que se tomara como base para el resto de los objetos
-	LoCapTxt1 << c_Captura_Texto.new("300+200")
-	LoCapTxt1.nTamanio << 3
-	LoCapTxt1.sAlineacion << :centre_left
-	
-	LoCapTxt2 << c_Captura_Texto.new_from(LoCapTxt1, "230+380")
-	LoCapTxt3 << c_Captura_Texto.new_from(LoCapTxt1, "166")
-	
-	#asigna los objetos creados a su correspondiente celda
-	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(1,2).oElemento << LoCapTxt1
-	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(2,2).oElemento << LoCapTxt2
-	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(3,2).oElemento << LoCapTxt3
-	
-_endmethod
-$
-
-
-_pragma(classify_level=restricted, usage={redefinable})
-_private _method c_dto_pronostico.prvCreaCfgTbl_pronostico(RoCoord)
-
-##  Objetivo: Crea y configura lso objetos necesarios para la
-##            tabla de pronosticos
-##  Parámetros de entrada:
-##   RoCoord. Coordenada donde iniciara a dibujarse la tabla
-##  Parámetros de salida:   NA
-##  Regresa: NA
-##  Fecha de última modificación: 03/04/2005
-##  Autor de la modificación : dsanchez
-## Descripción de la modificación: Se creo
-
-
-	_local LoTbl # Tabla a la que hacemos referencia
+		   # Obtiene la lista de pines conectados a la fibra
+		   LoPines << LoFibras.connected_pins_of_types({:mit_fiber_pin})					   
+		   # Obtiene el Pin Conectado al divisor
+		   LoPin << LoPines.an_element()			
+		   # Obtiene todos los pines conectados abajo del Pin de entrada
+		   LoPinesAbajo << .oConectividad.obten_pines_conectividad_abajo(LoPin)
+		   
+		   # Obtiene todas las terminales de fibra conectadas a los pines
+		   # y las agrega a una lista general de terminales
+		   LoTerminales  << .oConectividad.obten_terminales_de_pines(LoPinesAbajo)
 		
-	LoTbl << _self.oTablas.crea_tabla(3,3,:tbl_pronosticos)
+                   _for itert _over Loterminales.fast_elements()
+		   _loop
+			   LoCarga << 0
+			   LoCargaReal  << 0
+			   
+			   
+			           identifica_ter << itert.user!_nombre.write_string.substitute_string("FO","")
+				   
+				   _if identifica_ter.size > 0 _andif itert.user!_conexion = "SENCILLA"
+				   _then
+					   clave << identifica_ter
+					   
+				   _elif identifica_ter.size > 0 _andif itert.user!_conexion = "DOBLE" 
+				   _then
+					   clave << identifica_ter.split_by(".").an_element()
+				   _endif 
+				   
+				   numero_en_clave << clave.numbers_and_strings[2].write_string
+				   letra_en_clave  << clave.numbers_and_strings[1].write_string
+				   
+				   _if itert.construction_status = "EXISTENTE"
+				   _then
+					   LoRenglon[(numero_en_clave.write_string + "_edo_constr" ).as_symbol()] << "E"
+				   _endif
 
-	#lineas internas de la tabla no se dibujaran
-	#LoTbl.bDibuja_bordes? << _false 
-	#LoTbl.bDibuja_Columnas_Internas?  << _false
-	#LoTbl.bDibuja_Renglones_Internos? << _false
+				   #write("@valido", iterdivisor.name = letra_en_clave)
+				   
+				   _if itert.limite_fo _isnt _unset  _andif
+				       itert.limite_fo.user!_carga_corto_pla_cal _isnt _unset _andif
+				       itert.limite_fo.user!_carga_corto_pla_cal > 0 _andif
+				       iterdivisor.name = letra_en_clave
+				   _then					   
+					   # des_daniel Octubre 2022
+					   # Para Obtener la carga de una terminal se divide la carga
+					   # calculada del limite de terminal entre el numero de
+					   # terminales contenidas en el limite
+					   
+					   limTer << itert.limite_fo
+					   LoCarga << limTer.user!_carga_corto_pla_cal.default(0)
+					   LoCarga << loCarga _div limTer.terminal_distribucions.size
+					   
+				   
+					   _if itert.user!_conexion = "DOBLE"
+					   _then
+						   ## Obtener primera Terminal
+						   LoPriT << itert.user!_nombre.slice(4,4)
+						   LuUbi  << numero_en_clave.write_string
+						   
+						   _if LoPriT = LuUbi
+						   _then
+							   ## Es la primera de las terminales
+							   LoRenglon[numero_en_clave.as_symbol()] << "8"
+							   LoCargaReal << LoCargaReal + 8
+						   _else
+							   LoRenglon[numero_en_clave.as_symbol()] << (LoCarga - 8).write_string
+							   LoCargaReal << LoCargaReal + (LoCarga - 8)
+						   _endif
+					   _else
+
+						  
+						   LoRenglon[numero_en_clave.as_symbol()] << LoCargaReal.write_string
+						   LoCargaReal << LoCargaReal + LoCarga 
+						   
+					   _endif
+					   
+		
+					   LoRenglon[:serv] +<< LoCargaReal.default(0)
+					   LoRenglon[numero_en_clave.as_symbol()] << LoCargaReal.write_string	   
+				   _endif
+
+
+				   #show(iterdivisor.name,:indice,numero_en_clave,letra_en_clave, identifica_ter,:acumulado, LoRenglon[:serv] ,:carga, LoCarga,:real, LoCargaReal  )
+				   
+				   
+				   
+				   
+				   
+		   _endloop
+		   
+		   ##obtiene lacuenta del cable principal
+		   
+		   LoPinPrin << .oConectividad.obten_objeto_extremo(IterDivisor.input_ports()[1])
+		   
+		   _if LoPinPrin _isnt _unset 
+		   _then
+			   (LoCabPrin,LoAtrPrin) << LoPinPrin.get_cab_and_fiber_attribute
+			   cuenta_principal << LoAtrPrin.user!_cuenta
+			   LoRenglon[:fib] <<  cuenta_principal
+		   _endif	   
+
+
+		   .oDatos.add_last(LoRenglon)
+		   
+		   LoCont +<< 1	
+			   
+		   _endif
+
+		   
+	_endloop
 	
-	#Coordenada donde iniciara la tabla
-	LoTbl.oCoordenada_Origen << RoCoord
-
-	#longitudes de los renglones de la tabla, esta dada en mm 
-	LoTbl.oRenglones.elemento(1).nLongitud << 3
-	LoTbl.oRenglones.elemento(2).nLongitud << 3
-	LoTbl.oRenglones.elemento(3).nLongitud << 3
-
-	#longitud de las columnas, esta dada en mm 
-	LoTbl.oColumnas.elemento(1).nLongitud  <<  7
-	LoTbl.oColumnas.elemento(2).nLongitud  <<  8
-	LoTbl.oColumnas.elemento(3).nLongitud  << 18
-
-	LnAltura << _self.oTablas.Longitud_total_renglones({:tbl_pronosticos})
-
-	_return LnAltura 
-
 _endmethod
 $
 
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_dto_pronostico.prvLlenaTbl_pronostico()
-
-##  Objetivo: Asigna el objeto que le corresponde a cada una de
-##            las celdas
-##  Parámetros de entrada: NA
-##  Parámetros de salida:   NA
-##  Regresa: NA
-##  Fecha de última modificación: 03/04/2005
-##  Autor de la modificación : dsanchez
-##  Descripción de la modificación: Se creo
-
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	# Texto de fijos columna 1
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	# se crean los objetos que almacenara la tabla
-	# LoTit1 surve como base para los otros titulos
-	LoTit1  << c_texto_grafico.new("N")
-	LoTit1.sAlineacion << :centre_left
-	LoTit1.nTamanio << 18
-	
-	LoTit2  << c_texto_grafico.new_from(LoTit1, "N+1")
-	LoTit3  << c_texto_grafico.new_from(LoTit1, "SAT.")
-
-	# asigna los objetos creados a su correspondiente celda
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(1,1).oElemento << LoTit1
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(2,1).oElemento << LoTit2
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(3,1).oElemento << LoTit3
-
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	# Texto de captura columna 2
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	# Se crea el objeto que se tomara como base para el resto de los objetos
-	LoCapTxt1 << c_Captura_Texto.new("")
-	LoCapTxt1.nTamanio << 2
-	LoCapTxt1.sAlineacion << :centre_left
-	
-	LoCapTxt2 << c_Captura_Texto.new_from(LoCapTxt1)
-	LoCapTxt3 << c_Captura_Texto.new_from(LoCapTxt1)
-	
-	# asigna los objetos creados a su correspondiente celda
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(1,2).oElemento << LoCapTxt1
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(2,2).oElemento << LoCapTxt2
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(3,2).oElemento << LoCapTxt3
-	
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	# Texto de captura columna 3
-	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	# Se crea el objeto que se tomara como base para el resto de los objetos
-	LoCapTxt1 << c_Captura_Texto.new("")
-	LoCapTxt1.nTamanio << 2
-	LoCapTxt1.sAlineacion << :centre_left
-	
-	LoCapTxt2 << c_Captura_Texto.new_from(LoCapTxt1)
-	LoCapTxt3 << c_Captura_Texto.new_from(LoCapTxt1)
-	
-	
-	# asigna los objetos creados a su correspondiente celda
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(1,3).oElemento << LoCapTxt1
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(2,3).oElemento << LoCapTxt2
-	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(3,3).oElemento << LoCapTxt3	
-	
-_endmethod
-$
-
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_dto_pronostico.Agrega_LYM(RoLym)
-
-## Objetivo: Permite agregar todos los elementos Layout a la pagina
-## Parámetros de entrada:  
-##    :layout_manager - RoLym : Referencia al LayoutManager
-## Parámetros de salida:   NA
-## Regresa: NA
-## Fecha de última modificación: 3/Marzo/2005
-## Autor de la modificación : FADD
-## Descripción de la modificación: Se documentó
-
-	_self.oTablas.Agrega_LYM(RoLym)
-
-
-_endmethod
 
 
 
-Ubicación: Clase c_dto_pronostico | Fichero: c_dto_pronostico.magik
+Ubicación: Clase c_resumen_optico | Fichero: c_resumen_optico.magik
 
 ---
 

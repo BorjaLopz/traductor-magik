@@ -149,13 +149,13 @@ import { TraductorUI as TraductorBaseUI }            from './migration/Traductor
 import { TrazaTrailUI }                              from './migration/TrazaTrail';
 // [69] c_vp_cobre
 import { VpCobreUI }                                 from './migration/VpCobre';
-// [29] c_simbolo_grafico
+// [70] c_simbolo_grafico
 import { CSimboloGraficoUI }                     from './migration/CSimboloGrafico';
-// [30] c_gui_edita_sello_resumen_proyecto
+// [71] c_gui_edita_sello_resumen_proyecto
 import { CGuiEditaSelloResumenProyectoUI }        from './migration/CGuiEditaSelloResumenProyecto';
-// [31] preview_symbol_plugin
+// [72] preview_symbol_plugin
 import { PreviewSymbolPluginUI }                  from './migration/PreviewSymbolPlugin';
-// [32] c_celdas
+// [73] c_celdas
 import { CCeldasUI }                              from './migration/CCeldas';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
@@ -729,11 +729,13 @@ type DemoItem = {
 };
 
 const DEMO_ITEMS: DemoItem[] = [
+
+  // ── LOGICA pura — sin OL ───────────────────────────────────────────────────
   {
-    id         : '01-arbol-distritos',
-    label      : '[01] c_arbol_distritos_para_ruta',
-    description: 'Árbol de distritos con checkbox + botones Agregar / Desagregar / Agregar del mapa.',
-    render     : () => <DemoArbolDistritos />,
+    id         : '01-ruta-opbs',
+    label      : '[01] ruta_opbs_plugin',
+    description: 'Plugin ciclo de vida del diálogo c_opbs — cierra+recrea si ya abierto.',
+    render     : () => <DemoRutaOpbsPlugin />,
   },
   {
     id         : '02-seccionamiento',
@@ -742,11 +744,13 @@ const DEMO_ITEMS: DemoItem[] = [
     render     : () => <DemoSeccionamiento />,
   },
   {
-    id         : '03-ruta-opbs',
-    label      : '[03] ruta_opbs_plugin',
-    description: 'Plugin ciclo de vida del diálogo c_opbs — cierra+recrea si ya abierto.',
-    render     : () => <DemoRutaOpbsPlugin />,
+    id         : '03-arbol-distritos',
+    label      : '[03] c_arbol_distritos_para_ruta',
+    description: 'Árbol de distritos con checkbox + botones Agregar / Desagregar / Agregar del mapa.',
+    render     : () => <DemoArbolDistritos />,
   },
+
+  // ── MIXTO — lógica + algo OL ───────────────────────────────────────────────
   {
     id         : '04-sectores',
     label      : '[04] c_sectores',
@@ -754,257 +758,162 @@ const DEMO_ITEMS: DemoItem[] = [
     render     : () => <SectoresUI />,
   },
   {
-    id         : '05-elemento-empalme',
+    id         : '05-elemento-empalme-g',
     label      : '[05] c_elemento_empalme_g',
     description: 'SVG: empalme de cobre — línea + rombo + etiqueta ER-NNN.',
     render     : () => <DemoElementoEmpalme />,
   },
   {
-    id         : '06-elemento-seccion',
+    id         : '06-elemento-seccion-g',
     label      : '[06] c_elemento_seccion_g',
     description: 'SVG: sección de fibra óptica — |---| + longitud calculada (11 dígitos).',
     render     : () => <DemoElementoSeccion />,
   },
   {
-    id         : '07-elemento-nodo',
+    id         : '07-elemento-nodo-g',
     label      : '[07] c_elemento_nodo_g',
     description: 'SVG: nodo EDFA — 3 etiquetas (nomNodo / D.O. / tipo) + símbolo círculo+triángulo.',
     render     : () => <DemoElementoNodo />,
   },
   {
-    id         : '08-creador-tramo',
+    id         : '08-creador-elemento-tramo-g',
     label      : '[08] c_creador_elemento_tramo_g',
     description: 'Factory: crea empalme/sección/nodo según entityType (discriminated union).',
     render     : () => <CreadorElementoTramoGUI />,
   },
   {
-    id         : '09-viewport-mixin',
-    label      : '[09] viewport_layout_mixin',
-    description: 'Mixin de conexión a viewport — guard id>0 evita reconexión.',
-    render     : () => <ViewportLayoutMixinUI />,
+    id         : '09-traza-trail',
+    label      : '[09] c_traza_trail',
+    description: 'Traza trail — captura y visualiza la polilínea activa del mapa con coordenadas en tiempo real.',
+    render     : () => <TrazaTrailUI />,
   },
-  {
-    id         : '10-texto-linea',
-    label      : '[10] c_texto_linea_grafico',
-    description: 'Extiende c_texto_grafico: texto + línea horizontal al pie del bbox.',
-    render     : () => <TextoLineaGraficoUI />,
-  },
-  {
-    id         : '11-plot-engine',
-    label      : '[11] layout_plot_engine.centraliza_launch',
-    description: 'Lanzador background con guard de instancia única + UI de interrupción.',
-    render     : () => <LayoutPlotEngineUI />,
-  },
-  {
-    id         : '12-titulo-plano',
-    label      : '[12] c_titulo_de_plano',
-    description: 'Título de plano auto-posicionado en esquina inferior-derecha del contenedor.',
-    render     : () => <TituloDePlanoUI />,
-  },
-  {
-    id         : '13-sello-simbologia',
-    label      : '[13] c_sello_simbologia_diagrama_empalmes',
-    description: 'Cuadro de simbología de diagrama de empalmes — tbl_titulo (8×65) + tbl_contenido (110×65).',
-    render     : () => <SelloSimbologiaDiagramaEmpallesUI />,
-  },
-  {
-    id         : '14-sello-notas-sct-puente',
-    label      : '[14] c_sello_notas_sct_inst_puente',
-    description: 'Notas SCT instalación lateral en puente — tabla 2×1 (10mm+170mm, 165mm ancho), notas 1-11.',
-    render     : () => <SelloNotasSctInstPuenteUI />,
-  },
-  {
-    id         : '15-sello-notas-sct-marg-sub',
-    label      : '[15] c_sello_notas_sct_marg_sub',
-    description: 'Notas SCT instalación marginal subterránea — tabla 2×1 (10mm+265mm, 170mm ancho), notas 1-15.',
-    render     : () => <SelloNotasSctMargSubUI />,
-  },
-  {
-    id         : '16-sello-simbologia-red-sec',
-    label      : '[16] c_sello_simbologia_red_sec',
-    description: 'Simbología red secundaria FO — 3 tablas: título (8×130) + cabecera 3 columnas (8×60+35+35) + contenido (110×130).',
-    render     : () => <SelloSimbologiaRedSecUI />,
-  },
-  // ── [16] c_sello_simbologia_red_sec — anterior último componente migrado ─
-  {
-    id         : '17-sello-capacidad-cable',
-    label      : '[17] c_sello_capacidad_cable',
-    description: 'Cuadro de capacidad de cable — tbl_titulo (2×1, 12×44u) + tbl_contenido (18×2, 108×44u). 18 tipos: A→10PS. … Z→FIBRAS OPTICAS.',
-    render     : () => <SelloCapacidadCableUI />,
-  },
-  // ── [17] c_sello_capacidad_cable — anterior último componente migrado ────
-  {
-    id         : '18-simbologia-reubicacion-terminales',
-    label      : '[18] c_simbologia_plano_reubicacion_terminales',
-    description: 'Símbolo configurable: name/colour/angle/flip/mirror. Catálogo SVG inline (5 símbolos). Halo blanco vía SVG filter feMorphology.',
-    render     : () => <SimbologiaPlanoReubicacionTerminalesUI />,
-  },
-  // ── [18] c_simbologia_plano_reubicacion_terminales — anterior último ─────
-  {
-    id         : '19-vp-detalle-interno-edificio',
-    label      : '[19] c_vp_detalle_interno_edificio',
-    description: 'Viewport planta TBA — ACE :mit_floor_internal, oResulSet GeoJSON, barra de título 100u debajo (c_titulo_de_plano). draw_content_on delega a _super.',
-    render     : () => <VpDetalleInternoEdificioUI />,
-  },
-  // ── [19] c_vp_detalle_interno_edificio — anterior último componente ──────
-  {
-    id         : '20-sello-competencia-telmex',
-    label      : '[20] c_sello_competencia_telmex',
-    description: 'Competencia telefónica por edificio — 10 filas × 3 cols {10,27,7}u. Tabla abierta. Async llena_datos_celdas() → mock BD GIS (IDs: 101, 202, 303).',
-    render     : () => <SelloCompetenciaTelmexUI />,
-  },
-  // ── [20] c_sello_competencia_telmex — anterior último componente ─────────
-  {
-    id         : '21-imagen-bmp',
-    label      : '[21] c_imagen_bmp',
-    description: 'Contenedor BMP — wrappea bitmap_layout con flip H/V + fit. new() y new_from() con conversión de márgenes /10. Despliega() asigna oArea a bounds.',
-    render     : () => <CImagenBmpUI />,
-  },
-  // ── [21] c_imagen_bmp — anterior último componente ───────────────────────
-  {
-    id         : '22-croquis',
-    label      : '[22] c_croquis',
-    description: 'Croquis de localización — ordenamiento() encadena tramos, dibujaTrazo() buffer Turf.js, croquisProyecCanaliz() genera viewport+norte+título en layout.',
-    render     : () => <CCroquisUI />,
-  },
-  // ── [22] c_croquis — anterior último componente ──────────────────────────
 
-  // =============================================================================
-  // [23] Demo inline — c_sello_estandar_ctl
-  // Versión comentada como referencia de invocación directa sin menú selector.
-  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
-  // =============================================================================
-  // function DemoSelloEstandarCtl() {
-  //   return (
-  //     <section style={s.section}>
-  //       <h3 style={s.h3}>c_sello_estandar_ctl</h3>
-  //       <p style={s.meta}>
-  //         Sello estandar CTL — tbl_CeldaA (70mm, 2 filas) + tbl_CeldaB (45mm, 1 fila).
-  //         draw_content_on empuja atributos a celdas. lee_datos_BdeD() async.
-  //         IDs proyecto: GDL, MTY, MEX, TIJ
-  //       </p>
-  //       <SelloEstandarCtlUI />
-  //     </section>
-  //   );
-  // }
-
+  // ── LAYOUT simple ──────────────────────────────────────────────────────────
   {
-    id         : '23-sello-estandar-ctl',
-    label      : '[23] c_sello_estandar_ctl',
-    description: 'Sello CTL — tbl_CeldaA(70×15mm,2f) + tbl_CeldaB(45×15mm,1f). draw_content_on empuja atributos→celdas. lee_datos_BdeD() async desde oProyecto mock.',
-    render     : () => <SelloEstandarCtlUI />,
-  },
-  // ── [23] c_sello_estandar_ctl — anterior último componente ───────────────
-  {
-    id         : '24-vp-croquis-proy-can',
-    label      : '[24] c_vp_croquis_proy_can',
-    description: 'Viewport croquis canalización — objetos_visibles() filtra 6 tipos con predicados Turf.js (buffer 500m). Título "CROQUIS DE LOCALIZACION" en rgb(175,175,93).',
-    render     : () => <VpCroquisProyCanUI />,
-  },
-  // ── [24] c_vp_croquis_proy_can — anterior último componente ─────────────
-  {
-    id         : '25-sello-aumentos-secundarios',
-    label      : '[25] c_sello_aumentos_secundarios',
-    description: 'Sello de aumento de red secundaria — tabla 2×5 (sin red directa) ó 3×5 (con RED DIRECTA). Colores: verde/rojo/naranja. Async inicializaConGis() → mock BD GIS (D-01…D-04).',
-    render     : () => <SelloAumentosSecundariosUI />,
-  },
-  // ── [25] c_sello_aumentos_secundarios — anterior último componente ───────
-  {
-    id         : '26-c-fila',
-    label      : '[26] c_fila',
-    description: 'Modelo de fila de tabla — nLongitud setter valida ≥0 y almacena ×10 (mm→décimas de mm). serial_slots() ÷10 al serializar. new_from_serial / init_with / perform_private.',
-    render     : () => <CFilaUI />,
-  },
-  // ── [26] c_fila — anterior último componente migrado ────────────────────
-  {
-    id         : '27-tabla-georeferencia',
-    label      : '[27] c_tabla_georeferencia',
-    description: 'Sello georreferencia terminales ópticas: tbl_datos (N×3: nombre/estado/dist) + tbl_coord (N×2×3: X/Y|GEO|UTM). Zonas UTM 11–16. Filtra por LiteralTerminal.',
-    render     : () => <DemoTablaGeoreferencia />,
-  },
-  // ── [27] c_tabla_georeferencia — anterior último componente migrado ──────
-  {
-    id         : '28-cfg-bloque-titdet-editable',
-    label      : '[28] c_cfg_bloque_titdet_editable_mixin',
-    description: 'Mixin de bordes: cfg_tbl_titulo (6×3, contorno "a modo") + cfg_tbl_detalle (8×N, caja cols 3-6 + col-5 editable). Vista SVG before/after.',
-    render     : () => <DemoCfgBloqueTitdetEditableMixin />,
-  },
-  // ── PRÓXIMA MIGRACIÓN: agregar entrada aquí ──────────────────────────────
-  // ── [24] c_vp_croquis_proy_can — anterior último componente migrado ────────
-
-  // =============================================================================
-  // [25] Demo inline — c_sello_aumentos_secundarios
-  // Versión comentada como referencia de invocación directa sin menú selector.
-  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
-  // =============================================================================
-  // function DemoSelloAumentosSecundarios() {
-  //   return (
-  //     <section style={s.section}>
-  //       <h3 style={s.h3}>c_sello_aumentos_secundarios</h3>
-  //       <p style={s.meta}>
-  //         Sello de aumento de red secundaria. Tabla 5 cols x 2-3 filas.
-  //         IDs disponibles: D01 · D02 (sin red directa) · D03
-  //       </p>
-  //       <SelloAumentosSecundariosUI />
-  //     </section>
-  //   );
-  // }
-
-  {
-    id         : '25-sello-aumentos-secundarios',
-    label      : '[25] c_sello_aumentos_secundarios',
-    description: 'Sello aumento red secundaria por distrito — tabla 5 cols x 2 filas (3 si red directa). Cabeceras: DTO./CONECT./AUMENTO/L.PLAZO/TOTAL. Colores: verde/rojo/naranja.',
-    render     : () => <SelloAumentosSecundariosUI />,
-  },
-  // ── [25] c_sello_aumentos_secundarios — anterior último componente migrado ──
-
-  // =============================================================================
-  // [26] Demo inline — c_plano_desmontaje_cd
-  // Versión comentada como referencia de invocación directa sin menú selector.
-  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
-  // =============================================================================
-  // function DemoPlanoDesmontajeCd() {
-  //   return (
-  //     <section style={s.section}>
-  //       <h3 style={s.h3}>c_plano_desmontaje_cd</h3>
-  //       <p style={s.meta}>
-  //         Orquestador del plano de Desmontaje de Caja de Distribucion.
-  //         Pulsa "genera_plano()" para componer marco + sello + viewport.
-  //       </p>
-  //       <PlanoDesmontajeCdUI />
-  //     </section>
-  //   );
-  // }
-
-  {
-    id         : '26-plano-desmontaje-cd',
-    label      : '[26] c_plano_desmontaje_cd',
-    description: 'Plano desmontaje Caja Distribución — genera_plano() compone marco(3×1) + sello_proyecto_canalizacion + viewport_layout. Escala por ratio bounds o view_scale si ángulo > 0.1°.',
-    render     : () => <PlanoDesmontajeCdUI />,
-  },
-  {
-    id         : '27-polyline-layout',
-    label      : '[27] polyline_layout',
+    id         : '10-polyline-layout',
+    label      : '[10] polyline_layout',
     description: 'Atributos base de polilinea: coordenadas y estilo.',
     render     : () => <DemoPolylineLayout />,
   },
   {
-    id         : '28-simbologia-ocupacion-ductos',
-    label      : '[28] c_simbologia_ocupacion_de_ductos',
+    id         : '11-viewport-layout-mixin',
+    label      : '[11] viewport_layout_mixin',
+    description: 'Mixin de conexión a viewport — guard id>0 evita reconexión.',
+    render     : () => <ViewportLayoutMixinUI />,
+  },
+  {
+    id         : '12-sello-estandar',
+    label      : '[12] c_sello_estandar',
+    description: 'Sello estándar de plano — tablas título/proyecto/datos con llenado async desde servicio GIS.',
+    render     : () => <SelloEstandarUI />,
+  },
+  {
+    id         : '13-texto-linea-grafico',
+    label      : '[13] c_texto_linea_grafico',
+    description: 'Extiende c_texto_grafico: texto + línea horizontal al pie del bbox.',
+    render     : () => <TextoLineaGraficoUI />,
+  },
+  {
+    id         : '14-style-symbol-open-dialog',
+    label      : '[14] c_style_symbol_open_dialog',
+    description: 'Diálogo selección de símbolo de estilo — abre editor de símbolo GIS para entidad activa.',
+    render     : () => <StyleSymbolOpenDialogUI />,
+  },
+  {
+    id         : '15-layout-plot-engine',
+    label      : '[15] layout_plot_engine',
+    description: 'Lanzador background con guard de instancia única + UI de interrupción.',
+    render     : () => <LayoutPlotEngineUI />,
+  },
+  {
+    id         : '16-tachado-grafico',
+    label      : '[16] c_tachado_grafico',
+    description: 'Tachado gráfico — overlay SVG de línea diagonal para marcar elementos eliminados.',
+    render     : () => <TachadoGraficoUI />,
+  },
+  {
+    id         : '17-titulo-de-plano',
+    label      : '[17] c_titulo_de_plano',
+    description: 'Título de plano auto-posicionado en esquina inferior-derecha del contenedor.',
+    render     : () => <TituloDePlanoUI />,
+  },
+  {
+    id         : '18-tipo-geom',
+    label      : '[18] c_tipo_geom',
+    description: 'Tipo de geometría — discriminador point/line/polygon para features del dataset GIS.',
+    render     : () => <TipoGeomUI />,
+  },
+  {
+    id         : '19-simbologia-ocupacion-ductos',
+    label      : '[19] c_simbologia_ocupacion_de_ductos',
     description: 'Tabla 1x1 con simbolo ocupacion_de_ductos.',
     render     : () => <DemoSimbologiaOcupacionDeDuctos />,
   },
   {
-    id         : '29-pep-dcs',
-    label      : '[29] c_pep_dcs',
+    id         : '20-simbologia-plano-construccion-fo',
+    label      : '[20] c_simbologia_plano_construccion_fo',
+    description: 'Simbología plano construcción FO — leyenda de símbolos fibra óptica con categorías.',
+    render     : () => <SimbologiaPlanoContruccionFoUI />,
+  },
+  {
+    id         : '21-sello-simbologia-diagrama-empalmes',
+    label      : '[21] c_sello_simbologia_diagrama_empalmes',
+    description: 'Cuadro de simbología de diagrama de empalmes — tbl_titulo (8×65) + tbl_contenido (110×65).',
+    render     : () => <SelloSimbologiaDiagramaEmpallesUI />,
+  },
+  {
+    id         : '22-pep-dcs',
+    label      : '[22] c_pep_dcs',
     description: 'Tabla PEP con titulos y valores de referencia.',
     render     : () => <DemoPepDcs />,
   },
   {
-    id         : '30-sello-notas-sct-cruz-sub',
-    label      : '[30] c_sello_notas_sct_cruz_sub',
+    id         : '23-sello-notas-sct-cruz-aereo',
+    label      : '[23] c_sello_notas_sct_cruz_aereo',
+    description: 'Notas SCT cruce aéreo — tabla notas estáticas para instalación en cruce aéreo.',
+    render     : () => <SelloNotasSctCruzAereoUI />,
+  },
+  {
+    id         : '24-sello-notas-sct-cruz-sub',
+    label      : '[24] c_sello_notas_sct_cruz_sub',
     description: 'Notas generales para cruce subterraneo.',
     render     : () => <DemoSelloNotasSctCruzSub />,
+  },
+  {
+    id         : '25-sello-notas-sct-inst-puente',
+    label      : '[25] c_sello_notas_sct_inst_puente',
+    description: 'Notas SCT instalación lateral en puente — tabla 2×1 (10mm+170mm, 165mm ancho), notas 1-11.',
+    render     : () => <SelloNotasSctInstPuenteUI />,
+  },
+  {
+    id         : '26-sello-notas-sct-inst-puente-tn',
+    label      : '[26] c_sello_notas_sct_inst_puente_tn',
+    description: 'Notas SCT instalación puente TN — variante túnel/nodo de tabla notas instalación lateral.',
+    render     : () => <SelloNotasSctInstPuenteTnUI />,
+  },
+  {
+    id         : '27-sello-notas-sct-marg-aereo',
+    label      : '[27] c_sello_notas_sct_marg_aereo',
+    description: 'Notas SCT instalación marginal aérea — tabla notas para tendido marginal en poste.',
+    render     : () => <SelloNotasSctMargAereoUI />,
+  },
+  {
+    id         : '28-sello-notas-sct-marg-sub',
+    label      : '[28] c_sello_notas_sct_marg_sub',
+    description: 'Notas SCT instalación marginal subterránea — tabla 2×1 (10mm+265mm, 170mm ancho), notas 1-15.',
+    render     : () => <SelloNotasSctMargSubUI />,
+  },
+  {
+    id         : '29-traductor',
+    label      : '[29] c_traductor',
+    description: 'Traduccion de claves para planos y PEP.',
+    render     : () => <DemoTraductor />,
+  },
+  {
+    id         : '30-sello-simbologia-red-sec',
+    label      : '[30] c_sello_simbologia_red_sec',
+    description: 'Simbología red secundaria FO — 3 tablas: título (8×130) + cabecera 3 columnas (8×60+35+35) + contenido (110×130).',
+    render     : () => <SelloSimbologiaRedSecUI />,
   },
   {
     id         : '31-symbol-layout',
@@ -1013,28 +922,28 @@ const DEMO_ITEMS: DemoItem[] = [
     render     : () => <DemoSymbolLayout />,
   },
   {
-    id         : '32-traductor',
-    label      : '[32] c_traductor',
-    description: 'Traduccion de claves para planos y PEP.',
-    render     : () => <DemoTraductor />,
+    id         : '32-tabla-enc-georeferencia',
+    label      : '[32] c_tabla_enc_georeferencia',
+    description: 'Tabla encabezado georreferencia — coordenadas UTM del área del plano en tabla estándar.',
+    render     : () => <TablaEncGeoreferenciaUI />,
   },
   {
-    id         : '33-circulo-grafico',
-    label      : '[33] c_circulo_grafico',
+    id         : '33-sello-capacidad-cable',
+    label      : '[33] c_sello_capacidad_cable',
+    description: 'Cuadro de capacidad de cable — tbl_titulo (2×1, 12×44u) + tbl_contenido (18×2, 108×44u). 18 tipos: A→10PS. … Z→FIBRAS OPTICAS.',
+    render     : () => <SelloCapacidadCableUI />,
+  },
+  {
+    id         : '34-circulo-grafico',
+    label      : '[34] c_circulo_grafico',
     description: 'Circulo centrado con radio escalado.',
     render     : () => <DemoCirculoGrafico />,
   },
   {
-    id         : '34-placa-fosc350c',
-    label      : '[34] c_placa_fosc350c',
-    description: 'Simbolo con color y transformaciones.',
-    render     : () => <DemoPlacaFosc350c />,
-  },
-  {
-    id         : '35-ocupacion-de-vias',
-    label      : '[35] c_ocupacion_de_vias',
-    description: 'Simbolo con color y transformaciones.',
-    render     : () => <DemoOcupacionDeVias />,
+    id         : '35-detalles-layout',
+    label      : '[35] c_detalles_layout',
+    description: 'Textos de copyright del plano de detalle.',
+    render     : () => <DemoDetallesLayout />,
   },
   {
     id         : '36-cuadro-notas-plugin',
@@ -1043,231 +952,246 @@ const DEMO_ITEMS: DemoItem[] = [
     render     : () => <DemoCuadroDeNotasPlugin />,
   },
   {
-    id         : '37-detalles-layout',
-    label      : '[37] c_detalles_layout',
-    description: 'Textos de copyright del plano de detalle.',
-    render     : () => <DemoDetallesLayout />,
-  },
-  {
-    id         : '38-simbolo-longitud-trazo-gazas',
-    label      : '[38] c_simbolo_longitud_trazo_gazas',
+    id         : '37-ocupacion-de-vias',
+    label      : '[37] c_ocupacion_de_vias',
     description: 'Simbolo con color y transformaciones.',
-    render     : () => <DemoSimboloLongitudTrazoGazas />,
+    render     : () => <DemoOcupacionDeVias />,
   },
   {
-    id         : '39-margen-layout',
-    label      : '[39] c_margen_layout',
-    description: 'Margen del layout con segmentos guia.',
-    render     : () => <DemoMargenLayout />,
+    id         : '38-placa-fosc350c',
+    label      : '[38] c_placa_fosc350c',
+    description: 'Simbolo con color y transformaciones.',
+    render     : () => <DemoPlacaFosc350c />,
   },
   {
-    id         : '40-simbologia-plano-construccion',
-    label      : '[40] c_simbologia_plano_construccion',
-    description: 'Cuadro de simbologia del plano de construccion.',
-    render     : () => <DemoSimbologiaPlanoConstruccion />,
-  },
-  {
-    id         : '41-elementos-tramo-g',
-    label      : '[41] c_elementos_tramo_g',
-    description: 'Resumen de longitud y elementos habilitados.',
-    render     : () => <DemoElementosTramoG />,
-  },
-  {
-    id         : '42-dibuja',
-    label      : '[42] c_dibuja',
-    description: 'Dibujo de trazos con traslacion y rotacion.',
-    render     : () => <DemoDibuja />,
-  },
-  {
-    id         : '43-plano-e',
-    label      : '[43] c_plano_e',
-    description: 'Entidad de plano: proyecto, nombre, tipo y comentario.',
-    render     : () => <DemoPlanoE />,
-  },
-  {
-    id         : '44-empalme-subterraneo',
-    label      : '[44] c_elemento_empalme_subterraneo_g',
-    description: 'Empalme subterraneo con margenes internos.',
-    render     : () => <DemoElementoEmpalmeSubterraneoG />,
-  },
-  {
-    id         : '45-celdas-grafico',
-    label      : '[45] c_celdas_grafico',
-    description: 'Celda con bordes opcionales dibujados sobre el area.',
-    render     : () => <DemoCeldasGrafico />,
-  },
-  {
-    id         : '46-linea-grafico',
-    label      : '[46] c_linea_grafico',
-    description: 'Linea entre dos puntos proporcionales del area (OL + Turf).',
-    render     : () => <DemoLineaGrafico />,
-  },
-  {
-    id         : '47-vp-ubicacion-cedo',
-    label      : '[47] c_vp_ubicacion_cedo',
-    description: 'Viewport DETALLE DE CANALIZACION (filtro + titulo).',
-    render     : () => <DemoVpUbicacionCedo />,
-  },
-  {
-    id         : '48-tbl-cfg-mixin',
-    label      : '[48] c_tbl_cfg_mixin',
-    description: 'Configuracion de bordes de tabla (titulo / detalle).',
-    render     : () => <DemoTblCfgMixin />,
-  },
-  {
-    id         : '49-area-telmex',
-    label      : '[49] c_area_telmex',
-    description: 'Área de cobertura Telmex — polígono configurable con atributos de área y municipio.',
-    render     : () => <AreaTelmexUI />,
-  },
-  {
-    id         : '50-corte-geografico',
-    label      : '[50] c_Corte_Geografico',
-    description: 'Corte geográfico — OL v10 + Turf.js: buffer 0.5km sobre ruta, filtra capas por booleanDisjoint, dibuja colonia/lote/distrito.',
-    render     : () => <CorteGeograficoUI />,
-  },
-  {
-    id         : '51-elemento-empalme-derivacion',
-    label      : '[51] c_elemento_empalme_derivacion_g',
-    description: 'SVG: empalme con derivación — símbolo línea+rombo+bifurcación, etiqueta ER-NNN.',
-    render     : () => <ElementoEmpalmeDerivacionGUI />,
-  },
-  {
-    id         : '52-plano-ruta-cables',
-    label      : '[52] c_plano_ruta_de_cables',
-    description: 'Plano de ruta de cables — orquestador layout: marco + sello + viewports de ruta.',
-    render     : () => <PlanoRutaDeCablesUI />,
-  },
-  {
-    id         : '53-sello-correspondencias',
-    label      : '[53] c_sello_correspondencias',
-    description: 'Correspondencias ópticas — tbl_titulo(1×1,110mm) + tbl_subtitulos(1×2,55+55mm) + tbl_contenido(N×7). Max 40 filas.',
-    render     : () => <SelloCorrespondenciasUI />,
-  },
-  {
-    id         : '54-sello-estandar',
-    label      : '[54] c_sello_estandar',
-    description: 'Sello estándar de plano — tablas título/proyecto/datos con llenado async desde servicio GIS.',
-    render     : () => <SelloEstandarUI />,
-  },
-  {
-    id         : '55-sello-estandar-base',
-    label      : '[55] c_sello_estandar_base',
-    description: 'Sello estándar base — hereda c_base_sello_cobre, 4 tablas, DESP_Y=-124mm. FALC: sinBordes en tbl_ubicacion.',
-    render     : () => <SelloEstandarBaseUI />,
-  },
-  {
-    id         : '56-sello-lista-cables',
-    label      : '[56] c_sello_lista_cables',
-    description: 'Lista de cables — tabla dinámica N filas × columnas de tipo/capacidad/longitud.',
-    render     : () => <SelloListaCablesUI />,
-  },
-  {
-    id         : '57-sello-notas-sct-cruz-aereo',
-    label      : '[57] c_sello_notas_sct_cruz_aereo',
-    description: 'Notas SCT cruce aéreo — tabla notas estáticas para instalación en cruce aéreo.',
-    render     : () => <SelloNotasSctCruzAereoUI />,
-  },
-  {
-    id         : '58-sello-notas-sct-inst-puente-tn',
-    label      : '[58] c_sello_notas_sct_inst_puente_tn',
-    description: 'Notas SCT instalación puente TN — variante túnel/nodo de tabla notas instalación lateral.',
-    render     : () => <SelloNotasSctInstPuenteTnUI />,
-  },
-  {
-    id         : '59-sello-notas-sct-marg-aereo',
-    label      : '[59] c_sello_notas_sct_marg_aereo',
-    description: 'Notas SCT instalación marginal aérea — tabla notas para tendido marginal en poste.',
-    render     : () => <SelloNotasSctMargAereoUI />,
-  },
-  {
-    id         : '60-servicios-estilos',
-    label      : '[60] c_servicios_estilos',
-    description: 'Catálogo de estilos GIS — mapeo símbolo→estilo para entidades del dataset.',
-    render     : () => <ServiciosEstilosUI />,
-  },
-  {
-    id         : '61-simbologia-plano-fo',
-    label      : '[61] c_simbologia_plano_construccion_fo',
-    description: 'Simbología plano construcción FO — leyenda de símbolos fibra óptica con categorías.',
-    render     : () => <SimbologiaPlanoContruccionFoUI />,
-  },
-  {
-    id         : '62-simbologia-reubicacion-exist',
-    label      : '[62] c_simbologia_plano_reubicacion_exist_proy',
+    id         : '39-simbologia-reubicacion-exist-proy',
+    label      : '[39] c_simbologia_plano_reubicacion_exist_proy',
     description: 'Simbología reubicación existente/proyectado — leyenda dual: elementos a reubicar vs nuevos.',
     render     : () => <SimbologiaPlanoReubicacionExistProyUI />,
   },
   {
-    id         : '63-style-symbol-dialog',
-    label      : '[63] c_style_symbol_open_dialog',
-    description: 'Diálogo selección de símbolo de estilo — abre editor de símbolo GIS para entidad activa.',
-    render     : () => <StyleSymbolOpenDialogUI />,
+    id         : '40-simbologia-reubicacion-terminales',
+    label      : '[40] c_simbologia_plano_reubicacion_terminales',
+    description: 'Símbolo configurable: name/colour/angle/flip/mirror. Catálogo SVG inline (5 símbolos). Halo blanco vía SVG filter feMorphology.',
+    render     : () => <SimbologiaPlanoReubicacionTerminalesUI />,
   },
   {
-    id         : '64-tabla-enc-georeferencia',
-    label      : '[64] c_tabla_enc_georeferencia',
-    description: 'Tabla encabezado georreferencia — coordenadas UTM del área del plano en tabla estándar.',
-    render     : () => <TablaEncGeoreferenciaUI />,
+    id         : '41-simbolo-longitud-trazo-gazas',
+    label      : '[41] c_simbolo_longitud_trazo_gazas',
+    description: 'Simbolo con color y transformaciones.',
+    render     : () => <DemoSimboloLongitudTrazoGazas />,
   },
   {
-    id         : '65-tachado-grafico',
-    label      : '[65] c_tachado_grafico',
-    description: 'Tachado gráfico — overlay SVG de línea diagonal para marcar elementos eliminados.',
-    render     : () => <TachadoGraficoUI />,
+    id         : '42-margen-layout',
+    label      : '[42] c_margen_layout',
+    description: 'Margen del layout con segmentos guia.',
+    render     : () => <DemoMargenLayout />,
   },
   {
-    id         : '66-tipo-geom',
-    label      : '[66] c_tipo_geom',
-    description: 'Tipo de geometría — discriminador point/line/polygon para features del dataset GIS.',
-    render     : () => <TipoGeomUI />,
+    id         : '43-plano-ruta-cables',
+    label      : '[43] c_plano_ruta_de_cables',
+    description: 'Plano de ruta de cables — orquestador layout: marco + sello + viewports de ruta.',
+    render     : () => <PlanoRutaDeCablesUI />,
   },
   {
-    id         : '67-traductor-base',
-    label      : '[67] c_Traductor (base)',
+    id         : '44-simbologia-plano-construccion',
+    label      : '[44] c_simbologia_plano_construccion',
+    description: 'Cuadro de simbologia del plano de construccion.',
+    render     : () => <DemoSimbologiaPlanoConstruccion />,
+  },
+  {
+    id         : '45-vp-detalle-interno-edificio',
+    label      : '[45] c_vp_detalle_interno_edificio',
+    description: 'Viewport planta TBA — ACE :mit_floor_internal, oResulSet GeoJSON, barra de título 100u debajo (c_titulo_de_plano). draw_content_on delega a _super.',
+    render     : () => <VpDetalleInternoEdificioUI />,
+  },
+  {
+    id         : '46-elementos-tramo-g',
+    label      : '[46] c_elementos_tramo_g',
+    description: 'Resumen de longitud y elementos habilitados.',
+    render     : () => <DemoElementosTramoG />,
+  },
+  {
+    id         : '47-sello-lista-cables',
+    label      : '[47] c_sello_lista_cables',
+    description: 'Lista de cables — tabla dinámica N filas × columnas de tipo/capacidad/longitud.',
+    render     : () => <SelloListaCablesUI />,
+  },
+  {
+    id         : '48-sello-competencia-telmex',
+    label      : '[48] c_sello_competencia_telmex',
+    description: 'Competencia telefónica por edificio — 10 filas × 3 cols {10,27,7}u. Tabla abierta. Async llena_datos_celdas() → mock BD GIS (IDs: 101, 202, 303).',
+    render     : () => <SelloCompetenciaTelmexUI />,
+  },
+  {
+    id         : '49-servicios-estilos',
+    label      : '[49] c_servicios_estilos',
+    description: 'Catálogo de estilos GIS — mapeo símbolo→estilo para entidades del dataset.',
+    render     : () => <ServiciosEstilosUI />,
+  },
+  {
+    id         : '50-imagen-bmp',
+    label      : '[50] c_imagen_bmp',
+    description: 'Contenedor BMP — wrappea bitmap_layout con flip H/V + fit. new() y new_from() con conversión de márgenes /10. Despliega() asigna oArea a bounds.',
+    render     : () => <CImagenBmpUI />,
+  },
+  {
+    id         : '51-vp-cobre',
+    label      : '[51] c_vp_cobre',
+    description: 'Viewport red de cobre — dibuja rutas/distritos de la red de cobre activa con filtros por estado.',
+    render     : () => <VpCobreUI />,
+  },
+  {
+    id         : '52-croquis',
+    label      : '[52] c_croquis',
+    description: 'Croquis de localización — ordenamiento() encadena tramos, dibujaTrazo() buffer Turf.js, croquisProyecCanaliz() genera viewport+norte+título en layout.',
+    render     : () => <CCroquisUI />,
+  },
+  {
+    id         : '53-elemento-empalme-derivacion-g',
+    label      : '[53] c_elemento_empalme_derivacion_g',
+    description: 'SVG: empalme con derivación — símbolo línea+rombo+bifurcación, etiqueta ER-NNN.',
+    render     : () => <ElementoEmpalmeDerivacionGUI />,
+  },
+  {
+    id         : '54-elemento-empalme-subterraneo-g',
+    label      : '[54] c_elemento_empalme_subterraneo_g',
+    description: 'Empalme subterraneo con margenes internos.',
+    render     : () => <DemoElementoEmpalmeSubterraneoG />,
+  },
+  {
+    id         : '55-plano-e',
+    label      : '[55] c_plano_e',
+    description: 'Entidad de plano: proyecto, nombre, tipo y comentario.',
+    render     : () => <DemoPlanoE />,
+  },
+  {
+    id         : '56-dibuja',
+    label      : '[56] c_dibuja',
+    description: 'Dibujo de trazos con traslacion y rotacion.',
+    render     : () => <DemoDibuja />,
+  },
+  {
+    id         : '57-sello-estandar-ctl',
+    label      : '[57] c_sello_estandar_ctl',
+    description: 'Sello CTL — tbl_CeldaA(70×15mm,2f) + tbl_CeldaB(45×15mm,1f). draw_content_on empuja atributos→celdas. lee_datos_BdeD() async desde oProyecto mock.',
+    render     : () => <SelloEstandarCtlUI />,
+  },
+  {
+    id         : '58-area-telmex',
+    label      : '[58] c_area_telmex',
+    description: 'Área de cobertura Telmex — polígono configurable con atributos de área y municipio.',
+    render     : () => <AreaTelmexUI />,
+  },
+  {
+    id         : '59-sello-aumentos-secundarios',
+    label      : '[59] c_sello_aumentos_secundarios',
+    description: 'Sello de aumento de red secundaria — tabla 2×5 (sin red directa) ó 3×5 (con RED DIRECTA). Colores: verde/rojo/naranja. Async inicializaConGis() → mock BD GIS (D-01…D-04).',
+    render     : () => <SelloAumentosSecundariosUI />,
+  },
+  {
+    id         : '60-vp-croquis-proy-can',
+    label      : '[60] c_vp_croquis_proy_can',
+    description: 'Viewport croquis canalización — objetos_visibles() filtra 6 tipos con predicados Turf.js (buffer 500m). Título "CROQUIS DE LOCALIZACION" en rgb(175,175,93).',
+    render     : () => <VpCroquisProyCanUI />,
+  },
+  {
+    id         : '61-sello-correspondencias',
+    label      : '[61] c_sello_correspondencias',
+    description: 'Correspondencias ópticas — tbl_titulo(1×1,110mm) + tbl_subtitulos(1×2,55+55mm) + tbl_contenido(N×7). Max 40 filas.',
+    render     : () => <SelloCorrespondenciasUI />,
+  },
+  {
+    id         : '62-celdas-grafico',
+    label      : '[62] c_celdas_grafico',
+    description: 'Celda con bordes opcionales dibujados sobre el area.',
+    render     : () => <DemoCeldasGrafico />,
+  },
+  {
+    id         : '63-fila',
+    label      : '[63] c_fila',
+    description: 'Modelo de fila de tabla — nLongitud setter valida ≥0 y almacena ×10 (mm→décimas de mm). serial_slots() ÷10 al serializar. new_from_serial / init_with / perform_private.',
+    render     : () => <CFilaUI />,
+  },
+  {
+    id         : '64-linea-grafico',
+    label      : '[64] c_linea_grafico',
+    description: 'Linea entre dos puntos proporcionales del area (OL + Turf).',
+    render     : () => <DemoLineaGrafico />,
+  },
+  {
+    id         : '65-traductor-base',
+    label      : '[65] c_Traductor',
     description: 'Traductor de códigos GIS — 7 métodos lookup: tipoSuperficie/tipoCentral/tipoPlano/tipoCaseta/mes/metodoPep/nombreAtributoPep.',
     render     : () => <TraductorBaseUI />,
   },
   {
-    id         : '68-traza-trail',
-    label      : '[68] c_traza_trail',
-    description: 'Traza trail — captura y visualiza la polilínea activa del mapa con coordenadas en tiempo real.',
-    render     : () => <TrazaTrailUI />,
+    id         : '66-plano-desmontaje-cd',
+    label      : '[66] c_plano_desmontaje_cd',
+    description: 'Plano desmontaje Caja Distribución — genera_plano() compone marco(3×1) + sello_proyecto_canalizacion + viewport_layout. Escala por ratio bounds o view_scale si ángulo > 0.1°.',
+    render     : () => <PlanoDesmontajeCdUI />,
   },
   {
-    id         : '69-vp-cobre',
-    label      : '[69] c_vp_cobre',
-    description: 'Viewport red de cobre — dibuja rutas/distritos de la red de cobre activa con filtros por estado.',
-    render     : () => <VpCobreUI />,
+    id         : '67-vp-ubicacion-cedo',
+    label      : '[67] c_vp_ubicacion_cedo',
+    description: 'Viewport DETALLE DE CANALIZACION (filtro + titulo).',
+    render     : () => <DemoVpUbicacionCedo />,
   },
-  // ── [28] c_cfg_bloque_titdet_editable_mixin — anterior último componente ─────
   {
-    id         : '29-c-simbolo-grafico',
-    label      : '[29] c_simbolo_grafico',
+    id         : '68-tabla-georeferencia',
+    label      : '[68] c_tabla_georeferencia',
+    description: 'Sello georreferencia terminales ópticas: tbl_datos (N×3: nombre/estado/dist) + tbl_coord (N×2×3: X/Y|GEO|UTM). Zonas UTM 11–16. Filtra por LiteralTerminal.',
+    render     : () => <DemoTablaGeoreferencia />,
+  },
+  {
+    id         : '69-sello-estandar-base',
+    label      : '[69] c_sello_estandar_base',
+    description: 'Sello estándar base — hereda c_base_sello_cobre, 4 tablas, DESP_Y=-124mm. FALC: sinBordes en tbl_ubicacion.',
+    render     : () => <SelloEstandarBaseUI />,
+  },
+  {
+    id         : '70-cfg-bloque-titdet-editable-mixin',
+    label      : '[70] c_cfg_bloque_titdet_editable_mixin',
+    description: 'Mixin de bordes: cfg_tbl_titulo (6×3, contorno "a modo") + cfg_tbl_detalle (8×N, caja cols 3-6 + col-5 editable). Vista SVG before/after.',
+    render     : () => <DemoCfgBloqueTitdetEditableMixin />,
+  },
+  {
+    id         : '71-tbl-cfg-mixin',
+    label      : '[71] c_tbl_cfg_mixin',
+    description: 'Configuracion de bordes de tabla (titulo / detalle).',
+    render     : () => <DemoTblCfgMixin />,
+  },
+  {
+    id         : '72-corte-geografico',
+    label      : '[72] c_Corte_Geografico',
+    description: 'Corte geográfico — OL v10 + Turf.js: buffer 0.5km sobre ruta, filtra capas por booleanDisjoint, dibuja colonia/lote/distrito.',
+    render     : () => <CorteGeograficoUI />,
+  },
+  {
+    id         : '73-simbolo-grafico',
+    label      : '[73] c_simbolo_grafico',
     description: 'Símbolo puntual GIS: catálogo sw_gis!gis_point_style (8 símbolos), :rotate/:flipped?/:mirror? → SVG transform. new() / new_from() / init_with() / serialSlots().',
     render     : () => <DemoCSimboloGrafico />,
   },
-  // ── [29] c_simbolo_grafico — anterior último componente ─────────────────────
   {
-    id         : '30-c-gui-edita-sello-resumen-proyecto',
-    label      : '[30] c_gui_edita_sello_resumen_proyecto',
+    id         : '74-gui-edita-sello-resumen-proyecto',
+    label      : '[74] c_gui_edita_sello_resumen_proyecto',
     description: 'GUI editor de sello resumen proyecto: frame→modal, text_window→textarea, escribeTextoSelloAVentana()/escribeTextoAlSello() con .toUpperCase(), obtenSello() por className.',
     render     : () => <DemoCGuiEditaSelloResumenProyecto />,
   },
-  // ── [30] c_gui_edita_sello_resumen_proyecto — anterior último componente ─────
   {
-    id         : '31-preview-symbol-plugin',
-    label      : '[31] preview_symbol_plugin',
+    id         : '75-preview-symbol-plugin',
+    label      : '[75] preview_symbol_plugin',
     description: 'Plugin GIS de vista previa de símbolos: sigc_style_view (merge/post), manage_actions() habilita/deshabilita sw_actions según writable?+mode, c_preview_symbol_dialog con catálogo y databus :symbol_name.',
     render     : () => <DemoPreviewSymbolPlugin />,
   },
-  // ── [31] preview_symbol_plugin — anterior último componente ─────────────────
   {
-    id         : '32-c-celdas',
-    label      : '[32] c_celdas',
+    id         : '76-c-celdas',
+    label      : '[76] c_celdas',
     description: 'Contenedor de cuadrícula 2D: new(RnRen,RnCol) llena collCeldas con Map<pos,CCelda>; celda(ren,col) accede por índice lineal nNumCol*(ren−1)+col; serial_slots/new_from_serial; validación > 0 en setters.',
     render     : () => <DemoCCeldas />,
   },
+
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];
 

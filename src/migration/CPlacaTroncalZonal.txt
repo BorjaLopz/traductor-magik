@@ -1,0 +1,164 @@
+================================================================================
+  CLASE MIGRADA: CPlacaTroncalZonal
+  Fichero origen:  c_placa_troncal_zonal.magik
+  Fichero destino: CPlacaTroncalZonal.tsx
+  Jerarquía Magik: c_placa_troncal_zonal  extends  c_base_sello_fibra
+  Autor original:  lgranados, 15-Diciembre-2010 (Sigma Tao / Traza: Planos)
+================================================================================
+
+PROPÓSITO
+---------
+Placa de identificación de cable "Troncal Zonal" para planos GIS de
+fibra óptica. Muestra los datos de identificación, características y
+conexiones de origen/destino de un cable troncal en el tendido de red.
+
+La placa se compone de 7 tablas posicionadas en coordenadas absolutas
+(mm) relativas a un origen. El fondo es color rosa pálido (FILL).
+
+
+SLOTS
+------
+No tiene slots propios (hereda de c_base_sello_fibra):
+  .o_tablas        → gestor de tablas del sello
+  .o_coord_inicio  → coordenada origen (x,y) de la placa
+
+
+MÉTODOS MIGRADOS (4 en total)
+-------------------------------
+
+1. configura_tabla() → constante TBLS + SVG de posicionamiento
+   ──────────────────────────────────────────────────────────────
+   Define 7 tablas en coordenadas mm relativas al origen:
+
+   ┌────────────────────────────────────────────────────────────────────────┐
+   │ ID     │ Pos (x,y) mm │ Tamaño (ancho×alto) mm │ Columnas             │
+   ├────────┼──────────────┼────────────────────────┼──────────────────────┤
+   │ tbl_1  │   (0, 0)     │ 130 × 50               │ 1 col (marco externo)│
+   │ tbl_2  │  (25, 25)    │ 125 × 45               │ 1 col (interior)     │
+   │ tbl_3  │  (25, 25)    │  26 × 45               │ 1 col (logo)         │
+   │ tbl_4  │ (285, 70)    │  97.5 × 7.5            │ 8 cols label|dato    │
+   │ tbl_5  │ (285, 165)   │  97.5 × 7.5            │ 8 cols label|dato    │
+   │ tbl_6  │ (285, 260)   │  97.5 × 7.5            │ 10 cols label|dato   │
+   │ tbl_7  │ (285, 355)   │  97.5 × 7.5            │ 10 cols label|dato   │
+   └────────┴──────────────┴────────────────────────┴──────────────────────┘
+
+   Dimensiones totales de la placa: ~382.5mm × ~362.5mm
+   El espacio entre tbl_1 (x=130) y tbl_4-7 (x=285) contiene tablas del
+   base class (c_base_sello_fibra) no incluidas en este código.
+
+   Color de relleno: colour.new_rgb(1, 0.80, 0.80) → rgb(255, 204, 204)
+
+   PATRÓN DE BORDES EN tbl_4-7:
+   Las columnas impares (1,3,5,7,9) son "etiquetas" con bordes ocultos:
+     bBorde_Izq = false
+     bBorde_Inf = false
+     bBorde_Sup = false
+   Solo el borde derecho queda visible (forma el borde izquierdo del dato).
+   En TS: celdas isLabel=true renderizan solo una línea vertical derecha.
+
+   Widths de columnas por tabla:
+     tbl_4: [7.5, 15, 7.5, 15, 7.5, 15, 15, 15] mm
+     tbl_5: [16, 10.5, 11, 11, 16, 11, 11, 11] mm
+     tbl_6: [9.75×10] mm
+     tbl_7: [9.75×10] mm
+
+
+2. etiqueta_celdas() → propiedad labelText en CellDef
+   ──────────────────────────────────────────────────────
+   Asigna textos a los cols impares (etiquetas) de cada tabla:
+
+   tbl_3:  "logo_sellos" (símbolo GIS)
+   tbl_4:  TK | RUTA | PEP | NO.DE CABLE
+   tbl_5:  CAPACIDAD PS | CALIBRE | TIPO DE CABLE | NO.P.REP
+   tbl_6:  CTL | SECCION | VERTICAL | STRIPS | IND.
+   tbl_7:  CTL | SECCION | VERTICAL | STRIPS | IND.
+
+   En TS los textos están codificados en TBLS[].cells[].labelText.
+
+
+3. llena_datos_celdas() → método vacío
+   ─────────────────────────────────────
+   En el Magik original este método está vacío (sin implementación).
+   En TS no se genera lógica equivalente.
+
+
+4. llena_datos_dinamicos() → state + onChange en CPlacaTroncalZonalUI
+   ─────────────────────────────────────────────────────────────────────
+   Asigna los valores de los atributos (capturados por el usuario) a las
+   celdas pares de cada tabla. Magik: asigna_texto_celda(:tblN, 1, colPar, valor, 28)
+
+   Mapping atributo → tabla/columna:
+     tbl_4: tk→col2, ruta→col4, pep→col6, no_cable→col8
+     tbl_5: capacidad_ps→col2, calibre→col4, tipo_cable→col6, no_p_rep→col8
+     tbl_6: ctl_origen→col2, seccion_origen→col4, vertical_origen→col6,
+            strips_origen→col8, ind_origen→col10
+     tbl_7: ctl_destino→col2, seccion_destino→col4, vertical_destino→col6,
+            strips_destino→col8, ind_destino→col10
+
+   BUG EN EL MAGIK ORIGINAL (tbl_5):
+     El código original escribe capacidad_ps→col2, luego SOBREESCRIBE con
+     tipo_cable→col2; ídem calibre→col4 sobreescrito por no_p_rep→col4.
+     Los cols 6 y 8 quedan vacíos. Parece un error de copy-paste.
+     En la migración TS se CORRIGE el mapping usando los cols correctos
+     (capacidad_ps→2, calibre→4, tipo_cable→6, no_p_rep→8).
+
+
+ATRIBUTOS — defined_attributes() — 18 campos string
+------------------------------------------------------
+  Grupo tbl_4 (identificación):
+    tk, ruta, pep, no_cable
+
+  Grupo tbl_5 (características cable):
+    capacidad_ps, calibre, tipo_cable, no_p_rep
+
+  Grupo tbl_6 (origen):
+    ctl_origen, seccion_origen, vertical_origen, strips_origen, ind_origen
+
+  Grupo tbl_7 (destino):
+    ctl_destino, seccion_destino, vertical_destino, strips_destino, ind_destino
+
+  Todos son :string en Magik → string en TypeScript.
+  Heredados por c_base_sello_fibra (no incluidos aquí).
+
+
+COMPONENTE REACT UI
+--------------------
+  CPlacaTroncalZonalUI:
+  - Estado: PlacaTroncalZonalData (18 campos) con valores por defecto.
+  - Formulario: 4 grupos de campos con inputs editables.
+    Los cambios se reflejan en tiempo real en la vista previa.
+  - Vista previa SVG (escala 1.3 px/mm):
+    · tbl_1: rectángulo rosa pálido 130×50mm
+    · tbl_2: rectángulo interior 125×45mm
+    · tbl_3: área logo 26×45mm con placeholder gris
+    · tbl_4-7: cada tabla con celdas etiqueta (gris, solo borde der)
+      y celdas dato (blancas, bordes completos)
+    · Texto editable de los campos se refleja en las celdas dato
+
+  POSICIONAMIENTO SVG:
+    En Magik, la coordenada Y decrece hacia abajo (y-GIS).
+    En SVG/pantalla, Y crece hacia abajo (y-screen).
+    coordinate.new(x, origen.y - d) → y_screen = d en coordenadas de pantalla.
+    Se usa yMm directamente como offset positivo (ya corregido en TBLS).
+
+
+USO DESDE App.tsx
+------------------
+  import { CPlacaTroncalZonalUI } from './migration/CPlacaTroncalZonal';
+
+  function DemoCPlacaTroncalZonal() {
+    return (
+      <section>
+        <h3>c_placa_troncal_zonal</h3>
+        <CPlacaTroncalZonalUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '87-placa-troncal-zonal', label: '[87] c_placa_troncal_zonal', ... }
+
+
+================================================================================
+  Fin del documento — CPlacaTroncalZonal.txt
+================================================================================

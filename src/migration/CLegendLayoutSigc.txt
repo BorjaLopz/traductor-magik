@@ -1,0 +1,173 @@
+================================================================================
+  CLASE MIGRADA: CLegendLayoutSigc
+  Fichero origen:  c_legend_layout_sigc.magik
+  Fichero destino: CLegendLayoutSigc.tsx
+  Jerarquía Magik: c_legend_layout_sigc  extends  :legend_layout
+  Autor original:  (Sigma Tao / Traza: Planos)
+================================================================================
+
+PROPÓSITO
+---------
+Componente de leyenda GIS del motor de planos de fibra óptica.
+Extiende :legend_layout del framework Smallworld y personaliza el conjunto
+de entradas de la leyenda mediante:
+
+  1. Parseo de las descripciones heredadas del super.
+  2. Adición del estado de construcción (Existente / Desmontaje / Proyectado).
+  3. Deduplicación de estilos de punto (sw_gis!gis_point_style) por symbolName.
+  4. Filtrado de entradas específicas por combinación field/description.
+
+El resultado final es una leyenda limpia, sin duplicados y sin entradas
+técnicas internas que no deben aparecer en el plano impreso.
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  geometrias_leyenda → geometriasLeyenda: LegendEntry[] | null
+    Caché de geometrías obtenidas del super. Se inicializa la primera vez
+    que se llama a geometrySet() y se reutiliza en llamadas posteriores.
+
+  entradas_leyenda   → entradasLeyenda: ProcessedEntry[] | null
+    Caché de entradas procesadas (solo las incluidas). Se invalida al
+    inicio de cada llamada a dynamicEntries().
+
+
+MÉTODOS MIGRADOS (3 en total)
+-------------------------------
+
+1. inicializa()
+   Magik: post_initialisation() / Inicializa()
+   Configura los parámetros de la leyenda:
+     título               = 'Simbología'
+     viewportContentsOnly = true   (solo elementos del viewport visible)
+     displayFullBounds    = false
+     includeText          = false  (no incluir features de texto)
+
+2. geometrySet(superGeometries)
+   Magik: geometry_set >>
+   Patrón de caché lazy:
+     - Si geometriasLeyenda es null → asigna superGeometries y lo devuelve.
+     - Si ya está poblado → devuelve la caché sin llamar al super de nuevo.
+   Equivalente Magik:
+     geometry_set >> _self.geometrias_leyenda _is _unset
+       _then _self.geometrias_leyenda << super.geometry_set
+     _endmethod
+
+3. dynamicEntries(superEntries)
+   Magik: dynamic_entries()
+   Corazón de la lógica de negocio. Pipeline de transformación:
+
+   PASO 1 — Resetear caché:
+     entradasLeyenda = null
+
+   PASO 2 — Para cada entrada del super:
+     a) Parsear descripción: tomar el segmento antes del primer ".".
+        Ejemplo: "Nodo/Central. Tipo A" → "Nodo/Central"
+
+     b) Determinar sufijo de estado de construcción:
+        estadoConstruccion = "Existente"   → sufijo = " Existente"
+        estadoConstruccion = "Desmontaje"  → sufijo = " Desmontaje"
+        estadoConstruccion = "Proyectado"  → sufijo = " Proyectado"
+        (sin estado)                       → sufijo = ""
+        descriptionFinal = baseDesc + sufijo
+
+     c) Deduplicación de point styles (geomTipo = 'point'):
+        - Si symbolName ya fue visto → EXCLUIR (filtradoPor = "Duplicado…")
+        - Si es nuevo → añadir a seenSymbolNames
+
+     d) Filtros de negocio (aplicados sobre entradas no duplicadas):
+        · description="Nodo/Central" AND fieldName="connection_location" → EXCLUIR
+        · fieldName="tierra" → EXCLUIR
+        · description="Canalización" AND fieldName="leader_ac" → EXCLUIR
+
+        NOTA IMPORTANTE: en el Magik original estos filtros están dentro
+        del bloque que verifica si loelementos ya tiene al menos un elemento
+        con ese style (el mismo bloque donde se hace la deduplicación).
+        En TS se reproduce ese comportamiento: los filtros de negocio se
+        aplican solo a entradas que no fueron descartadas por duplicado.
+
+        Para geometrías no-point (line, polygon, text) solo se aplica
+        el filtro de "tierra" (no hay deduplicación por symbolName).
+
+   PASO 3 — Almacenar en caché solo las entradas incluidas:
+     entradasLeyenda = result.filter(e => !e.filtradoPor)
+
+   PASO 4 — Devolver TODAS (incluidas + filtradas) para visualización.
+
+
+TIPOS TYPESCRIPT
+-----------------
+  LegendEntry {
+    fieldName:          string        — campo/feature-type del GIS
+    styleId:            string        — identificador del estilo
+    symbolName?:        string        — nombre del símbolo (solo point styles)
+    geomTipo:           GeomTipo      — 'point' | 'line' | 'polygon' | 'text'
+    description:        string        — descripción original del super
+    estadoConstruccion?: string       — 'Existente' | 'Desmontaje' | 'Proyectado'
+  }
+
+  ProcessedEntry extends LegendEntry {
+    descriptionFinal:   string        — descripción tras parseo + sufijo estado
+    filtradoPor?:       string        — motivo de exclusión (undefined = incluida)
+  }
+
+
+CONSTANTES DE FILTRADO
+-----------------------
+  FIELD_CONNECTION_LOCATION = 'connection_location'
+  FIELD_TIERRA               = 'tierra'
+  FIELD_LEADER_AC            = 'leader_ac'
+  DESC_NODO_CENTRAL          = 'Nodo/Central'
+  DESC_CANALIZACION          = 'Canalización'
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· En Magik, dynamic_entries() opera directamente sobre objetos sw_gis del
+  framework (sw_gis!gis_point_style, sw_gis!legend_entry, etc.) que tienen
+  métodos como .style_name, .field_type, .description, etc.
+  En TS se abstrae a tipos planos (LegendEntry / ProcessedEntry).
+
+· El framework Smallworld proporciona super.dynamic_entries() y
+  super.geometry_set() como herencia real.
+  En TS se simulan pasando los arrays como parámetros.
+
+· La UI añade:
+  - Panel de entradas originales del super (input del pipeline).
+  - Panel de entradas incluidas en la leyenda final.
+  - Panel de entradas filtradas con el motivo de exclusión.
+  - Panel de resumen: totales, duplicados, filtros de negocio.
+
+· La caché geometriasLeyenda se invalida implícitamente seteando a null
+  antes de llamar a dynamicEntries() (igual que el Magik original que
+  resetea _self.entradas_leyenda << _unset al inicio del método).
+
+
+COMPARATIVA CON OTRAS LEYENDAS
+--------------------------------
+  :legend_layout (super)           → sin filtros, todas las entradas
+  c_legend_layout_sigc (esta)      → + parseo desc + dedup + 3 filtros
+  (posibles subclases futuras)     → pueden sobreescribir dynamicEntries()
+                                      llamando a super para reutilizar la lógica
+
+
+USO DESDE App.tsx
+------------------
+  import { CLegendLayoutSigcUI } from './migration/CLegendLayoutSigc';
+
+  function DemoCLegendLayoutSigc() {
+    return (
+      <section>
+        <h3>c_legend_layout_sigc</h3>
+        <CLegendLayoutSigcUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '85-legend-layout-sigc', label: '[85] c_legend_layout_sigc', ... }
+
+
+================================================================================
+  Fin del documento — CLegendLayoutSigc.txt
+================================================================================

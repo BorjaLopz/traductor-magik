@@ -177,6 +177,22 @@ import { CSelloNotasAdicionalesSctUI } from './migration/CSelloNotasAdicionalesS
 import { CSelloNotasSctUI } from './migration/CSelloNotasSct';
 // [84] c_dto_pronostico
 import { CDtoPronosticoUI } from './migration/CDtoPronostico';
+// [85] c_legend_layout_sigc
+import { CLegendLayoutSigcUI } from './migration/CLegendLayoutSigc';
+// [86] c_resumen_competencia_tvpaga
+import { CResumenCompetenciaTvpagaUI } from './migration/CResumenCompetenciaTvpaga';
+// [87] c_placa_troncal_zonal
+import { CPlacaTroncalZonalUI } from './migration/CPlacaTroncalZonal';
+// [88] c_resumen_competencia_tvpaga_sigp
+import { CResumenCompetenciaTvpagaSigpUI } from './migration/CResumenCompetenciaTvpagaSigp';
+// [89] c_norte
+import { CNorteUI } from './migration/CNorte';
+// [90] layout_element
+import { LayoutElementUI } from './migration/LayoutElement';
+import { CElementosUI } from './migration/CElementos';
+import { CFilasUI } from './migration/CFilas';
+import { CCentralEUI } from './migration/CCentralE';
+import { CCfgBloqueTitdetEditableMixinUI } from './migration/CCfgBloqueTitdetEditableMixin';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -745,6 +761,66 @@ function DemoCSelloNotasSct() {
     <section style={s.section}>
       <h3 style={s.h3}>c_sello_notas_sct</h3>
       <CSelloNotasSctUI />
+    </section>
+  );
+}
+
+// ── [85] c_legend_layout_sigc (comentado — método anterior) ──────────────────
+// function DemoCLegendLayoutSigc() {
+//   return (
+//     <section style={s.section}>
+//       <h3 style={s.h3}>c_legend_layout_sigc</h3>
+//       <CLegendLayoutSigcUI />
+//     </section>
+//   );
+// }
+
+// ── [86] c_resumen_competencia_tvpaga (comentado — método anterior) ──────────
+// function DemoCResumenCompetenciaTvpaga() {
+//   return (
+//     <section style={s.section}>
+//       <h3 style={s.h3}>c_resumen_competencia_tvpaga</h3>
+//       <CResumenCompetenciaTvpagaUI />
+//     </section>
+//   );
+// }
+
+// ── [87] c_placa_troncal_zonal ───────────────────────────────────────────────
+// function DemoCPlacaTroncalZonal() {
+//   return (
+//     <section style={s.section}>
+//       <h3 style={s.h3}>c_placa_troncal_zonal</h3>
+//       <CPlacaTroncalZonalUI />
+//     </section>
+//   );
+// }
+
+// ── [88] c_resumen_competencia_tvpaga_sigp ───────────────────────────────────
+// function DemoCResumenCompetenciaTvpagaSigp() {
+//   return (
+//     <section style={s.section}>
+//       <h3 style={s.h3}>c_resumen_competencia_tvpaga_sigp</h3>
+//       <CResumenCompetenciaTvpagaSigpUI />
+//     </section>
+//   );
+// }
+
+// ── [89] c_norte ─────────────────────────────────────────────────────────────
+// function DemoCNorte() {
+//   return (
+//     <section style={s.section}>
+//       <h3 style={s.h3}>c_norte</h3>
+//       <CNorteUI />
+//     </section>
+//   );
+// }
+
+// ── [90] layout_element ───────────────────────────────────────────────────────
+function DemoLayoutElement() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>layout_element</h3>
+      <LayoutElementUI />
     </section>
   );
 }
@@ -1482,6 +1558,48 @@ const DEMO_ITEMS: DemoItem[] = [
     label: '[84] c_dto_pronostico',
     description: 'Sello layout "Resumen de materiales" (red pares cobre) — tbl_Titulo(2×2,sin bordes,borde-inf celda1,2) + tbl_pares(3×2,bordes ext+rens) + tbl_pronosticos(3×3,todos bordes). Guard lazy bTablas_creadas en drawContentOn().',
     render: () => <CDtoPronosticoUI />,
+  },
+  // ── [85] c_legend_layout_sigc ────────────────────────────────────────────────
+  {
+    id: '85-legend-layout-sigc',
+    label: '[85] c_legend_layout_sigc',
+    description: 'Componente de leyenda GIS (extends :legend_layout). dynamicEntries(): parsea descripción (antes del primer "."), añade sufijo de estado (Existente/Desmontaje/Proyectado), deduplica point styles por symbolName, filtra Nodo/Central+connection_location / tierra / Canalización+leader_ac. geometrySet(): caché lazy. inicializa(): título="Simbología", viewportContentsOnly=true.',
+    render: () => <CLegendLayoutSigcUI />,
+  },
+  // ── [86] c_resumen_competencia_tvpaga ────────────────────────────────────────
+  {
+    id: '86-resumen-competencia-tvpaga',
+    label: '[86] c_resumen_competencia_tvpaga',
+    description: 'Sello layout GIS: Resumen Competencia y TV de Paga. calcula_datos() filtra viviendas dentro del límite óptico (Turf.js booleanPointInPolygon ≡ predicate.interacts), itera inventarios y acumula 15 contadores por servicio/producto (TV_SATELITAL/DISH/CABLE, TELEFONO, INTERNET, fibra). 3 tablas apiladas: tbl_titulo(1×1,6mm)+tbl_titulo2(1×3,6mm)+tbl_contenido(15×3,91mm). Ancho total 50mm.',
+    render: () => <CResumenCompetenciaTvpagaUI />,
+  },
+  // ── [87] c_placa_troncal_zonal ───────────────────────────────────────────────
+  {
+    id: '87-placa-troncal-zonal',
+    label: '[87] c_placa_troncal_zonal',
+    description: 'Placa de identificación Troncal Zonal. 7 tablas: tbl_1(130×50mm marco), tbl_2(125×45mm interior), tbl_3(26×45mm logo), tbl_4-7 (filas datos 1×8-10 col, 7.5mm alto). Patrón label|dato: cols impares=etiqueta(sin borde izq/inf/sup), cols pares=valor. 18 atributos editables: TK/RUTA/PEP/CABLE/CAPACIDAD/CALIBRE/TIPO_CABLE/NO_P_REP + Origen(CTL/SECCIÓN/VERTICAL/STRIPS/IND) + Destino. Fill: rgb(255,204,204).',
+    render: () => <CPlacaTroncalZonalUI />,
+  },
+  // ── [88] c_resumen_competencia_tvpaga_sigp ───────────────────────────────────
+  {
+    id: '88-resumen-competencia-tvpaga-sigp',
+    label: '[88] c_resumen_competencia_tvpaga_sigp',
+    description: 'Variante SIGP del sello de competencia TV de paga. calculaDatos() extiende [86] con: slot baldio (c_distrito.numero_baldios), DatosSinUbicacion (reemplaza solicitudes/infinitum/etc.), aplicarOverrides() (valor_propiedad: si override>0 gana al calculado). Renombra lineas_competencia_cobre→opertel, fibra_telmex→lineas_ftth. Columnas [11,30,9]mm = SÍMBOLO|DESCRIPCIÓN|CANT. ALLOWED_ON_MENU=false.',
+    render: () => <CResumenCompetenciaTvpagaSigpUI />,
+  },
+  // ── [89] c_norte ─────────────────────────────────────────────────────────────
+  {
+    id: '89-norte',
+    label: '[89] c_norte',
+    description: 'Símbolo de norte GIS para planos de fibra óptica. 3 tamaños (A/B/C): construir_arco() genera puntos 1°/paso para 4 arcos de 50° (círculo punteado); construir_norte() traza la flecha + líneas horizontales en offsets relativos. draw_content_on() reposiciona a esquina sup-izq del plano (margin 400u) y rota por −view_angle del viewport. allowed_on_menu=false.',
+    render: () => <CNorteUI />,
+  },
+  // ── [90] layout_element ───────────────────────────────────────────────────────
+  {
+    id: '90-layout-element',
+    label: '[90] layout_element',
+    description: 'Clase base de todos los elementos GIS de plano. define_shared_constant 9 atributos (outline/fill/shadow/locked/elementosBdGis/lb/modificados/cedos/agregarCedos). guardar_elementos_bd_*() serializa GisRecord[] a ElementRef[] ({col→id}). obtener_elementos_bd_*() resuelve refs desde dataset. TransformaCoordenada() aplica escala solo en canvas (print). indicadores() construye c_style_y_viewport_layout: transforma coord GIS→página, calcula endpoint arriba/abajo del viewport, crea style box. BUG documentado: con_punta y usa_viewport se sobreescriben incondicionalmente al final.',
+    render: () => <DemoLayoutElement />,
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

@@ -10,422 +10,378 @@ Reglas:
 
 Aquí está el código Magik:
 
-_package sw
+_package user
 $
-layout_element.define_shared_constant( :defined_attributes,
-	rope.new_with ( layout_attribute_definition.new ( :outline_style, :line_style,
-							  :description, "Renders the outline of the element",
-							  :default_value, composite_line_style.new(line_style)),
-			
-			layout_attribute_definition.new ( :fill_style, :fill_style,
-							  :description, "When defined renders given style as background fill style",
-							  :default_value, fill_style.new_solid(colour.called(:white))),
-			
-			layout_attribute_definition.new ( :shadow_style, :fill_style,
-							  :description, "Render a bottom right shadow",
-							  :default_value, _unset ),
+def_slotted_exemplar(:c_resumen_optico,
+                      {
+			 {:oCedo,_unset,:writable},
+			 {:tabla,_unset,:writable},
+			 {:capacidad_divisor,_unset,:writable},
+			 {:cuentas_principal,_unset,:writable},
+			 {:oRenglones,1,:writable},
+			 {:oConectividad,c_servicios_conectividad.Singleton(),:writable},
+			 {:oDatos,_unset,:writable}
+                      }, :c_base_sello_fibra)
+$
+c_resumen_optico.define_shared_constant(:divisor_equivalencia,
+				  property_list.new_with(:|A|,1,:|B|,2,:|C|,3,:|D|,4,:|E|,5,:|F|,6,
+							 :|G|,7,:|H|,8,:|J|,9,:|K|,10,:|L|,11,:|M|,12,
+							 :|O|,13,:|P|,14,:|R|,15,:|S|,16),
+				  :public)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.configura_tabla()
+	_local LoColorVerde << rope.new_with(0.2,0.6,0)	
+	_local LoColorRojo  << rope.new_with(255,0,0)
+	_local LfDesplazaY
 
-			layout_attribute_definition.new ( :locked, :boolean,
-							  :description, "Object locked or not",
-							  :default_value, _false,
-							  :allowed_on_properties_page?, _false ),
-			
-			layout_attribute_definition.new( :elementos_bd_gis, :unset,
-							 :description, "Elementos Gis",
-							 :default_value, _unset  ,
-							 :allowed_on_properties_page?, _false ),
-			
-			layout_attribute_definition.new( :elementos_bd_lb, :unset,
-							 :description, "Elementos Landbase",
-							 :default_value, _unset  ,
-							 :allowed_on_properties_page?, _false ),
-			
-			layout_attribute_definition.new(:elementos_modificados,
-							      :unset,
-							      :description,
-							      "Elementos Modificados Plano",
-							      :default_value,
-							      _unset,
-							      :allowed_on_properties_page?,
-							      _false ),
-			
-			layout_attribute_definition.new(:cedos,
-							_unset ,
-							:description,
-							"Cedos del plano",
-							:default_value,
-							_unset,
-							:allowed_on_properties_page?,
-							_false ),
+	#----------------------------------------------------------
+	# Tabla Datos NCo , Dto
+	#-----------------------------------------------------------
+	LoTblTitulo_nco<<property_list.new_with_properties(:ren,{6},:col,{50,26 })
+	LoTbl<<.o_tablas.crea_tabla(1,2,:tbl_titulo_nco)
+	LoTbl.ocoordenada_origen << .o_coord_inicio
+	LoTbl.color_linea << LoColorVerde
+	_self.asigna_medidas_tabla(LoTbl, LoTblTitulo_nco)
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo_nco})
 
-			layout_attribute_definition.new ( :agregar_cedos, :boolean,
-							  :description, "Bandera que indica agregar cedos",
-							  :default_value, _true ,
-							  :allowed_on_properties_page?, _false  )
-					
-			
-	     ), :public )
-$
-layout_element.define_attributes()
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method layout_element.guardar_elementos_bd_gis(PoElementos)
-## Metodo para guardar los id de los elementos de BD en la
-## lista PoElementos, estos elementos se guardan en el atributo
-## elementos_bd_gis.
-## PoElementos : rope con elementos del dataset GIS
-## Si se desea guardar algo diferente en este atributo,
-## este metodo se puede subclasear junto con el metodo
-## obtener_elementos_bd_gis. 
 	
-_local 	l_elementos_bd << rope.new()
-    _for obj _over PoElementos.elements()
-    _loop
-	    l_collection << obj.source_collection.name
-	    l_id << obj.id
-	    l_ele << property_list.new()
-	    l_ele[l_collection] << l_id
-	    l_elementos_bd.add_last(l_ele)
-    _endloop
-    
-    _self.elementos_bd_gis << l_elementos_bd
-    
+	#----------------------------------------------------------
+	# Tabla Datos
+	#-----------------------------------------------------------
+	LoTblTitulo<<property_list.new_with_properties(:ren,{6},:col,{76})
+	LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_titulo)
+	#LoTbl.ocoordenada_origen << .o_coord_inicio
+	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)
+	LoTbl.color_linea << LoColorVerde
+	_self.asigna_medidas_tabla(LoTbl, LoTblTitulo)
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo_nco,:tbl_titulo})
+	#----------------------------------------------------------
+	# Tabla Servicios
+	#-----------------------------------------------------------
+	lodimen << _self.dimensiona_tabla()
+	LoTblContenido << property_list.new_with_properties(:ren,lodimen,#{6,6,6,6,6,6,6},
+							    :col,{8,4,4,4,4,4,4,4,4,13,8,15})
+
+	
+	LoTbl <<.o_tablas.crea_tabla(lodimen.size,12, :tbl_contenido)
+	
+	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)
+	LoTbl.color_linea << LoColorVerde
+	_self.asigna_medidas_tabla(LoTbl, LoTblContenido)
+	LfDesplazaY << LfDesplazaY+.o_tablas.longitud_total_renglones({ :tbl_contenido})
+	#----------------------------------------------------------
+	# Tabla total
+	#-----------------------------------------------------------
+	LoTblTotal<<property_list.new_with_properties(:ren,{6},:col,{76})
+	LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_total)
+	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,.o_coord_inicio.y - LfDesplazaY)	
+	LoTbl.color_linea << LoColorVerde
+	_self.asigna_medidas_tabla(LoTbl, LoTblTotal)
 _endmethod
 $
-_pragma(classify_level=restricted, usage={redefinable})
-_method layout_element.guardar_elementos_bd_landbase(PoElementos)
-## Metodo para guardar los id de los elementos de BD en la
-## lista PoElementos, estos elementos se guardan en el atributo
-## elementos_bd_gis.
-## PoElementos : rope con elementos del dataset GIS
-## Si se desea guardar algo diferente en este atributo,
-## este metodo se puede subclasear junto con el metodo
-## obtener_elementos_bd_gis. 
-	
-_local 	l_elementos_bd << rope.new()
-    _for obj _over PoElementos.elements()
-    _loop
-	    l_collection << obj.source_collection.name
-	    l_id << obj.id
-	    l_ele << property_list.new()
-	    l_ele[l_collection] << l_id
-	    l_elementos_bd.add_last(l_ele)
-    _endloop
-    
-    _self.elementos_bd_lb << l_elementos_bd
-    
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.dimensiona_tabla()
+	## 
+	## 
+	_local lo_tabla << rope.new()
+	lo_tabla.add(6)
+	_for i _over range(1,.oRenglones)
+	_loop
+		lo_tabla.add(4)
+	_endloop
+	_return lo_tabla
 _endmethod
 $
-_pragma(classify_level=restricted, usage={redefinable})
-_method layout_element.guardar_elementos_visibles(PoElementos)
-## Metodo para guardar los id de los elementos de BD en la
-## lista PoElementos, estos elementos se guardan en el atributo
-## elementos_bd_gis.
-## PoElementos : rope con elementos del dataset GIS
-## Si se desea guardar algo diferente en este atributo,
-## este metodo se puede subclasear junto con el metodo
-## obtener_elementos_bd_gis. 
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.etiqueta_celdas()
+	## 
+	##
+
+        sch  << swg_dsn_admin_engine.active_scheme
+	nodo << sch.project.user!_central.building
+	dto_titulo << "DTO: " + sch.user!_distrito_optico.user!_distrito
+	LoNombreNCO << ""
+	LoNCOsiglas << ""
 	
-_local 	l_elementos_bd << rope.new()
-    _for obj _over PoElementos.elements()
-    _loop
-	    l_collection << obj.source_collection.name
-	    l_id << obj.id
-	    l_ele << property_list.new()
-	    l_ele[l_collection] << l_id
-	    l_elementos_bd.add_last(l_ele)
-    _endloop
-    
-    _self.elementos_modificados << l_elementos_bd
-    
+	_if nodo  _isnt _unset 
+	_then
+		(LoNombreNCO,LoNCOsiglas)  <<    nodo.datos_nco
+	_endif
+
+
+	 nco_titulo << "NCO" + %space + LoNCOsiglas + %( + LoNombreNCO + %)
+	
+	_local LoColorVerde << rope.new_with(0.2,0.6,0)
+	_local LoColorRojo << rope.new_with(1,0,0)
+	_local LoColorOro << rope.new_with(0.8,0.8,0.2)
+	_local LoColorNco << rope.new_with(1,0.3,0.8)
+	_self.asigna_texto_celda(:tbl_titulo_nco,1,1,nco_titulo.uppercase,20, :centre_centre,0,LoColorNco)
+	_self.asigna_texto_celda(:tbl_titulo_nco,1,2,dto_titulo ,20, :centre_centre,0,LoColorOro)
+	_self.asigna_texto_celda(:tbl_titulo,1,1,"RESUMEN OPTICO",40, :centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,1,"TER",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,2,"1",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,3,"2",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,4,"3",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,5,"4",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,6,"5",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,7,"6",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,8,"7",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,9,"8",35,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,10,"Total de Clientes" + %newline + "a Atender",15,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,11,"No.Fibra" + %newline + "Principal",    15,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_contenido,1,12,"Capacidad de" + %newline + "Servicios en divisor" ,15,:centre_centre,0,LoColorVerde)
+	_self.asigna_texto_celda(:tbl_total,1,1,"Total de servicios Opticos a atender      ",    30, :centre_left,0,LoColorRojo)
+
+	
 _endmethod
 $
-_pragma(classify_level=restricted)
-_method layout_element.indicadores(PoAreaDibujo,PoRegistro,PyCampoGeom,RoViewport,
-					 PbTomaEncuentaVP?,PbConLinea?,PbConPunta?,
-					 PnAncho,PnAlto,PnDist_x_p,PnDist_y_p,
-					 PbLineaAbajo?,PaDiseno)
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.llena_datos_celdas()
+  ## 
+  ##
+	_local LoColorVerde << rope.new_with(0.2,0.6,0)
+	_local LoColorRojo << rope.new_with(1,0,0)	
+	_local renglon << 0
+	_local t_serv << 0
+	_local texto << ""
+	_local t_total << 0
 
-## Objetivo: Dibujar Lineas indicadores de Pozos 
-## Parametros de Entrada:
-##   PoAreaDibujo:   Area de dibujo
-##   PoRegistro:     Referencia a un registro de cualquier tabla.
-##   PycamboGeom:    Campo geometrico del registro de PoRegistro.
-##   RoViewport:     Referencia al viewport donde se hace el dibujo.
-##   PbTomaEncuentaVP?: Toma en cuenta el viewport para hacer
-##                      pliegues en la linea que apunta un objeto.
-##   PbConLinea?:    Linea que relaciona un estilo y un objeto.
-##   PbConPunta?:    Crea una punta de media fleca en un
-##                   extremo de la linea.
-##   PnAncho:        Ancho del objeto c_style_y_viewport_layout
-##   PnAlto:         Alto del objeto c_style_y_viewport_layout
-##   PnDist_x_p:     Indica la distribucion de los estilos en el eje X.
-##   PnDist_y_p:     Indica la distribucion de los estilos en el eje Y.
-##   PbLineaAbajo?:  Indica si la distribucion se hace hacia abajo.
-##   PaDiseno:       Arreglo con datos del diseno del estilo.
-## Parametros de Salida: Ninguno
-## Regresa: Ninguno.
-## Fecha de ultima modificacion: 5/Nov./2004
-## Autor de la modificacion: rbsaldan
-## Descripcion de la modificacion: Metodo nuevo
+	_self.calcula_datos_celdas()
 
-_local LoLs          ## Estilo de una linea.
-_local LoAreaEstilo  ## Area definida para un objeto c_style_y_viewport_layout
-_local LoDibujo      ## Estilo que representa un dibujo dise/ado para un objeto.
-_local LoAreaViewport## Area del viewport
-_local LoCoordPozoGis## Coordenada del pozo en el GIS.
-_local LoCoordPozoVp ## Coordenada del pozo en el viewport
-_local LoCoordCentro ## Indica la coordenada central de un area.
-_local LoCoord_p2    ## Coordenada del estilo.
+	_for iterRenglones _over .oDatos.elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_contenido,renglon+2,1,iterRenglones[:terminal].write_string,30,:centre_centre,0,LoColorVerde)
 
-        ## Se obtiene la transformacion de coordenadas del GIS a
-        ## coordenadas de pagina de Layout Designer.
-	LoTransGisVp<<RoViewport.transform
-
-	## Se obiene el area del viewport
-	LoAreaViewport<<RoViewport.bounds
-
-	## Se Obtiene la coordenada (GIS) del pozo.
-	LoCoordPozoGIS<<PoRegistro.perform(PyCampoGeom).coord
-
-	## Se transforma la coordenada del pozo a coordenadas de pagina
-	## de Layout Designer.
-	LoCoordPozoVp<<_self.TransformaCoordenada(PoAreaDibujo,LoCoordPozoGis,0.1,LoTransGisVp)
-
-	## Definir si la linea se dibuja hacia arriba o hacia abajo del viewport
-	_if PbConLinea?
-	_then
-		_if PbLineaAbajo?
-		_then
-			## Si la linea es hacia abajo.
-			LoCoord_p2<<coordinate(LoAreaViewport.xmin+PnDist_x_p,LoAreaViewport.ymin-PnDist_y_p)
-		_else
-			## Si la linea es hacia arriba.
-			LoCoord_p2<<coordinate(LoAreaViewport.xmin+PnDist_x_p,LoAreaViewport.ymax+PnDist_y_p)
-		_endif
-	_else
-		## si no se dibuja  la linea se asigna la misma coordenada del pozo.
-		LoCoord_p2<<LoCoordPozoVp
-	_endif
-	
-	## Crear un area para un estilo dise/ando
-	LoAreaEstilo<<bounding_box.new(0,0,PnAncho,PnAlto)
-	## Modificar el centro del area. a la coordenada donde deber ser colocado el estilo
-	LoAreaEstilo.centre<<LoCoord_p2
-	## Crear una instacia de un estilo y agregarlo a una pagina de Layout Designer
-	LoDibujo<<c_style_y_viewport_layout.new_with(:bounds,LoAreaEstilo)
-	LoDibujo.outline_style<<_unset
-	LoDibujo.fill_style<<_unset
-	_if PbTomaEncuentaVP?
-	_then
-		LoDibujo.usa_viewport<<"Si"
-	_else
-		LoDibujo.usa_viewport<<"No"
-	_endif
-	_if PbConLinea?
-	_then
-		LoDibujo.con_linea<<"Si"
-	_else
-		LoDibujo.con_linea<<"No"
-	_endif
-	_if PbConPunta?
-	_then
-		LoDibujo.con_punta<<"Si"
-	_else
-		LoDibujo.con_punta<<"No"
-	_endif
-	_if LoCoord_p2.x>=LoCoordPozoVp.x
-	_then
-		LoDibujo.derecho<<"Si"
-	_else
-		LoDibujo.derecho<<"No"
-	_endif
-	LoDibujo.con_punta<<"No"
-	LoDibujo.usa_viewport<<"Si"
-
-	
-#	LoDibujo.crea_figura(PaDiseno[1],
-#			     PaDiseno[2].as_symbol(),
-#			     PaDiseno[3],PaDiseno[4],PaDiseno[5],PaDiseno[6], PaDiseno[7],PaDiseno[8])
-	_if PaDiseno.size=3
-	_then
-		LoDibujo.crea_figura(PaDiseno[1],
-				     PaDiseno[2].as_symbol(),
-				     PaDiseno[3])
-	_elif PaDiseno.size=4
-	_then
-		LoDibujo.crea_figura(PaDiseno[1],
-				     PaDiseno[2].as_symbol(),
-				     PaDiseno[3],PaDiseno[4])
-	_elif PaDiseno.size=5
-	_then
-		LoDibujo.crea_figura(PaDiseno[1],
-				     PaDiseno[2].as_symbol(),
-				     PaDiseno[3],PaDiseno[4],PaDiseno[5])
-	_elif PaDiseno.size=6
-	_then
-		LoDibujo.crea_figura(PaDiseno[1],
-				     PaDiseno[2].as_symbol(),
-				     PaDiseno[3],PaDiseno[4],PaDiseno[5],PaDiseno[6])
-	_elif PaDiseno.size=7
-	_then
-		LoDibujo.crea_figura(PaDiseno[1],
-				     PaDiseno[2].as_symbol(),
-				     PaDiseno[3],PaDiseno[4],PaDiseno[5],PaDiseno[6],PaDiseno[7])
-	_elif PaDiseno.size=8
-	_then
-		LoDibujo.crea_figura(PaDiseno[1],
-				     PaDiseno[2].as_symbol(),
-				     PaDiseno[3],PaDiseno[4],PaDiseno[5],PaDiseno[6],PaDiseno[7],PaDiseno[8])
+		_for itColumna _over range(1,8)
+		_loop
+			_if iterRenglones[(itColumna.write_string + "_edo_constr").as_symbol()] = "E"
+			_then
+				
+				_self.asigna_texto_celda(:tbl_contenido,renglon+2,itColumna+1,
+							 iterRenglones[(itColumna.write_string).as_symbol()].write_string,
+							 30,:centre_centre,0,LoColorVerde)
+			_else
+				_self.asigna_texto_celda(:tbl_contenido,renglon+2,itColumna+1,
+							 iterRenglones[(itColumna.write_string).as_symbol()].write_string,
+							 30,:centre_centre,0,LoColorRojo)
+			_endif
+			t_serv +<< iterRenglones[(itColumna.write_string).as_symbol()].as_number().default(0)
+		_endloop
 		
-	_endif
-	LoDibujo.LoObjRel<<PoRegistro
-	LoDibujo.nIdObjRel<<PoRegistro.id
-	LoDibujo.LyCampoGeoObjRel<<PyCampoGeom
-	LoDibujo.oVp<<RoViewport
-	_self.layout_document.current_page.add_element(LoDibujo)
+		_self.asigna_texto_celda(:tbl_contenido,renglon+2,10,
+					 iterRenglones[:serv].write_string,30,:centre_centre,0,LoColorRojo)
+		_self.asigna_texto_celda(:tbl_contenido,renglon+2,11,
+					 iterRenglones[:fib].write_string,28,:centre_centre,0,LoColorRojo)
+		_self.asigna_texto_celda(:tbl_contenido,renglon+2,12,
+					 iterRenglones[:tot].write_string,30,:centre_centre,0,LoColorRojo)
+
+		t_total +<< iterRenglones[:tot].as_number().default(0)
+
+		renglon +<< 1
+	_endloop
+
+	#texto << "TOTAL SERVICIOS OPTICOS       " + t_serv.write_string + "                           " + t_total.write_string
+	texto << "Total de servicios Opticos a atender " + t_serv.write_string 
+	_self.asigna_texto_celda(:tbl_total,1,1,texto,30, :centre_left,0,LoColorRojo)
+	
+	
 _endmethod
 $
-_pragma(classify_level=restricted, usage={redefinable})
-_method layout_element.obtener_elementos_bd_gis()
-## Metodo que obtiene los elementos del dataset GIS, los id de
-## estos elementos deben estar guardados en el atributo
-## elementos_bd_gis, regresa un rope.
-## Si se desea recuperar algo diferente en este atributo,
-## este metodo se puede subclasear junto con el metodo
-## guardar_elementos_bd_gis. 
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_optico.calcula_datos_celdas()
+	## 
+	##1
 
-_local l_dataset << mit_manager.modelit_dataset
-_local l_elementos_bd << rope.new()
-
-    _if _self.elementos_bd_gis _isnt _unset _andif _self.elementos_bd_gis.size > 0
-    _then
-	    _for an_obj _over _self.elementos_bd_gis.elements()
-	    _loop
-		    _for a_key,ele _over an_obj.keys_and_elements()
-		    _loop
-			    _if l_dataset.collection(a_key) _isnt _unset _andif
-				(l_dato <<  l_dataset.collection(a_key).at(ele)) _isnt _unset 
-			    _then
-		    		    l_elementos_bd.add_last(l_dato)
-			    _endif
-		    _endloop
-	    _endloop		
-    _endif
-    
-    _return l_elementos_bd
-    
-_endmethod
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method layout_element.obtener_elementos_bd_landbase()
-## Metodo que obtiene los elementos del dataset LANDBASE, los id de
-## estos elementos deben estar guardados en el atributo
-## elementos_bd_gis, regresa un rope.
-## Si se desea recuperar algo diferente en este atributo,
-## este metodo se puede subclasear junto con el metodo
-## guardar_elementos_bd_gis. 
-
-_local l_dataset << gis_program_manager.cached_dataset(:landbase)
-_local l_elementos_bd << rope.new()
-
-    _if _self.elementos_bd_lb _isnt _unset _andif _self.elementos_bd_lb.size > 0
-    _then
-	    _for an_obj _over _self.elementos_bd_lb.elements()
-	    _loop
-		    _for a_key,ele _over an_obj.keys_and_elements()
-		    _loop
-			    _if (l_dato << l_dataset.collection(a_key).at(ele)) _isnt _unset 
-			    _then
-		    		    l_elementos_bd.add_last(l_dato)
-			    _endif
-		    _endloop
-	    _endloop		
-    _endif
-    
-    _return l_elementos_bd
-    
-_endmethod
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method layout_element.obtener_elementos_visibles()
-## Metodo que obtiene los elementos del dataset GIS, los id de
-## estos elementos deben estar guardados en el atributo
-## elementos_bd_gis, regresa un rope.
-## Si se desea recuperar algo diferente en este atributo,
-## este metodo se puede subclasear junto con el metodo
-## guardar_elementos_bd_gis. 
-
-_local l_dataset << mit_manager.modelit_dataset
-_local l_elementos_bd << rope.new()
-
-    _if _self.elementos_modificados _isnt _unset _andif _self.elementos_modificados.size > 0
-    _then
-	    _for an_obj _over _self.elementos_modificados.elements()
-	    _loop
-		    _for a_key,ele _over an_obj.keys_and_elements()
-		    _loop
-			    _if (l_dato << l_dataset.collection(a_key).at(ele)) _isnt _unset 
-			    _then
-		    		    l_elementos_bd.add_last(l_dato)
-			    _endif
-		    _endloop
-	    _endloop		
-    _endif
-    
-    _return l_elementos_bd
-    
-_endmethod
-$
-_pragma(classify_level=restricted)
-_method layout_element.TransformaCoordenada(PoAreaDibujo,PoCoordenada,PfEScala,PoSegTransformacion)
-## Objetivo: Transformar la coordenada de acuerdo el tipo de
-##           canvas y al parametro para la segunda transformacion.
-## Parametros de Entrada:
-##     PoAreadibujo:    Canvas donde se dibuja el plano.
-##     PoCoordenada:    Coordenada que se dibujara dentro del canvas.
-##     PfEscala:        Escala de la transformacion la primer
-##                      tranformacion a la coordenada.
-##     PoSegTransformacion: Tranformacion que debe ser aplicada
-##                          a la coordenada.
-## Parametros de Salida: Ninguno
-## Regresa: LoCoordenada. Ya sea con el mismo valor o transformada
-## Fecha de ultima modificacion: 18/Nov./2004
-## Autor de la modificacion: rbsaldan
-## Descripcion de la modificacion: Metodo nuevo.
-
-_local LoCoord  ##Coordenada transformada segun el tipo de canvas.
-
-         ## Esta transformacion se aplica de acuerdo al tipo de
-         ## canvas. Cuando se envia a plotter o se imprime en algun
-         ## archivo (svg,jpg,acrobat) es necesario esta tranformacion.
-	_if PoAreaDibujo.is_kind_of?(canvas)
+	
+	_local LoCont << 1
+	.odatos << rope.new() 
+	
+	_if _self.elementos_bd_gis _isnt _unset _andif
+	    _self.elementos_bd_gis.size > 0
 	_then
-		LoCoord<<PoCoordenada.transformed(transform.new().scalexy(PfEScala,PfEScala))
-	_else
-		LoCoord<<PoCoordenada
-	_endif
-
-	_if PoSegTransformacion _isnt _unset
-	_then
-		LoCoord<<LoCoord.transformed(PoSegTransformacion)
+		.oCedo << _self.obtener_elementos_bd_gis()[1]
 	_endif
 	
+	##   LoTerminales <<dto.obten_terminales_fo(.ocedo.id)   
+	
+	
+	LoCriterio << _proc(elemento1,elemento2)
+			      _if elemento1.name > elemento2.name
+			      _then
+				      _return _false
+			      _endif
+			      _return _true
+		 _endproc
+	
+	_Local LoNumDiv << 0
+	_local loContadorCables << 1
+	
+	_for iterDivisor _over .ocedo.obtener_divisores().as_sorted_collection(LoCriterio).elements()
+	_loop   
+		LoNumDiv << LoNumDiv + 1
+		LoRenglon << property_list.new_with(:terminal,"FO" + iterDivisor.name,
+					       :|1|,"R",:|1_edo_constr|,"P",
+					       :|2|,"R",:|2_edo_constr|,"P",
+					       :|3|,"R",:|3_edo_constr|,"P",
+					       :|4|,"R",:|4_edo_constr|,"P",
+					       :|5|,"R",:|5_edo_constr|,"P",
+					       :|6|,"R",:|6_edo_constr|,"P",
+					       :|7|,"R",:|7_edo_constr|,"P",
+					       :|8|,"R",:|8_edo_constr|,"P",
+					       :serv,0,
+					       :fib,0,
+					       :tot,iterDivisor.output_ports().size * 8)
+		
 
-	## Indica si la coordenada LoCoord esta dentro del "extent" de
-	## la pagina.
-#	_if _self.layout_page.bounds.surrounds_coord??(LoCoord).not 
-#	_then
-#		#write("Hay puntos fuera de los limites de la pagina.")
-#	_endif
-	>>LoCoord
+		   # Obtiene puerto de entrada de cada divisor
+		   LoPuertoEntrada << IterDivisor.input_ports()[1]		   
+		   # Obtiene una lista de lineas conectadas al puerto de entrada
+		   LoFibraEntrada << LoPuertoEntrada.location.connected_chains()
+
+		   ##validar LoFibraEntrada.
+		   
+		   # Obtiene la fibra conectada al puerto de entrada
+		   LoFibras << LoFibraEntrada.an_element()
+
+		   _if LoFibras _isnt _unset 
+		   _then
+
+
+		   # Obtiene la lista de pines conectados a la fibra
+		   LoPines << LoFibras.connected_pins_of_types({:mit_fiber_pin})					   
+		   # Obtiene el Pin Conectado al divisor
+		   LoPin << LoPines.an_element()			
+		   # Obtiene todos los pines conectados abajo del Pin de entrada
+		   LoPinesAbajo << .oConectividad.obten_pines_conectividad_abajo(LoPin)
+		   
+		   # Obtiene todas las terminales de fibra conectadas a los pines
+		   # y las agrega a una lista general de terminales
+		   LoTerminales  << .oConectividad.obten_terminales_de_pines(LoPinesAbajo)
+		
+                   _for itert _over Loterminales.fast_elements()
+		   _loop
+			   LoCarga << 0
+			   LoCargaReal  << 0
+			   
+			   
+			           identifica_ter << itert.user!_nombre.write_string.substitute_string("FO","")
+				   
+				   _if identifica_ter.size > 0 _andif itert.user!_conexion = "SENCILLA"
+				   _then
+					   clave << identifica_ter
+					   
+				   _elif identifica_ter.size > 0 _andif itert.user!_conexion = "DOBLE" 
+				   _then
+					   clave << identifica_ter.split_by(".").an_element()
+				   _endif 
+				   
+				   numero_en_clave << clave.numbers_and_strings[2].write_string
+				   letra_en_clave  << clave.numbers_and_strings[1].write_string
+				   
+				   _if itert.construction_status = "EXISTENTE"
+				   _then
+					   LoRenglon[(numero_en_clave.write_string + "_edo_constr" ).as_symbol()] << "E"
+				   _endif
+
+				   #write("@valido", iterdivisor.name = letra_en_clave)
+				   
+				   _if itert.limite_fo _isnt _unset  _andif
+				       itert.limite_fo.user!_carga_corto_pla_cal _isnt _unset _andif
+				       itert.limite_fo.user!_carga_corto_pla_cal > 0 _andif
+				       iterdivisor.name = letra_en_clave
+				   _then					   
+					   # des_daniel Octubre 2022
+					   # Para Obtener la carga de una terminal se divide la carga
+					   # calculada del limite de terminal entre el numero de
+					   # terminales contenidas en el limite
+					   
+					   limTer << itert.limite_fo
+					   LoCarga << limTer.user!_carga_corto_pla_cal.default(0)
+					   LoCarga << loCarga _div limTer.terminal_distribucions.size
+					   
+				   
+					   _if itert.user!_conexion = "DOBLE"
+					   _then
+						   ## Obtener primera Terminal
+						   LoPriT << itert.user!_nombre.slice(4,4)
+						   LuUbi  << numero_en_clave.write_string
+						   
+						   _if LoPriT = LuUbi
+						   _then
+							   ## Es la primera de las terminales
+							   LoRenglon[numero_en_clave.as_symbol()] << "8"
+							   LoCargaReal << LoCargaReal + 8
+						   _else
+							   LoRenglon[numero_en_clave.as_symbol()] << (LoCarga - 8).write_string
+							   LoCargaReal << LoCargaReal + (LoCarga - 8)
+						   _endif
+					   _else
+
+						  
+						   LoRenglon[numero_en_clave.as_symbol()] << LoCargaReal.write_string
+						   LoCargaReal << LoCargaReal + LoCarga 
+						   
+					   _endif
+					   
+		
+					   LoRenglon[:serv] +<< LoCargaReal.default(0)
+					   LoRenglon[numero_en_clave.as_symbol()] << LoCargaReal.write_string	   
+				   _endif
+
+
+				   #show(iterdivisor.name,:indice,numero_en_clave,letra_en_clave, identifica_ter,:acumulado, LoRenglon[:serv] ,:carga, LoCarga,:real, LoCargaReal  )
+				   
+				   
+				   
+				   
+				   
+		   _endloop
+		   
+		   ##obtiene lacuenta del cable principal
+		   
+		   LoPinPrin << .oConectividad.obten_objeto_extremo(IterDivisor.input_ports()[1])
+		   
+		   _if LoPinPrin _isnt _unset 
+		   _then
+			   (LoCabPrin,LoAtrPrin) << LoPinPrin.get_cab_and_fiber_attribute
+			   cuenta_principal << LoAtrPrin.user!_cuenta
+			   LoRenglon[:fib] <<  cuenta_principal
+		   _endif	   
+
+
+		   .oDatos.add_last(LoRenglon)
+		   
+		   LoCont +<< 1	
+			   
+		   _endif
+
+		   
+	_endloop
+	
 _endmethod
 $
 
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dto_pronostico.Agrega_LYM(RoLym)
+
+## Objetivo: Permite agregar todos los elementos Layout a la pagina
+## Parámetros de entrada:  
+##    :layout_manager - RoLym : Referencia al LayoutManager
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+
+_endmethod
 
 
 
-Ubicación: Clase layout_element | Fichero: layout_element.magik
+Ubicación: Clase c_dto_pronostico | Fichero: c_dto_pronostico.magik
 
 ---
 

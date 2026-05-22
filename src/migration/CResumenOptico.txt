@@ -1,0 +1,137 @@
+================================================================================
+COMPONENTE: CResumenOptico.tsx
+Clase Magik original: c_resumen_optico
+Fichero Magik original: c_resumen_optico.magik
+Autor original: Sigma Tao / Traza: Planos, fibra óptica secundarios
+Número de migración: [91]
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Sello "RESUMEN ÓPTICO" para planos de CEDO (Centro de Distribución Óptica).
+En Magik hereda de :c_base_sello_fibra.
+
+Estructura de cuatro sub-tablas apiladas verticalmente:
+  tbl_titulo_nco  — fila 1×2: NCO (siglas + nombre) | Distrito
+  tbl_titulo      — fila 1×1: texto "RESUMEN OPTICO" (fuente grande)
+  tbl_contenido   — cabecera + N filas de datos, una por divisor ordenado
+  tbl_total       — fila 1×1: "Total de servicios Opticos a atender N"
+
+En TypeScript se modela como componente React funcional con:
+  - DIVISOR_EQUIVALENCIA: constante compartida (shared_constant) exportada
+  - calculaDatosCeldas(): lógica de conectividad CEDO→divisores→terminales
+  - CeldaDato: subcomponente para colorear celdas (verde/rojo según estado)
+  - CResumenOpticoUI: componente principal con carga async y render de tablas
+
+
+CONSTANTE COMPARTIDA — DIVISOR_EQUIVALENCIA
+-------------------------------------------
+Magik: define_shared_constant(:divisor_equivalencia,
+         property_list.new_with(:|A|,1, :|B|,2, ... :|S|,16))
+
+Mapea letras A-S (sin I, N, Q) a índices 1-16:
+  A→1, B→2, C→3, D→4, E→5, F→6, G→7, H→8,
+  J→9, K→10, L→11, M→12, O→13, P→14, R→15, S→16
+
+En TypeScript: exportada como DIVISOR_EQUIVALENCIA (Record<string,number>).
+Nota: las letras omitidas I, N, Q no aparecen como nombres de divisor.
+
+
+MÉTODOS MIGRADOS Y SU EQUIVALENCIA
+------------------------------------
+
+1. inicializa() / configura_tabla()
+   Magik: crea 4 tablas con dimensiones y posiciones relativas al origen.
+   TypeScript: no hay instanciación con coordenadas; las tablas se renderizan
+   como HTML <table> apiladas verticalmente con width:100% y borderCollapse.
+
+2. etiqueta_celdas()
+   Magik: asigna_texto_celda para cabeceras fijas de tbl_contenido fila 1:
+     col 1: "TER"
+     col 2-9: "1".."8"  (número de puerto del divisor)
+     col 10: "Total de Clientes\na Atender"
+     col 11: "No.Fibra\nPrincipal"
+     col 12: "Capacidad de\nServicios en divisor"
+   TypeScript: renderizado directo en <thead> de tbl_contenido.
+
+3. calcula_datos_celdas()
+   Lógica principal. Recorre:
+     .oCedo → obtener_divisores().as_sorted_collection → elementos
+     Por divisor:
+       fila[:terminal] = "FO" + divisor.name
+       fila[:1..8] = "R" (inicial — "sin dato")
+       fila[:N_edo_constr:1..8] = 'P' (inicial — PROYECTO)
+       output_ports.size * 8 → capacidad total del divisor (fila[:tot])
+     Por terminal del divisor:
+       identifica = terminal.user!_nombre.substitute_string("FO","")
+       DOBLE: clave = identifica.split(".").first; primera→"8", segunda→(carga-8)
+       SENCILLA: cargaReal += carga; fila[numeroEnClave] = cargaReal
+       si construction_status = "EXISTENTE" → fila[:N_edo_constr:n] = 'E'
+       carga = limite_fo.carga_corto_pla_cal / terminal_distribucions.size
+   Acumula:
+     fila[:serv] += cargaReal  (total clientes de este divisor)
+   TypeScript: función async calculaDatosCeldas(cedo) → Promise<FilaDatos[]>
+
+4. llena_datos_celdas()
+   Magik: itera .oDatos y asigna_texto_celda con LoColorVerde o LoColorRojo.
+   TypeScript:
+     - Verde  (#1a8c1a): edos[n] === 'E' (EXISTENTE)
+     - Rojo   (#cc0000): edos[n] === 'P' (PROYECTO) con valor ≠ "R"
+     - Gris   (#666): valor === "R" (sin dato aún)
+   Implementado en subcomponente CeldaDato.
+
+5. dimensiona_tabla()
+   Magik: [6] + [4] * oRenglones — define altura de cada columna.
+   TypeScript: devuelve el número de divisores; la tabla HTML se adapta.
+
+6. llena_datos_titulo()
+   Magik: asigna_texto_celda(:tbl_titulo_nco,...) para NCO y Distrito.
+   TypeScript: renderizado con MOCK_NCO.siglas / MOCK_NCO.nombre / MOCK_DIST.
+
+7. llena_datos_total()
+   Magik: texto "Total de servicios Opticos a atender " + tServ.write_string
+   TypeScript: tServ acumulado vía Array.reduce sobre filas → mostrado en tbl_total.
+
+
+COLORES
+-------
+Magik                         TypeScript
+LoColorVerde rgb(0,0.55,0)  → #1a8c1a
+LoColorRojo  rgb(0.8,0,0)   → #cc0000
+LoColorOro   rgb(0.72,0.64,0)→ #b8a200
+LoColorNco   rgb(0.8,0.27,0.67)→ #cc44aa
+Fondo cabeceras               → #e8f5e9 (verde muy claro)
+
+
+DATOS MOCK
+----------
+MOCK_CEDO: 3 divisores (A, B, C) con terminales FOA1-FOA8, FOB1-FOB6, FOC1-FOC3.
+MOCK_NCO:  siglas:'NCO-01', nombre:'NODO CENTRAL OPTICO NORTE'
+MOCK_DIST: 'DISTRITO NORTE'
+
+
+LO QUE NO SE HA MIGRADO
+------------------------
+- Acceso real a la base de datos GIS (SW GIS API): sustituido por mock.
+- Recorrido real CEDO → puerto_entrada → fibras → pines → terminales:
+  en el Magik original se navega la topología de red fibra a fibra;
+  en TypeScript las terminales se asocian directamente al divisor.
+- Cálculo de :fib (No.Fibra Principal) desde la topología real:
+  simplificado como div.cuenta_principal en el mock.
+- configura_tabla con coordenadas y mm reales: no aplica en web.
+- Soporte para CEDO con más de 16 divisores (límite de DIVISOR_EQUIVALENCIA).
+
+
+DEPENDENCIAS EXTERNAS
+---------------------
+- React (useState, useEffect)
+- Sin Turf.js: no hay cálculos espaciales.
+- Sin OpenLayers: no hay renderizado en mapa.
+- DIVISOR_EQUIVALENCIA exportada: puede ser importada por otros componentes.
+
+
+INTEGRACIÓN EN App.tsx
+-----------------------
+Import:  import { CResumenOpticoUI } from './migration/CResumenOptico';
+Entry:   DEMO_ITEMS id='91-resumen-optico', render: () => <CResumenOpticoUI />
+================================================================================

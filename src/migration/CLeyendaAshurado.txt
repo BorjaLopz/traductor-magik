@@ -1,0 +1,181 @@
+================================================================================
+COMPONENTE: CLeyendaAshurado.tsx
+Clase Magik original: c_leyenda_ashurado
+Fichero Magik:        c_leyenda_ashurado.magik
+Autor original:       jtlelo — GE Network Solutions — 05/12/2023
+Hereda de:            layout_element, viewport_layout_mixin
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Elemento de Layout Designer que renderiza una leyenda de patrones de
+ashurado (hatching). Dibuja 3 cuadros idénticos en tamaño, cada uno
+con un patrón diferente de líneas diagonales:
+
+  cont=1 → Reticulado: diagonal derecha (/) + diagonal izquierda (\)
+  cont=2 → Diagonal derecha solamente (/)
+  cont=3 → Diagonal izquierda solamente (\)
+
+Colores: diagonal derecha = rojo, diagonal izquierda = verde, marco = negro.
+Espaciado de líneas: step = size/6 (25 unidades cuando size=150 como en original).
+
+
+MÉTODOS MIGRADOS
+----------------
+  Magik                             TypeScript
+  ──────────────────────────────────────────────────────────────────────────
+  defined_attributes (:Tamano)      → type TamanoNorte + const TAMANO_PX
+  tamano_norte()                    → TamanoNorte = 'A' | 'B' | 'C'
+  construir_arco(radio,centro,…)    → export function construirArco()
+  construir_leyenda(window)         → export function construirLeyenda()
+  draw_content_on(window)           → useEffect → construirLeyenda(ctx, …)
+  initialise_for_page(page)         → estado inicial (outline=none, oFlag=false)
+
+
+FUNCIONAMIENTO REAL
+-------------------
+1. construirArco(radio, centro, angIni, angFin):
+   Genera puntos de arco circular de angIni a angFin grados.
+   Equivale a sector.new() + coordinate(cx+R*cos, cy+R*sin).
+   Definido en la clase Magik pero no invocado en construir_leyenda.
+
+2. construirLeyenda(ctx, size, cw, ch):
+   Itera cont = 1, 2, 3. Por cada iteración:
+     a. Borra el área de la caja con fondo blanco.
+     b. Si cont=1 o cont=2 → drawSlashLines() (rojo)
+     c. Si cont=1 o cont=3 → drawBackslashLines() (verde)
+     d. drawFrame() (marco negro, siempre encima)
+   Equivale a la lógica del _for cont _over 1.upto(3) _loop con sus
+   dos bloques _if.
+
+3. drawSlashLines(ctx, sx, sy, size):
+   Traza 11 líneas paralelas en sentido / (45° visual).
+   En Magik (y↑): van de (cx,cy) a (cx+s,cy+s) = abajo-izq a arriba-der.
+   En Canvas (y↓): van de (sx,sy+s) a (sx+s,sy) = abajo-izq a arriba-der.
+
+   Desde borde inferior (6 líneas, n=0..size-step):
+     moveTo(sx+n, sy+size) → lineTo(sx+size, sy+n)
+
+   Desde borde izquierdo (5 líneas, n=step..size-step):
+     moveTo(sx, sy+size-n) → lineTo(sx+size-n, sy)
+
+4. drawBackslashLines(ctx, sx, sy, size):
+   Traza 11 líneas paralelas en sentido \ (45° visual).
+   En Magik (y↑): van de (cx,cy+s) a (cx+s,cy) = arriba-izq a abajo-der.
+   En Canvas (y↓): van de (sx,sy) a (sx+s,sy+s) = arriba-izq a abajo-der.
+
+   Desde borde izquierdo (6 líneas, n=0..size-step):
+     moveTo(sx, sy+n) → lineTo(sx+size-n, sy+size)
+
+   Desde borde superior (5 líneas, n=step..size-step):
+     moveTo(sx+n, sy) → lineTo(sx+size, sy+size-n)
+
+5. Atributo Tamano (A/B/C):
+   Controla el tamaño de los cuadros en la UI React:
+   A=60px, B=90px, C=120px. En Magik representa el tamaño del "Norte"
+   (North arrow) en la leyenda. El Magik no usaba el atributo directamente
+   en construir_leyenda; aquí se usa para escalar el canvas.
+
+
+MAPEO DE COORDENADAS MAGIK → CANVAS
+--------------------------------------
+  Magik usa y↑ (coordenadas geográficas):
+    Esquina inferior-izquierda del cuadro = (cx, cy)
+    Esquina superior-derecha              = (cx+size, cy+size)
+
+  Canvas usa y↓ (pantalla):
+    Esquina superior-izquierda = (sx, sy)
+    Esquina inferior-derecha   = (sx+size, sy+size)
+
+  Transformación: canvas_y = sy + (size - magik_y_desde_cy)
+
+  Verificación diagonal derecha principal:
+    Magik: (cx,cy)→(cx+s,cy+s) [arriba-derecha en papel]
+    Canvas: (sx,sy+s)→(sx+s,sy) [arriba-derecha en pantalla] = / ✓
+
+  Verificación diagonal izquierda principal:
+    Magik: (cx,cy+s)→(cx+s,cy) [abajo-derecha en papel]
+    Canvas: (sx,sy)→(sx+s,sy+s) [abajo-derecha en pantalla] = \ ✓
+
+
+EQUIVALENCIAS MAGIK → TYPESCRIPT
+----------------------------------
+  _for cont _over 1.upto(3) _loop
+    → for (let cont = 1; cont <= 3; cont++)
+
+  sector_rope.new() + sector.new() + .add(coordinate)
+    → ctx.beginPath() + ctx.moveTo() + ctx.lineTo()
+
+  PoSecRop.draw_on(window, line_style.new(colour.called(:red), 2))
+    → ctx.strokeStyle = 'red'; ctx.lineWidth = …; ctx.stroke()
+
+  line_style.new(colour.called(:black), 3)
+    → ctx.strokeStyle = 'black'; ctx.lineWidth = max(1, size/60)
+
+  _self.bounds << bounding_box.new(8000, 2000-cordy, 8000, 2000-cordy)
+  _self.bounds.centre.x / .y
+    → sx, sy (calculados en el loop, no absolutos del sheet)
+
+  Lcollsector.last_coord + coordinate(dx, dy)
+    → punto de inicio + delta → lineTo(x1+dx, y1+dy)
+
+  define_shared_constant(:activate_properties_dialog_on_insert?, _false)
+    → comportamiento por defecto del componente (no modal al insertar)
+
+  define_shared_constant(:allowed_on_menu?, _false)
+    → elemento no accesible desde menú (solo programáticamente)
+
+  :limites slot (_unset)
+    → bounds implícitos del canvas
+
+  :oFlag slot (_false)
+    → initialise_for_page: flag reseteado a false (no persistido en UI)
+
+
+ATRIBUTOS
+---------
+  :Tamano   — string (enum: A/B/C) — Tamaño del "Norte" en la leyenda
+  :limites  — bounding box del elemento (slot Magik, no expuesto en UI)
+  :oFlag    — flag interno, privado, default=false
+
+
+UI REACT (CLeyendaAshuradoUI)
+-------------------------------
+  Controles:
+    - Radio buttons: A (60px) / B (90px) / C (120px)
+      Equivalen al atributo :Tamano con enum_method :tamano_norte
+
+  Canvas (cw × ch, calculados según size):
+    - Fondo blanco
+    - 3 cuadros con patrones de ashurado
+    - Etiquetas "cont=1/2/3" debajo de cada cuadro
+
+  Panel de colores (leyenda visual):
+    - /  rojo   → diagonal derecha (cont 1,2)
+    - \  verde  → diagonal izquierda (cont 1,3)
+    - ■  negro  → marco exterior
+
+  Tabla desplegable:
+    - Muestra qué diagonales activa cada valor de cont
+
+
+DEPENDENCIAS
+------------
+  React (useRef, useEffect, useState)
+  HTML5 Canvas API (beginPath, moveTo, lineTo, stroke, strokeRect)
+  Sin OpenLayers ni Turf.js (componente de layout/print puro)
+
+
+ARCHIVOS
+--------
+  CLeyendaAshurado.tsx  — funciones de trazado + componente React
+  CLeyendaAshurado.txt  — este fichero de documentación
+
+
+INVOCACIÓN EN App.tsx (entrada [88])
+--------------------------------------
+  <CLeyendaAshuradoUI />
+
+  Invocación directa comentada dentro del render() de DEMO_ITEMS[88]
+  para referencia histórica.
+================================================================================

@@ -1,0 +1,111 @@
+================================================================================
+COMPONENTE: CPlacaSecundarios.tsx
+Clase Magik original: c_placa_secundarios
+Fichero Magik original: c_placa_secundarios.magik
+Autor original: lgranados — Sigma Tao / Traza: Planos, 13-Diciembre-2010
+Número de migración: [90]
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Placa de identificación para planos de red de fibra óptica de secundarios.
+En Magik hereda de :c_base_sello_fibra. No añade slots propios.
+Estructura de layout idéntica a c_placa_principales (mismas 6 tablas, mismas
+dimensiones y posiciones). Las diferencias son solo en etiquetas y atributos.
+
+En TypeScript se modela como componente React funcional con:
+  - Formulario de los 8 atributos capturables (defined_attributes)
+  - Vista previa del layout con 6 tablas posicionadas (configura_tabla)
+  - Actualización en tiempo real de la placa al editar atributos (llena_datos_dinamicos)
+
+
+DIFERENCIAS RESPECTO A c_placa_principales
+-------------------------------------------
+  etiqueta_celdas:
+    tbl_4 col3 (1-based): "DISTRITO"   (antes: "CAPACIDAD")
+    tbl_5 col1: "CALIBRE"              (igual)
+    tbl_5 col3: "CALIBRE"              (antes: "CUENTA" → ahora segundo CALIBRE)
+    tbl_5 col5: "CUENTA"               (antes: "INDICADOR")
+
+  defined_attributes / atributos:
+    :sgl_ctl    → mismo (desc: "SGL-CTL" en vez de "SIGLAS CENTRAL")
+    :distrito   → NUEVO (reemplaza :capacidad)
+    :cable      → mismo
+    :calibre1   → renombrado desde :calibre
+    :calibre2   → NUEVO (reemplaza :indicador — segundo calibre)
+    :cuenta     → mismo
+    :fecha      → mismo
+    :constructor→ mismo
+
+  llena_datos_dinamicos — tamaño de fuente:
+    22pt para datos (c_placa_principales usa 28pt)
+
+  configura_tabla:
+    100% idéntico a c_placa_principales — mismas 6 tablas, dimensiones y posiciones.
+
+
+MÉTODOS MIGRADOS Y SU EQUIVALENCIA
+------------------------------------
+
+1. configura_tabla()
+   Idéntico a c_placa_principales. Ver documentación CPlacaPrincipales.txt.
+   Resumen:
+     tbl_1: 1×1, 130×50mm, origen (0,0)
+     tbl_2: 1×1, 120×40mm, offset (+50, -50)
+     tbl_3: 1×1, 26×40mm,  offset (+50, -50) — área logo
+     tbl_4: 1×6, 7.5mm × 6×15mm, offset (+330, -110) — bordes ocultos cols 1,3,5
+     tbl_5: 1×6, 7.5mm × 6×15mm, offset (+330, -215) — bordes ocultos cols 1,3,5
+     tbl_6: 1×4, 7.5mm × 4×22.5mm, offset (+330, -310) — bordes ocultos cols 1,3
+   Bordes ocultos: bBorde_Izq/Inf/Sup? = false → visual label|valor.
+   set_fill_colour(rgb(0.82, 0.91, 1)) → rgb(209, 232, 255).
+
+2. etiqueta_celdas()
+   Magik: asigna_texto_celda + asigna_simbolo_celda
+   TypeScript: objeto ETIQUETAS con claves tablaNombre→fi→ci.
+     tbl_4: {0: {"SIGLAS\nCENTRAL", "DISTRITO", "CABLE"}} (cols 0,2,4 en 0-based)
+     tbl_5: {0: {"CALIBRE", "CALIBRE", "CUENTA"}}         (cols 0,2,4)
+     tbl_6: {0: {"FECHA", "CONSTRUCTOR"}}                  (cols 0,2)
+   Nota: dos etiquetas "CALIBRE" en tbl_5 → se distinguen por posición (col0=calibre1, col2=calibre2).
+
+3. defined_attributes
+   TypeScript: interfaz PlacaSecundariosAtributos (8 campos string).
+   Mapa ATTRS_LABELS muestra descripciones: 'CALIBRE 1' / 'CALIBRE 2' para distinguir.
+
+4. llena_datos_dinamicos()
+   Magik: asigna_texto_celda(:tbl_X, 1, col_par, _self.campo, 22)
+     tbl_4: (1,2)=sgl_ctl, (1,4)=distrito, (1,6)=cable
+     tbl_5: (1,2)=calibre1, (1,4)=calibre2, (1,6)=cuenta
+     tbl_6: (1,2)=fecha, (1,4)=constructor
+   TypeScript: mapa ATTRS_MAP → clave "tablaNombre:fi,ci" → valor del atributo.
+   Tamaño fuente datos 22pt → CSS fontSize proporcional (diferencia vs principales 28pt).
+
+5. llena_datos_celdas()
+   Vacío — idéntico a c_placa_principales. No implementado.
+
+
+DATOS MOCK
+----------
+ATTRS_DEFAULT: MEX-01 / D-042 / FO-24 / G.652D / G.657A / 002-017 / 2024-12 / SIGMA TAO
+
+
+LO QUE NO SE HA MIGRADO
+------------------------
+Idéntico a c_placa_principales. Ver CPlacaPrincipales.txt sección correspondiente.
+Adicionalmente:
+  - La diferencia de tamaño 22pt vs 28pt no tiene efecto visual significativo
+    en el componente web al escala 1.8px/mm, pero se documenta en el banner
+    informativo Δ vs c_placa_principales.
+
+
+DEPENDENCIAS EXTERNAS
+---------------------
+- React (useState)
+- Sin Turf.js: no hay cálculos espaciales.
+- Sin OpenLayers: no hay renderizado en mapa.
+
+
+INTEGRACIÓN EN App.tsx
+-----------------------
+Import:  import { CPlacaSecundariosUI } from './migration/CPlacaSecundarios';
+Entry:   DEMO_ITEMS id='90-placa-secundarios', render: () => <CPlacaSecundariosUI />
+================================================================================

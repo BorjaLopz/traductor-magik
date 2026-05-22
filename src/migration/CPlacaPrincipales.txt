@@ -1,0 +1,122 @@
+================================================================================
+COMPONENTE: CPlacaPrincipales.tsx
+Clase Magik original: c_placa_principales
+Fichero Magik original: c_placa_principales.magik
+Autor original: lgranados — Sigma Tao / Traza: Planos, 13-Diciembre-2010
+Número de migración: [89]
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Placa de identificación para planos de red de fibra óptica de principales.
+En Magik hereda de :c_base_sello_fibra. No añade slots propios.
+En TypeScript se modela como componente React funcional con:
+  - Formulario de los 8 atributos capturables (defined_attributes)
+  - Vista previa del layout con 6 tablas posicionadas (configura_tabla)
+  - Actualización en tiempo real de la placa al editar atributos (llena_datos_dinamicos)
+
+La placa se compone de 6 tablas posicionadas en coordenadas absolutas del layout:
+  tbl_1: marco exterior 1×1  (130×50mm)  — origen coord_inicio
+  tbl_2: área interior 1×1   (120×40mm)  — offset (+50, -50)
+  tbl_3: área logo 1×1       ( 26×40mm)  — offset (+50, -50) — mismo que tbl_2
+  tbl_4: fila datos 1×6     (6×15mm × 7.5mm alto) — offset (+330, -110)
+  tbl_5: fila datos 1×6     (6×15mm × 7.5mm alto) — offset (+330, -215)
+  tbl_6: fila datos 1×4    (4×22.5mm × 7.5mm alto) — offset (+330, -310)
+Color de fondo: set_fill_colour(rgb(0.82, 0.91, 1.0)) → rgb(209, 232, 255) azul claro.
+
+
+MÉTODOS MIGRADOS Y SU EQUIVALENCIA
+------------------------------------
+
+1. configura_tabla()
+   Magik: crea_tabla(filas, cols, nombre) + nLongitud + borde ocultos.
+   TypeScript: array TABLAS de TablaConfig con alturas/anchos/offsetX/offsetY.
+
+   Bordes ocultos — patrón reproducido en los 3 grupos (tbl_4, tbl_5, tbl_6):
+     Magik: ocultar = rope.new_with({1,1},{1,3},{1,5}) [o {1,1},{1,3} para tbl_6]
+            bBorde_Izq? = false, bBorde_Inf? = false, bBorde_Sup? = false
+     TypeScript: Set<string> bordeOculto con claves "fi,ci" en 0-based.
+     Efecto visual: las celdas de etiqueta (cols impares 1-based) pierden bordes
+     izquierdo/inferior/superior, quedando visualmente fusionadas con la celda
+     de valor adyacente — patrón label|valor sin separación.
+
+   Posicionamiento:
+     Magik: coordinate.new(.o_coord_inicio.x + offsetX, .o_coord_inicio.y - offsetY)
+     TypeScript: style position:absolute + left=offsetX*SCALE + top=|offsetY|*SCALE
+     (Y invertida: en Magik Y crece hacia arriba, en HTML hacia abajo)
+
+2. etiqueta_celdas()
+   Magik: asigna_texto_celda(:tbl_N, fila, col, texto, tamaño, alineación)
+          asigna_simbolo_celda(:tbl_3, 1, 1, "logo_sellos")
+   TypeScript: objeto ETIQUETAS → Record<tablaNombre, Record<fi, Record<ci, texto>>>.
+   Las etiquetas son texto fijo hardcodeado; el logo se renderiza como ★.
+   Estructura:
+     tbl_4: col0="SIGLAS\nCENTRAL"(size26,top_left), col2="CABLE"(26), col4="CAPACIDAD"(25)
+     tbl_5: col0="CALIBRE"(26), col2="CUENTA"(26), col4="INDICADOR"(25)
+     tbl_6: col0="FECHA"(26), col2="CONSTRUCTOR"(26)
+
+3. defined_attributes
+   Magik: rope.new_from(_super.defined_attributes) + attribs.add(layout_attribute_definition.new(...))
+   TypeScript: interfaz PlacaPrincipalesAtributos con 8 campos string.
+   Los atributos se muestran como inputs editables en un <fieldset>.
+
+4. llena_datos_dinamicos()
+   Magik: asigna_texto_celda(:tbl_N, 1, col_par, _self.campo, 28)
+     tbl_4: (1,2)=sgl_ctl, (1,4)=cable, (1,6)=capacidad
+     tbl_5: (1,2)=calibre, (1,4)=cuenta, (1,6)=indicador
+     tbl_6: (1,2)=fecha, (1,4)=constructor
+   TypeScript: mapa ATTRS_MAP → clave "tablaNombre:fi,ci" → valor del atributo.
+   Objeto `valores` construido en render(); TablaLayout lo usa para llenar celdas.
+   Los valores dinámicos van en cols pares (0-based: 1,3,5) = cols impares de datos.
+
+5. llena_datos_celdas()
+   Magik: método vacío — hereda comportamiento de c_base_sello_fibra.
+   TypeScript: no se implementa — la lógica de datos dinámicos está en llena_datos_dinamicos().
+
+
+PATRÓN DE BORDES — LABEL|VALOR
+-------------------------------
+La técnica de ocultar bBorde_Izq+Inf+Sup en columnas impares (labels) crea
+visualmente pares label|valor sin divisor entre ellos:
+
+  tbl_4, tbl_5 (1×6): cols 1,3,5 (1-based) = etiqueta; cols 2,4,6 = valor
+    ocultar bordes izq/inf/sup en cols 1,3,5 → label+valor parecen una celda
+
+  tbl_6 (1×4): cols 1,3 = etiqueta; cols 2,4 = valor
+    ocultar bordes izq/inf/sup en cols 1,3
+
+En TypeScript: celdas con bordeOculto solo tienen borde derecho visible.
+
+
+DATOS MOCK
+----------
+ATTRS_DEFAULT simula atributos de ejemplo:
+  sgl_ctl='MEX-01', cable='FO-12', capacidad='144 F',
+  calibre='G.652D', cuenta='001-042', indicador='A1',
+  fecha='2024-12', constructor='SIGMA TAO'
+
+
+LO QUE NO SE HA MIGRADO
+------------------------
+- :c_base_sello_fibra: herencia — campos del sello base (o_tablas, o_coord_inicio,
+  etc.) no se modelan — el layout posicionado es propio del componente.
+- c_texto_grafico.nTamanio (26/25/28pt): reproducido con CSS fontSize relativo.
+- asigna_simbolo_celda("logo_sellos"): en Smallworld carga un símbolo vectorial
+  del catálogo; en TypeScript se muestra ★ como placeholder.
+- draw_content_on(): no hay canvas/window — React lo renderiza directamente.
+- Tbl_1 y tbl_2: son marcos sin contenido (sin etiquetas ni datos dinámicos);
+  se muestran como rectángulos de fondo para preservar la estructura visual.
+
+
+DEPENDENCIAS EXTERNAS
+---------------------
+- React (useState)
+- Sin Turf.js: no hay cálculos espaciales.
+- Sin OpenLayers: no hay renderizado en mapa.
+
+
+INTEGRACIÓN EN App.tsx
+-----------------------
+Import:  import { CPlacaPrincipalesUI } from './migration/CPlacaPrincipales';
+Entry:   DEMO_ITEMS id='89-placa-principales', render: () => <CPlacaPrincipalesUI />
+================================================================================

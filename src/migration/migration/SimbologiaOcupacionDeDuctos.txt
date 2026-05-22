@@ -1,0 +1,44 @@
+================================================================================
+CLASE: SimbologiaOcupacionDeDuctos
+ORIGEN: c_simbologia_ocupacion_de_ductos.magik
+FICHERO TS: SimbologiaOcupacionDeDuctos.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Define una tabla 1x1 con medidas fijas y coloca el simbolo
+"ocupacion_de_ductos" en la celda (1,1).
+En Magik esto se divide en dos pasos: configurar tabla y etiquetar celdas.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: configura_tabla()
+TS:    SimbologiaOcupacionDeDuctos.configuraTabla(): Promise<TableDefinition>
+
+Equivalencias directas:
+  - property_list.new_with_properties(:ren,{37}, :col,{74}) -> TableContent
+  - o_tablas.crea_tabla(1,1, :tbl_contenido)               -> TableDefinition 1x1
+  - ocoordenada_origen << .o_coord_inicio                  -> origin [0,0] (parametrizable)
+  - asigna_medidas_tabla / oculta_bordes_celdas            -> hideBorders=true
+
+-----------------------------------------------------------------------
+
+Magik: etiqueta_celdas()
+TS:    SimbologiaOcupacionDeDuctos.etiquetaCeldas(table)
+
+Equivalencias directas:
+  - asigna_simbolo_celda(:tbl_contenido,1,1,"ocupacion_de_ductos", 3)
+    -> table.cells = [{ row:1, col:1, symbol:{ symbolId, size } }]
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+SimbologiaOcupacionDeDuctosUI
+  - Llama build() (configura + etiqueta).
+  - Renderiza una celda 1x1 con el simbolo y su size.
+  - Muestra metadatos de origen y medidas.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Integracion con tablas y simbolos reales del motor Smallworld.
+- Coordenadas reales de origen (.o_coord_inicio) distintas de [0,0].
+================================================================================

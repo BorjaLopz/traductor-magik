@@ -1,0 +1,55 @@
+================================================================================
+CLASE: PlanoE
+ORIGEN: c_plano_e.magik
+FICHERO TS: PlanoE.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Representa un plano y expone sus propiedades (proyecto, nombre, tipo,
+comentario), con el tipo en mayusculas.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: new(PoPlano)
+TS:    PlanoE.create(plano)
+
+Equivalencia:
+  - _clone.init(PoPlano) -> new PlanoE().init(plano)
+
+-----------------------------------------------------------------------
+
+Magik: init(PoPlano)
+TS:    PlanoE.init(plano)
+
+Equivalencias directas:
+  - sProyecto << PoPlano.user!_proyecto
+  - sNombre << PoPlano.user!_nombre
+  - sTipo << PoPlano.user!_tipo
+  - sComentario << PoPlano.user!_comentario
+
+-----------------------------------------------------------------------
+
+Magik: Proyecto / Nombre / Comentario
+TS:    proyecto() / nombre() / comentario()
+
+Equivalencias directas:
+  - retornan el valor del slot
+
+-----------------------------------------------------------------------
+
+Magik: Tipo
+TS:    tipo()
+
+Equivalencia:
+  - retorna sTipo.uppercase -> toUpperCase()
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+PlanoEUI
+  - Crea una instancia mock y muestra sus propiedades.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Acceso real a objetos PoPlano del dataset.
+================================================================================

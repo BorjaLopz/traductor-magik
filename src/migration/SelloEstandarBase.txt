@@ -1,0 +1,259 @@
+================================================================================
+CLASE: SelloEstandarBase (CSelloEstandarBase)
+ORIGEN: c_sello_estandar_base.magik  —  package user
+HEREDA: c_base_sello_cobre
+FICHERO TS: SelloEstandarBase.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Es el sello base de planos de red de cobre. Define la estructura y los datos
+comunes a todos los sellos estándar derivados (título, compañía, fechas, escala).
+
+Genera 4 tablas apiladas horizontalmente que forman la franja inferior del plano:
+
+  ┌──────────────────────────────────────────────────────────────────────────────┐
+  │                    ┌──────────────┬─────────┬──────────┐                    │
+  │                    │ RED NACIONAL │ FECHA   │          │                    │
+  │  [NOMBRE DE        │  LTIMA MILLA │ DIBUJO  │  ESCALA  │                    │
+  │   PLANO / UBIC.    │ S.A.P.I.C.V.│ REVISO  │  1:2000  │                    │
+  │   (rotado 90°)]    └──────────────┴─────────┴──────────┘                    │
+  └──────────────────────────────────────────────────────────────────────────────┘
+     tbl_ubicacion      tbl_compania  tbl_FecDibRev  tbl_escala
+     (15mm × 274mm)     (25mm × 15mm) (35mm × 15mm) (15mm × 15mm)
+
+  Las tres tablas derechas (compañía, FecDibRev, escala) se alinean en la parte
+  inferior de tbl_ubicacion con un offset vertical calculado como:
+    Y = -(altura_ubicacion - 150) = -(274 - 150) = -124 mm
+
+  No hay cálculos espaciales (no Turf.js) ni interacción con el mapa (no OL).
+
+── PATRÓN DE INICIALIZACIÓN ────────────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ──────────────────────────────────────────── ─────────────────────────────────
+  def_slotted_exemplar(:c_sello_estandar_base  class CSelloEstandarBase {
+    {:pl_datos, _unset, :writable},               private plDatos: PlDatos | null = null
+    ..., :c_base_sello_cobre)                     private sTipoPlano: string = ''
+                                               }
+
+  La herencia de c_base_sello_cobre no se transcribe explícitamente porque
+  en este fichero solo se usan las llamadas a métodos del padre que se abstraen
+  en la interfaz SelloEstandarBaseService.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_sello_estandar_base.configura_tabla()
+TS:    CSelloEstandarBase.configurarTabla(esFalc: boolean): TableLayout
+────────────────────────────────────────────────────────────────────────────────
+
+  Crea 4 tablas con sus dimensiones y posiciones. En Magik se llama a
+  crea_tabla() + asigna_medidas_tabla(); en TS se devuelve un objeto TableLayout
+  con todas las definiciones listas para que el componente React las renderice.
+
+  Tabla            Filas (mm)    Cols (mm)    Posición X         Posición Y
+  ─────────────    ──────────    ─────────    ──────────────     ──────────
+  tbl_ubicacion    [274]         [15]         0                  0
+  tbl_compania     [5,5,5]       [25]         15                 -124
+  tbl_FecDibRev    [5,5,5]       [15,20]      15+25 = 40         -124
+  tbl_escala       [5,10]        [15]         15+25+35 = 75      -124
+
+  Caso FALC:
+  Magik: swg_dsn_admin_engine.active_scheme.project.name.matches?("*FALC*")
+         → ocultar los 4 bordes de la celda (bBorde_Der/Izq/Sup/Inf? = _false)
+  TS:    esProyectoFalc() → sinBordes: true en TableDef de tbl_ubicacion.
+
+  tbl_compania:
+  Magik: bDibuja_Renglones_Internos? << _false
+  TS:    sinRenglonesInternos: true (no se dibujan divisores entre las 3 filas)
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_sello_estandar_base.etiqueta_celdas()
+TS:    CSelloEstandarBase.etiquetarCeldas()
+────────────────────────────────────────────────────────────────────────────────
+
+  Texto estático de las cabeceras. Equivalencia directa:
+
+  Magik: asigna_texto_celda(:tbl_compania,  1,1,"RED NACIONAL",35)
+  TS:    labels.compania[0] = 'RED NACIONAL'
+
+  Magik: asigna_texto_celda(:tbl_compania,  2,1," LTIMA MILLA",35)
+  TS:    labels.compania[1] = ' LTIMA MILLA'   (espacio inicial preservado)
+
+  Magik: asigna_texto_celda(:tbl_compania,  3,1,"S.A.P.I. DE C.V.",35)
+  TS:    labels.compania[2] = 'S.A.P.I. DE C.V.'
+
+  Magik: asigna_texto_celda(:tbl_FecDibRev, 1,1,"FECHA",35)
+  TS:    labels.fecDibRev[0] = 'FECHA'
+         labels.fecDibRev[1] = 'DIBUJO'
+         labels.fecDibRev[2] = 'REVISO'
+
+  Magik: asigna_texto_celda(:tbl_escala,    1,1,"ESCALA",35)
+  TS:    labels.escala = 'ESCALA'
+
+  NOTA: tbl_escala fila 2 y tbl_FecDibRev col 2 son dinámicos → se asignan en
+  llenaDatosCeldas() / llenaDatosDinamicos(), no en etiquetarCeldas().
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_sello_estandar_base.obten_registros()
+TS:    CSelloEstandarBase.obtenerRegistros(service): Promise<void>
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ──────────────────────────────────────────── ─────────────────────────────────
+  .s_tipo_plano << _self.tipo_plano()            this.sTipoPlano = await service.obtenerTipoPlano()
+  .pl_datos << property_list.new()               this.plDatos = await service.obtenerDatosProyecto()
+  .pl_datos[:fecha]     << .o_proyecto.mes_anio  → plDatos.fecha
+  .pl_datos[:proyecta_empresa] << ...            → plDatos.proyectaEmpresa
+  .pl_datos[:revisa_empresa]   << ...            → plDatos.revisaEmpresa
+  .pl_datos[:ubicacion]        << ...            → plDatos.ubicacion
+  .pl_datos[:Delegacion_Municipio] << ...        → plDatos.delegacionMunicipio
+  .pl_datos[:colonia]          << ...            → plDatos.colonia
+  .pl_datos[:nombre_plano] << _self.nombre_plano() → plDatos.nombrePlano
+
+  .o_proyecto es el objeto de proyecto del Layout Designer de Smallworld.
+  En TS se abstrae en SelloEstandarBaseService.obtenerDatosProyecto().
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_sello_estandar_base.llena_datos_celdas()
+TS:    CSelloEstandarBase.llenaDatosCeldas(): Omit<CellData,'escala'> | null
+────────────────────────────────────────────────────────────────────────────────
+
+  Construye ls_nombre_plano con lógica de word-wrap y rellena las celdas
+  dinámicas de tbl_ubicacion y tbl_FecDibRev columna 2.
+
+  Lógica de word-wrap (Magik → TS):
+
+  Magik                                          TypeScript
+  ──────────────────────────────────────────── ─────────────────────────────────
+  ls_nombre_plano <<                             const base =
+    .pl_datos[:ubicacion] + " / "                  plDatos.ubicacion + ' / \n' +
+    + %newline                                     plDatos.nombrePlano
+    + .pl_datos[:nombre_plano]
+
+  segmentos << ls_nombre_plano.split_by(" / ")   const segmentos = base.split(' / ')
+  saltolinea? << _false                          let saltoHecho = false
+  _for segmento _over segmentos.elements()       for (const segmento of segmentos) {
+  _loop
+    _if (ubicacion2.size + segmento.size + 1)      if ((resultado.length + segmento.length + 1)
+        > 170 _andif saltolinea? _is _false            > 170 && !saltoHecho) {
+    _then                                               resultado += '\n'
+        ubicacion2 +<< %newline                         saltoHecho = true
+        saltolinea? << _true                           }
+    _endif
+    _if ubicacion2.size > 2                          resultado += resultado.length > 2
+    _then                                              ? ' / ' + segmento
+        ubicacion2 +<< " / "+segmento                  : segmento
+    _else
+        ubicacion2 +<< segmento
+    _endif
+  _endloop                                       }
+
+  Celdas asignadas:
+    tbl_FecDibRev(1,2) ← pl_datos[:fecha]
+    tbl_FecDibRev(2,2) ← pl_datos[:proyecta_empresa]
+    tbl_FecDibRev(3,2) ← pl_datos[:revisa_empresa]
+    tbl_ubicacion(1,1) ← ls_nombre_plano.uppercase   (+ giro 90°)
+
+  Rotación 90°:
+  Magik: .o_tablas.elemento(:tbl_ubicacion).oCeldas.Celda(1,1).oElemento.nGrados << 90
+  TS:    CSS writingMode: 'vertical-rl' + transform: 'rotate(180deg)'
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_sello_estandar_base.llena_datos_dinamicos()
+TS:    CSelloEstandarBase.llenaDatosDinamicos(service): Promise<string>
+────────────────────────────────────────────────────────────────────────────────
+
+  Determina el valor de la celda de escala según el tipo de plano.
+
+  Magik                                          TypeScript
+  ──────────────────────────────────────────── ─────────────────────────────────
+  _if .s_tipo_plano = :principales _orif         const TIPOS_FE = new Set(
+      .s_tipo_plano = :diagrama_empalmes            ['principales','diagrama_empalmes'])
+  _then                                          if (TIPOS_FE.has(this.sTipoPlano))
+      ls_escala << "F/E"                           return 'F/E'
+  _else
+      ls_escala << _self.escala()                return service.obtenerEscala()
+  _endif
+  asigna_texto_celda(:tbl_Escala,2,1,ls_escala)
+
+  "F/E" = Fuera de Escala (planos esquemáticos sin escala cartográfica).
+
+── TIPOS CLAVE INTRODUCIDOS ────────────────────────────────────────────────────
+
+  PlDatos                  ≡ property_list .pl_datos
+  TableDef                 ≡ resultado de crea_tabla() + asigna_medidas_tabla()
+  TableLayout              ≡ las 4 tablas juntas (devueltas por configurarTabla)
+  CellData                 ≡ valores calculados de las celdas dinámicas
+  SelloEstandarBaseService ≡ abstracción de swg_dsn_admin_engine + .o_proyecto
+  mockSelloEstandarBaseService ≡ datos de prueba (proyecto ficticio MAY/2025)
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- _pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+  → Metadatos Smallworld. Sin equivalente TS.
+
+- c_base_sello_cobre (clase padre)
+  → Solo se usa a través de la interfaz de servicio. Los métodos del padre
+    (_self.tipo_plano(), _self.escala(), _self.nombre_plano()) se abstraen
+    en SelloEstandarBaseService para no requerir la cadena de herencia completa.
+
+- swg_dsn_admin_engine.active_scheme / active_design
+  → Singleton de Smallworld que da acceso al proyecto activo y al design.
+    En TS: service.esProyectoFalc() / service.obtenerTipoPlano().
+    LoEtapa y LoFase (leídos de active_design) están en el código comentado
+    del original (##) → no se transcriben.
+
+- .o_tablas / .o_coord_inicio / coordinate.new(x,y)
+  → Motor de layout del Layout Designer de Smallworld.
+    En TS: configurarTabla() devuelve los valores numéricos equivalentes;
+    el componente React los convierte a posiciones CSS absolutas.
+
+- asigna_medidas_tabla(lo_tabla, pl_xxx)
+  → Helper de la clase base que aplica filas y columnas de un property_list
+    a una tabla del Layout Designer. En TS se inlinan directamente en TableDef.
+
+- .oCeldas.Celda(1,1).oElemento.nGrados << 90
+  → Rotación nativa del Layout Designer. En TS: CSS writingMode vertical-rl.
+
+- Renglón de escala comentado con ##:
+  ## + " / " + LoEtapa + " /  " + LoFase
+  → Código comentado en el original (etapa y fase no se incluían). No se transcribe.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Pipeline completo:
+  const sello = new CSelloEstandarBase();
+  const result = await sello.generarSello(mockSelloEstandarBaseService);
+
+  result.layout.tblUbicacion   // → { filas:[274], columnas:[15], x:0, y:0 }
+  result.layout.tblCompania    // → { filas:[5,5,5], columnas:[25], x:15, y:-124 }
+  result.layout.tblFecDibRev   // → { filas:[5,5,5], columnas:[15,20], x:40, y:-124 }
+  result.layout.tblEscala      // → { filas:[5,10],  columnas:[15], x:75, y:-124 }
+  result.labels.compania       // → ['RED NACIONAL',' LTIMA MILLA','S.A.P.I. DE C.V.']
+  result.cellData.nombrePlano  // → 'COL. VALLEJO / ... / RED SECUNDARIA FO ...' (uppercase, \n)
+  result.cellData.fecha        // → 'MAY/2025'
+  result.cellData.escala       // → '1:2000'  (o 'F/E' si principales/diagrama_empalmes)
+  result.esFalc                // → false (true oculta bordes de tbl_ubicacion)
+
+  // Componente demo React:
+  <SelloEstandarBaseUI />
+  // → Botón "Generar sello"
+  //   Visualización proporcional (mm × 3.2px) con las 4 tablas posicionadas
+  //   Texto rotado 90° en tbl_ubicacion
+  //   Tabla de resumen: campo / valor calculado / método Magik equivalente
+
+── RELACIÓN CON OTRAS MIGRACIONES ──────────────────────────────────────────────
+
+  [10] SelloEstandar → factory que instanciaría subclases de CSelloEstandarBase
+       según el tipo de sello (construcción, diagrama empalmes, control estado).
+       CSelloEstandarBase es la clase padre de todos ellos.
+
+  [18] TablaEncGeoreferencia → comparte el patrón de tablas apiladas con
+       asigna_medidas_tabla y coordenada_origen.
+
+  [26] Traductor → CTraductor.tipoPlano() genera el texto de tipo de plano que
+       aparecería en el nombre del plano de tbl_ubicacion.
+
+================================================================================

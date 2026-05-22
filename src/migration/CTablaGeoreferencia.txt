@@ -1,0 +1,189 @@
+================================================================================
+  CLASE MIGRADA: CTablaGeoreferencia
+  Fichero origen:  c_tabla_georeferencia.magik
+  Fichero destino: CTablaGeoreferencia.tsx
+  Jerarquía Magik: c_tabla_georeferencia  extends  c_base_sello_fibra
+================================================================================
+
+PROPÓSITO
+---------
+Genera un sello de georreferencia de terminales ópticas de distribución para
+el motor de planos Smallworld (plotting engine). El sello se compone de dos
+tablas adyacentes que, juntas, muestran qué terminales atiende un CEDO, en
+qué estado están y dónde se ubican geográficamente.
+
+
+ESTRUCTURA DEL SELLO
+--------------------
+El sello tiene DOS tablas horizontalmente adyacentes:
+
+  [ tbl_datos ][ tbl_coord ]
+
+  tbl_datos  — N filas × 3 columnas (anchos: 8 / 6 / 11 unidades)
+               Columna 1: Nombre del terminal (user!_nombre)
+               Columna 2: Estado operacional (user!_estado_terminal)
+               Columna 3: Distancia óptica en km (distancia_cal_emp_dist)
+               Alto de renglón: 6 u
+               Origen: (coord_inicio.x, coord_inicio.y)
+               Color de línea: verde  rgb(0.2, 0.6, 0)
+
+  tbl_coord  — N×2 filas × 3 columnas (anchos: 3 / 8 / 14 unidades)
+               Columna 1: Etiqueta fija  "X" / "Y"  alternando por par de filas
+                          Color marrón  rgb(0.4, 0.2, 0)
+               Columna 2: Coordenada geográfica (longitud / latitud en WGS84)
+               Columna 3: Coordenada UTM (X / Y en la zona seleccionada)
+               Alto de renglón: 3 u
+               Origen: (coord_inicio.x + 25, coord_inicio.y)   ← offset = suma anchos tbl_datos
+               Color de línea: verde  rgb(0.2, 0.6, 0)
+
+Cada terminal produce 1 fila en tbl_datos  y  2 filas en tbl_coord (una para X
+y otra para Y), de modo que ambas tablas tienen la misma altura total.
+
+
+SLOTS MIGRADOS (estado interno de la clase)
+-------------------------------------------
+  oDtoOptico  → DtoOptico | null         Datos del elemento óptico (landbase)
+  oCedo       → CedoService | null       Servicio que provee terminales del CEDO (GIS)
+  oRenglones  → number  (default 1)      Número de filas del sello (= núm. terminales a mostrar)
+  oDatosSello → FilaDatos[]              Array de filas calculadas por obtenerInformacion()
+
+
+MÉTODOS MIGRADOS
+----------------
+
+1. configuraTabla()
+   Magik: configura_tabla()
+   Construye la configuración geométrica de tbl_datos y tbl_coord:
+   tamaños de columnas, alturas de filas, coordenadas de origen.
+   Calcula el desplazamiento X de tbl_coord como la suma de anchos de tbl_datos.
+   Invoca internamente etiquetaCeldas() al final.
+
+2. coordenadaUbicacionTerminal(terminal)
+   Magik: coordenada_ubicacion_terminal(PoTerminal)
+   Resuelve la coordenada efectiva de un terminal óptico siguiendo esta
+   prioridad (lógica de mundos Smallworld):
+     a) Geometría primaria del registro (primary_geometry)
+     b) Si no tiene → inside_location  (terminal dentro de edificio)
+     c) Si el world_id ≠ 0 y hay edificio propietario → coordenada del edificio
+   Devuelve siempre un [lon, lat] en WGS84.
+
+3. etiquetaCeldas()   [privado]
+   Magik: etiqueta_celdas()
+   Rellena la columna 1 de tbl_coord con etiquetas "X"/"Y" en color marrón.
+   Itera con paso 2 (1, 3, 5, ...) sobre el rango de filas (range Magik con step).
+   Cada par de filas consecutivo recibe "X" en la fila impar y "Y" en la par.
+
+4. obtenerInformacion()   [async]
+   Magik: obtener_informacion()
+   Núcleo principal de la lógica de negocio. Para cada terminal del CEDO:
+     · Filtra por LiteralTerminal: compara el último carácter del primer segmento
+       alfanumérico del nombre del terminal con el atributo LiteralTerminal.
+       Equivalente Magik: user!_nombre.numbers_and_strings[1].last
+     · Obtiene nombre, estado y distancia del terminal.
+     · Llama a coordenadaUbicacionTerminal() para obtener la coordenada real.
+     · Convierte la coordenada a geográficas (en TypeScript ya está en WGS84).
+     · Si hay zona UTM configurada, convierte a coordenadas UTM usando
+       turf.toMercator() como aproximación (en producción: proj4.js con EPSG UTM).
+     · Almacena la fila en oDatosSello.
+
+5. llenaDatosCeldas(elementosBdLb, elementosBdGis)   [async]
+   Magik: llena_datos_celdas()
+   Orquesta la obtención de datos y el relleno de celdas:
+     · Asigna oDtoOptico del primer elemento de landbase.
+     · Asigna oCedo del primer elemento de GIS.
+     · Invoca obtenerInformacion().
+     · Distribuye los datos en las celdas de tbl_datos y tbl_coord.
+
+6. CTablaGeoreferencia.zonasUtm()   [estático]
+   Magik: zona_utm  (método enum)
+   Devuelve el array de zonas UTM disponibles: ["11","12","13","14","15","16"].
+   En Magik este método se usa como enum_method para el atributo zona_utm del sello.
+
+
+ATRIBUTOS DE LAYOUT (defined_attributes)
+-----------------------------------------
+  LiteralTerminal  :character   Filtra terminales por el último char del primer
+                                segmento alfanumérico del nombre.
+                                No aparece en la página de propiedades.
+
+  zona_utm         :string      Zona UTM a usar para la conversión de coordenadas.
+                                Muestra un dropdown (enum_method → zona_utm).
+                                Aparece en la página de propiedades.
+                                Valores posibles: "11"–"16"
+
+  zutm             :string      Zona UTM almacenada internamente (cache).
+                                Se rellena desde zona_utm al primer uso.
+                                No aparece en la página de propiedades.
+
+
+CONVERSIÓN DE COORDENADAS
+--------------------------
+  Magik usa c_coord_system_engine para dos operaciones:
+    · get_coord_as_geograficas(coord)  → convierte coords internas a lon/lat
+    · get_transform_from_cs_to_cs("conic","utm14",:gis)  → proyección UTM
+
+  En TypeScript:
+    · Las coordenadas del mock ya están en WGS84 [lon, lat] → sin conversión.
+    · La proyección UTM se aproxima con turf.toMercator() (Web Mercator EPSG:3857).
+      Para producción con datum NAD27/WGS84 y zonas UTM exactas, usar proj4.js
+      con la cadena de proyección correspondiente.
+
+  Formato de salida (equivalente a as_fixed_string en Magik):
+    · Geográficas: toFixed(4).padStart(10)   → "  -99.1332"
+    · UTM:         toFixed(2).padStart(10)   → "-11036....."
+
+
+DATOS MOCK INCLUIDOS
+--------------------
+  mockCedoGeoreferencia         → CedoService con 4 terminales de ejemplo:
+    - TDSL-01, TDSL-02, TDSL-03  (primer segmento "TDSL" → último char "L")
+    - TDSC-04                    (primer segmento "TDSC" → último char "C")
+  mockDtoOpticoGeoreferencia    → DtoOptico "CTO Óptico Central Tlalpan"
+
+  Con LiteralTerminal = "L" se muestran los 3 terminales TDSL.
+  Con LiteralTerminal = "C" se muestra solo TDSC-04.
+  Con LiteralTerminal vacío se muestran todos (sin filtro).
+
+  TDSL-02 tiene enEdificio=true y buildingLocation distinta → la coordenada
+  efectiva que se muestra es la del edificio anfitrión, no la del terminal.
+
+
+USO DESDE App.tsx
+-----------------
+  import { CTablaGeoreferenciaUI } from './migration/CTablaGeoreferencia';
+
+  function DemoTablaGeoreferencia() {
+    return (
+      <section>
+        <h3>c_tabla_georeferencia</h3>
+        <CTablaGeoreferenciaUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '27-tabla-georeferencia', label: '[27] c_tabla_georeferencia', render: ... }
+
+
+LO QUE NO SE HA MIGRADO / DIFERENCIAS
+---------------------------------------
+  · c_base_sello_fibra  (clase padre Magik) no se ha migrado. La clase TypeScript
+    es independiente y contiene solo la lógica propia de c_tabla_georeferencia.
+
+  · _super.defined_attributes  no se encadena, ya que c_base_sello_fibra no existe
+    en TypeScript. DEFINED_ATTRIBUTES_GEOREF solo incluye los atributos propios.
+
+  · El sistema de coordenadas exacto de CTL México (cónica conforme de Lambert
+    o UTM con datum NAD27) no se reproduce; se usa WGS84 / Web Mercator como
+    aproximación suficiente para la demostración funcional.
+
+  · gis_program_manager.cached_dataset() y obtener_elementos_bd_landbase/gis()
+    se sustituyen por los mocks mockCedoGeoreferencia y mockDtoOpticoGeoreferencia.
+
+  · La serialización/deserialización del sello (Smallworld plotting persistence)
+    no está implementada en TypeScript.
+
+
+================================================================================
+  Fin del documento — CTablaGeoreferencia.txt
+================================================================================

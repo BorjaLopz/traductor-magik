@@ -1,0 +1,284 @@
+================================================================================
+CLASE: ElementoEmpalmeDerivacionG (CElementoEmpalmeDerivacionG)
+ORIGEN: c_elemento_empalme_derivacion_g.magik  —  package user
+Autor:  dsanchez / Sigma Tao  (31-03-2005, rev. 05-04-2005)
+HEREDA: c_elemento_empalme_g  →  CElementoEmpalmeGBase (stub inline)
+FICHERO TS: ElementoEmpalmeDerivacionG.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Es un elemento gráfico de croquis (diagrama de red) que representa un empalme
+de cobre con derivación (tap/branch). Extiende la clase base c_elemento_empalme_g
+añadiendo un segundo nivel de información: el nombre de la localidad o zona que
+recibe la derivación del cable.
+
+Visualización del elemento (40mm × 40mm, 20 filas):
+
+  ┌─────────────────────────────────────────────┐  fila 0
+  │                                             │
+  │  ──────◆────────────────────────────────    │  fila ~6: cable horizontal + rombo junction
+  │         │                                   │
+  │         │   (rama de derivación)             │
+  │         ↓                                   │
+  │      ED-42          ← Etiqueta_1 (fila 14) │  "ED-NNN" = código del empalme
+  │                                             │
+  │   Localidad Norte   ← Etiqueta_2 (fila 19) │  nombre de la derivada
+  └─────────────────────────────────────────────┘  fila 20
+
+  ◆ = empalme (junction point), contacto en el extremo izquierdo del cable.
+
+Diferencias respecto a la clase padre c_elemento_empalme_g:
+  ─────────────────────────── ─────────────────── ─────────────────────────
+  Atributo                     c_elemento_empalme_g  c_elemento_empalme_der.
+  ─────────────────────────── ─────────────────── ─────────────────────────
+  sNombreSimbolo               "empalme"            "empalme_derivacion"
+  sDescripcion (prefijo)       "ER-NNN"             "ED-NNN"
+  nLong_grafica                150 (o similar)      40  ← mucho más compacto
+  Etiqueta_2                   no tiene             sí: nombre de derivada
+  slot sNombre_derivada        no tiene             sí: user!_nom_deriva
+  ─────────────────────────── ─────────────────── ─────────────────────────
+
+── NOTA SOBRE LA CLASE BASE ─────────────────────────────────────────────────
+
+  c_elemento_empalme_g fue migrada como [5] en este proyecto, pero el fichero
+  ElementoEmpalmeG.tsx no está presente en src/migration/. Por eso se incluye
+  CElementoEmpalmeGBase como stub inline en ElementoEmpalmeDerivacionG.tsx.
+
+  El stub expone los mismos campos y métodos que usa la clase derivada:
+    oEntidad, sNombreSimbolo, sDescripcion, nLongGrafica, oArea, oPtoContacto,
+    oElementos, collEtiquetas, posEtiqueta(), configurarElementos(),
+    dfnUbicacionElementosInternos().
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_elemento_empalme_derivacion_g.new(RoObjeto)
+TS:    constructor(entidad: EntidadEmpalmeDerivacion)
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ────────────────────────────────────────────── ────────────────────────────────────
+  _super.new(RoObjeto)                           super(entidad)
+  _self.sNombre_Simbolo << "empalme_derivacion"  this.sNombreSimbolo = 'empalme_derivacion'
+  _self.sDescripcion << "ED-" +                  this.sDescripcion = `ED-${entidad.numEmpalme}`
+    oEntidad.user!_num_empalme.write_string
+  _self.nLong_Grafica << 40                      this.nLongGrafica = 40
+  _self.sNombre_derivada <<                      this.sNombreDerivada = entidad.nomDeriva
+    oEntidad.user!_nom_deriva.write_string
+  _return _clone                                 (implícito — constructor devuelve la instancia)
+
+  Nota: el comentario Magik original dice "40 #150 * 1" — el valor fue cambiado
+  de 150 a 40 durante el desarrollo. La migración usa 40 (el valor activo).
+
+  _return _clone en Magik retorna la instancia actual (self). En TypeScript,
+  el constructor siempre devuelve `this` implícitamente.
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_elemento_empalme_derivacion_g.configurar_elementos()
+TS:    CElementoEmpalmeDerivacionG.configurarElementos(): void
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ────────────────────────────────────────────── ────────────────────────────────────
+  _super.configurar_elementos()                  super.configurarElementos()
+  LoLbl = oElementos.obten_elemento(:Etiqueta_2) lbl = oElementos.obtenElemento('Etiqueta_2')
+  LoLbl.sTexto << _self.sNombre_derivada         if (lbl) lbl.sTexto = this.sNombreDerivada
+
+  Único método de datos dinámicos: inyecta el nombre de la derivada en Etiqueta_2.
+  Etiqueta_1 recibe su texto dinámico implícitamente (el padre fija el código "ER-NNN";
+  aquí la nueva instancia ya tiene sDescripcion = "ED-NNN" desde el constructor).
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_elemento_empalme_derivacion_g.dfn_ubicacion_elementos_internos()
+TS:    CElementoEmpalmeDerivacionG.dfnUbicacionElementosInternos(): void
+────────────────────────────────────────────────────────────────────────────────
+
+  El algoritmo divide el bounding box en 20 renglones iguales y asigna márgenes
+  superior/inferior a cada elemento en función de su fila asignada.
+
+  FÓRMULA GENÉRICA (etiquetas):
+
+    NUM_REN    = 20
+    altRen     = (oArea.yMax - oArea.yMin) / 20
+
+    nNumRenSup = pos_etiqueta(key).as_integer()        → Math.trunc(collEtiquetas[key])
+    nNumRenInf = 20 - 2 - nNumRenSup                   → complemento respecto a la fila 18
+
+    nMargen_Sup = altRen × (nNumRenSup / 10)
+    nMargen_Inf = altRen × (nNumRenInf / 10)
+
+  Valores calculados (con nLong_grafica=40, altRen = 40/20 = 2mm):
+
+    Etiqueta_1 (fila 14):
+      nNumRenSup = 14  →  nMargen_Sup = 2 × (14/10) = 2.8 mm
+      nNumRenInf = 4   →  nMargen_Inf = 2 × (4/10)  = 0.8 mm
+
+    Etiqueta_2 (fila 19):
+      nNumRenSup = 19  →  nMargen_Sup = 2 × (19/10) = 3.8 mm
+      nNumRenInf = -1  →  nMargen_Inf = 2 × (-1/10) = -0.2 mm  ← valor negativo
+        (fila 19 de 20: el complemento es negativo — la etiqueta se extiende a la última fila)
+
+  FÓRMULA ESPECÍFICA (Simbolo_1):
+
+    El símbolo "empalme_derivacion" tiene proporciones fijas en el sistema GIS:
+    - Ancho nativo del símbolo: 300 unidades
+    - Alto nativo del símbolo:  552 unidades
+    - La punta de la flecha está a 150+80=230 unidades desde arriba
+
+    A escala del elemento (nLong_grafica = ancho de referencia):
+      LnAlturaSim = (300 / 552) × nLong_grafica = (300/552) × 40 ≈ 21.74 mm
+      LV          = ((150+80) / 552) × LnAlturaSim             ≈ 9.07 mm
+      nMargen_Sup = LV / 10                                     ≈ 0.907
+      nMargen_Inf = (LV × -1) / 10                             ≈ -0.907
+
+    El margen negativo en Inf indica que el símbolo se extiende ligeramente más
+    allá del slot asignado hacia abajo (comportamiento de Smallworld: permite
+    que el símbolo desborde su zona de layout para alinearse con el cable).
+
+    Los márgenes horizontales (nMargen_Izq/Der) están comentados en el Magik
+    original y no se trasladan a TypeScript.
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_elemento_empalme_derivacion_g.Crea_elementos_internos()  [_private]
+TS:    CElementoEmpalmeDerivacionG.crearElementosInternos(): void  [private]
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ────────────────────────────────────────────── ────────────────────────────────────
+  c_texto_grafico.new("ER")                      TextoGrafico { sTexto:'ER', nTamanio:25, ... }
+  nTamanio = 25, sAlineacion = :centre_centre    (preservado)
+  collEtiquetas[:Etiqueta_1] << 14               collEtiquetas['Etiqueta_1'] = 14
+  oElementos.Agregar_elemento(lbl1, :Etiqueta_1) oElementos.agregarElemento(lbl1, 'Etiqueta_1')
+
+  c_texto_grafico.new("Localidad")               TextoGrafico { sTexto:'Localidad', nTamanio:30 }
+  nTamanio = 30, sAlineacion = :centre_centre    (preservado)
+  collEtiquetas[:Etiqueta_2] << 19               collEtiquetas['Etiqueta_2'] = 19
+  oElementos.Agregar_elemento(lbl2, :Etiqueta_2) oElementos.agregarElemento(lbl2, 'Etiqueta_2')
+
+  c_simbolo_grafico.new(sNombreSimbolo)          SimboloGrafico { sNombre: 'empalme_derivacion' }
+  oElementos.Agregar_elemento(sim, :Simbolo_1)   oElementos.agregarElemento(sim, 'Simbolo_1')
+
+  write("crea elemento internos emp derivac ")   → omitido (console.log de desarrollo)
+
+  Orden de llamadas al final del constructor:
+    crearElementosInternos() → configurarElementos() → dfnUbicacionElementosInternos()
+  El Magik invoca estos métodos en el mismo orden durante la inicialización.
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_elemento_empalme_derivacion_g.reposicionar_Area(RoArea)
+TS:    CElementoEmpalmeDerivacionG.reposicionarArea(_areaBase): BBoxMM
+────────────────────────────────────────────────────────────────────────────────
+
+  El Magik calcula cuatro variables intermedias que luego NO usa en el return:
+
+    LnAlturaArea = RoArea.YMax - RoArea.YMin     ← no usada en _return
+    LnDistEnXInf = 0                             ← no usada en _return
+    LnDistEnYInf = LnAlturaArea / 2              ← no usada en _return
+    LnDistEnXSup = nLong_grafica                 ← no usada en _return
+    LnDistEnYSup = LnAlturaArea / 2              ← no usada en _return
+
+  El return ignora esas variables y usa fórmulas directas:
+
+    Magik                                TypeScript
+    ─────────────────────────────────── ────────────────────────────────────
+    oPto_Contacto.X + LnDistEnXInf      oPtoContacto.x          (= x + 0)
+    oPto_Contacto.Y - nLong_grafica/2   oPtoContacto.y - 20     (y centrado)
+    oPto_Contacto.X + nLong_grafica     oPtoContacto.x + 40     (x derecha)
+    oPto_Contacto.Y + nLong_grafica/2   oPtoContacto.y + 20     (y centrado)
+
+  El resultado es un bbox 40×40mm anclado en oPtoContacto (left-center):
+    └── El elemento se dibuja SIEMPRE a la DERECHA del punto de contacto.
+    └── El punto de contacto queda en el extremo izquierdo, centrado en Y.
+
+  El parámetro `RoArea` es recibido pero solo se usa para calcular LnAlturaArea,
+  que luego es descartada. La migración refleja este comportamiento: el parámetro
+  se recibe como `_areaBase` pero no influye en el resultado.
+
+── TIPOS CLAVE INTRODUCIDOS ────────────────────────────────────────────────────
+
+  EntidadEmpalmeDerivacion   ≡ rwo con user!_num_empalme y user!_nom_deriva
+  BBoxMM                     ≡ bounding_box.new(xMin,yMin,xMax,yMax)
+  PtoContacto                ≡ coordinate con .x, .y
+  TextoGrafico               ≡ c_texto_grafico (sTexto, nTamanio, sAlineacion, márgenes)
+  SimboloGrafico             ≡ c_simbolo_grafico (sNombre, márgenes)
+  ColeccionElementos         ≡ sorted_collection / property_list de elementos internos
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- write("crea elemento internos emp derivac ")
+  → Debug print de Magik. Se omite (sin equivalente útil en TS).
+
+- Márgenes horizontales del símbolo (comentados en el Magik original):
+  # LoSim.nMargen_Izq << ...
+  # LoSim.nMargen_Der << ...
+  → Permanecen comentados como en el original.
+
+- define_slot_access(:sNombre_derivada, :writable, :private)
+  → En TS: campo `private sNombreDerivada`. TypeScript gestiona acceso
+    mediante modificadores de acceso, sin declaración externa.
+
+- _pragma(classify_level=restricted, usage={redefinable})
+  → Metadatos del sistema de clasificación Smallworld. Sin equivalente TS.
+
+- #remex(:c_elemento_empalme_derivacion_g) (comentado en el original)
+  → Comando de recarga en caliente de Smallworld. No aplica en TS compilado.
+
+- La herencia completa de c_elemento_empalme_g (fichero [5] ausente)
+  → Se sustituye por CElementoEmpalmeGBase con los campos y métodos mínimos
+    necesarios para que la clase derivada funcione.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Solo lógica:
+  const elem = new CElementoEmpalmeDerivacionG({
+    numEmpalme: 42,
+    nomDeriva:  'Localidad Norte',
+  });
+
+  const lay = elem.buildLayout();
+  lay.descripcion   // → 'ED-42'
+  lay.sNombreDer    // → 'Localidad Norte'
+  lay.bbox          // → { xMin:0, yMin:-20, xMax:40, yMax:20 }  (oPto en origen)
+  lay.etiqueta1Row  // → 14  (fila 14 de 20)
+  lay.etiqueta2Row  // → 19  (fila 19 de 20)
+  lay.altRen        // → 2   (40mm / 20 filas)
+
+  // BBox reposicionado con oPtoContacto en (100, 50):
+  elem.oPtoContacto = { x:100, y:50 };
+  elem.reposicionarArea({ xMin:0, yMin:0, xMax:40, yMax:40 });
+  // → { xMin:100, yMin:30, xMax:140, yMax:70 }
+
+  // Renderizado SVG:
+  <ElementoEmpalmeDerivacionGSvg
+    entidad={{ numEmpalme: 42, nomDeriva: 'Localidad Norte' }}
+    width={200}
+    height={180}
+  />
+  // → SVG: cable horizontal + rombo en junction + rama vertical + arrowhead
+  //        + "ED-42" en fila 14 + "Localidad Norte" en fila 19
+
+  // Componente demo React:
+  <ElementoEmpalmeDerivacionGUI />
+  // → Inputs: numEmpalme + nomDeriva
+  //   SVG del símbolo en tiempo real
+  //   Tabla: reposicionar_Area con coordenadas bbox
+  //   Tabla: márgenes calculados por dfn_ubicacion_elementos_internos
+  //   Tabla: fórmula del Simbolo_1 con valores intermedios LnAlturaSim y LV
+
+── RELACIÓN CON OTRAS MIGRACIONES ──────────────────────────────────────────────
+
+  [5]  ElementoEmpalmeG (c_elemento_empalme_g) → clase base directa.
+       Fichero ElementoEmpalmeG.tsx no presente; se usa stub CElementoEmpalmeGBase.
+       Diferencia visual: padre renderiza "ER-NNN" + rombo simple. Esta clase
+       añade Etiqueta_2 (derivada) y el símbolo "empalme_derivacion" (fork).
+
+  [8]  CreadorElementoTramoG (c_creador_elemento_tramo_g) → factory que decide
+       si crear un CElementoEmpalmeG o CElementoEmpalmeDerivacionG según el tipo
+       de entidad (sCveSello = "ET" → empalme_g o empalme_derivacion_g).
+
+  [6]  ElementoSeccionG (c_elemento_seccion_g) → hermano de clase:
+       otro subtipo de elemento de diagrama. Mismo patrón de 20 filas,
+       collEtiquetas y dfn_ubicacion_elementos_internos.
+
+================================================================================

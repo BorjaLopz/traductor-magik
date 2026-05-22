@@ -1,0 +1,188 @@
+================================================================================
+CLASE: SimbologiaPlanoReubicacionExistProy (CSimbologiaPlanoReubicacionExistProy)
+ORIGEN: c_simbologia_plano_reubicacion_exist_proy.magik  —  package user
+HEREDA: symbol_layout  (Smallworld layout element)
+FICHERO TS: SimbologiaPlanoReubicacionExistProy.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Elemento de simbología embebible en planos de reubicación (existente/proyectado).
+Es un "layout symbol" de Smallworld: un objeto que vive dentro de un plano
+de impresión (plot layout) y sabe cómo dibujarse a sí mismo en el canvas de
+Smallworld (ventana de plano) usando un símbolo GIS puntual configurable.
+
+El símbolo se obtiene de la tabla :sw_gis!gis_point_style de la base de datos
+:sigc_style_view (o del style_view global como fallback) y se renderiza con
+5 transformaciones configurables por el usuario en el layout editor.
+
+Diferencia clave vs [11] StyleSymbolOpenDialog:
+  [11] tiene parámetros fijos (rotate=0, flipped=true, mirror=false) — es solo
+  un diálogo de preview. Esta clase [19] es un elemento de plano con 5
+  atributos editables, incluyendo override de color y ángulo variable.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_simbologia_plano_reubicacion_exist_proy.defined_attributes
+TS:    CSimbologiaPlanoReubicacionExistProy.definedAttributes(): AttributeDefinition[]
+
+  Magik                                                    TypeScript
+  ────────────────────────────────────────────────────── ────────────────────────────────────
+  attribs << rope.new_from(_super.defined_attributes)    (atributos del padre no transcritos —
+                                                          son metadatos del motor de layout SW)
+  layout_attribute_definition.new(:name, :string, ...)   { name:'name',   type:'string',  ... }
+  layout_attribute_definition.new(:colour, :colour, ...) { name:'colour', type:'colour',  ... }
+  layout_attribute_definition.new(:angle, :float, ...)   { name:'angle',  type:'float',   ... }
+  layout_attribute_definition.new(:flip, :boolean, ...)  { name:'flip',   type:'boolean', ... }
+  layout_attribute_definition.new(:mirror,:boolean,...) { name:'mirror', type:'boolean', ... }
+  :enum_method, :symbol_names                             enumMethod: 'symbol_names'
+  :default_value, _unset                                  defaultValue: null
+
+  Los 5 atributos y sus defaults:
+  ┌─────────┬─────────┬──────────────────────────────────────┬────────────────┐
+  │ name    │ type    │ description                          │ default        │
+  ├─────────┼─────────┼──────────────────────────────────────┼────────────────┤
+  │ name    │ string  │ Símbolo                              │ simbologia_... │
+  │ colour  │ colour  │ Cambiar color para el símbolo        │ null (_unset)  │
+  │ angle   │ float   │ Ángulo                               │ 0.0            │
+  │ flip    │ boolean │ Girar                                │ false          │
+  │ mirror  │ boolean │ Espejo                               │ false          │
+  └─────────┴─────────┴──────────────────────────────────────┴────────────────┘
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_simbologia_plano_reubicacion_exist_proy.draw_content_on(window)
+TS:    CSimbologiaPlanoReubicacionExistProy.drawContentOn(canvas, service): void
+
+  Flujo completo:
+
+  Magik                                                    TypeScript
+  ────────────────────────────────────────────────────── ────────────────────────────────────
+  _self.outline_style <<                                   ctx.strokeStyle = '#ffffff'
+    line_style.new(colour.called(:white))
+
+  LoGpm << gis_program_manager                             (inyectado como `service:
+  LoDsSimbolos << LoGpm.databases[:sigc_style_view]         SigcSymbolService`)
+    .default(LoGpm.style_view)
+
+  _if _self.name _is _unset _orif .size _is 0             if (!name || name.length === 0)
+    _self.draw_incomplete(window, message)                   drawIncomplete(ctx, ...)
+
+  sym << LoDsSimbolos.collections[                         service.getSymbol(name) abstrae:
+    :sw_gis!gis_point_style].new_detached_record()           new_detached_record +
+  sym.symbol_name << _self.name                              symbol_name << +
+  sym.realise(_unset, col_vec)                               realise()
+
+  col_vec << _self.colour.scaled_rgb_vector(100.0)         rgb100ToCss([r,g,b]) →
+  (si colour _isnt _unset → override fillColor/strokeColor) modifica el SymbolDefinition
+
+  _if sym.actual_geoms _is _unset                          if (!sym || !sym.hasActualGeoms)
+    _self.draw_incomplete(window, str)                       drawIncomplete(ctx, ...)
+
+  angle << -_self.angle.default(0.0).degrees_to_radians   -(angle_deg * Math.PI / 180)
+
+  sym.draw_sample(window, bounds,                          drawSample(ctx, bounds, sym,
+    :rotate, angle,                                          { rotate: angleRad,
+    :flipped?, _self.flip.default(_false),                   flipped: flip,
+    :mirror?, _self.mirror.default(_false))                  mirror:  mirror })
+
+  Nota sobre el signo del ángulo:
+    Magik: angle << - _self.angle.degrees_to_radians  ← NEGATIVO
+    TS:    angleRad = -(angle_deg * Math.PI / 180)    ← conserva el signo negativo
+    Efecto: ángulo positivo en el editor → rotación antihoraria en pantalla
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_simbologia_plano_reubicacion_exist_proy.symbol_names
+TS:    CSimbologiaPlanoReubicacionExistProy.getSymbolNames(service): string[]
+
+  Magik                                                    TypeScript
+  ────────────────────────────────────────────────────── ────────────────────────────────────
+  LoGpm << gis_program_manager                             service.listSymbolNames()
+  LdsEstilosSigc << LoGpm.databases[:sigc_style_view]       (doble fuente abstraída)
+  sym_table << symbol_bundle_table.open(
+    LdsEstilosSigc.default(LoGpm.style_view)).symbol_names
+  names << sorted_collection.new()                         .sort()  — sort() nativo JS
+  _for sym_name _over sym_table.fast_elements() _loop
+    names.add(sym_name.write_string)
+  _endloop
+  >> names.as_simple_vector()                              return string[]
+
+── RELACIÓN CON OTRAS MIGRACIONES ──────────────────────────────────────────────
+
+  [11] StyleSymbolOpenDialog  →  Exporta: SymbolDefinition, DrawSampleParams,
+                                          drawSample(), SymbolStyleService
+  [19] CSimbologiaPlanoReubicacionExistProy  →  Importa todo lo anterior.
+
+  drawSample() de [11] se reutiliza directamente para el paso 9 del render.
+  SymbolStyleService de [11] es la interfaz de inyección para la BD de símbolos.
+
+  Diferencias respecto a [11]:
+    [11] draw_preview:         rotate=0, flipped=true, mirror=false  (fijos)
+    [19] draw_content_on:      rotate=f(angle), flipped=f(flip), mirror=f(mirror) (variables)
+    [19] añade:                colour override (scaled_rgb_vector(100.0))
+    [19] añade:                defined_attributes (5 descriptores de propiedades)
+    [19] añade:                symbol_names (lista ordenada de símbolos)
+
+── CONVERSIÓN DE COLOR ──────────────────────────────────────────────────────────
+
+  Magik: colour.scaled_rgb_vector(100.0) → float_vec[3] con valores 0-100
+  TS:    [number, number, number]         con valores 0-100 (mismo rango)
+
+  Conversiones:
+    RGB 0-100 → CSS:      rgb(r*2.55, g*2.55, b*2.55)
+    CSS hex → RGB 0-100:  [(R/255)*100, (G/255)*100, (B/255)*100]
+
+  Ejemplo: colour.called(:green) = [0.2*100, 0.6*100, 0*100] = [20, 60, 0]
+    → CSS: rgb(51, 153, 0)
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- define_shared_constant(:allowed_on_menu?, _false, :public)
+  → Metadato Smallworld. Sin equivalente TS.
+
+- _super.defined_attributes (atributos de symbol_layout)
+  → Son metadatos del motor de layout Smallworld (posición, tamaño, rotación a
+    nivel de contenedor). Sin equivalente TS directo.
+
+- c_simbologia_plano_reubicacion_exist_proy.define_attributes()
+  → Llama al sistema de reflexión de Smallworld para registrar los atributos.
+    En TS el registro se hace a través del array de AttributeDefinition.
+
+- _pragma(classify_level=restricted, usage={redefinable})
+  → Metadato Smallworld de accesibilidad. Sin equivalente TS.
+
+- Slots del exemplar (escritura implícita):
+  .name, .colour, .angle, .flip, .mirror → gestionados por el constructor
+  y setAttribs() en TS.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Solo lógica:
+  const sym = new CSimbologiaPlanoReubicacionExistProy({
+    name:   'empalme_subterraneo',
+    colour: [80, 20, 0],       // RGB 0-100 ≡ colour.scaled_rgb_vector(100.0)
+    angle:  45,                // grados → internamente -(45 * π/180)
+    flip:   true,
+    mirror: false,
+  });
+  sym.drawContentOn(canvasElement, mockReubicacionSymbolService);
+
+  // Obtener nombres disponibles (≡ symbol_names):
+  const names = CSimbologiaPlanoReubicacionExistProy.getSymbolNames(service);
+  // → ['cable_fo_existente_12fo', 'cable_fo_existente_24fo', ...]
+
+  // Descriptores de atributos (≡ defined_attributes):
+  const defs = CSimbologiaPlanoReubicacionExistProy.definedAttributes();
+  // → [{ name:'name', type:'string', enumMethod:'symbol_names', ... }, ...]
+
+  // Componente demo React:
+  <SimbologiaPlanoReubicacionExistProyUI />
+  // → Selector de símbolo (symbol_names ordenados)
+  //   Color picker con conversión hex ↔ RGB[0-100]
+  //   Slider de ángulo (-180..180°)
+  //   Checkboxes flip / mirror
+  //   Canvas draw_content_on en tiempo real
+  //   Tabla de defined_attributes
+
+================================================================================

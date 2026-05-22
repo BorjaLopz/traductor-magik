@@ -1,0 +1,121 @@
+================================================================================
+CLASE: TachadoGrafico (CTachadoGrafico)
+ORIGEN: c_tachado_grafico.magik  —  Sigma Tao / dsanchez / 2004-12-06
+HEREDA: c_elemento_grafico (Smallworld)
+FICHERO TS: TachadoGrafico.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Dibuja una rejilla (patrón de tachado) dentro de un área rectangular (bounding
+box). Se usa para rellenar visualmente celdas o zonas en planos técnicos GIS,
+habitualmente indicando áreas sombreadas o sin contenido.
+
+La rejilla consta de:
+  - Líneas verticales   espaciadas 10 unidades (X de Xmin+10 a Xmax)
+  - Líneas horizontales espaciadas 10 unidades (Y de Ymin+10 a Ymax)
+  - Estilo fijo: color negro (#000000), grosor 2
+
+El espaciado comienza DESPUÉS del mínimo: la primera línea está en Xmin+10
+(no en Xmin), igual que en el bucle Magik donde LnX empieza en Xmin y la
+primera operación es LnX << LnX + 10.
+
+── OBSERVACIÓN SOBRE EL CÓDIGO ORIGINAL ────────────────────────────────────────
+
+  El primer _loop tiene el comentario:
+    "#Se dibujan primero las líneas horizontales separadas 1 mm"
+  pero el código dibuja líneas VERTICALES (X constante, Y varía de Ymin a Ymax).
+
+  El segundo _loop tiene el mismo comentario y SÍ dibuja líneas horizontales.
+
+  En la migración TS se respeta la intención real del código (lo que hace),
+  no el comentario incorrecto. Los segmentos se etiquetan correctamente como
+  vertical/horizontal.
+
+── MÉTODO TRANSCRITO ───────────────────────────────────────────────────────────
+
+Magik: c_tachado_grafico.Despliega()
+TS:    CTachadoGrafico.despliega(): GridSegments
+
+  Magik                                         TypeScript
+  ──────────────────────────────────────────    ──────────────────────────────
+  line_style.new_with_properties(               { color: 'black', width: 2 }
+    :foreground_colour, colour("black"),         → guardado en lineStyle
+    :width, 2)                                   → pasado al renderizador
+
+  coords_vector.new(2)                          Segment = [x1,y1,x2,y2]
+                                                 → array de tuplas inline
+
+  Loop 1 (verticales):
+  LnX << _self.oArea.Xmin                       let lnX = xmin
+  LnX << LnX + 10                               lnX += spacing
+  _if LnX > oArea.XMax → _leave                 if (lnX > xmax) break
+  coord[1] = (LnX, Ymin)                        vertical.push(
+  coord[2] = (LnX, Ymax)                          [lnX, ymin, lnX, ymax])
+  oVentana.draw_line_transform(style, coord)    → acumulado, no pintado aún ①
+
+  Loop 2 (horizontales):
+  LnY << _self.oArea.Ymin                       let lnY = ymin
+  LnY << LnY + 10                               lnY += spacing
+  _if LnY > oArea.YMax → _leave                 if (lnY > ymax) break
+  coord[1] = (Xmin, LnY)                        horizontal.push(
+  coord[2] = (Xmax, LnY)                          [xmin, lnY, xmax, lnY])
+  oVentana.draw_line_transform(style, coord)    → acumulado, no pintado aún ①
+
+  ① DIFERENCIA CLAVE:
+    Magik llama a oVentana.draw_line_transform() dentro del bucle, pintando
+    segmento a segmento sobre la ventana GIS.
+    TS separa la generación de geometría del renderizado: despliega() devuelve
+    { vertical, horizontal } (arrays de Segment) y el componente SVG los pinta.
+    Esto permite reutilizar la lógica con cualquier renderer (SVG, Canvas, OL).
+
+── SLOT sNombre_Grafico ─────────────────────────────────────────────────────────
+
+  Magik: {:sNombre_Grafico, _unset}  define_slot_access(:writable, :private)
+  TS:    private sNombreGrafico: string | null = null
+         Getters: getNombreGrafico() / setNombreGrafico(n)
+
+  No se usa en Despliega() pero forma parte de la definición de la clase.
+
+── HERENCIA c_elemento_grafico ─────────────────────────────────────────────────
+
+  Magik: hereda oArea (bounding box) y oVentana (contexto de dibujo).
+  TS:    oArea → BoundingBox (pasado en constructor)
+         oVentana → no existe como objeto; sustituido por retornar GridSegments
+                    para que el componente React renderice con SVG.
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- c_tachado_grafico.new() → _return _clone
+  Smallworld clone del ejemplar. Sustituido por `new CTachadoGrafico(...)`.
+
+- oVentana.draw_line_transform(LoEstiloLinea, LoCoordenada)
+  El pintado directo en ventana GIS no tiene equivalente en TS.
+  La función devuelve los datos de geometría; el SVG del componente los renderiza.
+
+- coords_vector.new(2) / coordinate.new(x, y)
+  Tipos primitivos de Smallworld. Sustituidos por la tupla Segment = [x1,y1,x2,y2].
+
+- colour.called("black")
+  Lookup de color por nombre en Smallworld. Sustituido por string CSS '#000000'.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Solo algoritmo (sin render):
+  const c = new CTachadoGrafico({ xmin:0, ymin:0, xmax:100, ymax:80 });
+  const { vertical, horizontal } = c.despliega();
+  // vertical[0]   → [10, 0, 10, 80]   ← primera línea vertical
+  // horizontal[0] → [0, 10, 100, 10]  ← primera línea horizontal
+
+  // Con spacing personalizado:
+  const c = new CTachadoGrafico(area, 5, { color: '#ff0000', width: 1 });
+
+  // Contar líneas:
+  console.log(`${vertical.length} verticales, ${horizontal.length} horizontales`);
+
+  // Componente demo React:
+  <TachadoGraficoUI />
+  // → Inputs BoundingBox + spacing + color + width
+  //   Preview SVG en tiempo real + contador de segmentos
+
+================================================================================

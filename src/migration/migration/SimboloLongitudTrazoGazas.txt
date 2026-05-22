@@ -1,0 +1,53 @@
+================================================================================
+CLASE: SimboloLongitudTrazoGazas
+ORIGEN: c_simbolo_longitud_trazo_gazas.magik
+FICHERO TS: SimboloLongitudTrazoGazas.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Define los atributos del simbolo y dibuja una muestra con color y
+transformaciones (rotacion, flip, mirror).
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: defined_attributes
+TS:    SimboloLongitudTrazoGazas.definedAttributes(base?)
+
+Equivalencias directas:
+  - rope.new_from(_super.defined_attributes) -> copia de base
+  - name/colour/angle/flip/mirror -> LayoutAttributeDefinition
+  - enum_method :symbol_names -> enumMethod: 'symbolNames'
+
+-----------------------------------------------------------------------
+
+Magik: symbol_names
+TS:    SimboloLongitudTrazoGazas.symbolNames()
+
+Equivalencia:
+  - symbol_bundle_table.open(...).symbol_names -> dataSource.listSymbolNames()
+
+-----------------------------------------------------------------------
+
+Magik: draw_content_on(window)
+TS:    SimboloLongitudTrazoGazas.drawContentOn()
+
+Equivalencias directas:
+  - name unset -> status=incomplete
+  - crea estilo + realiza simbolo -> dataSource.renderSymbol()
+  - actual_geoms unset -> status=unknown
+  - rotate/flip/mirror -> parametros de render
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+SimboloLongitudTrazoGazasUI
+  - Lista simbolos (mock).
+  - Permite elegir color, angulo, flip y mirror.
+  - Renderiza una muestra: usa bitmap para "longitud trazo gazas".
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Acceso real a sigc_style_view y gis_program_manager.
+- Dibujo real en ventana de layout Smallworld.
+- Recoloreo real del bitmap (solo transformaciones).
+================================================================================

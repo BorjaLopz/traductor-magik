@@ -1,0 +1,197 @@
+================================================================================
+  CLASE MIGRADA: CSimboloGrafico
+  Fichero origen:  c_simbolo_grafico.magik
+  Fichero destino: CSimboloGrafico.tsx
+  Jerarquía Magik: c_simbolo_grafico  extends  c_elemento_grafico
+  Autores orig.:   fdiaz / DSB — 28/10/2004, 03/11/2004, 25/01/2005
+================================================================================
+
+PROPÓSITO
+---------
+Elemento gráfico de símbolo puntual para el motor de planos (plotting engine)
+de Smallworld CTL México. Representa un icono GIS que puede:
+
+  · Rotarse un ángulo arbitrario (nGrados)
+  · Voltearse horizontalmente — "flipped?" en el motor (bVoltear_H)
+  · Voltearse verticalmente  — "mirror?"  en el motor (bVoltear_V)
+
+El símbolo se busca en la base de datos de estilos GIS (sw_gis!gis_point_style)
+por nombre (sNombre_Grafico) y se renderiza sobre la ventana de planos mediante
+el método draw_sample() del objeto de símbolo.
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  sNombre_Grafico  → _sNombreGrafico: string | null    Nombre del símbolo en el catálogo
+  bVoltear_H       → _bVoltearH: boolean  (default false)  Volteo horizontal (:flipped?)
+  bVoltear_V       → _bVoltearV: boolean  (default false)  Volteo vertical   (:mirror?)
+  nGrados          → _nGrados: number     (default 0)    Ángulo de rotación en grados
+  o_sty_view       → _oStyView: string|null              Grupo de estilos (sigc_style_view)
+
+  Slots heredados de c_elemento_grafico (simulados en TypeScript):
+  nMargenIzq, nMargenDer, nMargenSup, nMargenInf  (en décimas de mm)
+
+
+MÉTODOS MIGRADOS (12 en total)
+--------------------------------
+
+1. constructor(nombre?)
+   Magik: new(RsNombre) → _self.sNombre_Grafico << RsNombre ; _return _clone
+   Crea una instancia con el nombre de símbolo indicado.
+   En Magik new() asigna el slot y retorna un _clone; en TypeScript el constructor
+   asigna el valor y retorna la propia instancia.
+
+2. get/set sNombreGrafico
+   Magik: sNombre_Grafico getter/setter
+   Nombre del símbolo a buscar en la BD de estilos GIS.
+
+3. get/set bVoltearH
+   Magik: bVoltear_H? getter/setter
+   Indica si el símbolo debe voltearse horizontalmente.
+   En draw_sample: parámetro :flipped? → SVG transform scale(-1,1).
+
+4. get/set bVoltearV
+   Magik: bVoltear_V? getter/setter
+   Indica si el símbolo debe voltearse verticalmente.
+   En draw_sample: parámetro :mirror? → SVG transform scale(1,-1).
+
+5. get/set nGrados
+   Magik: nGrados getter/setter
+   Ángulo de rotación del símbolo en grados.
+   En draw_sample: parámetro :rotate → SVG transform rotate(nGrados).
+
+6. get/set grupoEstilos
+   Magik: grupo_estilos getter/setter → .o_sty_view
+   Referencia al style view personalizado (sigc_style_view).
+   Si es null/_unset, se usa el estilo por defecto del gis_program_manager.
+
+7. static fromInstance(origen, nombre?)
+   Magik: new_from(RoObjeto, RsNombre_Grafico?)
+   Constructor de copia. Copia todos los atributos del objeto origen.
+   Comprobación de tipo: is_kind_of?(c_simbolo_grafico) → instanceof CSimboloGrafico.
+   Los márgenes se dividen entre 10 al copiar (conversión décimas mm → mm).
+   Si el tipo no coincide: condition.raise(:warning) → throw TypeError.
+   RsNombre_Grafico opcional: si se proporciona, sobreescribe el nombre copiado.
+
+8. initWith(props)
+   Magik: init_with(props)
+   Inicializa desde un property_list/Record con los slots del exemplar.
+   Extiende _super.init_with() añadiendo bVoltear_H y bVoltear_V.
+   Devuelve _self → return this (método fluente).
+
+9. despliega()
+   Magik: Despliega()
+   Método central de renderizado. En Magik:
+     · Obtiene gis_program_manager → style database → gis_point_style collection
+     · Crea un detached_record, asigna symbol_name, llama realise()
+     · Invoca draw_sample(oVentana, oArea, :rotate, :flipped?, :mirror?)
+   En TypeScript:
+     · Busca el símbolo en SYMBOL_CATALOG (mock de la BD GIS)
+     · Devuelve SimboloRenderProps con {nombre, grados, voltearH, voltearV}
+     · El componente SVG aplica: transform="rotate(g) scale(sX,sY)"
+   Nota: la secuencia scale→rotate en SVG (transforms de derecha a izquierda)
+   equivale a "voltear primero, luego rotar" — comportamiento natural para símbolos.
+
+10. serialSlots()
+    Magik: serial_slots()
+    Extiende _super.serial_slots() añadiendo:
+      :sNombre_grafico, :bVoltear_H, :bVoltear_V, :nGrados, :grupo_estilos
+    En TypeScript devuelve un objeto SimboloSerialData tipado.
+
+
+CONVERSIÓN DE TRANSFORMS DE DIBUJO
+------------------------------------
+Magik draw_sample() params → SVG transform equivalentes:
+
+  :rotate,   nGrados  →  rotate(nGrados)          Rotación en grados
+  :flipped?, true     →  scale(-1, 1)              Volteo eje Y (espejo horizontal)
+  :flipped?, false    →  scale( 1, 1)              Sin volteo horizontal
+  :mirror?,  true     →  scale( 1,-1)              Volteo eje X (espejo vertical)
+  :mirror?,  false    →  scale( 1, 1)              Sin volteo vertical
+
+  Transform SVG combinado: rotate(g) scale(sX, sY)
+  Equivale a: aplicar volteos primero, luego la rotación.
+  (SVG aplica transforms de derecha a izquierda)
+
+
+CATÁLOGO DE SÍMBOLOS — SYMBOL_CATALOG
+----------------------------------------
+Mock de la colección sw_gis!gis_point_style de Smallworld.
+En producción, estos símbolos vendrían de la BD de estilos GIS.
+
+  gis_point_circle    → Círculo
+  gis_point_square    → Cuadrado
+  gis_point_triangle  → Triángulo
+  gis_point_diamond   → Rombo
+  gis_point_cross     → Cruz / más
+  gis_point_arrow     → Flecha direccional
+  gis_point_star      → Estrella de 5 puntas
+  gis_point_terminal  → Terminal óptica (círculo + X)
+  gis_point_hexagon   → Hexágono
+
+Si sNombreGrafico no existe en el catálogo, se usa 'gis_point_circle' (fallback).
+
+
+ACCESO AL ESTILO EN MAGIK vs. TYPESCRIPT
+-----------------------------------------
+Magik:
+  gpm << gis_program_manager
+  sty_view << gpm.databases[:sigc_style_view]
+  _if (sty_view) _is _unset _orif _self.grupo_estilos = :default
+    syb_table << gpm.style_view.collections[:sw_gis!gis_point_style]
+  _else
+    syb_table << sty_view.collections[:sw_gis!gis_point_style]
+  _endif
+  LoSym << syb_table.new_detached_record()
+
+TypeScript:
+  SYMBOL_CATALOG[nombre].render(fill, stroke)
+  El campo grupoEstilos se conserva en serialSlots() pero no tiene efecto
+  funcional en el catálogo mock. En producción filtrarías el catálogo por
+  el grupo de estilos activo.
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· c_elemento_grafico (clase padre) no está migrada. Los slots de márgenes
+  (nMargenIzq/Der/Sup/Inf) se simulan como propiedades directas de la clase.
+
+· oVentana / oArea (window y área de dibujo de Smallworld) no tienen equivalente
+  directo. El renderizado se hace con un componente React SVG (SymbolSVG).
+
+· gis_program_manager no existe en TypeScript; su función de lookup se reemplaza
+  por el catálogo estático SYMBOL_CATALOG.
+
+· LoSym.realise(_unset, _unset) — en Magik carga el símbolo desde la BD.
+  En TS es implícito en el render() de cada entrada del catálogo.
+
+· _self.grupo_estilos = :default compara con el símbolo :default de Magik.
+  En TS se trata como string o null.
+
+· El componente UI añade:
+  - Catálogo visual clicable (los 8 símbolos en grid)
+  - Matriz 2×2 de combinaciones de volteo (con la rotación activa)
+  - Panel de serialSlots() en tiempo real
+  - Botón fromInstance() para probar el constructor de copia
+
+
+USO DESDE App.tsx
+------------------
+  import { CSimboloGraficoUI } from './migration/CSimboloGrafico';
+
+  function DemoCSimboloGrafico() {
+    return (
+      <section>
+        <h3>c_simbolo_grafico</h3>
+        <CSimboloGraficoUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '29-c-simbolo-grafico', label: '[29] c_simbolo_grafico', ... }
+
+
+================================================================================
+  Fin del documento — CSimboloGrafico.txt
+================================================================================

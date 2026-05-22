@@ -1,0 +1,189 @@
+================================================================================
+  CLASE MIGRADA: CGuiEditaSelloResumenProyecto
+  Fichero origen:  c_gui_edita_sello_resumen_proyecto.magik
+  Fichero destino: CGuiEditaSelloResumenProyecto.tsx
+  Jerarquía Magik: c_gui_edita_sello_resumen_proyecto  extends  gui_framework_mixin
+  Autor original:  des_david — sin fecha indicada
+================================================================================
+
+PROPÓSITO
+---------
+Componente GUI del motor de planos (plotting engine) de Smallworld que gestiona
+la edición interactiva del texto libre de un "sello resumen proyecto".
+
+En Magik, abre una ventana (frame/text_window) sobre el plano, carga el contenido
+de la celda (2,1) de la tabla "tbl_resumen_proyecto" en un área de texto, permite
+que el usuario edite el texto, y al confirmar lo escribe de vuelta al sello
+convertido a mayúsculas (.uppercase → .toUpperCase()), refrescando el layout.
+
+En TypeScript, se implementa como un modal dialog (position:fixed overlay) con
+un textarea editabe, botones de confirmación y cancelación, log de cambios, y
+un panel de visualización del layout simulado.
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  oVentana          → oVentana: string          Nombre/ID de la ventana activa
+  oMarco            → oMarco: FrameConfig        Configuración del frame (título, dimensiones, open)
+  loSello           → loSello: SelloResumenProyecto | null  Referencia al sello activo
+  loCurrentPage1    → loCurrentPage1: LayoutElement[]      Elementos del layout página 1
+
+  Variable compartida (shared_variable):
+  editaSelloResumenProyAux  → static editaSelloResumenProyAux: CGuiEditaSelloResumenProyecto | null
+  En Magik: define_shared_variable(:editaSelloResumenProyAux, _unset, :writable)
+  En TS: campo estático de clase.
+
+
+MÉTODOS MIGRADOS (9 en total)
+-------------------------------
+
+1. constructor(onStateChange?)
+   Magik: new() → init()
+   Crea instancia, llama init() automáticamente.
+   onStateChange: callback React para triggear re-render desde fuera del componente.
+
+2. init()
+   Magik: init()
+   Inicializa oMarco con título 'Text window', dimensiones 550×500, estado cerrado.
+   Devuelve _self → return this (método fluente).
+
+3. abreVentana()
+   Magik: abre_ventana()
+   Abre el frame de edición con título "Personalización del Sello", 550×500.
+   En Magik: crea frame, añade text_item y button_item, llama activate().
+   En TS: setea oMarco.open = true, desencadena renderizado del modal.
+
+4. escribeTextoSelloAVentana()
+   Magik: escribe_texto_sello_a_ventana()
+   Lee la celda (2,1) de la tabla "tbl_resumen_proyecto" del sello activo.
+   Carga el texto encontrado en el area de edición (text_item → textarea value).
+   Ruta de acceso en Magik: loSello.tablas["tbl_resumen_proyecto"].cells[key].texto
+   En TS: busca la tabla por nombre en loSello.tablas Map, localiza la celda "2-1".
+
+5. escribeTextoAlSello()
+   Magik: escribe_texto_al_sello()
+   Toma el texto del área de edición, lo convierte a mayúsculas (.uppercase → .toUpperCase()).
+   Escribe el resultado de vuelta en la celda (2,1) de "tbl_resumen_proyecto".
+   Llama layout_view_refresh() → en TS registra el cambio en changeLog y cierra el modal.
+
+6. obtenSello(tipoSello: string)
+   Magik: obten_sello(tipoSello)
+   Itera loCurrentPage1 buscando un elemento cuya propiedad "className" coincida
+   con tipoSello (string comparación directa).
+   En Magik: itera con _for loElt _over loCurrentPage1.fast_elements() _loop
+   En TS: loCurrentPage1.find(el => el.className === tipoSello)
+   Devuelve el sello encontrado o null.
+
+7. salir()
+   Magik: salir()
+   Cierra el frame (deactivate → oMarco.open = false).
+   No guarda cambios; descarta la edición en curso.
+
+8. noteChange(who, what)
+   Magik: note_change(who, what)
+   Registra un cambio en el log de auditoría. Devuelve [who, what].
+   En Magik equivale a un mecanismo de notificación/log interno.
+   En TS: pushes ChangeLogEntry { who, what, timestamp } a changeLog[].
+
+9. showEditControls()
+   Magik: show_edit_controls()
+   Stub — muestra controles adicionales de edición.
+   En Magik activa widgets específicos del frame; en TS es un placeholder
+   que registra la llamada en el log.
+
+
+TIPOS DE DATOS CLAVE
+---------------------
+SelloResumenProyecto:
+  { tipo: string, tablas: Map<string, TablaSello>, contenidoSello: string }
+
+TablaSello:
+  { nombre: string, cells: Map<CellKey, CeldaTexto> }
+
+CellKey: string en formato "fila-col" (ej. "2-1")
+CeldaTexto: { texto: string, esEditable?: boolean }
+
+FrameConfig:
+  { title: string, width: number, height: number, open: boolean }
+
+LayoutElement:
+  { id: string, className: string, label: string, tipo?: string }
+
+ChangeLogEntry:
+  { who: string, what: unknown, timestamp: string }
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  frame           → FrameConfig (objeto de configuración) + modal dialog (HTML)
+  text_window     → <textarea> HTML
+  text_item       → valor del textarea (React state)
+  button_item     → <button> HTML
+  activate()      → oMarco.open = true
+  deactivate()    → oMarco.open = false
+  .uppercase      → .toUpperCase()
+  layout_view_refresh() → registra en changeLog + cierra modal
+  define_shared_variable(:editaSelloResumenProyAux, _unset, :writable)
+                  → static editaSelloResumenProyAux: CGuiEditaSelloResumenProyecto | null = null
+  _for ... _over ... .fast_elements() _loop
+                  → Array.prototype.find() / for...of
+  condition.raise(:warning) → throw new TypeError(...)
+
+
+MOCK DE DATOS (página 1)
+--------------------------
+loCurrentPage1 contiene 5 elementos simulados:
+  · c_marco_general     (marco exterior)
+  · c_titulo_plano      (cabecera)
+  · c_resumen_proyecto  (sello editable — el que busca obtenSello())
+  · c_tabla_coordenadas (tabla de georeferencia)
+  · c_sello_fecha       (fecha y firma)
+
+El sello c_resumen_proyecto tiene:
+  · tbl_resumen_proyecto → celda "2-1" con texto de ejemplo editable
+  · contenidoSello: texto libre del resumen
+
+En producción, loCurrentPage1 vendría del layout_view activo del plotting engine.
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· gui_framework_mixin no está migrado. La funcionalidad GUI (frame, widgets) se
+  reemplaza por un modal dialog React con position:fixed overlay.
+
+· El text_item de Magik (widget nativo de Smallworld) se mapea a <textarea>
+  con React state para gestión del valor.
+
+· layout_view_refresh() no tiene equivalente directo. Se simula registrando
+  el cambio en changeLog y forzando re-render del componente.
+
+· define_shared_variable se convierte en campo static de clase TypeScript.
+  La instancia singleton se accede via CGuiEditaSelloResumenProyecto.editaSelloResumenProyAux.
+
+· El componente UI añade:
+  - Preview del layout simulado (lista de elementos de loCurrentPage1)
+  - Panel del sello activo con contenido de celda en tiempo real
+  - Log de cambios (changeLog) visible en la UI
+  - Display de la variable compartida editaSelloResumenProyAux
+
+
+USO DESDE App.tsx
+------------------
+  import { CGuiEditaSelloResumenProyectoUI } from './migration/CGuiEditaSelloResumenProyecto';
+
+  function DemoCGuiEditaSelloResumenProyecto() {
+    return (
+      <section>
+        <h3>c_gui_edita_sello_resumen_proyecto</h3>
+        <CGuiEditaSelloResumenProyectoUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '30-c-gui-edita-sello-resumen-proyecto', label: '[30] c_gui_edita_sello_resumen_proyecto', ... }
+
+
+================================================================================
+  Fin del documento — CGuiEditaSelloResumenProyecto.txt
+================================================================================

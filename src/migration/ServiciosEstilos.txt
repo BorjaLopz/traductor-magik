@@ -1,0 +1,215 @@
+================================================================================
+CLASE: ServiciosEstilos (CServiciosEstilos)
+ORIGEN: c_servicios_estilos.magik  —  package user
+Autor:  dvalenci / GE Network Solutions  (11-02-2002, rev. 28-Jul-2011)
+FICHERO TS: ServiciosEstilos.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Es un servicio singleton que adapta los estilos visuales de texto de objetos GIS
+según su estado de construcción. Funciona como una capa de transformación de
+estilos entre el modelo de datos de la red (estado de un cable/elemento) y el
+motor de renderizado del Layout Designer de Smallworld.
+
+El único método con lógica activa en el Magik original es:
+  obtener_estilo_blanco_y_negro_txt(PoRwo_est, Pc_construccion?)
+
+El segundo método (línea) está completamente vacío en el original (stub).
+
+No hay cálculos espaciales ni interacción con mapa →
+no se usa Turf.js ni OpenLayers.
+
+── PATRÓN SINGLETON ─────────────────────────────────────────────────────────────
+
+  Magik                                  TypeScript
+  ──────────────────────────────────── ────────────────────────────────────
+  def_slotted_exemplar(                private constructor() {}
+    :c_servicios_estilos, {...})
+                                       static new(): CServiciosEstilos {
+  _method c_servicios_estilos.new()      return new CServiciosEstilos();
+    _return _clone.init()              }
+  _endmethod
+                                       static singleton(): CServiciosEstilos {
+  _method c_servicios_estilos.init()     if (_singleton === null)
+    _return _self                          _singleton = CServiciosEstilos.new();
+  _endmethod                             return _singleton;
+                                       }
+  define_shared_variable(
+    :singleton, _unset, :private)      private static _singleton = null;
+
+  _method c_servicios_estilos
+          .singleton()
+    _if _self.singleton _is _unset
+      _self.singleton << _self.new()
+    _return _self.singleton
+
+  Nota: en Magik el singleton se registra como una shared_variable (variable de
+  clase). En TypeScript se usa un campo estático privado `_singleton`, patrón
+  equivalente y canónico en OOP.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_servicios_estilos.obtener_estilo_blanco_y_negro_txt(PoRwo_est, _optional Pc_construccion)
+TS:    CServiciosEstilos.obtenerEstiloBlancoYNegroTxt(poRwoEst, pcConstruccion?)
+────────────────────────────────────────────────────────────────────────────────
+
+PASO 1 — Extracción del estilo base
+
+  Magik                                        TypeScript
+  ────────────────────────────────────────── ──────────────────────────────────────
+  _if PoRwo_est.class_name = :gis_text_style  if (poRwoEst.className === 'gis_text_style')
+    LoEstilo =                                  loEstilo =
+      PoRwo_est.actual_text_styles[:left_right]   poRwoEst.actualTextStyles.leftRight
+  _elif PoRwo_est.class_name = :rwo_style     else if (poRwoEst.className === 'rwo_style')
+    LoEstilo = PoRwo_est.actual_text_style      loEstilo = poRwoEst.actualTextStyle
+  _else                                       } else {
+    _return PoRwo_est                           return poRwoEst   ← early return
+  _endif                                      }
+
+  La unión de tipos AnyStyleInput = GisTextStyle | RwoStyle | {className?: string}
+  modela los tres ramos. El else branch devuelve la entrada tal cual, igual que
+  en el Magik original.
+
+PASO 2 — Cálculo de propiedades según Pc_construccion
+
+  Pc_construccion   Magik                              TypeScript
+  ────────────────  ────────────────────────────────── ──────────────────────────
+  "PROYECTADO"      font.new_logical("bold")           loFont  = 'bold'
+                    colour.called(:red)                loColor = COLOURS.red
+                    xscale + (xscale*0.10).truncated   loEscalaX = xscale + Math.trunc(xscale*0.10)
+                    yscale + (xscale*0.10).truncated   loEscalaY = yscale + Math.trunc(xscale*0.10)
+
+  _unset (omitido)  font.new_logical("plain")          loFont  = 'plain'
+                    colour.called(:black)              loColor = COLOURS.black
+                    escala sin cambio                  loEscalaX = loEstilo.xscale  (sin cambio)
+
+  otro valor        font.new_logical("plain")          loFont  = 'plain'
+                    colour.called(:green)              loColor = COLOURS.green
+                    escala sin cambio                  loEscalaX = loEstilo.xscale  (sin cambio)
+
+  OBSERVACIÓN IMPORTANTE:
+    En el Magik original, el cálculo del incremento de yscale usa LoEstilo.xscale
+    (no yscale). Esto parece un copy-paste del autor (dvalenci), pero es el
+    comportamiento real del sistema. La migración TS lo replica exactamente:
+      loEscalaY = loEstilo.yscale + Math.trunc(loEstilo.xscale * 0.10)
+
+  .truncated en Magik ≡ Math.trunc() en TypeScript:
+    Ambos truncan el decimal hacia cero sin redondear.
+    Ejemplo: (20 * 0.10).truncated = 2 → loEscalaX = 20 + 2 = 22
+
+PASO 3 — Copia del estilo
+
+  Magik                                     TypeScript
+  ──────────────────────────────────────── ────────────────────────────────────
+  LoEstilo.copy_with_properties(            { ...loEstilo,
+    :font, LoFont,                            font:   loFont,
+    :yscale, LoEscalaY,                       colour: loColor,
+    :xscale, LoEscalaX,                       xscale: loEscalaX,
+    :colour, LoColor)                         yscale: loEscalaY }
+
+  copy_with_properties en Magik crea una copia del objeto con solo
+  las propiedades especificadas modificadas. El spread operator { ...obj }
+  en TypeScript es la equivalencia directa.
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_servicios_estilos.obtiener_estilo_blanco_y_negro_linea(rwo_est)
+TS:    CServiciosEstilos.obtenerEstiloBlancoYNegroLinea(_rwoEst): void
+────────────────────────────────────────────────────────────────────────────────
+
+  Cuerpo completamente vacío en el Magik original.
+  Se transcribe como stub con comentario explícito.
+  (Nombre original en Magik tiene errata: "obtiener" en lugar de "obtener".)
+
+── TIPOS CLAVE INTRODUCIDOS ────────────────────────────────────────────────────
+
+  FontStyle            ≡ font.new_logical("bold" / "plain")
+  ColourStyle          ≡ colour.called(:red / :green / :black)
+  TextStyleProperties  ≡ propiedades de un texto Magik (xscale, yscale, font, colour)
+  GisTextStyle         ≡ PoRwo_est con class_name = :gis_text_style
+  RwoStyle             ≡ PoRwo_est con class_name = :rwo_style
+  AnyStyleInput        ≡ unión abierta de los tres ramos del if/elif/else
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- remex(:c_servicios_estilos)
+  → Comando Smallworld para redefinir un exemplar en caliente.
+    Sin equivalente en TS. No aplica en el contexto React/compilado.
+
+- _pragma(classify_level=advanced, topic={if_mit_cable_model})
+  → Metadatos del sistema de clasificación de Smallworld.
+    Sin equivalente en TS.
+
+- define_shared_variable(:singleton, _unset, :private)
+  → Variable de clase privada de Smallworld. En TS: campo estático privado.
+
+- {:st_arbol, _unset}  (slot de instancia)
+  → Declarado en el exemplar pero nunca usado en ningún método del fichero.
+    Se conserva como `private stArbol: unknown = null` para fidelidad.
+
+- Herencia implícita de object (todos los exemplars en Magik heredan de object)
+  → En TS la clase no extiende ninguna base explícita.
+
+── CONTEXTO DE USO EN EL SISTEMA GIS ───────────────────────────────────────────
+
+  En Smallworld Physical Network Inventory, los objetos de la red (cables, ductos,
+  empalmes) tienen un estado de construcción que determina cómo se muestran en el
+  plano imprimible:
+
+    PROYECTADO → rojo + negrita + escala mayor (diferencia claramente lo que aún
+                 no está instalado físicamente)
+    EXISTENTE  → verde + normal (lo que ya está en campo pero tiene algún estado
+                 de proceso)
+    sin estado  → negro + normal (estado base / sin clasificar)
+
+  Este servicio es llamado por los métodos de dibujado de símbolos y etiquetas
+  del Layout Designer antes de renderizar cada objeto, sustituyendo el estilo
+  original por uno modificado según el estado del objeto.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Singleton (patrón original):
+  const svc = CServiciosEstilos.singleton();
+
+  // Caso 1: gis_text_style, PROYECTADO
+  const gisStyle: GisTextStyle = {
+    className: 'gis_text_style',
+    actualTextStyles: { leftRight: { xscale:20, yscale:20, font:'plain', colour:COLOURS.black } }
+  };
+  const result = svc.obtenerEstiloBlancoYNegroTxt(gisStyle, 'PROYECTADO');
+  // → { xscale:22, yscale:22, font:'bold', colour:{name:'red',hex:'#CC0000'} }
+
+  // Caso 2: rwo_style, sin estado (_unset)
+  const rwoStyle: RwoStyle = {
+    className: 'rwo_style',
+    actualTextStyle: { xscale:15, yscale:15, font:'plain', colour:COLOURS.black }
+  };
+  const result2 = svc.obtenerEstiloBlancoYNegroTxt(rwoStyle);
+  // → { xscale:15, yscale:15, font:'plain', colour:{name:'black',hex:'#000000'} }
+
+  // Caso 3: tipo desconocido → devuelve entrada sin modificar
+  const unknown = { className: 'raw_symbol', data: '...' };
+  const result3 = svc.obtenerEstiloBlancoYNegroTxt(unknown, 'EXISTENTE');
+  // → { className: 'raw_symbol', data: '...' }  (misma referencia)
+
+  // Componente demo React:
+  <ServiciosEstilosUI />
+  // → Selector de tipo de entrada (gis_text_style / rwo_style / desconocido)
+  //   Selector de Pc_construccion (PROYECTADO / EXISTENTE / _unset)
+  //   Slider de xscale/yscale base
+  //   Preview de texto renderizado con las propiedades calculadas
+  //   Tabla antes/después con delta de escala y color
+  //   Traza de equivalencia Magik → TypeScript paso a paso
+
+── RELACIÓN CON OTRAS MIGRACIONES ──────────────────────────────────────────────
+
+  [11] StyleSymbolOpenDialog → también trabaja con estilos de símbolo GIS
+       (drawSample, SymbolStyleService). Contexto similar pero para símbolos
+       punto en lugar de estilos de texto.
+
+  [14] SimbologiaPlanoContruccionFo → usa un símbolo GIS con escala fija 3.
+       CServiciosEstilos sería el servicio que determinaría el estilo final
+       del símbolo según el estado de construcción antes de dibujarlo.
+
+================================================================================

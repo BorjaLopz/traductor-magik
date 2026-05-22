@@ -1,0 +1,224 @@
+================================================================================
+CLASE: CFila
+ORIGEN: c_fila.magik  —  dsanchez — 03/Noviembre/2004
+HEREDA: (ninguna herencia explícita en Magik)
+FICHERO TS: CFila.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Clase de modelo para una fila de tabla en el motor de planos Smallworld.
+Es una pieza de bajo nivel utilizada por el sistema de tablas (c_tablas /
+oTablas) para definir la altura de cada renglón de una tabla de plano.
+
+Responsabilidades:
+  1. Almacenar la longitud (altura) de una fila con conversión interna ×10
+     → el valor externo es en mm; el almacenamiento interno es en décimas de mm.
+  2. Validar que la longitud no sea negativa (setter).
+  3. Serializarse / deserializarse desde/hacia pares clave-valor XML (serial_slots /
+     new_from_serial), revirtiendo la conversión ×10 al serializar.
+
+Conversión de unidad (clave del comportamiento):
+  ┌──────────────────────────────────────────────────────────┐
+  │  Entrada del usuario: 5 mm                               │
+  │  Almacenamiento interno: 5 × 10 = 50  (_nLongitud = 50)  │
+  │  Getter devuelve: 50  (valor interno, no los mm)         │
+  │  serial_slots divide: 50 / 10 = 5  (recupera los mm)    │
+  └──────────────────────────────────────────────────────────┘
+
+── ATRIBUTOS ────────────────────────────────────────────────────────────────────
+
+  {:nLongitud, _unSet}  — slot privado con acceso :writable, :private
+    TS: private _nLongitud: number | null = null
+
+  No hay defined_attributes (no es un layout_element).
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_fila.new(RnLongitud)
+TS:    constructor(nLongitud?: number)
+
+  Magik: .nLongitud << RnLongitud ; _return _clone
+  TS:    this.nLongitud = nLongitud  (delega en setter → validación + ×10)
+
+  _clone en Magik devuelve una copia del objeto con el slot ya asignado.
+  En TS el constructor crea la instancia directa; el efecto es equivalente.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_fila.nLongitud  (getter)
+TS:    get nLongitud(): number
+
+  Magik: _return .nLongitud
+  TS:    return this._nLongitud ?? 0
+
+  Devuelve el valor interno (ya ×10). Si nunca se asignó, devuelve 0.
+  NOTA: el getter devuelve el valor INTERNO (décimas de mm), no los mm
+  originales. Para obtener los mm hay que dividir por 10 (o usar serialSlots).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_fila.nLongitud << RnValor  (setter)
+TS:    set nLongitud(valor: number)
+
+  Magik:
+    _if RnValor < 0 _then
+      condition.raise(:warning, :string, "Longitud no puede ser menor que cero")
+    _endif
+    .nLongitud << RnValor * 10
+
+  TS:
+    if (valor < 0) throw new RangeError('Longitud no puede ser menor que cero');
+    this._nLongitud = valor * 10;
+
+  PUNTOS CLAVE:
+    - La validación se hace sobre el valor de entrada (mm), no el interno.
+    - La conversión ×10 ocurre SIEMPRE que se asigna (incluyendo init_with
+      y el constructor), por lo que el slot interno siempre está en décimas de mm.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_fila.init_with(props)
+TS:    initWith(props: Record<string,unknown>): this
+
+  Magik:
+    _for key, value _over props.fast_keys_and_elements()
+      _try _with cond
+        _self.perform_private(key.with_chevron, value)
+      _when does_not_understand
+      _endtry
+
+  TS:
+    for (const [key, value] of Object.entries(props))
+      try { descriptor.set.call(this, value) }
+      catch { /* ignora claves sin setter */ }
+
+  perform_private(key.with_chevron, value) en Magik llama al setter
+  cuyo nombre es key + "<" (por ej., "nLongitud<"). En TS se usa
+  Object.getOwnPropertyDescriptor sobre el prototipo para obtener el
+  setter del mismo nombre que la clave del objeto props.
+
+  Uso típico: construir desde datos ya parseados (XML/JSON/mock).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_fila.new_from_serial(keys, xml_values)
+TS:    static fromSerial(keys: string[], values: unknown[]): CFila
+
+  Magik:
+    props << property_list.new()
+    _for nr, key _over keys.fast_keys_and_elements()
+      props[key] << xml_values[nr]
+    _return _clone.init_with(props)
+
+  TS:
+    const props = {}
+    keys.forEach((key, i) => { props[key] = values[i]; })
+    return new CFila().initWith(props)
+
+  Reconstruye la instancia desde datos serializados.
+  Los valores deben estar en mm (sin ×10); initWith llama al setter
+  que aplica la conversión interna.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_fila.serial_slots()
+TS:    serialSlots(): { keys: string[]; values: number[] }
+
+  Magik:
+    _try ln_long << .nLongitud / 10
+    _when does_not_understand ln_long << 0
+    keys   << rope.new_with(:nLongitud)
+    values << rope.new_with(ln_long)
+    >> keys, values
+
+  TS:
+    let ln_long: number
+    try { ln_long = (this._nLongitud ?? 0) / 10 }
+    catch { ln_long = 0 }
+    return { keys: ['nLongitud'], values: [ln_long] }
+
+  Divide ÷10 para deshacer la conversión interna y devolver mm.
+  El _try/_when protege el caso en que _nLongitud no sea un número
+  (slot _unSet en Magik → null en TS → da 0).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_fila.serial_structure
+TS:    static readonly SERIAL_STRUCTURE = 'slotted'
+
+  Magik: >> :slotted
+  Indica al motor de serialización que debe guardar los slots, no una
+  referencia ni un valor escalar. En TS se modela como constante estática.
+
+── FLUJO COMPLETO DE USO ────────────────────────────────────────────────────────
+
+  // 1. Crear fila de 5 mm
+  const fila = new CFila(5);
+  fila.nLongitud   // → 50  (almacenamiento interno ×10)
+
+  // 2. Serializar
+  const { keys, values } = fila.serialSlots();
+  // keys   = ['nLongitud']
+  // values = [5]   (÷10 del valor interno)
+
+  // 3. Deserializar desde XML/JSON
+  const fila2 = CFila.fromSerial(['nLongitud'], [7.5]);
+  fila2.nLongitud  // → 75  (7.5 × 10)
+
+  // 4. init_with (construcción flexible)
+  const fila3 = new CFila().initWith({ nLongitud: 3 });
+  fila3.nLongitud  // → 30
+
+  // 5. Validación — valor negativo
+  try {
+    const filaErr = new CFila(-1);
+  } catch (e) {
+    // RangeError: Longitud no puede ser menor que cero
+  }
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                    TypeScript
+  ─────────────────────────────────────────────────────────────────────────────
+  {:nLongitud, _unSet}                    private _nLongitud: number | null = null
+  .nLongitud << RnValor * 10             this._nLongitud = valor * 10
+  condition.raise(:warning, :string, …)  throw new RangeError(…)
+  _try … _when does_not_understand        try { … } catch { … }
+  perform_private(key.with_chevron, val) Object.getOwnPropertyDescriptor(proto, key)?.set?.call(this, val)
+  rope.new_with(:nLongitud)              ['nLongitud']
+  _return _clone                         new CFila().initWith(props)
+  property_list.new()                    {} (Record<string,unknown>)
+  >> keys, values                        return { keys, values }
+  >> :slotted                            static readonly SERIAL_STRUCTURE = 'slotted'
+  .nLongitud / 10  (serial_slots)        (this._nLongitud ?? 0) / 10
+
+── DEMO INTERACTIVO (CFilaUI) ───────────────────────────────────────────────────
+
+  El componente <CFilaUI /> muestra tres secciones:
+
+  1. Panel new(RnLongitud):
+     - Input numérico para introducir mm
+     - Botón "Crear fila" → llama new CFila(valor)
+     - Tabla con columnas: Entrada (mm) | Interno ×10 | serial_slots() ÷10 | Error
+     - Los valores negativos aparecen en fondo naranja con el RangeError
+
+  2. Panel new_from_serial:
+     - Inputs para keys y values (CSV)
+     - Botón "fromSerial()" → llama CFila.fromSerial(keys, values)
+     - Muestra nLongitud interno y el resultado de serialSlots()
+
+  3. Tabla de equivalencias Magik → TypeScript con 8 entradas
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+  - Integración con c_tablas (motor de tablas de Smallworld) que consume
+    las instancias de c_fila para calcular la geometría del layout.
+  - El sistema de serialización XML de Smallworld (serial_structure :slotted
+    se usa en conjunto con el framework de persistencia GIS).
+  - La lógica de render de la fila en el canvas del plano (es gestionada por
+    c_tablas, no por c_fila directamente).
+  - El concepto _clone de Magik (shallow copy del objeto); en TS el constructor
+    crea directamente la instancia nueva.
+
+================================================================================

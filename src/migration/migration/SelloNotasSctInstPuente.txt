@@ -1,0 +1,47 @@
+================================================================================
+CLASE: SelloNotasSctInstPuente
+ORIGEN: c_sello_notas_sct_inst_puente.magik
+FICHERO TS: SelloNotasSctInstPuente.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Crea la tabla de notas generales (2 filas x 1 columna) y asigna un texto
+sobre la instalacion lateral en puente.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+TS:    SelloNotasSctInstPuente.prvCreaCfgTblNotasGrales(origin)
+
+Equivalencias directas:
+  - oTablas.crea_tabla(2,1,:tbl_notas_grales) -> TableDefinition con id y tamano
+  - oCoordenada_Origen << RoCoord             -> origin
+  - renglones[1]=10, renglones[2]=170         -> rowHeights [10, 170]
+  - columnas[1]=165                           -> colWidths [165]
+
+-----------------------------------------------------------------------
+
+Magik: prvAsignaTexto()
+TS:    SelloNotasSctInstPuente.prvAsignaTexto(table)
+
+Equivalencias directas:
+  - _super.prvAsignaTexto() -> baseTexto (opcional) que se antepone
+  - character.newLine       -> '\n'
+  - concatenaciones con s_tipo_cable, s_estado
+    -> interpolacion de cadenas
+  - oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+    -> cell (2,1) con texto asignado
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+SelloNotasSctInstPuenteUI
+  - Instancia la clase con datos mock.
+  - Llama build() (crear tabla + asignar texto).
+  - Renderiza el texto de la celda (2,1) en un bloque preformateado.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Integracion con tablas reales de Smallworld.
+- Textos de la clase padre (solo se simula baseTexto).
+================================================================================

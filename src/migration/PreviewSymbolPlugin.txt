@@ -1,0 +1,213 @@
+================================================================================
+  CLASE MIGRADA: PreviewSymbolPlugin
+  Fichero origen:  preview_symbol_plugin.magik
+  Fichero destino: PreviewSymbolPlugin.tsx
+  Jerarquía Magik: preview_symbol_plugin  extends  :plugin  (plugin del framework GUI)
+  Autor original:  — (sin fecha indicada)
+================================================================================
+
+PROPÓSITO
+---------
+Plugin del framework GUI de Smallworld que gestiona la vista previa interactiva
+de símbolos GIS del catálogo sigc (sigc_style_view). Sus responsabilidades son:
+
+  · Inicializar y mantener la referencia a sigc_style_view (BD de estilos GIS)
+  · Controlar el acceso de escritura a esa BD (modo :write / :readonly)
+  · Registrar y habilitar/deshabilitar 4 acciones según permisos (sw_action)
+  · Abrir un diálogo de vista previa (c_preview_symbol_dialog) con catálogo de símbolos
+  · Publicar el símbolo seleccionado en el databus (:symbol_name)
+  · Consolidar (merge) o propagar (post) cambios en la BD de estilos
+
+
+SLOT MIGRADO
+-------------
+  .sigc_style_view → _sigcStyleView: SigcStyleView | null
+    Referencia a la vista de estilos GIS (gis_program_manager.databases[:sigc_style_view]).
+    Se inicializa en init(): si el DB está registrado se usa esa instancia;
+    si no, se llama user:abre_style_sigc() como fallback.
+
+  Propiedades (def_property equivalentes):
+    x_offset → xOffset: number (default 0)  Desplazamiento X del diálogo
+    y_offset → yOffset: number (default 0)  Desplazamiento Y del diálogo
+
+  Constante compartida (define_shared_constant):
+    databusProsumerDataTypes = ['symbol_name']
+    Equivale a: define_shared_constant(:databus_producer_data_types, {:symbol_name}, :public)
+
+
+MÉTODOS MIGRADOS (9 en total)
+-------------------------------
+
+1. init(name, framework)
+   Magik: init(name, framework) — _super.init() + carga sigc_style_view
+   Carga sigc_style_view desde gis_program_manager.databases[:sigc_style_view].
+   Si no está registrado en el DB manager, llama user:abre_style_sigc() (fallback).
+   Devuelve _self → return this.
+
+2. activatePreviewSymbol()
+   Magik: activate_preview_symbol()
+   Obtiene o crea una instancia de c_preview_symbol_dialog (con caché: get_dialog/cache_dialog).
+   Llama activate_relative_to() con título, top_frame, x_offset, y_offset.
+   En TS: abre el modal dialog (dialogOpen = true).
+
+3. buildGui(container)
+   Magik: build_gui(container)
+   Crea c_preview_symbol_dialog y construye la GUI embebida en el contenedor padre.
+   Asigna tab_label desde el mensaje :tab_title.
+   En TS: representado por el componente React PreviewSymbolPluginUI completo.
+
+4. postActivation()
+   Magik: post_activation()
+   Llamado automáticamente por el framework tras activar el plugin.
+   Llama manage_actions() para actualizar el estado de las acciones.
+
+5. manageActions()
+   Magik: manage_actions()
+   Lee gis_program_manager.databases[:sigc_style_view].current_writer.
+   Condición de habilitación:
+     sigcStyleView !== null && writable? && current_writer = "yourself"
+   Si se cumple: enabled? = true para las 3 acciones de escritura.
+   Si no:        enabled? = false para las 3 acciones.
+   La acción :activate_preview_symbol NO depende de este control (siempre activa).
+
+6. initActions()
+   Magik: init_actions()
+   Registra 4 sw_action con sw_action.new():
+     :activate_preview_symbol   → activatePreviewSymbol()
+     :open_style_sigc_app       → openSigcStyleSymbolApp()
+     :merge_style_sigc_view     → mergeStyleSigcView()
+     :post_style_sigc_view      → postStyleSigcView()
+   En TS: estado ActionState { openStyleSigcApp, mergeStyleSigcView, postStyleSigcView }
+   gestionado por manageActions(). Los botones React refleja el estado enabled?.
+
+7. mergeStyleSigcView()
+   Magik: merge_style_sigc_view()
+   Consolida cambios de la BD de símbolos sigc hacia la BD base.
+   Condición: sigcStyleView !== null && writable? && mode = :write
+   Éxito: sigcStyleView.merge() → show_message("La base de datos de dibujos se ha actualizado")
+   Error: condition.raise(:user_error) con mensaje que incluye modo actual y current_writer.
+   _try/_when error → try/catch en TypeScript.
+
+8. postStyleSigcView()
+   Magik: post_style_sigc_view()
+   Propaga cambios de la BD de símbolos sigc hacia otras vistas.
+   Misma lógica que mergeStyleSigcView() pero llama .post() en lugar de .merge().
+   Mismos mensajes de error que merge, con texto "propagar" en lugar de "consolidar".
+
+9. openSigcStyleSymbolApp()
+   Magik: open_sigc_style_symbol_app()
+   Obtiene smallworld_product.application_definition(:sigc_style_symbol_editor).
+   Si app is _unset → .start(); si existe → .restart().
+   En TS: stub que muestra mensaje de confirmación (no hay aplicación real).
+
+
+TIPOS DE DATOS CLAVE
+---------------------
+SigcStyleView:
+  { writable: boolean, mode: 'write'|'readonly',
+    currentWriter: string|null, merge(): void, post(): void }
+
+ActionState:
+  { openStyleSigcApp: boolean, mergeStyleSigcView: boolean, postStyleSigcView: boolean }
+
+ViewMode: 'write' | 'readonly'  (equivale a :write | :readonly en Magik)
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  :plugin (extends)            → clase TypeScript normal
+  define_shared_constant       → static readonly campo de clase
+  def_property :x_offset       → xOffset: number = 0
+  def_property :y_offset       → yOffset: number = 0
+  define_slot_access :read     → getter público (get sigcStyleView())
+  gis_program_manager.databases[:sigc_style_view]
+                               → _getDbStyleView() devuelve SigcStyleView mock
+  user:abre_style_sigc()       → _abreStyleSigc() — fallback mock
+  .writable?                   → v.writable (boolean)
+  .mode _is :write             → v.mode === 'write'
+  current_writer = "yourself"  → v.currentWriter === 'yourself'
+  sw_action.new(:name, ...)    → objeto ActionState + botones React
+  .enabled? << _true/_false    → estado boolean en ActionState
+  d.activate_relative_to(...)  → dialogOpen = true + posición x/y en modal
+  cache_dialog / get_dialog    → modal único (React state)
+  condition.raise(:user_error, :string, msg)
+                               → throw new Error + captura → statusMessage
+  show_message(msg)            → statusMessage = msg
+  _try _with _when error       → try/catch
+
+
+DATABUS PATTERN
+----------------
+Magik define_shared_constant(:databus_producer_data_types, {:symbol_name}, :public)
+indica que este plugin "publica" el valor :symbol_name en el databus del framework.
+En TypeScript:
+  static readonly databusProsumerDataTypes = ['symbol_name'] as const
+El símbolo seleccionado en el catálogo representa el valor publicado.
+En producción, esto notificaría a otros componentes suscritos al databus qué símbolo
+está seleccionado actualmente.
+
+
+SIGC_STYLE_VIEW — CONTROL DE VERSIONES
+----------------------------------------
+La BD sigc_style_view funciona como una BD versionada de Smallworld:
+  :write    → el usuario tiene acceso en escritura, puede modificar estilos
+  :readonly → solo lectura, los botones de escritura se deshabilitan
+  current_writer → identifica qué usuario tiene el "lock" de escritura
+  merge()   → consolida cambios locales hacia la copia base (como git merge)
+  post()    → propaga cambios hacia otras vistas (como git push)
+
+En la UI se puede simular cualquier combinación de estos estados para verificar
+el comportamiento de manage_actions().
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· :plugin (framework Smallworld) no está migrado. Las funcionalidades del plugin
+  (registro, activación, gestión de framework) se simulan directamente en la clase.
+
+· sw_action con :image → en TS los botones no tienen icono de módulo; el estado
+  enabled/disabled se representa con color y badge ON/OFF.
+
+· get_dialog / cache_dialog → patrón de caché de diálogos de Smallworld.
+  En TS el modal es un único componente React; no hay caché explícita.
+
+· activate_relative_to(title, top_frame, x, y) → en TS el modal se centra en
+  la ventana del navegador; x_offset/y_offset se muestran como metadato informativo.
+
+· gis_program_manager no existe en TS. Se reemplaza por createMockSigcStyleView()
+  que devuelve una instancia configurable desde la UI.
+
+· smallworld_product.application_definition(:sigc_style_symbol_editor).start/restart
+  → stub que muestra mensaje de confirmación; no existe la aplicación real.
+
+· build_gui(container) / build_embedded_gui(container) → toda la UI se representa
+  en PreviewSymbolPluginUI como componente React autocontenido.
+
+· El componente UI añade:
+  - Controles interactivos para simular el estado de sigc_style_view
+  - Indicador visual del resultado de manage_actions()
+  - Badges ON/OFF en cada botón de acción
+  - Modal con catálogo de 9 símbolos clicables (c_preview_symbol_dialog simulado)
+  - Panel de mensajes para show_message / condition.raise
+
+
+USO DESDE App.tsx
+------------------
+  import { PreviewSymbolPluginUI } from './migration/PreviewSymbolPlugin';
+
+  function DemoPreviewSymbolPlugin() {
+    return (
+      <section>
+        <h3>preview_symbol_plugin</h3>
+        <PreviewSymbolPluginUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '31-preview-symbol-plugin', label: '[31] preview_symbol_plugin', ... }
+
+
+================================================================================
+  Fin del documento — PreviewSymbolPlugin.txt
+================================================================================

@@ -1,0 +1,183 @@
+================================================================================
+CLASE: TrazaTrail (CTrazaTrail)
+ORIGEN: linea_perpendicular.magik  —  GE Network Solutions / jtlelo / 2006-02-28
+HEREDA: model, pni_editor_plugin (Smallworld)
+FICHERO TS: TrazaTrail.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Utilidad geométrica de red física: dado un segmento de línea P1-P2, calcula la
+línea perpendicular (transversal) que pasa por P2, con longitud fija (radio 18 000
+unidades de mapa) o ángulo personalizable. Opcionalmente genera el símbolo de
+tierra eléctrica sobre un bounding box.
+
+Casos de uso en PNI:
+  - Determinar la traza perpendicular a un cable en un punto determinado.
+  - Visualizar el "cruce" transversal en planos de canalización.
+  - Dibujar el símbolo de tierra en planos eléctricos (dibujar_tierra).
+
+────────────────────────────────────────────────────────────────────────────────
+
+── ALGORITMO CENTRAL ───────────────────────────────────────────────────────────
+
+Dado P1 y P2 (dos puntos en el plano proyectado):
+
+  1. sangulo = atan2(P2.y - P1.y, P2.x - P1.x)     ← ángulo del segmento base
+  2. vangulo = sangulo + 90°  (o + PiAngulo si se pasa)  ← dirección perpendicular
+  3. punto_up   = P2 − radio·(cos, sin)(vangulo)     ← extremo "arriba"
+  4. punto_down = P2 + radio·(cos, sin)(vangulo)     ← extremo "abajo"
+  5. transversal = LineString([punto_up, punto_down]) ← geometría del cruce
+
+  radio fijo = 18 000 unidades de mapa.
+
+  La línea transversal es siempre de longitud total 2 × radio = 36 000 u.m.,
+  centrada exactamente en P2.
+
+────────────────────────────────────────────────────────────────────────────────
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_traza_trail.mangulo(p1, p2)
+TS:    CTrazaTrail.mangulo(p1, p2): number
+
+  Dado p1 y p2, devuelve el ángulo en radianes de la línea que los une.
+
+  Magik: construction_line.new_with_coords(p1, p2).angle
+  TS:    Math.atan2(p2.y - p1.y, p2.x - p1.x)
+
+  → Equivalencia directa: en Smallworld, .angle sobre coordenadas proyectadas
+    devuelve el mismo valor que atan2 para el par (dy, dx).
+    (eje X positivo = 0 rad, sentido antihorario positivo)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_traza_trail.linea(p1, p2, _optional PiAngulo)
+TS:    CTrazaTrail.linea(p1, p2, piAngulo?): void
+
+  Núcleo del algoritmo.
+
+  .radio   << 18000
+  .sangulo << _self.mangulo(p1, p2)
+
+  _if PiAngulo _is _unset
+    vangulo << .sangulo + 90.degrees_to_radians   → sangulo + π/2
+  _else
+    vangulo << .sangulo + PiAngulo.degrees_to_radians
+
+  #arriba
+  .xup << p2.x - .radio * cos(vangulo)
+  .yup << p2.y - .radio * sin(vangulo)
+
+  #abajo
+  .xdown << p2.x + .radio * cos(vangulo)
+  .ydown << p2.y + .radio * sin(vangulo)
+
+  .transversal << aux_tri.sectors  →  array [[xup,yup],[xdown,ydown]]
+
+  Llama internamente a trazarTrail() al finalizar (igual que el Magik).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_traza_trail.trazar_trail
+TS:    CTrazaTrail.trazarTrail(): void
+
+  Traza el trail en el mapa a partir de punto_down:
+
+  Magik:
+    mt.add_coordinate(.punto_down)
+    c2 << .punto_down + coordinate(6000, -6000)   ← offset constante del original
+    mt.add_coordinate(c2)
+    mapa.set_trail_from_geometry(mt.as_pseudo_geometry)
+
+  TS:
+    Crea OL Feature con LineString([punto_down, punto_down+(6000,-6000)])
+    y lo añade al trailSource (VectorSource de OpenLayers).
+    Si hay GisService inyectado, delega también setTrailFromGeometry(coords).
+
+  El offset (6000, -6000) es una constante del Magik original, reproducida
+  fielmente; determina la orientación del trail dibujado en mapa.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_traza_trail.dibujar_tierra(limite, window)
+TS:    CTrazaTrail.dibujarTierra(bbox): { diagonales, baseline }
+
+  Genera el símbolo gráfico de "tierra" eléctrica sobre un bounding box.
+
+  Lógica del algoritmo:
+    longitud = bbox.xmax - bbox.xmin         ← ca.distance_to(cb) en eje X
+    incX     = longitud / 16                 ← 16 tramos iguales
+    incY     = 300                           ← descenso diagonal (constante Magik)
+
+    Loop 16 iteraciones:
+      ca = (xmin + offsetX,       ymin - 300)   ← punto alto del tramo
+      cb = (xmin + offsetX+incX,  ymin)          ← punto bajo del tramo
+      → segmento diagonal ca → cb
+
+    baseline = línea horizontal (xmin, ymin) → (xmax, ymin)
+
+  Magik pinta directamente en window:
+    LoWin1.paint(_true, sr,  line_style.new(colour_black, 2))  ← diagonales
+    LoWin1.paint(_true, sr2, line_style.new(colour_black, 2))  ← baseline
+
+  TS devuelve:
+    { diagonales: [Point2D, Point2D][], baseline: [Point2D, Point2D] }
+    → el componente SVG o Canvas se encarga de pintar.
+
+── ABSTRACCIÓN TrazaTrailGisService ────────────────────────────────────────────
+
+  smallworld_product.pni_application().plugin(:map_plugin).current_map
+  → abstraído como TrazaTrailGisService:
+
+  setTrailFromGeometry(coords)  ←  mapa.set_trail_from_geometry(mt.as_pseudo_geometry)
+
+  Además, la clase expone:
+    trailSource: VectorSource (OL) — conectar a VectorLayer en el mapa.
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- def_slotted_exemplar(:c_traza_trail, ..., :model, :pni_editor_plugin)
+  → Herencia del framework Smallworld PNI. Sin equivalente React/TS.
+
+- c_traza_trail.new() / c_traza_trail.init()
+  → Métodos de construcción de Smallworld (_clone / _super.init()).
+    Sustituidos por el constructor de TypeScript.
+
+- .transversal << aux_tri.sectors  (objeto sectors Magik)
+  → Tipo nativo de Smallworld. Sustituido por [number, number][] en TS.
+
+- smallworld_product.pni_application().plugin(:map_plugin).current_map
+  → Instancia global del mapa en Smallworld.
+    Abstraída en TrazaTrailGisService o trailSource (VectorSource OL).
+
+- dibujar_tierra: colour.new_from_hex("000000") + line_style.new(color, 2)
+  → Estilos de pintado de la ventana Smallworld.
+    En TS el estilo lo aplica el componente SVG/Canvas.
+
+- Objeto mapa comentado en el .magik original (bloque #_method c_traza_trail.Objeto)
+  → No transcrito (era código comentado en el fuente Magik también).
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Solo algoritmo (sin mapa):
+  const c = new CTrazaTrail();
+  c.linea({ x: 440000, y: 4474000 }, { x: 440200, y: 4474200 });
+  const up   = c.getPuntoUp();    // → { x, y }
+  const down = c.getPuntoDown();  // → { x, y }
+
+  // Con ángulo personalizado (PiAngulo = 45°):
+  c.linea(p1, p2, 45);
+
+  // Con GisService (trail en mapa):
+  const c = new CTrazaTrail(myGisService);
+  c.linea(p1, p2);  // internamente llama trazarTrail → gis.setTrailFromGeometry
+
+  // Símbolo de tierra:
+  const { diagonales, baseline } = c.dibujarTierra({ xmin, ymin, xmax, ymax });
+  // → renderizar segmentos con <svg> o Canvas
+
+  // Componente demo React:
+  <TrazaTrailUI />   // inputs P1/P2, ángulo override, canvas SVG + tabla
+
+================================================================================

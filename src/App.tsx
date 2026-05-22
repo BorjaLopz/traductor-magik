@@ -101,6 +101,48 @@ import { LineaGraficoUI }                         from './migration/migration/Li
 import { VpUbicacionCedoUI }                      from './migration/migration/VpUbicacionCedo';
 // [48] c_tbl_cfg_mixin
 import { TblCfgMixinUI }                          from './migration/migration/TblCfgMixin';
+// [49] c_area_telmex
+import { AreaTelmexUI }                              from './migration/AreaTelmex';
+// [50] c_Corte_Geografico
+import { CorteGeograficoUI }                         from './migration/CorteGeografico';
+// [51] c_elemento_empalme_derivacion_g
+import { ElementoEmpalmeDerivacionGUI }              from './migration/ElementoEmpalmeDerivacionG';
+// [52] c_plano_ruta_de_cables
+import { PlanoRutaDeCablesUI }                       from './migration/PlanoRutaDeCables';
+// [53] c_sello_correspondencias
+import { SelloCorrespondenciasUI }                   from './migration/SelloCorrespondencias';
+// [54] c_sello_estandar
+import { SelloEstandarUI }                           from './migration/SelloEstandar';
+// [55] c_sello_estandar_base
+import { SelloEstandarBaseUI }                       from './migration/SelloEstandarBase';
+// [56] c_sello_lista_cables
+import { SelloListaCablesUI }                        from './migration/SelloListaCables';
+// [57] c_sello_notas_sct_cruz_aereo
+import { SelloNotasSctCruzAereoUI }                  from './migration/SelloNotasSctCruzAereo';
+// [58] c_sello_notas_sct_inst_puente_tn
+import { SelloNotasSctInstPuenteTnUI }               from './migration/SelloNotasSctInstPuenteTn';
+// [59] c_sello_notas_sct_marg_aereo
+import { SelloNotasSctMargAereoUI }                  from './migration/SelloNotasSctMargAereo';
+// [60] c_servicios_estilos
+import { ServiciosEstilosUI }                        from './migration/ServiciosEstilos';
+// [61] c_simbologia_plano_construccion_fo
+import { SimbologiaPlanoContruccionFoUI }            from './migration/SimbologiaPlanoContruccionFo';
+// [62] c_simbologia_plano_reubicacion_exist_proy
+import { SimbologiaPlanoReubicacionExistProyUI }     from './migration/SimbologiaPlanoReubicacionExistProy';
+// [63] c_style_symbol_open_dialog
+import { StyleSymbolOpenDialogUI }                   from './migration/StyleSymbolOpenDialog';
+// [64] c_tabla_enc_georeferencia
+import { TablaEncGeoreferenciaUI }                   from './migration/TablaEncGeoreferencia';
+// [65] c_tachado_grafico
+import { TachadoGraficoUI }                          from './migration/TachadoGrafico';
+// [66] c_tipo_geom
+import { TipoGeomUI }                                from './migration/TipoGeom';
+// [67] c_Traductor (alias — TraductorUI ya importado desde migration/migration/)
+import { TraductorUI as TraductorBaseUI }            from './migration/Traductor';
+// [68] c_traza_trail
+import { TrazaTrailUI }                              from './migration/TrazaTrail';
+// [69] c_vp_cobre
+import { VpCobreUI }                                 from './migration/VpCobre';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -957,6 +999,132 @@ const DEMO_ITEMS: DemoItem[] = [
     label      : '[48] c_tbl_cfg_mixin',
     description: 'Configuracion de bordes de tabla (titulo / detalle).',
     render     : () => <DemoTblCfgMixin />,
+  },
+  {
+    id         : '49-area-telmex',
+    label      : '[49] c_area_telmex',
+    description: 'Área de cobertura Telmex — polígono configurable con atributos de área y municipio.',
+    render     : () => <AreaTelmexUI />,
+  },
+  {
+    id         : '50-corte-geografico',
+    label      : '[50] c_Corte_Geografico',
+    description: 'Corte geográfico — OL v10 + Turf.js: buffer 0.5km sobre ruta, filtra capas por booleanDisjoint, dibuja colonia/lote/distrito.',
+    render     : () => <CorteGeograficoUI />,
+  },
+  {
+    id         : '51-elemento-empalme-derivacion',
+    label      : '[51] c_elemento_empalme_derivacion_g',
+    description: 'SVG: empalme con derivación — símbolo línea+rombo+bifurcación, etiqueta ER-NNN.',
+    render     : () => <ElementoEmpalmeDerivacionGUI />,
+  },
+  {
+    id         : '52-plano-ruta-cables',
+    label      : '[52] c_plano_ruta_de_cables',
+    description: 'Plano de ruta de cables — orquestador layout: marco + sello + viewports de ruta.',
+    render     : () => <PlanoRutaDeCablesUI />,
+  },
+  {
+    id         : '53-sello-correspondencias',
+    label      : '[53] c_sello_correspondencias',
+    description: 'Correspondencias ópticas — tbl_titulo(1×1,110mm) + tbl_subtitulos(1×2,55+55mm) + tbl_contenido(N×7). Max 40 filas.',
+    render     : () => <SelloCorrespondenciasUI />,
+  },
+  {
+    id         : '54-sello-estandar',
+    label      : '[54] c_sello_estandar',
+    description: 'Sello estándar de plano — tablas título/proyecto/datos con llenado async desde servicio GIS.',
+    render     : () => <SelloEstandarUI />,
+  },
+  {
+    id         : '55-sello-estandar-base',
+    label      : '[55] c_sello_estandar_base',
+    description: 'Sello estándar base — hereda c_base_sello_cobre, 4 tablas, DESP_Y=-124mm. FALC: sinBordes en tbl_ubicacion.',
+    render     : () => <SelloEstandarBaseUI />,
+  },
+  {
+    id         : '56-sello-lista-cables',
+    label      : '[56] c_sello_lista_cables',
+    description: 'Lista de cables — tabla dinámica N filas × columnas de tipo/capacidad/longitud.',
+    render     : () => <SelloListaCablesUI />,
+  },
+  {
+    id         : '57-sello-notas-sct-cruz-aereo',
+    label      : '[57] c_sello_notas_sct_cruz_aereo',
+    description: 'Notas SCT cruce aéreo — tabla notas estáticas para instalación en cruce aéreo.',
+    render     : () => <SelloNotasSctCruzAereoUI />,
+  },
+  {
+    id         : '58-sello-notas-sct-inst-puente-tn',
+    label      : '[58] c_sello_notas_sct_inst_puente_tn',
+    description: 'Notas SCT instalación puente TN — variante túnel/nodo de tabla notas instalación lateral.',
+    render     : () => <SelloNotasSctInstPuenteTnUI />,
+  },
+  {
+    id         : '59-sello-notas-sct-marg-aereo',
+    label      : '[59] c_sello_notas_sct_marg_aereo',
+    description: 'Notas SCT instalación marginal aérea — tabla notas para tendido marginal en poste.',
+    render     : () => <SelloNotasSctMargAereoUI />,
+  },
+  {
+    id         : '60-servicios-estilos',
+    label      : '[60] c_servicios_estilos',
+    description: 'Catálogo de estilos GIS — mapeo símbolo→estilo para entidades del dataset.',
+    render     : () => <ServiciosEstilosUI />,
+  },
+  {
+    id         : '61-simbologia-plano-fo',
+    label      : '[61] c_simbologia_plano_construccion_fo',
+    description: 'Simbología plano construcción FO — leyenda de símbolos fibra óptica con categorías.',
+    render     : () => <SimbologiaPlanoContruccionFoUI />,
+  },
+  {
+    id         : '62-simbologia-reubicacion-exist',
+    label      : '[62] c_simbologia_plano_reubicacion_exist_proy',
+    description: 'Simbología reubicación existente/proyectado — leyenda dual: elementos a reubicar vs nuevos.',
+    render     : () => <SimbologiaPlanoReubicacionExistProyUI />,
+  },
+  {
+    id         : '63-style-symbol-dialog',
+    label      : '[63] c_style_symbol_open_dialog',
+    description: 'Diálogo selección de símbolo de estilo — abre editor de símbolo GIS para entidad activa.',
+    render     : () => <StyleSymbolOpenDialogUI />,
+  },
+  {
+    id         : '64-tabla-enc-georeferencia',
+    label      : '[64] c_tabla_enc_georeferencia',
+    description: 'Tabla encabezado georreferencia — coordenadas UTM del área del plano en tabla estándar.',
+    render     : () => <TablaEncGeoreferenciaUI />,
+  },
+  {
+    id         : '65-tachado-grafico',
+    label      : '[65] c_tachado_grafico',
+    description: 'Tachado gráfico — overlay SVG de línea diagonal para marcar elementos eliminados.',
+    render     : () => <TachadoGraficoUI />,
+  },
+  {
+    id         : '66-tipo-geom',
+    label      : '[66] c_tipo_geom',
+    description: 'Tipo de geometría — discriminador point/line/polygon para features del dataset GIS.',
+    render     : () => <TipoGeomUI />,
+  },
+  {
+    id         : '67-traductor-base',
+    label      : '[67] c_Traductor (base)',
+    description: 'Traductor de códigos GIS — 7 métodos lookup: tipoSuperficie/tipoCentral/tipoPlano/tipoCaseta/mes/metodoPep/nombreAtributoPep.',
+    render     : () => <TraductorBaseUI />,
+  },
+  {
+    id         : '68-traza-trail',
+    label      : '[68] c_traza_trail',
+    description: 'Traza trail — captura y visualiza la polilínea activa del mapa con coordenadas en tiempo real.',
+    render     : () => <TrazaTrailUI />,
+  },
+  {
+    id         : '69-vp-cobre',
+    label      : '[69] c_vp_cobre',
+    description: 'Viewport red de cobre — dibuja rutas/distritos de la red de cobre activa con filtros por estado.',
+    render     : () => <VpCobreUI />,
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

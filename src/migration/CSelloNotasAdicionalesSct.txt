@@ -1,0 +1,229 @@
+================================================================================
+  CLASE MIGRADA: CSelloNotasAdicionalesSct
+  Fichero origen:  c_sello_notas_adicionales_sct.magik
+  Fichero destino: CSelloNotasAdicionalesSct.tsx
+  Jerarquía Magik: c_sello_notas_adicionales_sct  extends  :layout_element
+  Autor original:  Viridiana Baltazar, 03-Enero-2006 (Sigma Tao / Traza: Planos)
+================================================================================
+
+PROPÓSITO
+---------
+Elemento de layout del motor de planos GIS (fibra óptica) que genera el sello
+"NOTAS ADICIONALES SCT" para planos de permisos de la Secretaría de
+Comunicaciones y Transportes (SCT, México).
+
+Es el sello complementario a c_sello_nota_restrictiva_sct: mientras la Nota
+Restrictiva contiene el texto del permiso (carácter provisional, plazo de 45
+días), las Notas Adicionales contienen las obligaciones operativas de TELMEX:
+  · Obligación 1: exhibir el programa de obra antes de iniciar los trabajos.
+  · Obligación 2: entregar el plano 'As Built' o Plano Definitivo al finalizar.
+
+El texto varía según tres atributos: Tipo_Trabajo, Tipo_Material y Tipo_Cable.
+
+
+DIFERENCIAS CLAVE RESPECTO A CSelloNotaRestrictivaSct
+-------------------------------------------------------
+  · Añade Tipo_Material (5 opciones) como tercer atributo de configuración.
+  · Tabla más grande: 50 mm (cuerpo) × 160 mm (ancho)
+    vs. 40 mm × 145 mm en la Nota Restrictiva.
+  · Dos variables de concordancia de género:
+    - LsPrefijo    → para el tipo de trabajo (masculino/femenino)
+    - LsPrefijoMat → para el tipo de material (masculino/femenino)
+    La Nota Restrictiva solo tiene LsEstructura + LsPrefijo + LsTrabajo.
+  · Contenido completamente diferente: obligaciones legales de TELMEX
+    en lugar del texto de permiso SCT.
+
+
+NOTA DE CODIFICACIÓN
+---------------------
+El código Magik original tiene pérdida de caracteres acentuados:
+  "TEL FONOS"     → "TELÉFONOS"
+  "M XICO"        → "MÉXICO"
+  "DEBER "        → "DEBERÁ"
+  "CONSTRUCCI N"  → "CONSTRUCCIÓN"
+  "EXCAVACI N"    → "EXCAVACIÓN"
+  "V A"           → "VÍA"
+  "SE ALIZACI N"  → "SEÑALIZACIÓN"
+  "A REA"         → "AÉREA"
+  "SUBTERR NEA"   → "SUBTERRÁNEA"
+Se reconstruyen aquí con UTF-8 correcto.
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  (Idénticos a CSelloNotaRestrictivaSct)
+
+  oTablas         → oTablas: TablaNotasAdicionales | null
+                    Estructura con dimensiones y celdas de la tabla.
+
+  oCoordOrigen    → oCoordOrigen: { x:number, y:number }
+
+  oWindow         → no migrado (no aplica en React).
+
+  bTablas_creadas → bTablas_creadas: boolean
+
+  oTipoMaterial   → oTipoMaterial: Map<number,string>  (5 entradas)
+  oTipoTrabajo    → oTipoTrabajo:   Map<number,string>  (7 entradas)
+  oTipoCable      → oTipoCable:     Map<number,string>  (2 entradas)
+
+  Atributos de instancia (defined_attributes):
+    Tipo_Material → Tipo_Material: TipoMaterial | null   ← NUEVO
+    Tipo_Trabajo  → Tipo_Trabajo:  TipoTrabajoNA | null
+    Tipo_Cable    → Tipo_Cable:    TipoCableNA   | null
+
+
+MÉTODOS MIGRADOS (8 en total)
+-------------------------------
+
+1. enumTipoMaterial()
+   Magik: enum_tipo_material() → hash_table[1..5]
+   Atributo nuevo no presente en CSelloNotaRestrictivaSct:
+     1: POSTERIA     (género femenino → LsPrefijoMat = " INSTALADA LA ")
+     2: FLEXODUCTO   (masculino)
+     3: TUBO DE PVC  (masculino)
+     4: TUBO NEGRO   (masculino)
+     5: CANALETA     (femenino → LsPrefijoMat = " INSTALADA LA ")
+
+2. enumTipoTrabajo()
+   Magik: enum_tipo_trabajo() → hash_table[1..7]
+   Mismos 7 valores que CSelloNotaRestrictivaSct.
+
+3. enumTipoCable()
+   Magik: enum_tipo_cable() → hash_table[1..2]
+   Mismos 2 valores que CSelloNotaRestrictivaSct.
+
+4. inicializa(coord?)
+   Magik: Inicializa(_optional RoCoord)
+   Idéntico al flujo de CSelloNotaRestrictivaSct:
+   _prvCreaCfgTabla(coord) → _prvLlenaCeldas() → bTablas_creadas = true.
+
+5. postInitialisation()
+   Magik: post_initialisation() → _self.inicializa(coordinate.new(0,0))
+
+6. _prvCreaCfgTabla(coord)
+   Magik: prvCrea_Cfg_Tabla(RoCoord) — crea_tabla(2, 1, :tbl_notas_adic)
+   DIFERENCIAS respecto a CSelloNotaRestrictivaSct:
+     · Fila 2: 50 mm (vs 40 mm) — 10 mm más para el texto más largo
+     · Col 1:  160 mm (vs 145 mm) — 15 mm más
+     · Nombre: 'tbl_notas_adic' (vs 'tbl_nota_rest')
+
+7. _prvLlenaCeldas()
+   Magik: prvLlena_Celdas()
+   celda(1,1): "NOTAS ADICIONALES SCT", tamaño 50pt, centrado
+   celda(2,1): "", tamaño 30pt, alineación top_left
+   Llama prvAsignaTexto() para completar celda(2,1).
+
+8. prvAsignaTexto()
+   Magik: prvAsignaTexto() — corazón de la lógica de negocio.
+
+   Lee los tres atributos y determina 2 variables de concordancia:
+
+   LsPrefijo → concordancia de género para el tipo de trabajo:
+     " ESTA " si:
+       · INSTALACION LATERAL EN PUENTE
+       · INSTALACION LATERAL EN PUENTE CON TUBO NEGRO
+       · INSTALACION MARGINAL AÉREA
+       · INSTALACION MARGINAL SUBTERRÁNEA
+     " ESTE " (masculino) para los demás (cruzamientos).
+
+   LsPrefijoMat → concordancia de género para el tipo de material:
+     " INSTALADA LA " si material es POSTERIA o CANALETA (nombres femeninos)
+     " INSTALADO EL " para los demás (FLEXODUCTO, TUBO DE PVC, TUBO NEGRO).
+
+   Texto generado — dos párrafos:
+   ─ Párrafo 1: obligación de exhibir el programa de obra
+     " TELÉFONOS DE MÉXICO [...] DEBERÁ EXHIBIR EL PROGRAMA DE OBRA..."
+     " LOS TRABAJOS PARA LA CONSTRUCCIÓN DE{LsPrefijo}{trabajo}"
+     " CON CABLE DE {cable} DENTRO DEL DERECHO DE VÍA, INCLUYENDO EL RETIRO"
+     " DEL MATERIAL SOBRANTE Y PRODUCTO DE LA EXCAVACIÓN PARA{LsPrefijo}"
+     "{trabajo}."
+
+   ─ Párrafo 2: obligación del plano 'As Built'
+     " TELÉFONOS DE MÉXICO [...] SE HA COMPROMETIDO A ENTREGAR UNA VEZ TERMINADA"
+     " LA OBRA EL PLANO 'AS BUILT' O PLANO DEFINITIVO, EN EL CUAL SE INDIQUE..."
+     " FUE{LsPrefijoMat}{material} CON CABLE DE {cable} DICHO PLANO DEBERA CONTENER"
+     " LA SEÑALIZACIÓN QUE INDIQUE A QUÉ DISTANCIA SE ENCUENTRA EL CABLE DE {cable}"
+     " INSTALADO A PARTIR DEL LIMITE DEL DERECHO DE VIA O DEL EJE CENTRAL DE LA CARRETERA"
+
+
+ESTRUCTURA DE LA TABLA
+-----------------------
+:tbl_notas_adic  (2 filas × 1 columna)
+
+  Fila 1 [10 mm] │ celda(1,1) │ "NOTAS ADICIONALES SCT"  tamaño 50pt, centrado
+  Fila 2 [50 mm] │ celda(2,1) │ texto legal dinámico      tamaño 30pt, top_left
+  ─────────────────────────────────────────────────────────────────────────────
+  Columna 1:  160 mm de ancho
+
+  Comparativa de dimensiones:
+    c_sello_nota_restrictiva_sct: fila2=40mm, col=145mm
+    c_sello_notas_adicionales_sct: fila2=50mm, col=160mm  ← esta clase
+
+
+LÓGICA DE CONCORDANCIA DE GÉNERO
+----------------------------------
+El texto legal está escrito en español y varía en género gramatical:
+
+  Tipo de trabajo:
+    Cruzamientos → masculino ("ESTE CRUZAMIENTO AÉREO")
+    Instalaciones laterales/marginales → femenino ("ESTA INSTALACION LATERAL...")
+
+  Tipo de material:
+    FLEXODUCTO, TUBO DE PVC, TUBO NEGRO → masculino ("INSTALADO EL FLEXODUCTO")
+    POSTERIA, CANALETA                  → femenino  ("INSTALADA LA POSTERIA")
+
+En la UI, los selectores muestran indicadores ♀/♂ para el material y badges
+"ESTA/ESTE" y "INSTALADA LA/INSTALADO EL" en tiempo real.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  (Idéntico al de CSelloNotaRestrictivaSct con las siguientes diferencias)
+
+  layout_attribute_definition.new(:Tipo_Material, :string, ...)
+                                         → Tipo_Material: TipoMaterial | null
+  hash_table[1..5] para materiales       → new Map<number,string>()
+  crea_tabla(2, 1, :tbl_notas_adic)      → _prvCreaCfgTabla() → oTablas
+  oRenglones.elemento(2).nLongitud << 50 → alturaFila2: 50
+  oColumnas.elemento(1).nLongitud << 160 → anchoCol: 160
+  c_texto_grafico.new("NOTAS ADICIONALES SCT")
+                                         → celda1_1 = { texto, tamano:50, ... }
+  LsPrefijo / LsPrefijoMat               → dos variables de concordancia
+  _orif (múltiples condiciones)          → || (OR lógico)
+  .oTablas.elemento(:tbl_notas_adic)
+    .oCeldas.Celda(2,1).oElemento.sTexto → oTablas.celda2_1.texto
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Mismas diferencias estructurales que CSelloNotaRestrictivaSct respecto al
+  framework de Smallworld (sin :layout_element real, sin motor de dibujo, etc.)
+
+· El indicador de concordancia de género es visible en tiempo real en la UI
+  (badges LsPrefijo/LsPrefijoMat) — no está en el original.
+
+· La condición LsPrefijoMat se aplica sobre el nombre del material en
+  español. POSTERIA y CANALETA son femeninos gramaticalmente en español.
+  Los demás materiales (FLEXODUCTO, TUBO...) son masculinos.
+
+
+USO DESDE App.tsx
+------------------
+  import { CSelloNotasAdicionalesSctUI } from './migration/CSelloNotasAdicionalesSct';
+
+  function DemoCSelloNotasAdicionalesSct() {
+    return (
+      <section>
+        <h3>c_sello_notas_adicionales_sct</h3>
+        <CSelloNotasAdicionalesSctUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '82-sello-notas-adicionales-sct', label: '[82] c_sello_notas_adicionales_sct', ... }
+
+
+================================================================================
+  Fin del documento — CSelloNotasAdicionalesSct.txt
+================================================================================

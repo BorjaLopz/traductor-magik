@@ -161,6 +161,20 @@ import { CGuiEditaSelloResumenProyectoUI }        from './migration/CGuiEditaSel
 import { PreviewSymbolPluginUI }                  from './migration/PreviewSymbolPlugin';
 // [73] c_celdas
 import { CCeldasUI }                              from './migration/CCeldas';
+// [77] c_arbol_cables_fo_cedo
+import { CArbolCablesFoCedoUI }                   from './migration/CArbolCablesFoCedo';
+// [78] c_resumen_materiales
+import { CResumenMaterialesUI }                   from './migration/CResumenMateriales';
+// [79] c_sello_nota_restrictiva_sct
+import { CSelloNotaRestrictivaSctUI }              from './migration/CSelloNotaRestrictivaSct';
+// [80] c_catalogo_de_placas_plugin
+import { CCatalogoDeplacasPluginUI }               from './migration/CCatalogoDeplacasPlugin';
+// [81] c_factory_planos
+import { CFactoryPlanosUI }                        from './migration/CFactoryPlanos';
+// [82] c_sello_notas_adicionales_sct
+import { CSelloNotasAdicionalesSctUI }              from './migration/CSelloNotasAdicionalesSct';
+// [83] c_sello_notas_sct
+import { CSelloNotasSctUI }                         from './migration/CSelloNotasSct';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -711,6 +725,76 @@ function DemoCCeldas() {
   );
 }
 
+// ── [76] c_celdas — anterior último componente ────────────────────────────────
+function DemoCArbolCablesFoCedo() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_arbol_cables_fo_cedo</h3>
+      <CArbolCablesFoCedoUI />
+    </section>
+  );
+}
+
+// ── [83] c_sello_notas_sct ───────────────────────────────────────────────────
+function DemoCSelloNotasSct() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_sello_notas_sct</h3>
+      <CSelloNotasSctUI />
+    </section>
+  );
+}
+
+// ── [82] c_sello_notas_adicionales_sct ───────────────────────────────────────
+function DemoCSelloNotasAdicionalesSct() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_sello_notas_adicionales_sct</h3>
+      <CSelloNotasAdicionalesSctUI />
+    </section>
+  );
+}
+
+// ── [81] c_factory_planos ─────────────────────────────────────────────────────
+function DemoCFactoryPlanos() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_factory_planos</h3>
+      <CFactoryPlanosUI />
+    </section>
+  );
+}
+
+// ── [80] c_catalogo_de_placas_plugin ─────────────────────────────────────────
+function DemoCCatalogoDeplacasPlugin() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_catalogo_de_placas_plugin</h3>
+      <CCatalogoDeplacasPluginUI />
+    </section>
+  );
+}
+
+// ── [79] c_sello_nota_restrictiva_sct ────────────────────────────────────────
+function DemoCSelloNotaRestrictivaSct() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_sello_nota_restrictiva_sct</h3>
+      <CSelloNotaRestrictivaSctUI />
+    </section>
+  );
+}
+
+// ── [78] c_resumen_materiales ─────────────────────────────────────────────────
+function DemoCResumenMateriales() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_resumen_materiales</h3>
+      <CResumenMaterialesUI />
+    </section>
+  );
+}
+
 // ── [30] c_gui_edita_sello_resumen_proyecto — anterior último componente ──────
 function DemoCGuiEditaSelloResumenProyecto() {
   return (
@@ -1256,6 +1340,55 @@ const DEMO_ITEMS: DemoItem[] = [
     render     : () => <DemoCCeldas />,
   },
 
+  // ── [76] c_celdas — anterior último componente ───────────────────────────────
+  {
+    id         : '77-arbol-cables-fo-cedo',
+    label      : '[77] c_arbol_cables_fo_cedo',
+    description: 'Árbol GIS FO: Distrito → CEDO → Cables con checkbox. activados() filtra source=sheath; generaPlanoCable() valida exactamente 1 seleccionado; valor_cambiado() actualiza cable_seleccionado.',
+    render     : () => <DemoCArbolCablesFoCedo />,
+  },
+  // ── [78] c_resumen_materiales ─────────────────────────────────────────────────
+  {
+    id         : '78-resumen-materiales',
+    label      : '[78] c_resumen_materiales',
+    description: 'Tabla layout GIS FO: 5 secciones (ZonaUrbana 13, ZonaSubUrbana 21, Tramo 11, Derivaciones 8, Permisos 15). sTipo=SEMBRADO omite las 2 últimas. inicializa()→prvCreaCfgTablas()→prvLlenaCeldas(). Cantidades_Xxx() inyecta valores.',
+    render     : () => <DemoCResumenMateriales />,
+  },
+  // ── [79] c_sello_nota_restrictiva_sct ────────────────────────────────────────
+  {
+    id         : '79-sello-nota-restrictiva-sct',
+    label      : '[79] c_sello_nota_restrictiva_sct',
+    description: 'Sello layout GIS: Nota Restrictiva SCT. 3 variables dinámicas (LsEstructura/LsPrefijo/LsTrabajo) según Tipo_Trabajo×Tipo_Cable. prvAsignaTexto() ensambla texto legal. Tabla 2×1: 10mm título + 40mm cuerpo × 145mm ancho.',
+    render     : () => <DemoCSelloNotaRestrictivaSct />,
+  },
+  // ── [80] c_catalogo_de_placas_plugin ─────────────────────────────────────────
+  {
+    id         : '80-catalogo-de-placas-plugin',
+    label      : '[80] c_catalogo_de_placas_plugin',
+    description: 'Plugin GIS: 8 sw_action (1 catálogo + 7 genera_placa_*). manageActions(bool) habilita/deshabilita las 7 acciones. cada genera_placa_*() → obtiene_pagina() + c_placa_*.new_with(:bounds, bounding_box) + page.add_element().',
+    render     : () => <DemoCCatalogoDeplacasPlugin />,
+  },
+  // ── [81] c_factory_planos ─────────────────────────────────────────────────────
+  {
+    id         : '81-factory-planos',
+    label      : '[81] c_factory_planos',
+    description: 'Clase base factory para planos de layout GIS. generaPlano()→iniciaLayout()+addElementosComunes(). Valida página vacía antes de crear. Añade marco (124×84cm), título posicionado relativo al marco, y 3 sellos (ruta_cables_fo, estandar_base_fo, notas_constructor). creaTitulo() diseñado para subclasearse.',
+    render     : () => <DemoCFactoryPlanos />,
+  },
+  // ── [82] c_sello_notas_adicionales_sct ───────────────────────────────────────
+  {
+    id         : '82-sello-notas-adicionales-sct',
+    label      : '[82] c_sello_notas_adicionales_sct',
+    description: 'Sello layout GIS: Notas Adicionales SCT. 3 atributos (Material×Trabajo×Cable). 2 variables de concordancia de género: LsPrefijo (trabajo) + LsPrefijoMat (material: POSTERIA/CANALETA → femenino). Tabla 2×1: 10mm título + 50mm cuerpo × 160mm ancho.',
+    render     : () => <DemoCSelloNotasAdicionalesSct />,
+  },
+  // ── [83] c_sello_notas_sct ───────────────────────────────────────────────────
+  {
+    id         : '83-sello-notas-sct',
+    label      : '[83] c_sello_notas_sct',
+    description: 'Sello layout GIS: Notas SCT. 4 atributos: estado (texto libre sin enum), tipo_cable, procedimiento, instalacion. Solo "estado" (uppercase) aparece en el texto — 4 notas numeradas fijas, nota 3 dinámica. Tabla 2×1: 10mm título + 55mm cuerpo × 155mm ancho.',
+    render     : () => <DemoCSelloNotasSct />,
+  },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];
 

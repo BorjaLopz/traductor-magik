@@ -1,0 +1,219 @@
+================================================================================
+  CLASE MIGRADA: CSelloNotasSct
+  Fichero origen:  c_sello_notas_sct.magik
+  Fichero destino: CSelloNotasSct.tsx
+  Jerarquía Magik: c_sello_notas_sct  extends  :layout_element
+  Autor original:  Viridiana Baltazar, 03-Enero-2006 (Sigma Tao / Traza: Planos)
+================================================================================
+
+PROPÓSITO
+---------
+Elemento de layout del motor de planos GIS (fibra óptica) que genera el sello
+"NOTAS SCT" para planos de permisos de la Secretaría de Comunicaciones y
+Transportes (SCT, México).
+
+Contiene 4 notas numeradas con obligaciones legales y de procedimiento:
+  1. Aclaración de unidades (metros, excepto donde se indique).
+  2. Obligación de comunicar cualquier modificación a la SCT.
+  3. Obligación de notificar la fecha de inicio de trabajos a la Residencia
+     General de Conservación de Carreteras EN EL ESTADO DE {estado}.
+  4. Plazos: inicio máx. 30 días naturales / conclusión máx. 180 días.
+
+Solo la nota 3 es dinámica: incluye el nombre del estado de México donde
+se realizan los trabajos (atributo "estado", texto libre, en mayúsculas).
+
+
+DIFERENCIAS CLAVE RESPECTO A LOS OTROS SELLOS SCT
+---------------------------------------------------
+  vs. CSelloNotaRestrictivaSct [79]:
+    · "estado" es texto libre (sin enum_method) en lugar de 2 enums
+    · 4 notas fijas vs texto legal variable con 3 fragmentos dinámicos
+    · Tabla más alta: 55 mm vs 40 mm
+
+  vs. CSelloNotasAdicionalesSct [82]:
+    · Añade "procedimiento" e "instalacion" (pero no aparecen en el texto)
+    · Sin variables de concordancia de género (LsPrefijo / LsPrefijoMat)
+    · Tabla ligeramente diferente: 55 mm × 155 mm vs 50 mm × 160 mm
+
+  Comparativa de dimensiones de los 3 sellos SCT:
+    c_sello_nota_restrictiva_sct     → fila2=40mm, col=145mm
+    c_sello_notas_adicionales_sct    → fila2=50mm, col=160mm
+    c_sello_notas_sct (esta clase)   → fila2=55mm, col=155mm  ← la más alta
+
+
+NOTA DE CODIFICACIÓN
+---------------------
+  "EST N"         → "ESTÁN"
+  "MODIFICACI N"  → "MODIFICACIÓN"
+  "TEL FONOS"     → "TELÉFONOS"
+  "M XICO"        → "MÉXICO"
+  "DEBER "        → "DEBERÁ"
+  "REVISI N"      → "REVISIÓN"
+  "CONSERVACI N"  → "CONSERVACIÓN"
+  "INICIACI N"    → "INICIACIÓN"
+  "D AS"          → "DÍAS"
+  "ANTICIPACI N"  → "ANTICIPACIÓN"
+  "SUPERVISI N"   → "SUPERVISIÓN"
+  "DEBER N"       → "DEBERÁN"
+  "DESPU S"       → "DESPUÉS"
+  "SUBTERR NEA"   → "SUBTERRÁNEA"
+  "FIBRAS PTICAS" → "FIBRAS ÓPTICAS"
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  oTablas         → oTablas: TablaNotasSct | null
+  oCoordOrigen    → oCoordOrigen: { x:number, y:number }
+  oWindow         → no migrado
+  bTablas_creadas → bTablas_creadas: boolean
+  oTipoCable      → oTipoCable: Map<number,string>   (enum_tipo_cable)
+  oTipoProc       → oTipoProc:  Map<number,string>   (enum_tipo_proc)
+
+  Slots de valores de atributos (leídos en prvAsignaTexto):
+    s_estado        → s_estado: string        (.uppercase aplicado)
+    s_tipo_cable    → s_tipo_cable: string    (almacenado, no usado en texto)
+    s_procedimiento → s_procedimiento: string (almacenado, no usado en texto)
+    s_instalacion   → s_instalacion: string   (almacenado, no usado en texto)
+
+  Atributos de instancia (defined_attributes):
+    estado        → estado: string            (texto libre, sin enum)
+    tipo_cable    → tipo_cable: TipoCableSCTN | null
+    procedimiento → procedimiento: TipoProcedimiento | null
+    instalacion   → instalacion: TipoInstalacion | null
+
+
+ATRIBUTOS Y SUS ENUMERACIONES
+-------------------------------
+  estado: texto libre (no tiene enum_method en Magik — el usuario escribe el
+    nombre del estado mexicano directamente). Es el único que aparece en el texto.
+
+  tipo_cable:    FIBRAS ÓPTICAS (1) / COBRE (2)
+  procedimiento: HINCADO (1) / TUBO DIRECCIONAL (2)
+  instalacion:   SUBTERRÁNEA (1) / CANALIZADA (2)
+
+  NOTA IMPORTANTE: en el método prvAsignaTexto() del Magik original, los cuatro
+  atributos se leen y almacenan en los slots s_*, pero SOLO s_estado se inserta
+  en el texto LsTexto. Los otros tres (s_tipo_cable, s_procedimiento, s_instalacion)
+  quedan disponibles en los slots para uso potencial por subclases.
+
+
+MÉTODOS MIGRADOS (8 en total)
+-------------------------------
+
+1. enumTipoInst()
+   Magik: enum_tipo_inst() → hash_table LOCAL (no almacenada en slot)
+   Devuelve: Map { 1: 'SUBTERRÁNEA', 2: 'CANALIZADA' }
+   DIFERENCIA: en Magik es local (LoTipoInst), no se guarda en .oTipoInst.
+
+2. enumTipoCable()
+   Magik: enum_tipo_cable() → .oTipoCable = hash_table[1..2]
+   Devuelve: Map { 1: 'FIBRAS ÓPTICAS', 2: 'COBRE' }
+
+3. enumTipoProc()
+   Magik: enum_tipo_proc() → .oTipoProc = hash_table[1..2]
+   Devuelve: Map { 1: 'HINCADO', 2: 'TUBO DIRECCIONAL' }
+
+4. inicializa(coord?)
+   Magik: Inicializa(_optional RoCoord)
+   Flujo: _prvCreaCfgTblNotasGrales → _prvLlenaCeldas → bTablas_creadas = true.
+
+5. postInitialisation()
+   Magik: post_initialisation() → _self.Inicializa(coordinate.new(0,0))
+
+6. _prvCreaCfgTblNotasGrales(coord)
+   Magik: prvCrea_Cfg_Tbl_Notas_Grales(RoCoord) — crea_tabla(2, 1, :tbl_notas_grales)
+   Fila 1: 10 mm  (título)
+   Fila 2: 55 mm  (notas — mayor de los 3 sellos SCT)
+   Col 1: 155 mm
+
+7. _prvLlenaCeldas()
+   Magik: prvLlena_Celdas()
+   celda(1,1): "NOTAS SCT", tamaño 50pt, centrado
+   celda(2,1): "", tamaño 30pt, alineación top_left
+   Llama prvAsignaTexto() para completar celda(2,1).
+
+8. prvAsignaTexto()
+   Magik: prvAsignaTexto() — lee los 4 atributos del elemento:
+     .s_estado        << _self.attributes[:estado].value.write_string.uppercase
+     .s_tipo_cable    << _self.attributes[:tipo_cable].value.write_string
+     .s_procedimiento << _self.attributes[:procedimiento].value.write_string
+     .s_instalacion   << _self.attributes[:instalacion].value.write_string
+
+   Luego construye 4 notas numeradas. Solo la nota 3 usa s_estado:
+
+   Nota 1 (fija):
+     " 1.- TODAS LAS DIMENSIONES ESTÁN EN METROS, EXCEPTO LAS INDICADAS EN OTRA UNIDAD."
+
+   Nota 2 (fija):
+     " 2.- PARA CUALQUIER MODIFICACIÓN A ESTE PROYECTO, TELÉFONOS DE MÉXICO,
+       S.A. DE C.V. DEBERÁ COMUNICAR Y SOLICITAR A ESTA SECRETARIA LA REVISIÓN
+       Y DICTAMEN CORRESPONDIENTE."
+
+   Nota 3 (DINÁMICA — usa s_estado):
+     " 3.- TELÉFONOS DE MÉXICO, S.A. DE C.V. INFORMARA POR ESCRITO A LA
+       RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS EN EL ESTADO DE {estado}
+       LA FECHA DE INICIACIÓN DE LOS TRABAJOS CON DIEZ DÍAS DE ANTICIPACIÓN,
+       PREVIA SUPERVISIÓN DE LA ZONA."
+
+   Nota 4 (fija):
+     " 4.- LOS TRABAJOS DEBERÁN INICIARSE A MAS TARDAR 30 DÍAS NATURALES DESPUÉS
+       DE OTORGADO EL PERMISO POR LA SECRETARIA Y CONCLUIRSE EN UN PLAZO NO MAYOR
+       DE 180 DÍAS NATURALES A PARTIR DE SU INICIO."
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (:layout_element)    → class CSelloNotasSct
+  {:s_estado, _unset}, {:s_tipo_cable,...}  → campos de instancia string
+  layout_attribute_definition.new(:estado, :string, :description, "estado")
+                                            → estado: string  (sin TipoCableXxx)
+  layout_attribute_definition con :enum_method
+                                            → tipo_cable / procedimiento / instalacion
+  hash_table local (LoTipoInst)             → Map local en enumTipoInst()
+  _self.attributes[:estado].value.write_string.uppercase
+                                            → this.estado.toUpperCase()
+  character.newLine + character.newLine     → '\n\n'  (línea en blanco)
+  LsTexto +<<                               → lines.push() + join('\n')
+  .oTablas.elemento(:tbl_notas_grales)
+    .oCeldas.Celda(2,1).oElemento.sTexto   → oTablas.celda2_1.texto
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Los 4 atributos se leen de _self.attributes[:xxx].value en Magik.
+  En TS se leen directamente de los campos de instancia (this.estado, etc.).
+
+· La tabla enum_tipo_inst se crea como variable local (LoTipoInst) en Magik,
+  no se almacena en un slot. En TS se mantiene ese comportamiento: enumTipoInst()
+  devuelve un Map sin guardarlo en this.
+
+· Solo s_estado aparece en el texto. Los otros 3 slots (s_tipo_cable,
+  s_procedimiento, s_instalacion) se populan pero no se usan en LsTexto.
+  En la UI se marcan con badge "no aparece en texto" para documentar este hecho.
+
+· El componente UI añade:
+  - Selector de estados mexicanos + campo de texto libre (estado sin enum)
+  - Badges "no aparece en texto" para tipo_cable, procedimiento e instalacion
+  - Resaltado visual del nombre del estado en la nota 3 del sello
+
+
+USO DESDE App.tsx
+------------------
+  import { CSelloNotasSctUI } from './migration/CSelloNotasSct';
+
+  function DemoCSelloNotasSct() {
+    return (
+      <section>
+        <h3>c_sello_notas_sct</h3>
+        <CSelloNotasSctUI />
+      </section>
+    );
+  }
+
+  // En DEMO_ITEMS:
+  { id: '83-sello-notas-sct', label: '[83] c_sello_notas_sct', ... }
+
+
+================================================================================
+  Fin del documento — CSelloNotasSct.txt
+================================================================================

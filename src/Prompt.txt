@@ -11,200 +11,250 @@ Crea el componente en typescript en la ruta C:\Users\User\Documents\Test IA\migr
 Devuelve el código modularizado y añade comentarios cortos explicando la equivalencia.
 Aquí está el código Magik:
 
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza:               Planos
+# Objetivo:            Genera las notas para permisos de la SCT
+# Autor:               Viridiana Baltazar
+# Fecha de creacion:   03-Enero-2006
+
 _package user
+#remex(:c_sello_notas_sct)
 $
-#remex(:c_celdas)
-$
-def_slotted_exemplar(:c_celdas,
-                     {
-                      {:nNumRen,      _unset}, # Numero de renglones que tendra celdas
-		      {:nNumCol,      _unset}, # Numero de columnas que tendra celdas
-		      {:collCeldas,   _unset}  # Coleccion de celdas
-		     }
-)
 
+def_slotted_exemplar(:c_sello_notas_sct, {
+	{:oTablas,          _unset }, # Almacena la coleccion de tablas que componen el sello
+	{:oCoordOrigen,     _unset }, # Coord donde inicia el sello	
+        {:oWindow,          _unset }, # Ventana o canvas en el que se desplegara en el sello
+	{:bTablas_creadas,  _unset }, # Indica si las tablas ya fueron creadas
+	{:oTipoCable,       _unset }, # Almacena los tipos de cable
+	{:oTipoProc,        _unset }, # Almacena los tipos de cable
+	{:s_estado,         _unset }, # Valor del attributo estado
+	{:s_tipo_cable,     _unset }, # Valor del attributo tipo cable
+	{:s_procedimiento,  _unset }, # Valor del attributo procedimiento
+	{:s_instalacion,    _unset }  # Valor del attributo instalacion
+}, :layout_element )
 $
-c_celdas.define_slot_access(:collCeldas,    :writable, :private)
+
+c_sello_notas_sct.define_shared_constant(:allowed_on_menu?, _false, :public)
 $
-c_celdas.define_slot_access(:nNumCol,       :writable, :private)
+
+c_sello_notas_sct.define_slot_access(:oTablas,             :writable, :public)
+c_sello_notas_sct.define_slot_access(:oCoordOrigen,        :writable, :public)
+c_sello_notas_sct.define_slot_access(:oWindow,             :writable, :public)
+c_sello_notas_sct.define_slot_access(:bTablas_creadas,     :writable, :public)
+c_sello_notas_sct.define_slot_access(:oTipoCable,          :writable, :public)
+c_sello_notas_sct.define_slot_access(:oTipoProc,           :writable, :public)
+c_sello_notas_sct.define_slot_access(:s_estado,            :writable, :public)
+c_sello_notas_sct.define_slot_access(:s_tipo_cable,        :writable, :public)
+c_sello_notas_sct.define_slot_access(:s_procedimiento,     :writable, :public)
+c_sello_notas_sct.define_slot_access(:s_instalacion,       :writable, :public)
 $
-c_celdas.define_slot_access(:nNumRen,       :writable, :private)
-$
+
 _pragma(classify_level=restricted, usage={redefinable})
-_method c_celdas.celda(RnRen, RnCol)
-## Objetivo: regresa una celda de acuerdo a una posicion (ren,
-##           col) proporcionada
-## Parámetros de entrada:
-## 	Entero - RnRen - Numero de renglon en el que se encuentra la celda
-## 	Entero - RnCol - Numero de columna en la que se encuentra la celda
-## Parámetros de salida:   
-## 	c_celda - Objeto celda solicitado 
-## Regresa: c_celda - regresa un objeto celda
-## Fecha de última modificación: 28/10/2004
-## Autor de la modificación : dsanchez
-## Descripción de la modificación: Se documento
+_method c_sello_notas_sct.defined_attributes
 
-	# Se valida que la celda solicitada exista
-	_if RnRen > _self.nNumren _or RnCol > _self.nNumCol
-	_then
-	   _local str
-	   str << RnRen.write_string + " " + RnCol.write_string
-	   condition.raise(:warning, :string, "La celda que se solicita no existe " + str)	
-	_endif 
+	attribs << rope.new_from (_super.defined_attributes)
 	
-	>> _self.collCeldas[_self.nNumCol * (RnRen-1) + RnCol ]		
-	
-_endmethod
-$
-_pragma(classify_level=restricted)
-_method c_celdas.collCeldas << valor
-
-	.collCeldas << valor
-	
-_endmethod
-$
-_pragma(classify_level=restricted)
-_method c_celdas.init_with( props )
-
-	_for key, value _over props.fast_keys_and_elements()
+	_for attrib _over attribs.fast_elements()
 	_loop
-		_try _with cond
-		     _self.perform_private( key.with_chevron, value )
-		_when does_not_understand
-		_endtry 
+		attrib.allowed_on_properties_page? << _false
 	_endloop
-
-	_return _self
 	
+	attribs.add(layout_attribute_definition.new(:estado, :string,
+						    :description, "estado"))
+	attribs.add(layout_attribute_definition.new(:tipo_cable, :string,
+						    :description, "tipo_cable",	    
+                                                    :enum_method, :enum_tipo_cable))
+	attribs.add(layout_attribute_definition.new(:procedimiento, :string,
+						    :description, "procedimiento",	    
+                                                    :enum_method, :enum_tipo_proc))
+	attribs.add(layout_attribute_definition.new(:instalacion, :string,
+						    :description, "instalacion",	    
+                                                    :enum_method, :enum_tipo_inst))	
+	>> attribs
+
 _endmethod
 $
+
+c_sello_notas_sct.define_attributes()
+$
+
 _pragma(classify_level=restricted, usage={redefinable})
-_method c_celdas.new(RnRen, RnCol)
-## Objetivo: Crear una instacia de celdas
-## Parámetros de entrada:
-## 	Entero - RnRen : Numero de renglones que tendra celdas 
-## 	Entero - RnCol : Numero de columna que tendra celdas
-## Parámetros de salida:   NA
-## Regresa: 
-## 	c_celdas - Un objeto celdas
-## Fecha de última modificación: 28/10/2004
-## Autor de la modificación : dsanchez
-## Descripción de la modificación: Se documento
+_method c_sello_notas_sct.enum_tipo_inst
 
-_local LnPos # Almacena temporalmente el numero de celda a utilizar
-
-	# Asigna el numero de renglones y columnas que tendra celdas
-	_self.nNumRen << RnRen
-	_self.nNumCol << RnCol
-
-	# Crea las celdas que forman parte de celdas
-	_self.collCeldas <<  hash_table.new()
-	_for LnRen  _over range(1, _self.nNumRen ) 
-        _loop
-	   _for LnCol  _over range(1, _self.nNumCol) 
-	   _loop
-		   LnPos << _self.nNumCol * (LnRen - 1) + LnCol
-		   _self.collCeldas[LnPos] << c_celda.new(LnRen, LnCol)
-	   _endloop
-	_endloop
-	
-	_return _clone
+	_local LoTipoInst
+	LoTipoInst << hash_table.new()
+	LoTipoInst[1] << "SUBTERR NEA"
+	LoTipoInst[2] << "CANALIZADA"
+	_return LoTipoInst
 	
 _endmethod
 $
-_pragma(classify_level=restricted)
-_method c_celdas.new_from_serial( keys, xml_values )
 
-	props << property_list.new()
-	
-	_for nr, key _over keys.fast_keys_and_elements()
-	_loop
-		props[key] << xml_values[nr]
-	_endloop
-	
-	_return _clone.init_with( props )
-	
-_endmethod
-$
 _pragma(classify_level=restricted, usage={redefinable})
-_private _method c_celdas.nNum_Col << RnValor
-## Objetivo: Asignar un valor permitido al slot nNumCol
-## Parámetros de entrada:
-## 	Entero - RnValor : Numero de columnas
-## Parámetros de salida:   NA
-## Regresa: NA
-## Fecha de última modificación: 3/11/2004
-## Autor de la modificación : dsanchez
-## Descripción de la modificación: Se documento
+_method c_sello_notas_sct.enum_tipo_cable
 
-	# Se valida que el Numero de columnas sea mayor que cero
-	_if RnValor > 0
+	.oTipoCable << hash_table.new()
+	.oTipoCable[1] << "FIBRAS  PTICAS"
+	.oTipoCable[2] << "COBRE"
+	_return .oTipoCable
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.enum_tipo_proc
+
+	.oTipoProc << hash_table.new()
+	.oTipoProc[1] << "HINCADO"
+	.oTipoProc[2] << "TUBO DIRECCIONAL"
+	_return .oTipoProc
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.draw_content_on ( window )
+
+	_self.prvAsignaTexto()
+	_self.oWindow << window
+	
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << .oTablas.area_total()
+	
+        _self.oTablas.Despliega(window)
+
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_notas_sct.post_initialisation ()
+	
+        _self.Inicializa(coordinate.new(0,0))	
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.Agrega_LYM(RoLym)
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.Inicializa(_optional RoCoord)
+
+	_local LoArea # Area que ocupan todas la tablas
+
+	_if RoCoord _is _unset 
 	_then
- 	   .nNumCol << RnValor
-	_else
-	   condition.raise(:warning, :string, "Error al asignar el número de columnas")	
+		RoCoord << coordinate.new(0,0)
 	_endif
+
+	_self.oCoordOrigen << RoCoord	
+
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	# Crea y configura cada una de las tablas 
+	_self.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	# Se conoce el area de la tabla dibujada
+	LoArea << _self.oTablas.area_total()
+
+	# Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	# Crea a los objetos que tendra c/u de las tablas
+	_self.prvLlena_Celdas()
+	
+	# Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblTitulo # Tabla que almacena el t tulo de la tabla
+
+	LoTblTitulo << _self.oTablas.crea_tabla(2,1,:tbl_notas_grales)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# Longitud de los renglones de la tabla, esta dada en mm
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 55
+
+	# Longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 155
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct.prvLlena_Celdas()
+
+	# Tama o de la letra en cada una de los objetos
+        _local LoTitulo      << c_texto_grafico.new("NOTAS SCT")
+        _local LoDescripcion << c_texto_grafico.new("")
+
+	LoTitulo.nTamanio      << 50
+	LoDescripcion.nTamanio << 30
+	LoDescripcion.sALineacion << :top_left
+	
+	# Asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(1,1).oElemento << LoTitulo
+	_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento << LoDescripcion	
+
+	_self.prvAsignaTexto()
 	
 _endmethod
 $
 _pragma(classify_level=restricted, usage={redefinable})
-_method c_celdas.nNum_Ren
-## Objetivo: retornar en valor del slot nNumRen
-## Parámetros de entrada:  NA
-## Parámetros de salida:   NA
-## Regresa: 
-## 	Entero - nNumRen : Numero de renglones
-## Fecha de última modificación: 3/11/2004
-## Autor de la modificación : dsanchez
-## Descripción de la modificación: Se documento
+_private _method c_sello_notas_sct.prvAsignaTexto()
 
-	_return .nNumRen
+	.s_estado << _self.attributes[:estado].value.write_string.uppercase
+	.s_tipo_cable << _self.attributes[:tipo_cable].value.write_string
+	.s_procedimiento << _self.attributes[:procedimiento].value.write_string
+	.s_instalacion << _self.attributes[:instalacion].value.write_string
+	
+_local LsTexto <<  character.newLine
+     LsTexto +<<" 1.- TODAS LAS DIMENSIONES EST N EN METROS, EXCEPTO LAS INDICADAS EN OTRA UNIDAD. "
+     LsTexto +<<character.newLine + character.newLine
+     LsTexto +<<" 2.- PARA CUALQUIER MODIFICACI N A ESTE PROYECTO, TEL FONOS DE M XICO, S.A. DE C.V. DEBER "
+     LsTexto +<<character.newLine
+     LsTexto +<<" COMUNICAR Y SOLICITAR A ESTA SECRETARIA LA REVISI N Y DICTAMEN CORRESPONDIENTE. "
+     LsTexto +<<character.newLine + character.newLine
+     LsTexto +<<" 3.- TEL FONOS DE M XICO, S.A. DE C.V. INFORMARA POR ESCRITO A LA RESIDENCIA GENERAL DE "
+     LsTexto +<<character.newLine
+     LsTexto +<<" CONSERVACI N DE CARRETERAS EN EL ESTADO DE " + .s_estado + " LA FECHA DE "
+     LsTexto +<<character.newLine
+     LsTexto +<<" INICIACI N DE LOS TRABAJOS CON DIEZ D AS DE ANTICIPACI N, PREVIA SUPERVISI N DE LA ZONA. "
+     LsTexto +<<character.newLine + character.newLine
+     LsTexto +<<" 4.- LOS TRABAJOS DEBER N INICIARSE A MAS TARDAR 30 D AS NATURALES DESPU S DE OTORGADO EL "
+     LsTexto +<<character.newLine
+     LsTexto +<<" PERMISO POR LA SECRETARIA Y CONCLUIRSE EN UN PLAZO NO MAYOR DE 180 D AS NATURALES A "
+     LsTexto +<<character.newLine
+     LsTexto +<<" PARTIR DE SU INICIO. "
+     LsTexto +<<character.newLine
+
+_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto << LsTexto
 	
 _endmethod
 $
-_pragma(classify_level=restricted, usage={redefinable})
-_private _method c_celdas.nNum_Ren << RnValor
-## Objetivo: Asignar un valor permitido al slot nNumRen
-## Parámetros de entrada:
-## 	Entero - RnValor : Numero de renglones
-## Parámetros de salida:   NA
-## Regresa: NA
-## Fecha de última modificación: 3/11/2004
-## Autor de la modificación : dsanchez
-## Descripción de la modificación: Se documento
 
-	# Se valida que el numero de renglones no sea negativo
-	_if RnValor > 0
-	_then
- 	   .nNumRen << RnValor
-	_else
-	   condition.raise(:warning, :string, "Error al asignar el número de renglón")	
-	_endif
-	
-_endmethod
-$
-_pragma(classify_level=restricted)
-_method c_celdas.serial_slots()
 
-	keys << rope.new_with(:nNumRen,:nNumCol,:collCeldas)
-	values << rope.new_with(.nNumRen,.nNumCol,.collCeldas)
-
-	>> keys, values
-	
-_endmethod
-$
-_pragma(classify_level=restricted)
-_method c_celdas.serial_structure
-
-	>> :slotted
-	
-_endmethod
-$
 
 
 Ubicación: 
-Clase   c_celdas
-Fichero	c_celdas.magik
+Clase   c_sello_notas_sct
+Fichero	c_sello_notas_sct.magik
 
 vale, con este nuevo component exportado a .tsx, vamos a ver de que manera lo podemos invocarlo en app.tsx. Quiero que comentes el metodo anterior y lo dejes ahi
 comentado
@@ -216,3 +266,527 @@ Además de esto, vamos a meter el código en el selector de menús y vamos a uni
 Vale, me gustaria que me dijeras cual es el funcionamiento real del componente que has creado y qué es lo que has transcrito del código .magik, por favor. Generame un
   fichero .txt cuyo nombre sea el nombre de la clase creada en typescript e indiques su funcionamiento como has hecho hasta ahora. Ubicalo en la misma carpeta, en
   test-magik\src\migration
+
+
+
+
+  Actúa como ingeniero de software experto en GIS, Smallworld (Magik) y desarrollo web moderno con TypeScript + OpenLayers v10.
+
+Tarea: Migrar el siguiente código Magik a TypeScript. No traduzcas línea por línea. Analiza la lógica e intención del código y reescríbelo en una función/componente TypeScript limpio, asíncrono y modular.
+
+Reglas:
+- Usa Turf.js (GeoJSON) para cálculos espaciales.
+- Usa la API moderna de OpenLayers (ol/Feature, VectorSource, etc.) para interacción con mapa.
+- Genera un archivo .tsx con el código resultante.
+- Modulariza el código y añade comentarios cortos explicando la equivalencia con el original Magik.
+
+Aquí está el código Magik:
+
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Genera la tabla Resumen de materiales
+# Autor: dsanchez
+# Fecha de creacion: 03-Abril-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+# 03/04/05 DSB 14:00 * ya puede seleccionar el txt desde diseño
+# 03/04/05 DSB 13:30 * Pronosticos
+# 03/04/05 DSB 13:10 * Pares
+# 03/04/05 DSB 12:00 * Titulo
+
+# Reviso.
+#  DSB 
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_dto_pronostico)
+
+$
+def_slotted_exemplar(:c_dto_pronostico,
+                     {
+		        {:otablas,               _unset}, # Alamcena un objeto tablas
+			{:oCoordOrigen,          _unset}, # Coord donde inicia el sello
+	    		{:oWindow,               _unset}, # canvas en el que se desplegara el sello
+	     		{:bTablas_Creadas,       _false}  # Indica si las tabals ya fueron creadas
+		     },
+		      :layout_element 
+)
+$
+c_dto_pronostico.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+
+
+c_dto_pronostico.define_slot_access(:oTablas,              :writable, :public)
+c_dto_pronostico.define_slot_access(:oCoordOrigen,         :writable, :public)
+c_dto_pronostico.define_slot_access(:oWindow,              :writable, :public)
+c_dto_pronostico.define_slot_access(:bTablas_creadas,      :writable, :public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dto_pronostico.defined_attributes
+	## 
+	##
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	>> attribs
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+c_dto_pronostico.define_attributes()
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dto_pronostico.draw_content_on(window)
+
+	_self.oWindow << window
+
+	_if _self.bTablas_Creadas = _false  
+	_then
+
+	   _local LoPAF << smallworld_product.pni_application()
+	   _local LoLYP << LoPAF.plugin(:layout_plugin)	
+	   _local LoLYD << LoLYP.start_layout_designer()
+	   _local LoLYM << LoLYD.plugin(:layout_manager)	
+	   
+           _self.inicializa(coordinate.new(0,0))	
+
+   	   _self.Agrega_LYM(LoLYM)
+	   LoLYM.current_document.current_page.send_to_back(_self )
+
+	_endif
+
+	 _self.oTablas.Despliega(window)
+	 
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dto_pronostico.inicializa(_optional RoCoord)
+
+##  Objetivo: Manda llamar todos los metodos que crean e
+##            inicializan las tablas
+##  Parámetros de entrada: 
+##    coordinate - RoCoord -
+##                 Coordenada donde iniciara el resumen de
+##                 materiales dentro del layout
+##  Parámetros de salida:   NA
+##  Regresa: NA
+## Fecha de última modificación: 03/04/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	# Configuracion del sello transparente
+	_self.set_fill_colour(_unset )
+	
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord
+	
+	# sepasa como parametro el layout
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	#Crea y configura cada una de las tablas 
+	_self.prvCrea_Cfg_Tablas()
+
+	#Se conoce el area de la tabla dibujada
+	LoArea << _self.oTablas.area_total()
+
+	#Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	#Crea a los objetos que tendra c/u de las tablas
+	_self.prvLlena_Celdas_de_tablas()
+
+	#Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_dto_pronostico.prvCrea_Cfg_Tablas()
+
+##  Objetivo: Manda llamar los metodos que crean y configuran 
+##            las tablas 
+##  Parámetros de entrada: 
+##    coordinate - RoCoord -
+##                 Coordenada donde iniciara el resumen de
+##                 materiales dentro del layout
+##  Parámetros de salida:   NA
+##  Regresa: NA
+## Fecha de última modificación: 03/04/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	_local LnAltura << 1
+	LnAltura << _self.prvCreaCfgTbl_titulo(_self.oCoordOrigen)
+
+	#se calcula la coordenada donde se dibujara la siguiente tabla,
+	# pero incluyendo el desplazamianto en y "LnAltura" de la tabla anterior
+	LoCoord  << coordinate.new(_self.oCoordOrigen.x, _self.oCoordOrigen.y - LnAltura)
+	LnAltura << _self.PrvCreaCfgTbl_pares(LoCoord)
+
+	#se calcula la coordenada donde se dibujara la siguiente tabla,
+	# pero incluyendo el desplazamianto en y "LnAltura" de la tabla anterior	
+	LoCoord << coordinate.new(_self.oCoordOrigen.x, LoCoord.y - LnAltura)
+        LnAltura << _self.PrvCreaCfgTbl_Pronostico(LoCoord)
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_dto_pronostico.prvLlena_Celdas_de_tablas()
+
+##  Objetivo: Manda llamar los metodos que llenan las celdas de 
+##            las tablas 
+##  Parámetros de entrada: NA
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 03/04/2005
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+
+	_self.prvLlenaTbl_titulo()
+        _self.prvLlenaTbl_pares()
+	_self.prvLlenaTbl_Pronostico()
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_dto_pronostico.PrvCreaCfgTbl_titulo(RoCoord)
+
+##  Objetivo: Crea y configura los objetos necesarios para la
+##            tabla titulo
+##  Parámetros de entrada:
+##   RoCoord. Coordenada donde iniciara a dibujarse la tabla 
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 03/04/2005
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo	
+	
+	_local LoTblTitulo
+	_local LoTblCuerpo
+	
+	LoTblTitulo << _self.oTablas.crea_tabla(2,2,:tbl_Titulo)
+
+	#lineas internas de la tabla no se dibujaran
+	LoTblTitulo.bDibuja_bordes? << _false 
+	LoTblTitulo.bDibuja_Columnas_Internas?  << _false
+	LoTblTitulo.bDibuja_Renglones_Internos? << _false
+
+	#Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 5
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 5
+
+	#longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 10
+	LoTblTitulo.oColumnas.elemento(2).nLongitud  << 23
+
+	# configura que el borde inf se active
+	LoCelda << LoTblTitulo.oCeldas.Celda(1,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true	
+
+	
+	LnAltura << _self.oTablas.Longitud_total_renglones({:tbl_titulo})
+	_return LnAltura
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dto_pronostico.prvLlenaTbl_titulo()
+##  Objetivo: Asigna el objeto que contendra cada celda de la tabla
+##  Parámetros de entrada: NA
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 03/04/2005
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	# Texto de fijos columna 1
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	#se crean los objetos que almacenara la tabla
+	LoTit1  << c_texto_grafico.new("DTO.")
+        LoTit1.sAlineacion << :centre_left
+	LoTit1.nTamanio << 26
+	
+	LoTit2  << c_texto_grafico.new("D.A O.C.")
+        LoTit2.sAlineacion << :centre_left
+	LoTit2.nTamanio << 26
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(1,1).oElemento << LoTit1
+	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(2,1).oElemento << LoTit2
+
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	# Texto de captura columna 2
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	#Se crea el objeto que se tomara como base para el resto de los objetos
+	
+	LoCapTxt1 << c_Captura_Texto.new("LJC-1")
+	LoCapTxt1.nTamanio << 4
+	LoCapTxt1.sAlineacion << :centre_left
+	
+	LoCapTxt2 << c_Captura_Texto.new("538.3 MTS")
+	LoCapTxt2.nTamanio << 4
+	LoCapTxt2.sAlineacion << :centre_left
+	
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(1,2).oElemento << LoCapTxt1
+	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(2,2).oElemento << LoCapTxt2
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_dto_pronostico.prvCreaCfgTbl_Pares(RoCoord)
+
+#  Objetivo: Crea y configura lso objetos necesarios para la
+#            tabla pares
+#  Parámetros de entrada:
+#   RoCoord. Coordenada donde iniciara a dibujarse la tabla
+#  Parámetros de salida:   NA
+#  Regresa: NA
+#  Fecha de última modificación: 03/05/2005
+#  Autor de la modificación : dsanchez
+#  Descripción de la modificación: Se creo
+
+	_local LoTbl
+		
+	LoTbl << _self.oTablas.crea_tabla(3,2,:tbl_pares)
+
+	#lineas internas de la tabla no se dibujaran
+	LoTbl.bDibuja_bordes? << _true 
+	LoTbl.bDibuja_Columnas_Internas?  << _false
+	LoTbl.bDibuja_Renglones_Internos? << _true
+	
+	#Coordenada donde iniciara la tabla
+	LoTbl.oCoordenada_Origen << RoCoord
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTbl.oRenglones.elemento(1).nLongitud << 3
+	LoTbl.oRenglones.elemento(2).nLongitud << 3
+	LoTbl.oRenglones.elemento(3).nLongitud << 3
+
+	#longitud de las columnas, esta dada en mm 
+	LoTbl.oColumnas.elemento(1).nLongitud  << 15
+	LoTbl.oColumnas.elemento(2).nLongitud  << 18
+
+
+	LnAltura << _self.oTablas.Longitud_total_renglones({:tbl_pares})
+
+	_return LnAltura
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dto_pronostico.prvLlenaTbl_pares()
+
+##  Objetivo: Asigna el objeto que le corresponde a cada una de
+##            las celdas
+##  Parámetros de entrada: NA
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 03/04/2005
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	# Texto de fijos columna 1
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	#se crean los objetos que almacenara la tabla
+	# LoTit1 es la base para los otros titulos
+	LoTit1  << c_texto_grafico.new("P.PRINC.")
+	LoTit1.sAlineacion << :centre_left
+	LoTit1.nTamanio << 18
+	
+	LoTit2  << c_texto_grafico.new_from(LoTit1, "P.SEC")
+	LoTit3  << c_texto_grafico.new_from(LoTit1, "ABNS. EXIST.")
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(1,1).oElemento << LoTit1
+	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(2,1).oElemento << LoTit2
+	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(3,1).oElemento << LoTit3
+
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	# Texto de captura columna 2
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	#Se crea el objeto que se tomara como base para el resto de los objetos
+	LoCapTxt1 << c_Captura_Texto.new("300+200")
+	LoCapTxt1.nTamanio << 3
+	LoCapTxt1.sAlineacion << :centre_left
+	
+	LoCapTxt2 << c_Captura_Texto.new_from(LoCapTxt1, "230+380")
+	LoCapTxt3 << c_Captura_Texto.new_from(LoCapTxt1, "166")
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(1,2).oElemento << LoCapTxt1
+	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(2,2).oElemento << LoCapTxt2
+	_self.oTablas.elemento(:tbl_pares).oCeldas.Celda(3,2).oElemento << LoCapTxt3
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_dto_pronostico.prvCreaCfgTbl_pronostico(RoCoord)
+
+##  Objetivo: Crea y configura lso objetos necesarios para la
+##            tabla de pronosticos
+##  Parámetros de entrada:
+##   RoCoord. Coordenada donde iniciara a dibujarse la tabla
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 03/04/2005
+##  Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+
+	_local LoTbl # Tabla a la que hacemos referencia
+		
+	LoTbl << _self.oTablas.crea_tabla(3,3,:tbl_pronosticos)
+
+	#lineas internas de la tabla no se dibujaran
+	#LoTbl.bDibuja_bordes? << _false 
+	#LoTbl.bDibuja_Columnas_Internas?  << _false
+	#LoTbl.bDibuja_Renglones_Internos? << _false
+	
+	#Coordenada donde iniciara la tabla
+	LoTbl.oCoordenada_Origen << RoCoord
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTbl.oRenglones.elemento(1).nLongitud << 3
+	LoTbl.oRenglones.elemento(2).nLongitud << 3
+	LoTbl.oRenglones.elemento(3).nLongitud << 3
+
+	#longitud de las columnas, esta dada en mm 
+	LoTbl.oColumnas.elemento(1).nLongitud  <<  7
+	LoTbl.oColumnas.elemento(2).nLongitud  <<  8
+	LoTbl.oColumnas.elemento(3).nLongitud  << 18
+
+	LnAltura << _self.oTablas.Longitud_total_renglones({:tbl_pronosticos})
+
+	_return LnAltura 
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dto_pronostico.prvLlenaTbl_pronostico()
+
+##  Objetivo: Asigna el objeto que le corresponde a cada una de
+##            las celdas
+##  Parámetros de entrada: NA
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 03/04/2005
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	# Texto de fijos columna 1
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	# se crean los objetos que almacenara la tabla
+	# LoTit1 surve como base para los otros titulos
+	LoTit1  << c_texto_grafico.new("N")
+	LoTit1.sAlineacion << :centre_left
+	LoTit1.nTamanio << 18
+	
+	LoTit2  << c_texto_grafico.new_from(LoTit1, "N+1")
+	LoTit3  << c_texto_grafico.new_from(LoTit1, "SAT.")
+
+	# asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(1,1).oElemento << LoTit1
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(2,1).oElemento << LoTit2
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(3,1).oElemento << LoTit3
+
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	# Texto de captura columna 2
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	# Se crea el objeto que se tomara como base para el resto de los objetos
+	LoCapTxt1 << c_Captura_Texto.new("")
+	LoCapTxt1.nTamanio << 2
+	LoCapTxt1.sAlineacion << :centre_left
+	
+	LoCapTxt2 << c_Captura_Texto.new_from(LoCapTxt1)
+	LoCapTxt3 << c_Captura_Texto.new_from(LoCapTxt1)
+	
+	# asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(1,2).oElemento << LoCapTxt1
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(2,2).oElemento << LoCapTxt2
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(3,2).oElemento << LoCapTxt3
+	
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	# Texto de captura columna 3
+	# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	# Se crea el objeto que se tomara como base para el resto de los objetos
+	LoCapTxt1 << c_Captura_Texto.new("")
+	LoCapTxt1.nTamanio << 2
+	LoCapTxt1.sAlineacion << :centre_left
+	
+	LoCapTxt2 << c_Captura_Texto.new_from(LoCapTxt1)
+	LoCapTxt3 << c_Captura_Texto.new_from(LoCapTxt1)
+	
+	
+	# asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(1,3).oElemento << LoCapTxt1
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(2,3).oElemento << LoCapTxt2
+	_self.oTablas.elemento(:tbl_pronosticos).oCeldas.Celda(3,3).oElemento << LoCapTxt3	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dto_pronostico.Agrega_LYM(RoLym)
+
+## Objetivo: Permite agregar todos los elementos Layout a la pagina
+## Parámetros de entrada:  
+##    :layout_manager - RoLym : Referencia al LayoutManager
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+
+_endmethod
+
+
+
+Ubicación: Clase c_dto_pronostico | Fichero: c_dto_pronostico.magik
+
+---
+
+Instrucciones adicionales:
+- En app.tsx: Comenta el método anterior y deja el código comentado (no lo borres). Permite ir agregando nuevos métodos progresivamente.
+- Integra el nuevo componente en el selector de menús de App.tsx junto con el código existente.
+- Explica brevemente el funcionamiento real del componente creado y qué lógica del código Magik se transcribió.
+- Genera un archivo .txt con el nombre de la clase TypeScript creada. Colócalo en: test-magik\src\migration\. En este .txt describe su funcionamiento.
+- Mantén el código lo más limpio y eficiente posible.

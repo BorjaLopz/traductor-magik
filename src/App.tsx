@@ -61,6 +61,8 @@ import { CFilaUI }                               from './migration/CFila';
 import { CTablaGeoreferenciaUI }                 from './migration/CTablaGeoreferencia';
 // [28] c_cfg_bloque_titdet_editable_mixin
 import { CfgBloqueTitdetEditableMixinUI }        from './migration/CfgBloqueTitdetEditableMixin';
+// [26] c_plano_desmontaje_cd
+import { PlanoDesmontajeCdUI }                    from './migration/PlanoDesmontajeCd';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -444,6 +446,26 @@ const DEMO_ITEMS: DemoItem[] = [
     render     : () => <CCroquisUI />,
   },
   // ── [22] c_croquis — anterior último componente ──────────────────────────
+
+  // =============================================================================
+  // [23] Demo inline — c_sello_estandar_ctl
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoSelloEstandarCtl() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_sello_estandar_ctl</h3>
+  //       <p style={s.meta}>
+  //         Sello estandar CTL — tbl_CeldaA (70mm, 2 filas) + tbl_CeldaB (45mm, 1 fila).
+  //         draw_content_on empuja atributos a celdas. lee_datos_BdeD() async.
+  //         IDs proyecto: GDL, MTY, MEX, TIJ
+  //       </p>
+  //       <SelloEstandarCtlUI />
+  //     </section>
+  //   );
+  // }
+
   {
     id         : '23-sello-estandar-ctl',
     label      : '[23] c_sello_estandar_ctl',
@@ -486,6 +508,59 @@ const DEMO_ITEMS: DemoItem[] = [
     render     : () => <DemoCfgBloqueTitdetEditableMixin />,
   },
   // ── PRÓXIMA MIGRACIÓN: agregar entrada aquí ──────────────────────────────
+  // ── [24] c_vp_croquis_proy_can — anterior último componente migrado ────────
+
+  // =============================================================================
+  // [25] Demo inline — c_sello_aumentos_secundarios
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoSelloAumentosSecundarios() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_sello_aumentos_secundarios</h3>
+  //       <p style={s.meta}>
+  //         Sello de aumento de red secundaria. Tabla 5 cols x 2-3 filas.
+  //         IDs disponibles: D01 · D02 (sin red directa) · D03
+  //       </p>
+  //       <SelloAumentosSecundariosUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id         : '25-sello-aumentos-secundarios',
+    label      : '[25] c_sello_aumentos_secundarios',
+    description: 'Sello aumento red secundaria por distrito — tabla 5 cols x 2 filas (3 si red directa). Cabeceras: DTO./CONECT./AUMENTO/L.PLAZO/TOTAL. Colores: verde/rojo/naranja.',
+    render     : () => <SelloAumentosSecundariosUI />,
+  },
+  // ── [25] c_sello_aumentos_secundarios — anterior último componente migrado ──
+
+  // =============================================================================
+  // [26] Demo inline — c_plano_desmontaje_cd
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoPlanoDesmontajeCd() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_plano_desmontaje_cd</h3>
+  //       <p style={s.meta}>
+  //         Orquestador del plano de Desmontaje de Caja de Distribucion.
+  //         Pulsa "genera_plano()" para componer marco + sello + viewport.
+  //       </p>
+  //       <PlanoDesmontajeCdUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id         : '26-plano-desmontaje-cd',
+    label      : '[26] c_plano_desmontaje_cd',
+    description: 'Plano desmontaje Caja Distribución — genera_plano() compone marco(3×1) + sello_proyecto_canalizacion + viewport_layout. Escala por ratio bounds o view_scale si ángulo > 0.1°.',
+    render     : () => <PlanoDesmontajeCdUI />,
+  },
+  // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];
 
 // =============================================================================

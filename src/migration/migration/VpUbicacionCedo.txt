@@ -1,0 +1,172 @@
+================================================================================
+CLASE: VpUbicacionCedo
+ORIGEN: c_vp_ubicacion_cedo.magik
+FICHERO TS: VpUbicacionCedo.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Viewport especializado para el plano "DETALLE DE CANALIZACION" (CEDO).
+Hace tres cosas principales:
+
+  1) Filtra el geometry_set heredado (lo que devuelve viewport_layout) para
+     dejar solo las colecciones relevantes a canalizacion (manzanas, ductos,
+     postes, access points, etc.).
+  2) Recorre oElementos.elements() y, segun source_collection.name, agrega
+     dos posibles geometrias por elemento:
+       - geometria principal  -> LoGeom
+       - geometria de anotacion -> LoGeomTxt
+  3) Combina ambos sets en uno (composite_geometry_set en Magik) y agrega
+     un titulo "DETALLE DE CANALIZACION" en una franja inferior del bounds.
+
+En la version TS, el render real se hace sobre OpenLayers v10 (VectorSource)
+y las geometrias se exponen tambien como Turf FeatureCollection para
+calculos espaciales (bbox, area, intersect, length, etc.).
+
+-- CONSTANTES TRANSCRITAS ------------------------------------------------------
+
+Magik: define_shared_constant(:titulo,   "DETALLE DE CANALIZACION")
+TS:    VpUbicacionCedo.titulo
+
+Magik: define_shared_constant(:tamanio, 6)
+TS:    VpUbicacionCedo.tamanio
+
+Magik: define_shared_constant(:allowed_on_menu?, _false)
+TS:    VpUbicacionCedo.allowedOnMenu
+
+Magik: define_shared_constant(:LoGeom,
+         property_list.new_with(:ubb,:location,
+                                :splice_closure,:user!_posicion_interna,
+                                :figure_eight,:user!_detalle))
+TS:    LO_GEOM: Record<string, string>
+
+Magik: define_shared_constant(:LoGeomTxt,
+         property_list.new_with(:user!_empalme_distribucion,:user!_anotacion))
+TS:    LO_GEOM_TXT: Record<string, string>
+
+Filtro select(:collection, {...}) de geometry_set_for_render
+  -> COLECCIONES_PERMITIDAS: Set<string>
+  (user!_manzana, access_point, mit_terminal_enclosure, user!_eje_calle, pole,
+   mit_presentation_object, uub, underground_route, aerial_route,
+   user!_registro_tablero, mit_room, mit_floor, mdu_route)
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: new_with(PoElementos, _gather args)
+TS:    VpUbicacionCedo.createWith(elementos, bounds)
+
+Equivalencias:
+  - .oElementos << PoElementos  -> vp.oElementos = { elements: () => [...] }
+  - _super.new_with(...)        -> instancia base + bounds asignado
+
+-----------------------------------------------------------------------
+
+Magik: init_with(properties)
+TS:    VpUbicacionCedo.initWith()
+
+Solo delega al super en Magik -> no-op en TS.
+
+-----------------------------------------------------------------------
+
+Magik: initialise_for_page(a_layout_page)
+TS:    VpUbicacionCedo.initialiseForPage(page)
+
+Equivalencias:
+  - _self.agregar_titulo(a_layout_page) -> await this.agregarTitulo(page)
+
+-----------------------------------------------------------------------
+
+Magik: geometry_set_for_render
+TS:    VpUbicacionCedo.geometrySetForRender(superSet)
+
+Equivalencias:
+  - _dynamic !current_coordinate_system! << _unset  -> sin equivalente (TS
+    no maneja proyeccion dinamica, se delega al View de OpenLayers)
+  - LcollGeometrias << _super.geometry_set_for_render
+      -> recibido como parametro superSet (el padre lo provee)
+  - LcollGeometrias.select(:collection, {...})
+      -> superSet.filter(g => COLECCIONES_PERMITIDAS.has(g.sourceCollection))
+  - loElementos << _self.agregar_elementos()
+      -> await this.agregarElementos()
+  - composite_geometry_set.new_with(LoResultSet, loElementos)
+      -> [...filtered, ...extra]
+  - loElementos.style_system << LoStyle  -> styleForEntry() asigna estilo por
+    tipo de geometria/coleccion en lugar de usar style_system global.
+
+-----------------------------------------------------------------------
+
+Magik: agregar_elementos()
+TS:    VpUbicacionCedo.agregarElementos()
+
+Equivalencias:
+  - geometry_set.new()         -> []
+  - _if .oElementos _is _unset _then _return loest
+                               -> if (!this.oElementos) return loest
+  - _for el _over .oElementos.elements() _loop ... _endloop
+                               -> for (const el of this.oElementos.elements())
+  - LoNombreGeo << _self.LoGeom[el.source_collection.name]
+                               -> LoGeom[el.sourceCollection]
+  - el.perform(LoNombreGeo)    -> el.geometries[nombreGeo]
+                                  (Magik perform = invoca metodo dinamicamente;
+                                   en TS se modela como mapa nombre -> geom)
+  - loest.add(LoGeo)           -> loest.push({...})
+  Mismo patron para LoGeomTxt (anotaciones).
+
+-----------------------------------------------------------------------
+
+Magik: draw_content_on(windows)
+TS:    VpUbicacionCedo.drawContentOn() + VpUbicacionCedo.drawOn(source)
+
+En Magik solo llama al super. En TS se expone drawOn(VectorSource) que
+vuelca cada entry como ol/Feature al source con su estilo, equivalente al
+ciclo de dibujado real del viewport.
+
+-----------------------------------------------------------------------
+
+Magik: agregar_titulo(PoPage)
+TS:    VpUbicacionCedo.agregarTitulo(page)
+
+Equivalencias:
+  - bounding_box.new(xmin, ymin - 100, xmax, ymin)
+      -> { xmin, ymin: ymin - 100, xmax, ymax: ymin }   (franja inferior)
+  - c_titulo_de_plano.new_with(:bounds, ..., :font_name, "bold",
+                               :font_size, tamanio, :text, titulo,
+                               :align_horizontal, :centre,
+                               :align_vertical,   :centre,
+                               :orientation,      :left_right)
+      -> LayoutTextElement con los mismos atributos
+  - PoPage.add_element(LoTitulo) -> page.addElement(element)
+
+-----------------------------------------------------------------------
+
+Magik: defined_attributes()
+TS:    VpUbicacionCedo.definedAttributes()
+
+Magik solo encadena al super en una rope. En TS se deja como [] (placeholder).
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+VpUbicacionCedoUI
+  - Monta mapa OpenLayers v10 con proyeccion local plana sobre el extent
+    [xmin..xmax, ymin-100..ymax] (incluye la franja del titulo).
+  - Set heredado de prueba (SUPER_SET) con colecciones permitidas + 1
+    coleccion ruido para verificar el filtro.
+  - Elementos de prueba (ELEMENTOS_DEMO) que disparan tanto LoGeom como
+    LoGeomTxt (ubb, splice_closure, figure_eight, user!_empalme_distribucion).
+  - Al montar:
+      1) geometrySetForRender(SUPER_SET) -> filtrado + extras
+      2) drawOn(sourceRef.current)       -> volcado a VectorSource
+      3) initialiseForPage(page)         -> agrega titulo
+  - Muestra: titulo, bounds del titulo, conteo de elementos (total /
+    filtrados / extras) y elementos registrados en la pagina.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- !current_coordinate_system! dinamico de Smallworld (TS delega proyeccion
+  al ol/View).
+- style_system real de Smallworld -> se sustituye por estilos por tipo de
+  geometria en styleForEntry().
+- Herencia real de viewport_layout (en TS oResulSet / bounds se modelan
+  como propiedades directas).
+- el.perform(nombre) de Magik (invocacion dinamica) -> mapa nombre->geom.
+================================================================================

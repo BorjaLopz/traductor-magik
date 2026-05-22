@@ -1,0 +1,50 @@
+================================================================================
+CLASE: DetallesLayout
+ORIGEN: c_detalles_layout.magik
+FICHERO TS: DetallesLayout.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Ajusta el bounds al marco del layout y genera dos textos de copyright,
+con su caja de dibujo y un size fijo.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: defined_attributes
+TS:    DetallesLayout.definedAttributes(base?)
+
+Equivalencia:
+  - rope.new_from(_super.defined_attributes) -> copia base sin cambios
+
+-----------------------------------------------------------------------
+
+Magik: initialise_for_page(a_layout_page)
+TS:    DetallesLayout.initialiseForPage(page)
+
+Equivalencias directas:
+  - busca_elemento("marco_layout") -> findElement(page, 'marco_layout')
+  - bounds << LoElemento.bounds -> this.bounds = marco.bounds
+
+-----------------------------------------------------------------------
+
+Magik: draw_content_on(window)
+TS:    DetallesLayout.drawContentOn()
+
+Equivalencias directas:
+  - recalcula bounds desde marco_layout
+  - construye 2 cajas y textos con offsets fijos
+  - datos_del_plano(...) -> lista de TextDraw
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+DetallesLayoutUI
+  - Simula un layout_page con un marco.
+  - Ejecuta initialiseForPage + drawContentOn.
+  - Renderiza los textos y sus cajas.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Integracion con c_larguillos_layout y el window real.
+- Dibujo real de texto en el canvas del layout.
+================================================================================

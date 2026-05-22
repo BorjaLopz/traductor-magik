@@ -1,0 +1,238 @@
+================================================================================
+CLASE: AreaTelmex (CAreaTelmex)
+ORIGEN: c_area_telmex.magik  —  package user
+Autor:  vbluna
+FICHERO TS: AreaTelmex.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Es un DAO (Data Access Object) que encapsula el acceso al dataset GIS "landbase"
+para recuperar los datos administrativos de un área Telmex por nombre.
+
+Dado un nombre de área (PsNombre), consulta la colección :user!_area del
+dataset :landbase, obtiene el objeto GIS correspondiente y expone tres atributos
+de su registro de información administrativa (infoadmin):
+
+  ┌─────────────────────────────────────────────────────────┐
+  │  CAreaTelmex.new("AREA-NORTE", service)                 │
+  │                                                         │
+  │  ├── area.nombre       → "AREA-NORTE"                   │
+  │  ├── area.direccion    → "Av. Insurgentes Norte 2453…"  │
+  │  ├── area.telefono     → "55-5328-0010"                 │
+  │  └── area.responsable  → "Juan García Torres"           │
+  └─────────────────────────────────────────────────────────┘
+
+Cadena de acceso GIS original (Magik):
+  gis_program_manager
+    .cached_dataset(:landbase)
+    .collection(:user!_area)
+    .select(predicate.eq(:user!_nombre, PsNombre))
+    .an_element()
+    .infoadmin
+    .an_element()
+
+No hay cálculos espaciales (no Turf.js) ni interacción con el mapa (no OL).
+El único aspecto que justifica el async es la naturaleza IO/red del acceso GIS.
+
+── PATRÓN DE INICIALIZACIÓN ────────────────────────────────────────────────────
+
+  Magik usa el patrón _clone.init() para separar creación e inicialización:
+
+  Magik                                  TypeScript
+  ──────────────────────────────────── ────────────────────────────────────────
+  _method c_area_telmex.new(PsNombre)  static async new(nombre, svc)
+    _return _clone.init(PsNombre)          const inst = new CAreaTelmex()
+  _endmethod                               await inst.init(nombre, svc)
+                                           return inst
+  _method c_area_telmex.init(PsNombre)
+    _self.objeto_area(PsNombre)          private async init(...): Promise<void>
+    _return _self                            await this.objetoArea(nombre, svc)
+
+  En Magik _clone duplica el exemplar (== new) y .init() lo configura.
+  En TS se usa un constructor privado + factory estático async new().
+  La decisión de hacerlo async viene de que objetoArea() es IO asíncrono.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_area_telmex.objeto_area(PsNombre)
+TS:    async CAreaTelmex.objetoArea(nombre, service): Promise<void>
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik                                              TypeScript
+  ──────────────────────────────────────────────── ────────────────────────────────────
+  _try                                              try {
+    LtbArea = gis_program_manager                      this.objeto =
+                .cached_dataset(:landbase)               await service.getAreaByNombre(nombre)
+                .collection(:user!_area)             } catch {
+    LoPred = predicate.eq(:user!_nombre, PsNombre)     console.error('Error al asignar el area')
+    .objeto = LtbArea                                   this.objeto = null
+               .select(LoPred)                       }
+               .an_element()
+               .infoadmin
+               .an_element()
+  _when does_not_understand
+    write("Error al asignar el area")
+  _endtry
+
+  EQUIVALENCIAS CLAVE:
+
+    gis_program_manager.cached_dataset(:landbase).collection(:user!_area)
+    → LandbaseService (inyección de dependencia)
+    El servicio abstrae la capa de acceso al dataset. En producción se
+    implementaría contra la API GIS real (REST, GraphQL, etc.).
+
+    predicate.eq(:user!_nombre, PsNombre) + select().an_element()
+    → La búsqueda por nombre es interna al servicio (getAreaByNombre).
+    En Magik el predicado y el filtro son explícitos en el cliente;
+    en TS se encapsulan en la interfaz del servicio.
+
+    .infoadmin.an_element()
+    → El campo infoadmin en Magik es una colección (sub-tabla) con
+      registros de información administrativa. an_element() devuelve
+      el primer (cualquier) elemento de esa colección.
+    → En TS, InfoAdmin es un único objeto (el primer elemento ya extraído).
+
+    _when does_not_understand
+    → La excepción does_not_understand en Magik se lanza cuando se llama
+      un método inexistente en un objeto (equivale a llamar a .toString()
+      en null/undefined en JavaScript, o a NullPointerException en Java).
+    → En TS: catch genérico (el optional chaining `?.` previene la mayoría
+      de estos casos, pero el catch mantiene la equivalencia semántica).
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_area_telmex.direccion / telefono / responsable
+TS:    get direccion/telefono/responsable(): string
+────────────────────────────────────────────────────────────────────────────────
+
+  Los tres getters tienen la misma estructura en Magik:
+
+    _try
+      _return .objeto.user!_CAMPO.write_string
+    _when does_not_understand
+      _return ""
+    _endtry
+
+  En TypeScript:
+
+    get campo(): string {
+      try {
+        return this.objeto?.infoadmin?.campo ?? '';
+      } catch {
+        return '';
+      }
+    }
+
+  EQUIVALENCIAS:
+
+    .objeto.user!_direccion.write_string
+    → this.objeto?.infoadmin?.direccion ?? ''
+
+    .write_string en Magik convierte cualquier objeto a string.
+    En TS los campos ya son string, así que ?? '' basta para el fallback.
+
+    `?.` (optional chaining) previene la mayoría de los does_not_understand
+    causados por objeto=null. El try/catch cubre casos más exóticos, igual
+    que en el Magik original.
+
+── TIPOS CLAVE INTRODUCIDOS ────────────────────────────────────────────────────
+
+  InfoAdmin       ≡ .infoadmin.an_element() — registro de info administrativa
+                    (user!_direccion, user!_telefono, user!_responsable)
+
+  AreaGisRecord   ≡ objeto GIS de la colección :user!_area
+                    (user!_nombre + infoadmin)
+
+  LandbaseService ≡ gis_program_manager.cached_dataset(:landbase)
+                    Interfaz de inyección de dependencia.
+                    Método: getAreaByNombre(nombre) → Promise<AreaGisRecord|null>
+
+  mockLandbaseService ≡ implementación de prueba con 4 áreas y latencia simulada
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- #remex(:c_area_telmex) (comentado en el original)
+  → Recarga en caliente de Smallworld. No aplica en TS compilado.
+
+- {:objeto, _unset, :writable}
+  → En TS: private objeto: AreaGisRecord | null = null.
+  El modificador :writable de Magik (acceso público de escritura) se convierte
+  en campo privado con setter controlado a través de objetoArea().
+
+- _pragma(classify_level=restricted, usage={redefinable})
+  → Metadato del sistema de clasificación Smallworld. Sin equivalente TS.
+
+- gis_program_manager (referencia al programa Smallworld)
+  → No existe en TS. Abstracción completa detrás de LandbaseService.
+
+- predicate.eq() / .select() / .an_element()
+  → Operaciones del ORM de Smallworld sobre sus colecciones de datos.
+  En TS: encapsuladas en el servicio. En producción se traduce a
+  una consulta SQL/API equivalente: SELECT * FROM user_area WHERE nombre = ?
+
+- .infoadmin (sub-colección GIS)
+  → En Smallworld, infoadmin es una sub-tabla relacionada (como una JOIN).
+  En TS se modela como un campo objeto anidado (ya resuelto el join).
+
+── CONTEXTO DE USO EN EL SISTEMA GIS ───────────────────────────────────────────
+
+  En el sistema Telmex (Physical Network Inventory), las "áreas" son zonas
+  geográficas administrativas que agrupan infraestructura de red (cables,
+  empalmes, ductos). Cada área tiene asignado un responsable y datos de
+  contacto usados en los planos y sellos del Layout Designer.
+
+  Esta clase es usada por los sellos de plano para mostrar los datos del
+  área Telmex correspondiente al plano que se está generando.
+  Por ejemplo, en un plano de construcción de fibra óptica, el sello incluye:
+    - Dirección de la oficina del área
+    - Teléfono de contacto
+    - Nombre del responsable técnico
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Uso básico (async):
+  const area = await CAreaTelmex.new('AREA-NORTE', miServicio);
+  if (area.encontrado) {
+    console.log(area.direccion);    // → "Av. Insurgentes Norte 2453…"
+    console.log(area.telefono);     // → "55-5328-0010"
+    console.log(area.responsable);  // → "Juan García Torres"
+  }
+
+  // Área no encontrada:
+  const noExiste = await CAreaTelmex.new('AREA-XYZ', miServicio);
+  // → console.error('Error al asignar el area')
+  noExiste.encontrado   // → false
+  noExiste.direccion    // → ""
+  noExiste.telefono     // → ""
+  noExiste.responsable  // → ""
+
+  // Implementar LandbaseService para producción:
+  const servicioReal: LandbaseService = {
+    async getAreaByNombre(nombre) {
+      const resp = await fetch(`/api/landbase/area?nombre=${encodeURIComponent(nombre)}`);
+      if (!resp.ok) return null;
+      return resp.json();   // debe devolver AreaGisRecord
+    }
+  };
+
+  // Componente demo React:
+  <AreaTelmexUI />
+  // → Botones con áreas del mock dataset
+  //   Input libre para nombre
+  //   Indicador de estado: loading / ok / error
+  //   Tabla con: getter TS | campo Magik | valor
+  //   Traza de llamadas Magik → TypeScript paso a paso
+
+── RELACIÓN CON OTRAS MIGRACIONES ──────────────────────────────────────────────
+
+  [20] PlanoRutaDeCables → el plano que usaría CAreaTelmex para obtener
+       los datos del área y colocarlos en el sello correspondiente.
+
+  [18] TablaEncGeoreferencia → sello que contiene datos del área Telmex
+       (dirección, responsable) en su bloque de información.
+
+  [22] ServiciosEstilos → servicio de estilo que podría aplicarse al texto
+       de los datos del área al renderizarlos en el sello de plano.
+
+================================================================================

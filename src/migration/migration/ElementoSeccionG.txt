@@ -1,0 +1,107 @@
+================================================================================
+CLASE: ElementoSeccionG
+ORIGEN: c_elemento_seccion_g.magik  —  SIGC11 / dsanchez / 2005
+HEREDA: c_elemento_entidad_g
+FICHERO TS: ElementoSeccionG.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Elemento gráfico de DIAGRAMA (croquis/layout) que representa una sección de
+fibra óptica con su longitud calculada.
+NO es un objeto de mapa OL. Vive en un viewport de impresión/croquis.
+
+Cuando se instancia con una entidad (calculatedFiberLength), produce un símbolo:
+  - Una línea horizontal con terminadores verticales en los extremos (el tramo)
+  - Una etiqueta de texto con la longitud de fibra en 11 dígitos de precisión
+
+Es hermana de c_elemento_empalme_g — mismo padre, mismo patrón de layout.
+Representa tramos de cable (sección), mientras el empalme representa uniones.
+
+── DIFERENCIAS RESPECTO A c_elemento_empalme_g ────────────────────────────────
+
+  Propiedad          c_elemento_empalme_g    c_elemento_seccion_g
+  ─────────────────────────────────────────────────────────────────
+  sNombreSimbol      "empalme de cobre"      "seccion"
+  sDescripcion       "ER-{numEmpalme}"       calculatedFiberLength.toPrecision(11)
+  nLongGrafica       20                      100
+  Etiqueta tamaño    25                      15
+  collEtiquetas pos  14                      5
+  nMargenSup         altRen * (14/10)        altRen * (5/10)
+  nMargenInf         altRen * (4/10)         altRen * (13/10)
+  SVG símbolo        línea + rombo central   línea con terminadores |---|
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_elemento_seccion_g.new(RoObjeto)
+TS:    constructor(entidad: EntidadSeccion)
+
+  Inicializa slots heredados de c_elemento_entidad_g:
+    sNombreSimbol = "seccion"
+    sDescripcion  = calculatedFiberLength.toPrecision(11)
+    nLongGrafica  = 100
+  Magik: !print_float_precision! << 11 → toPrecision(11) en JS
+         .as_float.write_string → Number.prototype.toPrecision
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_elemento_seccion_g.prvCrea_elementos_internos()  [private]
+TS:    private prvCreaElementosInternos()
+
+  Crea los dos elementos gráficos internos:
+    - Etiqueta_1: c_texto_grafico.new("seccion"), tamaño 15
+                  Posición en collEtiquetas: 5
+    - Simbolo_1:  c_simbolo_grafico.new("seccion")
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_elemento_seccion_g.dfn_ubicacion_elementos_internos()
+TS:    private dfnUbicacionElementosInternos()
+
+  Calcula márgenes de la etiqueta dentro del bounding box (20 filas):
+    LnNumRenSup = 5              (pos_etiqueta(:Etiqueta_1))
+    LnNumRenInf = 20 - 2 - 5    = 13
+    altRen      = (yMax-yMin) / 20
+    nMargenSup  = altRen * (5/10)
+    nMargenInf  = altRen * (13/10)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_elemento_seccion_g.configurar_elementos()
+TS:    configurarElementos()
+
+  Orquesta:
+    1. prvCreaElementosInternos()
+    2. dfnUbicacionElementosInternos()
+    3. Etiqueta_1.texto = sDescripcion   <- LoLbl.sTexto << _self.sDescripcion
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- !print_float_precision! (variable global de Magik para precisión de impresión)
+  → En JS los floats son siempre IEEE 754 de 64 bits. Se usa toPrecision(11)
+    para replicar el comportamiento de write_string con precisión 11.
+- _super.new(RoObjeto): padre c_elemento_entidad_g no migrado aún.
+  Sus slots relevantes se modelan directamente en esta clase.
+- No hay slots propios comentados (a diferencia del empalme, aquí están vacíos).
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const elem = new ElementoSeccionG({ calculatedFiberLength: 1523.456789012 });
+  elem.oArea = { xMin: 0, xMax: 160, yMin: 0, yMax: 40 };
+  elem.configurarElementos();
+  // → elem.oElementos.Etiqueta_1.texto === "1523.4567890"  (11 dígitos)
+  // → elem.oElementos.Simbolo_1.nombre === "seccion"
+
+  // O directamente el componente React:
+  <ElementoSeccionGUI
+    entidad={{ calculatedFiberLength: 1523.456789012 }}
+    width={160}
+    height={40}
+  />
+
+── PENDIENTE ────────────────────────────────────────────────────────────────────
+
+- Migrar c_elemento_entidad_g.magik (clase padre común con c_elemento_empalme_g).
+- Verificar unidades de calculated_fiber_length (metros, km, etc.) para
+  mostrar la etiqueta con la unidad correcta en el SVG.
+================================================================================

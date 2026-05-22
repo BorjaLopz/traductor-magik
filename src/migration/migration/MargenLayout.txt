@@ -1,0 +1,55 @@
+================================================================================
+CLASE: MargenLayout
+ORIGEN: c_margen_layout.magik
+FICHERO TS: MargenLayout.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Dibuja el margen del layout con 4 segmentos dentro del bounds del page.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: defined_attributes
+TS:    MargenLayout.definedAttributes(base?)
+
+Equivalencia:
+  - rope.new_from(_super.defined_attributes) -> copia base sin cambios
+
+-----------------------------------------------------------------------
+
+Magik: initialise_for_page(a_layout_page)
+TS:    MargenLayout.initialiseForPage(page)
+
+Equivalencia:
+  - asigna layout_page
+
+-----------------------------------------------------------------------
+
+Magik: draw_content_on(window)
+TS:    MargenLayout.drawContentOn()
+
+Equivalencias directas:
+  - busca_elemento("marco_layout") -> verifica elemento en layout_page
+  - _self.margen(window) -> margen()
+
+-----------------------------------------------------------------------
+
+Magik: margen(PoWindow)
+TS:    MargenLayout.margen()
+
+Equivalencias directas:
+  - calcula 4 puntos con offsets fijos
+  - crea 4 segmentos (sector.new_with) y los dibuja (line_style black)
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+MargenLayoutUI
+  - Simula un layout_page con marco.
+  - Dibuja los 4 segmentos en SVG.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Integracion con c_larguillos_layout y el window real.
+- Dibujo real en el canvas del layout.
+================================================================================

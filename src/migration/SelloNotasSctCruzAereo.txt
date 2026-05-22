@@ -1,0 +1,136 @@
+================================================================================
+CLASE: SelloNotasSctCruzAereo (CSelloNotasSctCruzAereo)
+ORIGEN: c_sello_notas_sct_cruz_aereo.magik  —  package user
+HEREDA: c_sello_notas_sct (Smallworld)
+FICHERO TS: SelloNotasSctCruzAereo.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Genera la sección "NOTAS GENERALES" del sello (cartucho) para planos de
+cruzamiento aéreo de cable bajo normativa SCT (Secretaría de Comunicaciones
+y Transportes de México).
+
+El sello de notas tiene dos partes:
+  1. Notas genéricas SCT (1-4): heredadas del padre c_sello_notas_sct
+     (especificaciones de construcción, permisos, materiales, tráfico)
+  2. Notas específicas de cruzamiento aéreo (5-8): definidas en esta clase
+     con dos valores dinámicos inyectados:
+       .s_tipo_cable → tipo del cable que cruza (ej. "FIBRA ÓPTICA")
+       .s_estado     → estado de la república donde se ejecuta la obra
+
+Estructura de la tabla generada (tbl_notas_grales):
+  2 filas × 1 columna — 160 mm de ancho total
+
+  ┌────────────────────────────────────┐  ← fila 1: 10 mm  (cabecera)
+  │         NOTAS GENERALES            │
+  ├────────────────────────────────────┤  ← fila 2: 110 mm (contenido)
+  │  Notas 1-4 (padre)                 │
+  │  Nota 5: verificación ubicación    │
+  │  Nota 6: cruzamiento con postes    │
+  │  Nota 7: gálibo ≥ 8.00 m           │
+  │  Nota 8: postes derecho de vía     │
+  └────────────────────────────────────┘
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_sello_notas_sct_cruz_aereo.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+TS:    CSelloNotasSctCruzAereo.prvCreaCfgTblNotasGrales(coord): TablaNotasConfig
+
+  Magik                                              TypeScript
+  ─────────────────────────────────────────────────  ────────────────────────────
+  oTablas.crea_tabla(2, 1, :tbl_notas_grales)        tabla = { id: 'tbl_notas_grales',
+                                                               rows:2, cols:1, ... }
+  LoTblTitulo.oCoordenada_Origen << RoCoord          tabla.origen = { ...coord }
+  oRenglones.elemento(1).nLongitud << 10             rowHeights: [10, 110]
+  oRenglones.elemento(2).nLongitud << 110
+  oColumnas.elemento(1).nLongitud  << 160            colWidths:  [160]
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_notas_sct_cruz_aereo.prvAsignaTexto()
+TS:    CSelloNotasSctCruzAereo.prvAsignaTexto(): void
+
+  Magik                                              TypeScript
+  ─────────────────────────────────────────────────  ────────────────────────────
+  _super.prvAsignaTexto()                            this.prvAsignaTextoBase()
+                                                      ← stub con notas 1-4
+
+  character.newLine                                  '\n'
+  LsTexto +<< "..."                                  lsTexto += '...'
+  .s_tipo_cable                                      this.sTipoCable
+  .s_estado                                          this.sEstado
+
+  oTablas.elemento(:tbl_notas_grales)                this.celdas.push({
+    .oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto   tableId:'tbl_notas_grales',
+                                                        row:2, col:1,
+                                                        texto: textoBase + lsTexto })
+
+  La operación +<< (append) de Magik se reproduce concatenando textoBase (del
+  padre) con lsTexto (específico) antes de asignar al objeto celda.
+
+── NOTAS REGLAMENTARIAS GENERADAS (contenido) ──────────────────────────────────
+
+  Con tipoCable="FIBRA ÓPTICA" y estado="JALISCO":
+
+  Nota 5:
+    LA UBICACIÓN DEL CRUZAMIENTO AÉREO CON CABLE DE FIBRA ÓPTICA INDICADO EN
+    ESTE PROYECTO DEBERÁ SER VERIFICADO Y PRECISADO EN EL LUGAR, POR LA
+    RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS EN EL ESTADO DE JALISCO
+
+  Nota 6:
+    EL CRUZAMIENTO AÉREO CON POSTES, DEBERÁ EFECTUARSE CONFORME A LAS
+    INDICACIONES DE LA RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS.
+
+  Nota 7:
+    EL GÁLIBO O DISTANCIA LIBRE EXISTENTE ENTRE LA RASANTE DE LA CARRETERA Y
+    EL CABLE DE FIBRA ÓPTICA, DEBERÁ SER NO MENOR DE 8.00 M.
+
+  Nota 8:
+    LA COLOCACIÓN DE LOS POSTES DEBERÁN SER FUERA DEL ÁREA DEL DERECHO DE VÍA
+    O DENTRO DE UNA FRANJA NO MAYOR DE 2.50 M. DE ANCHO EN AMBOS LADOS DE LA
+    CARRETERA, MEDIDOS A PARTIR DEL LIMITE DEL DERECHO DE VÍA.
+
+── ABSTRACCIÓN CSelloNotasSct (clase padre) ────────────────────────────────────
+
+  Magik: hereda .s_tipo_cable, .s_estado y prvAsignaTexto() del padre.
+  TS:    CSelloNotasSct (stub abstract) con:
+    - sTipoCable: string (inyectado en constructor)
+    - sEstado:    string (inyectado en constructor)
+    - prvAsignaTextoBase(): string  ← placeholder con notas 1-4 genéricas
+                                       (se completará al migrar c_sello_notas_sct)
+
+  Los slots .s_tipo_cable y .s_estado de Smallworld (write-access implícito)
+  se reciben como parámetros del constructor TS, eliminando la necesidad de
+  setters separados.
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- define_shared_constant(:allowed_on_menu?, _false, :public)
+  → Metadato Smallworld de visibilidad en menús. Sin equivalente TS.
+
+- El método prvCrea_Cfg_Tbl_Notas_Grales es _private en Magik.
+  En TS se mantiene en la clase sin `#` private ya que el stub necesita
+  override; se podría marcar protected cuando se complete la herencia.
+
+- oTablas.elemento(:tbl_notas_grales) — acceso por clave simbólica (:symbol)
+  → En TS se usa Map<id,TableConfig> y Array<CeldaTexto> para acumular datos.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Solo lógica (sin React):
+  const inst = new CSelloNotasSctCruzAereo('FIBRA ÓPTICA', 'JALISCO');
+  const { tabla, celdas } = inst.build({ x: 100, y: 200 });
+
+  tabla.rowHeights   // → [10, 110]
+  tabla.colWidths    // → [160]
+  celdas[0].texto    // → notas 1-8 completas
+
+  // Componente demo React:
+  <SelloNotasSctCruzAereoUI />
+  // → Selector de tipo de cable y estado
+  //   Vista esquemática de la tabla (proporciones reales en mm)
+  //   Previsualización del texto reglamentario generado
+  //   Tabla de configuración con rowHeights / colWidths / origen
+
+================================================================================

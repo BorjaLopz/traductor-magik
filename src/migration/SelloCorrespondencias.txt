@@ -1,0 +1,113 @@
+================================================================
+COMPONENTE: c_sello_correspondencias
+Fichero TS: SelloCorrespondencias.tsx
+Clase Magik original: c_sello_correspondencias.magik
+Empresa: Sigma Tao
+Autor original: aalarcon (18/05/2011)
+Modificado: rhernan (12/03/2021) — soporte multi-sello tras clone de master_series
+================================================================
+
+PROPÓSITO
+---------
+Genera la "Tabla de Correspondencia" que aparece en los planos de diagramas
+de empalmes de fibra óptica. Resume qué fibra de qué cable principal se asigna
+a qué cable secundario, a través de qué divisor óptico, y en qué terminal/puerto.
+
+
+ESTRUCTURA VISUAL (3 secciones apiladas)
+-----------------------------------------
+┌────────────────────────────────────────────────────────┐
+│          TABLA DE CORRESPONDENCIA  (tbl_titulo)        │
+├──────────────────────────┬─────────────────────────────┤
+│  NCO: <siglas_nco>       │  DISTRITO: <nombre>         │  (tbl_subtitulos)
+├────┬────┬────┬───────────┬──────┬──────┬──────────────┤
+│No. │FIBRA│DIV │CABLE SEC. │FIBRA │TERM. │PUERTOS       │  (tbl_contenido)
+│CABLE│PRIN│OPT│           │SEC.  │      │              │  cabecera fila 1
+├────┼────┼────┼───────────┼──────┼──────┼──────────────┤
+│ …  │ …  │ …  │    …      │  …   │  …   │   …          │  filas de datos
+└────┴────┴────┴───────────┴──────┴──────┴──────────────┘
+  12   12   12      32        16     16      10  (unidades Magik, total 110)
+
+
+MÉTODOS MIGRADOS
+----------------
+
+1. configura_tabla(PoNumeroRenglones?)  →  configurarTabla(numeroRenglones?)
+   - Construye layout de las 3 tablas con anchos de columna y alturas de fila.
+   - Primera fila contenido: altura 20. Resto: 10.
+   - Si PoNumeroRenglones es unset o 0, usa 1 fila por defecto.
+   - En TS devuelve un objeto TableLayout (no modifica OL/mapa).
+
+2. etiqueta_celdas()  →  etiquetarCeldas()
+   - Devuelve los textos estáticos de cabecera (título, "NCO:", "DISTRITO:",
+     nombres de las 7 columnas con saltos de línea \n).
+   - En Magik llamaba a asigna_texto_celda(...). Aquí devuelve un objeto
+     HeaderLabels que el componente React renderiza directamente.
+
+3. llena_datos_celdas()
+   - En Magik era un stub que hacía _return inmediato (los datos se asignaban
+     al incluir el sello). NO se ha migrado como método independiente; la
+     lógica útil está en llena_datos_tabla_correspondencias.
+
+4. llena_datos_tabla_correspondencias(distOptico, datos, numRenglones)
+   →  llenaDatos(distOptico, datos)
+   - Rellena tbl_subtitulos con siglas_nco y nombre_distrito.
+   - Itera datos[] incrementando loNumeroMax (equivale a .LoNumero_max +<< 1).
+   - Límite: máx 40 filas (Magik: _if cont <= 40).
+   - Devuelve FilledTableData { distOptico, filas[] }.
+
+5. obten_datos_dist_optico(PoIdCedo)  →  obtenerDatosDistOptico(idCedo, service)
+   - Magik: consulta mit_manager.modelit_dataset.collection(:user!_empalme_distribucion)
+     .at(idCedo) y lee .distrito_optico.siglas_nco / .distrito.
+   - TS: delega en SelloCorrespondenciasService (inyección de dependencia).
+   - El mock devuelve datos de prueba (NCO-SUR / DISTRITO VALLEJO).
+
+
+SHARED VARIABLES Magik → propiedades de instancia TS
+------------------------------------------------------
+  :Terminales       rope.new()   →  terminales: unknown[] = []
+  :numero_ciclos    1            →  numeroCiclos: number  = 1
+  :LoNumero_max     1            →  loNumeroMax: number   = 1
+  :idCedo           (atributo)   →  idCedo?: number
+
+
+QUÉ NO SE HA MIGRADO
+---------------------
+- Herencia de c_base_sello_fibra (clase base Smallworld de sellos de plano).
+  En TS no existe esa jerarquía; la lógica relevante está autocontenida.
+- defined_attributes / define_attributes (Magik ORM). El atributo idCedo
+  se maneja como propiedad simple de la clase.
+- Acceso real a mit_manager / GIS dataset. Sustituido por interfaz
+  SelloCorrespondenciasService con mock de desarrollo.
+- Posicionamiento de tablas en el mapa (ocoordenada_origen, OL layers).
+  En la migración las tablas se renderizan como HTML dentro del componente React.
+
+
+INTERFAZ DE SERVICIO (para conectar con GIS real)
+--------------------------------------------------
+  interface SelloCorrespondenciasService {
+    obtenerDatosDistOptico(idCedo: number): Promise<DistOpticoData>;
+    obtenerCorrespondencias(idCedo: number): Promise<CorrespondenciaRow[]>;
+  }
+
+  DistOpticoData   { siglas_nco, nombre_distrito }
+  CorrespondenciaRow { no_cable, fo_prin, divisor, cable_sec, fo_sec, terminal, puertos }
+
+
+USO EN App.tsx
+--------------
+  import { SelloCorrespondenciasUI } from './migration/SelloCorrespondencias';
+
+  // En ITEMS[]:
+  {
+    id: 'sello-correspondencias',
+    label: 'c_sello_correspondencias',
+    desc: 'Tabla de correspondencia FO: NCO, distrito, cable, fibras, divisor, terminal y puertos.',
+    render: () => <SelloCorrespondenciasUI />,
+  }
+
+  // Con servicio real:
+  render: () => <SelloCorrespondenciasUI service={miServicioGIS} />
+
+
+================================================================

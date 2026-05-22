@@ -1,0 +1,129 @@
+================================================================================
+CLASE: TipoGeom (CTipoGeom)
+ORIGEN: tipo_geometrias.magik / c_Tipo_Geom.magik  —  Sigma Tao / jesalaza / 2004-11-19
+HEREDA: (sin herencia — clase standalone)
+FICHERO TS: TipoGeom.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Value Object (objeto de valor) / DTO que almacena la relación entre una tabla
+de una base de datos GIS y el tipo de geometría que contienen sus registros.
+
+Contexto de uso en PNI:
+  En un sistema GIS existen múltiples tablas en distintos datasets, y cada una
+  contiene un tipo específico de geometría (puntos, cadenas/líneas, áreas...).
+  c_Tipo_Geom agrupa estos tres datos relacionados para ser usado por las
+  operaciones de corte geográfico (consultas espaciales que determinan qué
+  capas/tablas deben dibujarse en un plano).
+
+Ejemplo real de uso:
+  Una colección de instancias c_Tipo_Geom configura qué tablas entran en un
+  corte geográfico y qué tipo de geometría se debe renderizar de cada una:
+    [dataset:"gis_dataset", tabla:"ug_structure",       tipoGeom:"point"]
+    [dataset:"gis_dataset", tabla:"ug_conduit_section", tipoGeom:"chain"]
+    [dataset:"gis_dataset", tabla:"building_site",      tipoGeom:"area" ]
+
+────────────────────────────────────────────────────────────────────────────────
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_Tipo_Geom.new(PoDataset, PoTabla, PoTipo_geom)
+       >> _clone.init(PoDataset, PoTabla, PoTipo_geom)
+
+       _private c_Tipo_Geom.init(PoDataset, PoTabla, PoTipo_geom)
+         .oDataset   << PoDataset
+         .oTabla     << PoTabla
+         .oTipo_geom << PoTipo_geom
+         >> _self
+
+TS:    constructor(dataset, tabla, tipoGeom)
+       createTipoGeom(dataset, tabla, tipoGeom): CTipoGeom  [función factory pura]
+
+  El patrón Magik _clone.init() separa creación e inicialización porque
+  Smallworld no tiene constructores con parámetros. En TypeScript ambos pasos
+  se unifican en el constructor estándar de la clase.
+
+  Magik                                     TypeScript
+  ────────────────────────────────────────  ──────────────────────────────────
+  _clone                                    new CTipoGeom(...)
+  .init(PoDataset, PoTabla, PoTipo_geom)    constructor(dataset, tabla, tipoGeom)
+  .oDataset   << PoDataset                  this.dataset  = dataset
+  .oTabla     << PoTabla                    this.tabla    = tabla
+  .oTipo_geom << PoTipo_geom                this.tipoGeom = tipoGeom
+  >> _self                                  (return implícito)
+
+── SLOTS MAGIK → PROPIEDADES TS ────────────────────────────────────────────────
+
+  {:oDataset,   "", :writable}   →   dataset:  string   (inicializado a "")
+  {:oTabla,     "", :writable}   →   tabla:    string   (inicializado a "")
+  {:oTipo_geom, "", :writable}   →   tipoGeom: TipoGeometria
+
+  Todos son :writable en Magik → públicos en TS (sin getter/setter explícito).
+  Se implementa la interfaz TipoGeomData para uso sin instanciar la clase.
+
+── TIPO TipoGeometria ───────────────────────────────────────────────────────────
+
+  El slot oTipo_geom en Magik es un string libre. En TS se define como union type:
+
+    'point' | 'chain' | 'area' | 'text' | 'raster' | 'collection' | string
+
+  Los tipos corresponden a los tipos de geometría de la API de Smallworld:
+    point      → puntos (estructuras, nodos, elementos puntuales)
+    chain      → cadenas/polilíneas (ductos, cables, rutas)
+    area       → polígonos (parcelas, zonas, edificios)
+    text       → etiquetas de texto
+    raster     → imágenes raster
+    collection → colecciones heterogéneas
+
+── MÉTODOS ADICIONALES TS ──────────────────────────────────────────────────────
+
+  Añadidos en la migración (no existen en el Magik original):
+
+  toData(): TipoGeomData
+    → Serializa a objeto plano. Útil para JSON / transferencia por API.
+
+  clone(): CTipoGeom
+    → Equivale al _clone de Smallworld. Crea copia independiente.
+
+  toString(): string
+    → "${dataset} / ${tabla} [${tipoGeom}]"
+    → Útil para depuración / visualización en listas.
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- _package user
+  → Namespace Smallworld. No aplicable en TS (módulos ES).
+
+- _pragma(classify_level=restricted, usage={redefinable})
+  → Metadato del framework Smallworld sobre nivel de acceso.
+    Sin equivalente directo en TS.
+
+- def_slotted_exemplar (patrón de clase de Smallworld)
+  → La declaración de clase Smallworld completa se reduce al `class CTipoGeom`
+    estándar de TypeScript.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Crear instancia — equivale a c_Tipo_Geom.new(...):
+  const t = new CTipoGeom('gis_dataset', 'ug_structure', 'point');
+  console.log(t.dataset);    // → 'gis_dataset'
+  console.log(t.tabla);      // → 'ug_structure'
+  console.log(t.tipoGeom);   // → 'point'
+
+  // Factory function (atajo):
+  const t = createTipoGeom('gis_dataset', 'ug_conduit_section', 'chain');
+
+  // Colección de configuración de corte geográfico:
+  const capas: CTipoGeom[] = [
+    createTipoGeom('gis_dataset', 'ug_structure',       'point'),
+    createTipoGeom('gis_dataset', 'ug_conduit_section', 'chain'),
+    createTipoGeom('gis_dataset', 'building_site',      'area'),
+  ];
+
+  // Componente demo React:
+  <TipoGeomUI />
+  // → Formulario new(PoDataset, PoTabla, PoTipo_geom) + lista de instancias
+  //   + panel de detalle con slots de la instancia seleccionada
+
+================================================================================

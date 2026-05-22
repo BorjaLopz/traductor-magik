@@ -1,0 +1,59 @@
+================================================================================
+CLASE: VpDetalleInternoEdificio
+ORIGEN: c_vp_detalle_interno_edificio.magik
+FICHERO TS: VpDetalleInternoEdificio.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Configura el viewport, obtiene geometria y agrega el titulo
+"DETALLE DE EDIFICIO" al layout.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: initialise_for_page(a_layout_page)
+TS:    VpDetalleInternoEdificio.initialiseForPage(page)
+
+Equivalencias directas:
+  - ace_name << :mit_floor_internal -> aceName = "mit_floor_internal"
+  - agregar_titulo(page)
+
+-----------------------------------------------------------------------
+
+Magik: geometry_set_for_render
+TS:    VpDetalleInternoEdificio.geometrySetForRender(superSet?)
+
+Equivalencias directas:
+  - _dynamic !current_coordinate_system! << _unset -> comentario (sin efecto en TS)
+  - _super.geometry_set_for_render -> parametro superSet
+  - oResulSet << LcollGeometrias -> oResulSet = superSet
+
+-----------------------------------------------------------------------
+
+Magik: draw_content_on(windows)
+TS:    VpDetalleInternoEdificio.drawContentOn()
+
+Equivalencia:
+  - solo llama a super en Magik (sin logica adicional)
+
+-----------------------------------------------------------------------
+
+Magik: agregar_titulo(PoPage)
+TS:    VpDetalleInternoEdificio.agregarTitulo(page)
+
+Equivalencias directas:
+  - bounding_box.new(bounds.xmin, bounds.ymin-100, bounds.xmax, bounds.ymin)
+  - c_titulo_de_plano.new_with(..., "DETALLE DE EDIFICIO", tamanio)
+  - add_element(LoTitulo)
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+VpDetalleInternoEdificioUI
+  - Simula un layout_page y agrega el titulo.
+  - Muestra el elemento generado con sus bounds.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Integracion real con viewport_layout y geometrias del modelo.
+- Dibujo real en el canvas del layout.
+================================================================================

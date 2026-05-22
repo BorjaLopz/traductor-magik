@@ -1,0 +1,80 @@
+================================================================================
+CLASE: Traductor
+ORIGEN: c_traductor.magik
+FICHERO TS: Traductor.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Traduce claves o descripciones a abreviaturas y nombres normalizados
+usados en planos, PEP y catalogos internos.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: Tipo_Superficie(PsTipo_Sup)
+TS:    Traductor.tipoSuperficie(tipo)
+
+Equivalencias directas:
+  - hash_table con default "" -> mapa en memoria con fallback ""
+  - claves de superficie -> abreviaturas (ACERA, ASFAL., etc)
+
+-----------------------------------------------------------------------
+
+Magik: Mes(PnNumeroMes, formato_largo?)
+TS:    Traductor.mes(numeroMes, formatoLargo?)
+
+Equivalencias directas:
+  - tablas de meses largo/corto -> dos mapas
+  - default "" si el numero no existe
+
+-----------------------------------------------------------------------
+
+Magik: Tipo_Central(PsTipoCtl)
+TS:    Traductor.tipoCentral(tipo)
+
+Equivalencias directas:
+  - CENTRAL -> CTL, CONTENEDOR/URL -> URL, GABINETE/NAM -> NAM
+  - default "CTL"
+
+-----------------------------------------------------------------------
+
+Magik: metodo_pep(PsPEPSel)
+TS:    Traductor.metodoPep(selector)
+
+Equivalencias directas:
+  - claves pep_* -> abreviaturas pep_cons_*, pep_desm_*, pep_reha_*, pep_reco_*
+
+-----------------------------------------------------------------------
+
+Magik: tipo_plano(Id_Tipo_Plano)
+TS:    Traductor.tipoPlano(tipo)
+
+Equivalencias directas:
+  - claves de plano -> descripcion en mayusculas
+
+-----------------------------------------------------------------------
+
+Magik: tipo_caseta(p_descripcion)
+TS:    Traductor.tipoCaseta(descripcion)
+
+Equivalencias directas:
+  - descripcion larga -> sigla (PSLT, TPTC, LTC, OPERT)
+
+-----------------------------------------------------------------------
+
+Magik: nombre_atributo_pep(psym_nombre_pep)
+TS:    Traductor.nombreAtributoPep(nombre)
+
+Equivalencias directas:
+  - nombre simbolico PEP* -> nombre de atributo user!_pep_*
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+TraductorUI
+  - Selector de categoria + input de clave.
+  - Muestra el valor traducido.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Persistencia real de tablas en slots Smallworld (solo cache en memoria).
+================================================================================

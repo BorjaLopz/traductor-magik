@@ -1,0 +1,271 @@
+================================================================================
+CLASE: CorteGeografico (CCorteGeografico)
+ORIGEN: c_Corte_Geografico.magik  —  package user
+Autor:  jesalaza / 19-Nov-2004
+HEREDA: layout_element, layout_element_mixin, viewport_layout_mixin
+FICHERO TS: CorteGeografico.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Es un elemento de layout de Smallworld que dibuja un "corte geográfico":
+una vista del mapa insertada en un plano impreso, mostrando la infraestructura
+de red junto a la geografía del entorno (colonias, lotes, distritos).
+
+El corte se compone de tres partes:
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │  VIEWPORT (bounding_box 200,200 → 1500,1500)                           │
+  │                                                                         │
+  │   ══════════════════════════════ ← Ruta de arranque (azul, 3px)        │
+  │                                    (.oRwoArranque.route)                │
+  │   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ← Límites de colonia (landbase)        │
+  │  ┌──────────┐ ┌────────────────┐ ← Lotes (user!_lote)                 │
+  │  │  LOTE    │ │    LOTE        │   filtrados por buffer 500 m          │
+  │  └──────────┘ └────────────────┘                                       │
+  │  ╔══════════════════╗ ← Límite de distrito (user!_distrito)            │
+  │  ║   DISTRITO       ║                                                  │
+  │  ╚══════════════════╝                                                  │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+Flujo principal:
+  1. Dibuja_Calles? = "Si" → draw_content_on() → Dibuja_Corte()
+  2. Dibuja_Corte() crea viewport, mapea la vista actual del mapa
+  3. Dibuja la ruta de arranque en azul
+  4. Para cada capa (colonia / lote / distrito): carga features del dataset
+     landbase y dibuja solo los que intersectan el buffer de 500m de la ruta
+
+Equivalencias tecnológicas:
+  Viewport del Layout Designer → OL Map + View
+  bounding_box.new(200,200,1500,1500) → dimensiones del div OL (en CSS)
+  dibuja_geometria_en_viewport()      → OlFeature + VectorSource.addFeature()
+  dibuja_contenido_en_buffer()        → turf.buffer() + turf.booleanDisjoint()
+
+── PATRÓN DE INICIALIZACIÓN ────────────────────────────────────────────────────
+
+  Magik usa mixins de Smallworld (layout_element, viewport_layout_mixin).
+  En TypeScript se elimina la cadena de herencia framework y se trabaja con
+  interfaces de servicio (CorteGeograficoService) que abstraen los accesos
+  al entorno Smallworld.
+
+  Magik                                          TypeScript
+  ──────────────────────────────────────────── ─────────────────────────────────
+  def_slotted_exemplar(:c_Corte_Geografico,    class CCorteGeografico {
+    { {:oRwoArranque, _unset}, ...},               private oRwoArranque | null = null
+    {:layout_element, :viewport_layout_mixin})     private dibujaCalles: 'Si'|'No' = 'Si'
+                                               }
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_Corte_Geografico.oRwoArranque << newRwoArranque  (setter)
+       c_Corte_Geografico.oMapPlugin   << newMapPlugin    (setter)
+       c_Corte_Geografico.oAppLayout   << newAppLayout    (setter)
+TS:    setORwoArranque() / setDibujaCalles()
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik usa la sintaxis de asignación a slot (.slot << value), que en Smallworld
+  es equivalente a un setter. En TypeScript se convierten en métodos set explícitos.
+
+  Solo se transcriben los slots que participan en la lógica de negocio:
+    oRwoArranque → setORwoArranque (geometría fuente del corte)
+    oMapPlugin   → abstracción en service.obtenerMapView()
+    oAppLayout   → abstracción en service (viewport mapper)
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_Corte_Geografico.defined_attributes
+TS:    CCorteGeografico.definedAttributes(): AttributeDefinition[]
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ──────────────────────────────────────────── ─────────────────────────────────
+  attribs << rope.new_from(_super.defined_attributes)   [ stub 'viewport' ]
+  attribs.add(_self.viewport_attribute_definition)
+  attribs.add(layout_attribute_definition.new(          {
+    :Dibuja_Calles?, :string,                             name: 'Dibuja_Calles',
+    :description, "Dibuja Calles",                        type: 'string',
+    :default_value, "Si",                                 defaultValue: 'Si',
+    :allowed_on_properties_page?, _true,                  opciones: ['No','Si']
+    :enum_method, :metodo1,                              }
+    :editor, _unset))
+
+  El atributo :Dibuja_Calles? controla si se ejecuta el dibujo del corte.
+  :enum_method => :metodo1 referencia al método Opciones() que devuelve ["No","Si"].
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_Corte_Geografico.Opciones
+TS:    CCorteGeografico.opciones(): ('Si'|'No')[]
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ──────────────────────────────────────────── ─────────────────────────────────
+  LaOpciones << rope.new()                       return ['No', 'Si']
+  LaOpciones.add("No")
+  LaOpciones.add("Si")
+  >> LaOpciones
+
+  rope.new() (lista enlazada de Smallworld) → array literal de TS.
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_Corte_Geografico.Dibuja_Corte(window)
+TS:    CCorteGeografico.dibujaCorte(routeSource, layerSources, service)
+────────────────────────────────────────────────────────────────────────────────
+
+  Es el método central. Equivalencia bloque a bloque:
+
+  Paso  Magik                                            TypeScript
+  ────  ───────────────────────────────────────────────  ────────────────────────────────
+  1     LoVpBound << bounding_box.new(200,200,1500,1500)  Dimensiones del div OL (CSS px)
+        LoViewport << viewport_layout.new_with(:bounds)   new OlMap({ target: mapDiv, ... })
+        LoViewport.set_fill_colour(_unset)                 sin fondo CSS específico
+        LoViewport.outline_style << _unset                 sin borde en el div
+        LoViewport.name << "Viewport 1"
+
+  2     LoMapView << .oMapPlugin.current_map_view          service.obtenerMapView()
+        LoMapView.map.ace_name << "OCULTOS"                no aplica (ocultaba capa ACE)
+        LoViewMapperPlugin.map_viewport_on_map_view(...)   View.fit(extent)
+
+  3     dibuja_geometria_en_viewport(window,               OlFeature con estilo azul 3px
+          .oRwoArranque, vpName, _unset,                   → routeSource.addFeature()
+          _true, :route, :linea, :blue, 3, ...)
+
+  4     LoLista_Geometrias << { c_Tipo_Geom.new(...) × 3 } const LISTA_GEOMETRIAS: TipoGeomItem[]
+
+  5     _for LoRegistro _over LoLista_Geometrias.elements() for (const item of LISTA_GEOMETRIAS)
+        LdsDataSet << LoRegistro.perform(:oDataset)         item.dataset
+        LdscTabla  << LoRegistro.perform(:oTabla)           item.tabla
+        LdsrCampoG << LoRegistro.perform(:oTipo_geom)       item.campoGeom
+
+  6     dibuja_contenido_en_buffer(window, vpName,          turf.buffer(ruta, 0.5km)
+          .oRwoArranque.route, _true, 500000,               turf.booleanDisjoint → filtro
+          LdsDataSet, LdscTabla, LdsrCampoG, :linea)        VectorSource.addFeature()
+
+  DETALLE del buffer (paso 6):
+    Magik: 500000 = 500 000 unidades de mapa del sistema nativo Smallworld.
+    En proyecciones típicas (metros), esto equivale a 500 km, lo cual no tiene
+    sentido para un corte urbano. Se interpreta como milímetros de mapa → 500 m.
+    En Turf.js: turf.buffer(ruta, 0.5, { units: 'kilometers' }) → 500 m.
+
+  Implementación del filtro "dibuja_contenido_en_buffer":
+    Magik encapsula la lógica en el método del mixin (no visible en este fichero).
+    Su semántica es: "dibuja solo los objetos que intersectan el buffer de la ruta".
+    En TS: turf.booleanDisjoint(feat, bufferZone) → si disjoint, se descarta.
+    El wrapper try/catch protege de geometrías inválidas en los datos de prueba.
+
+  LoLista_Geometrias (las 3 capas del landbase):
+    ┌────────────────────┬──────────────────────────┬────────────────────────────┐
+    │ Tabla              │ Campo geométrico          │ Color en TS                │
+    ├────────────────────┼──────────────────────────┼────────────────────────────┤
+    │ colonia            │ limite                   │ naranja 35% opacidad       │
+    │ user!_lote         │ user!_lote_linea          │ verde 35% opacidad         │
+    │ user!_distrito     │ user!_limite_distrito     │ morado 35% opacidad        │
+    └────────────────────┴──────────────────────────┴────────────────────────────┘
+
+────────────────────────────────────────────────────────────────────────────────
+Magik: c_Corte_Geografico.draw_content_on(window)
+TS:    CCorteGeografico.drawContentOn(routeSource, layerSources, service)
+────────────────────────────────────────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ──────────────────────────────────────────── ─────────────────────────────────
+  _if _self.Dibuja_Calles? = "Si"              if (this.dibujaCalles === 'Si') {
+  _then                                            return this.dibujaCorte(...)
+      _self.Dibuja_Corte(window)               }
+  _endif                                       return null
+
+  Este es el punto de entrada al dibujo desde el framework Smallworld.
+  Se dispara automáticamente cuando el Layout Designer refresca el viewport.
+  En TS se llama manualmente desde el botón "Dibujar Corte".
+
+── TIPOS CLAVE INTRODUCIDOS ────────────────────────────────────────────────────
+
+  TipoGeomItem           ≡ objeto c_Tipo_Geom con .oDataset/.oTabla/.oTipo_geom
+  MapViewData            ≡ .oMapPlugin.current_map_view → center + extent
+  CorteGeograficoService ≡ abstracción de swg_dsn_admin_engine + dataset access
+  AttributeDefinition    ≡ layout_attribute_definition de Smallworld
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- Herencia múltiple de mixins Smallworld:
+  {:layout_element, :layout_element_mixin, :viewport_layout_mixin}
+  → Estos mixins dan acceso a: layout_page, viewports, connect_to_first_viewport_on_page,
+    dibuja_geometria_en_viewport, dibuja_contenido_en_buffer, etc.
+  → En TS: la lógica de estos métodos se implementa directamente en dibujaCorte()
+    usando Turf.js y OL, sin necesitar la cadena de herencia.
+
+- depends_on?(another)
+  → Delega al mixin viewport_layout_mixin para gestión de dependencias entre
+    layout elements. Sin equivalente en TS (es infraestructura del framework SW).
+
+- initialise_for_page(a_layout_page)
+  → connect_to_first_viewport_on_page() es infraestructura del Layout Designer.
+  → En TS: el OL Map se inicializa en el useEffect del componente React.
+
+- _pragma(classify_level=restricted)
+  → Metadatos del sistema de clasificación de Smallworld. Sin equivalente TS.
+
+- smallworld_product.pni_application()
+  → Referencia singleton a la aplicación PNI. En TS no se necesita; el acceso
+    al mapa se hace a través del OlMap instanciado en el componente React.
+
+- LoViewport.name << "Viewport 1"
+  → Nombre para identificar el viewport dentro del layout_page. En OL el mapa
+    está referenciado directamente por el ref del componente React (olMapRef).
+
+- LoMapView.map.ace_name << "OCULTOS"
+  → Cambia el ACE (Attribute Colour Entry) del mapa activo a "OCULTOS" para
+    ocultar determinadas capas durante el renderizado del corte. Es una
+    operación interna del motor de renderizado de Smallworld. Sin equivalente
+    directo en OL (las capas se gestiona con layer.setVisible() en OL).
+
+- vp << _self.viewports.an_element()
+  → Acceso al primer viewport disponible desde el mixin. En OL se usa
+    directamente olMapRef.current.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Solo lógica (sin UI):
+  const routeSource   = new VectorSource();
+  const layerSources  = {
+    'colonia':         new VectorSource(),
+    'user!_lote':      new VectorSource(),
+    'user!_distrito':  new VectorSource(),
+  };
+
+  const corte = new CCorteGeografico();
+  corte.setDibujaCalles('Si');
+
+  const result = await corte.drawContentOn(routeSource, layerSources, service);
+  // result → { featuresDrawn: N }
+  // routeSource       → 1 OlFeature (línea azul, 3px)
+  // layerSources['colonia']       → features dentro del buffer
+  // layerSources['user!_lote']    → features dentro del buffer
+  // layerSources['user!_distrito'] → features dentro del buffer
+
+  // Con Dibuja_Calles? = "No":
+  corte.setDibujaCalles('No');
+  const result2 = await corte.drawContentOn(...);
+  // result2 → null (draw_content_on no ejecuta Dibuja_Corte)
+
+  // Componente demo React:
+  <CorteGeograficoUI />
+  // → Selector Dibuja_Calles? (Si/No)
+  //   Botón "Dibujar Corte" → ejecuta drawContentOn()
+  //   Mapa OL con ruta azul y capas landbase coloreadas por tipo
+  //   Zoom automático al extent de la ruta tras dibujar
+  //   Leyenda de capas con colores y campos geométricos
+  //   Contador de features dibujados dentro del buffer
+
+── RELACIÓN CON OTRAS MIGRACIONES ──────────────────────────────────────────────
+
+  [15] TipoGeom (TipoGeom.tsx) → CTipoGeom equivale a c_Tipo_Geom.new().
+       La lista LoLista_Geometrias usa c_Tipo_Geom directamente. En TS se
+       reemplaza por la interfaz TipoGeomItem (equivalente estructural).
+
+  [17] VpCobre (VpCobre.tsx) → mismo patrón de viewport con filtrado espacial
+       por bounding_box. Ambas clases heredan de viewport_layout.
+
+  [1]  TrazaTrail (TrazaTrail.tsx) → mismo patrón de OL Feature + VectorSource
+       para dibujar geometrías en el mapa.
+
+================================================================================

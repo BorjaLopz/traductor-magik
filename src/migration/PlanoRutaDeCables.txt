@@ -1,0 +1,188 @@
+================================================================================
+CLASE: PlanoRutaDeCables (CPlanoRutaDeCables)
+ORIGEN: c_plano_ruta_de_cables.magik  —  SIGTAO SOFTWARE / vnguzman / 2006-05-18
+HEREDA: layout_element, viewport_layout_mixin
+FICHERO TS: PlanoRutaDeCables.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Es el compositor principal del plano "Ruta de cables": un objeto de tipo
+layout_element (elemento de plano imprimible) que sabe cómo construir la
+página de layout con todos sus componentes.
+
+Ensamble de la página (contenido real del plano):
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Marco (c_marco)                                            │
+  │  6" × 3"  (1500 × 750 u.p.)  sin relleno                   │  ← borde/marco general
+  │  ┌─────────────────────────────┐   ┌─────────────────────┐  │
+  │  │   Sello CTL-EDO             │   │  Sello PEP          │  │
+  │  │   c_sello_estandar_ctl_edo  │   │  c_pep              │  │
+  │  │   (250,250)→(3000,2990)     │   │  (450,500)→(1330,   │  │
+  │  │   2750 × 2740 u.p.          │   │   1410)             │  │
+  │  │   ≈ 11" × 10.96"            │   │  880 × 910 u.p.     │  │
+  │  │   [clase [10] SelloEstandar]│   │  ≈ 3.52" × 3.64"   │  │
+  │  └─────────────────────────────┘   └─────────────────────┘  │
+  └─────────────────────────────────────────────────────────────┘
+
+  Factor de escala: LnPulgada = 250 u.p./pulgada
+
+Contexto técnico:
+  Un "plano ruta de cables" es el documento técnico oficial que muestra el
+  trazado de la infraestructura de telecomunicaciones (cables de fibra óptica,
+  cobre, etc.) a lo largo de un corredor o ruta. Se genera en el Layout
+  Designer de Smallworld GIS y contiene: marco, sello PEP (datos del proyecto),
+  sello de control de estado y la vista georreferenciada del mapa (viewport).
+
+── NOTA SOBRE EL CÓDIGO ORIGINAL ───────────────────────────────────────────────
+
+  El cuerpo de genera_plano() está COMPLETAMENTE COMENTADO en el Magik original.
+  Solo los métodos new(), init() y defined_attributes() tienen código activo.
+
+  La implementación TypeScript de generaPlano() RECONSTRUYE la intención a partir
+  del código comentado en el .magik, incluyendo tipos, coordenadas y nombres
+  de los elementos de página. Este es el principal valor de la migración.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_plano_ruta_de_cables.new()  →  >> _clone.init()
+TS:    static CPlanoRutaDeCables.new(app?): CPlanoRutaDeCables
+
+  Magik                              TypeScript
+  ──────────────────────────────── ────────────────────────────────
+  >> _clone.init()                   return new CPlanoRutaDeCables(app)
+
+  Nota: el patrón _clone.init() separa creación (new) de inicialización (init).
+  En TS ambas se unifican en el constructor estándar. Se mantiene un factory
+  estático new() para conservar la semántica visible desde el código cliente.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_plano_ruta_de_cables.init()
+TS:    constructor(app: AppService = defaultAppService)
+
+  Magik                              TypeScript
+  ──────────────────────────────── ────────────────────────────────
+  .app << smallworld_product         this.app = app
+    .pni_application()               (inyectado como AppService)
+  >> _self                           (implícito en constructor)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_plano_ruta_de_cables.defined_attributes
+TS:    static CPlanoRutaDeCables.definedAttributes(): AttributeDefinition[]
+
+  Magik                                                    TypeScript
+  ────────────────────────────────────────────────────── ────────────────────────────────────
+  attribs << rope.new_from(_super.defined_attributes)    atributos base de layout_element:
+                                                          [bounds, visible]
+  attribs.add(_self.viewport_attribute_definition)       { name:'viewport', type:'viewport',
+                                                           description:'Vista GIS...' }
+  >> attribs                                             return [bounds, visible, viewport]
+
+  viewport_attribute_definition (viewport_layout_mixin):
+    Define el atributo que vincula el elemento de plano con una vista GIS del mapa
+    para zoom/encuadre automático al imprimir. Es la diferencia fundamental
+    entre layout_element (genérico) y viewport_layout_mixin (con vista GIS).
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_plano_ruta_de_cables.genera_plano()   [código comentado → reconstruido en TS]
+TS:    generaPlano(): LayoutDocument
+
+  Elemento         Magik (código comentado)                          TypeScript
+  ───────────────────────────────────────────────────────────────────────────────
+  Documento        LoDoc.name << "Plano ruta de cables"              name: 'Plano ruta de cables'
+                   LoDoc.user!_tipo_plano << :ruta_cables            userTipoPlano: 'ruta_cables'
+
+  Marco            c_marco.new_with(:bounds,                         CMarcoConfig {
+                     bounding_box.new(0,0,1,1))                        bounds: bbox(0,0,1,1)  ← placeholder
+                   .Largo << 6                                         largo: 6
+                   .Alto  << 3                                         alto: 3
+                   .set_fill_colour(_unset)                            fillColor: null
+                                                                    }
+
+  Sello PEP        c_pep.new_with(:bounds,                          CPepConfig {
+                     bounding_box.new(450,500,450+880,500+910))        bounds: bbox(450,500,1330,1410)
+                                                                    }
+
+  LnPulgada        _local LnPulgada << 250                          const LN_PULGADA = 250
+                   (250 u.p. = 1 pulgada — factor de escala)
+
+  Sello CTL-EDO    c_sello_estandar_ctl_edo.new_with(:bounds,       CSelloEstandarCtlEdoConfig {
+                     bounding_box.new(250,250,3000,2990))              bounds: bbox(250,250,3000,2990)
+                                                                    }
+
+  Todas las llamadas a LoPagina.add_element(X) → page.elements.push(X)
+
+── RELACIÓN CON OTRAS MIGRACIONES ──────────────────────────────────────────────
+
+  [10] SelloEstandar → CSelloEstandarCtlEdo es el tipo de sello que esta clase
+       usa como tercer elemento de página. En [10] es un stub; en [20] se
+       referencia por tipo e interfaz sin importar directamente.
+
+  [15-17] familia c_sello_notas_sct → mismo patrón de compositor de plano,
+          donde el "sello" es un elemento ensamblado por una clase compositora.
+
+── TIPOS CLAVE INTRODUCIDOS ────────────────────────────────────────────────────
+
+  BoundingBox          ≡ bounding_box.new(x1,y1,x2,y2)
+  LayoutPage           ≡ layout_page con elements[]
+  LayoutDocument       ≡ layout_document (name + tipo + página)
+  CMarcoConfig         ≡ c_marco con Largo/Alto/fillColor
+  CPepConfig           ≡ c_pep
+  CSelloEstandarCtlEdoConfig ≡ c_sello_estandar_ctl_edo
+  AppService           ≡ smallworld_product.pni_application()
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- define_shared_constant(:allowed_on_menu?, _false, :public)
+  → Metadato Smallworld. Sin equivalente TS.
+
+- viewport_layout_mixin (herencia múltiple Magik)
+  → En TS se refleja solo como atributo descriptor (viewport en defined_attributes).
+    No hay clase base TS con capacidades de viewport.
+
+- layout_element (herencia base de Smallworld)
+  → Sus atributos (bounds, visible) se incluyen en definedAttributes() como stub.
+
+- _pragma(classify_level=restricted, usage={redefinable})
+  → Metadatos de accesibilidad Smallworld. Sin equivalente TS.
+
+- LoLayoutDesigner.plugin(:layout_manager).current_document
+  → Integración con el Layout Designer de Smallworld. En TS se omite la capa
+    de integración con el framework GIS y se devuelve el LayoutDocument directamente.
+
+- LoPagina.elements.empty() (limpiar página antes de regenerar)
+  → No aplicable en TS ya que generaPlano() siempre crea una página nueva.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  // Solo lógica:
+  const plano = CPlanoRutaDeCables.new();
+  const doc = plano.generaPlano();
+
+  doc.name                    // → 'Plano ruta de cables'
+  doc.userTipoPlano           // → 'ruta_cables'
+  doc.currentPage.elements    // → [CMarcoConfig, CPepConfig, CSelloEstandarCtlEdoConfig]
+
+  const marco = doc.currentPage.elements[0] as CMarcoConfig;
+  marco.largo                 // → 6  (pulgadas)
+  marco.alto                  // → 3  (pulgadas)
+  marco.fillColor             // → null  (set_fill_colour(_unset))
+
+  // Atributos del layout element:
+  CPlanoRutaDeCables.definedAttributes()
+  // → [{ name:'bounds', type:'bounding_box', ... },
+  //    { name:'visible', type:'boolean', ... },
+  //    { name:'viewport', type:'viewport', description:'Vista GIS...' }]
+
+  // Componente demo React:
+  <PlanoRutaDeCablesUI />
+  // → Botón genera_plano() que construye el LayoutDocument
+  //   Vista SVG proporcional del layout con los 3 elementos coloreados
+  //   Tabla de elementos con bounds, tamaño en u.p. y pulgadas
+  //   Tabla de defined_attributes
+
+================================================================================

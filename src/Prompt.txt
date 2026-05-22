@@ -6,211 +6,167 @@ Si el código interactúa con el mapa, utiliza la API moderna de OpenLayers (ins
 
 Genera un fichero extensión .tsx con el código resultante obtenido de transforma .magik a .tsx
 
+Crea el componente en typescript en la ruta C:\Users\User\Documents\Test IA\migration_magik\traductor-magik\src\migration e invoca los componentes en C:\Users\User\Documents\Test IA\migration_magik\traductor-magik\src\App.tsx
+
 Devuelve el código modularizado y añade comentarios cortos explicando la equivalencia.
 Aquí está el código Magik:
 
-# Nombre de la empresa:           SIGTAO SOFTWARE S.A. DE C.V.
-# Traza:                          SIGC 11, PLANO DE DESMONTAJE
-#                                 DE CAJA DE DISTRIBUCIÓN
-# Objetivo principal del archivo: GENERAR EL PLANO DE
-#                                 DESMONTAJE DE CAJA DE DISTRIBUCIÓN
-# Autor:                          vnguzman
-# Fecha de creación:              Lúnes 10 de Abril de 2006
-$
 _package user
 $
-#remex(:c_plano_desmontaje_cd)
+def_slotted_exemplar(:c_sello_pie_diag_emp,
+{}, :c_sello_estandar_ctl_edo)
 $
-def_slotted_exemplar (:c_plano_desmontaje_cd
-                     ,{
-                       {:app,       smallworld_product.pni_application(), :writable, :public}
-#                    ,{:origen,    coordinate.new(200,200),              :writable, :public}
-#                    ,{:vp_nombre, _unset,                               :writable, :public}
-#                    ,{:marco,     _unset,                               :writable, :public}
-#                    ,{:rutas,     _unset,                               :writable, :private}
-		      }
-		     ,{:layout_element, :viewport_layout_mixin}
-                     )
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.codigo_postal
+	## 
+	## 
+	_return ""
+_endmethod
 $
-c_plano_desmontaje_cd.define_shared_constant(:allowed_on_menu?, _false, :public)
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_plano_desmontaje_cd.defined_attributes
-        ##  Objetivo:              Este método define atirbutos de este plano.
-        ##  Parámetros de entrada: N/A.
-        ##  Parámetros de salida:  sw:rope:[1-4] - _super.defined_attributes -
-	##                         atributos de viewport_layout_mixin.
-        ##                         sw:layout_attribute_definition -
-	##                         _self.viewport_attribute_definition - .
-        ##  Regresa:               sw:rope:[1-5] - attribs - Regresa Los atributos de este plano.
-	
-        attribs                    << rope.new_from(_super.defined_attributes)
+_method c_sello_pie_diag_emp.colonia
+	## 
+	## 
 
-#	attribs.add ( layout_attribute_definition.new(:Largo, :integer,
-#						      :description, "Numero de Modulos",
-#						      :allowed_on_properties_page?, _true,
-#						      :set_method, :modulos|()|,
-#						      :default_value, 3 ) )
-	
-        attribs.add (_self.viewport_attribute_definition)
-        >> attribs
+	_return ""
 _endmethod
 $
-c_plano_desmontaje_cd.define_attributes()
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_plano_desmontaje_cd.new()
-	## Objetivo:              Este método genera una nueva instancia
-	##                        del plano de fosa de cables y
-	##                        distribuidor general
-	## Parámetros de entrada: N/A.
-	## Parámetros de salida:  
-	## Regresa:               Una nueva instancia del plano fosa de
-	##                        cables y distribuidor general
-	
-        >> _clone.init()
-	
-	
-_endmethod
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_plano_desmontaje_cd.init()
-	## Objetivo:              Este método inicializa una nueva instancia
-	##                        del plano de fosa de cables y
-	##                        distribuidor general
-	## Parámetros de entrada: N/A
-	## Parámetros de salida:  N/A
-	## Regresa:               Esta instancia
-	
-	.app                      << smallworld_product.pni_application()
-	>> _self
-_endmethod
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_plano_desmontaje_cd.genera_plano()
-        ##  Objetivo:              Este método genera el plano Fosa de cables y distribuidor
-	##                         general.
-        ##  Parámetros de entrada: N/A.
-        ##  Parámetros de salida:  a sw:layout_page - LoPagina - Página actual del Layout Designer.
-        ##  Regresa:               N/A
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.configura_tabla()
 
-	_local LoLayoutDesigner << .app.plugin(:layout_plugin).start_layout_designer()
-	_local LoPagina << _unset
-	_if LoLayoutDesigner _isnt _unset 
+	_super.configura_tabla()
+
+	_local pl_colonia_cp << property_list.new()
+
+	pl_colonia_cp[:ren] << {5,5}
+	pl_colonia_cp[:col] << {22,45}
+	
+	lo_tabla << .o_tablas.crea_tabla(2,2,:tbl_colonia_cp)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion, :tbl_compania, :tbl_FecDibRev,
+						       :tbl_Escala, :tbl_pob_ctl, :tbl_central})
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_ubicacion, :tbl_del_mpo})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	_self.asigna_medidas_tabla(lo_tabla, pl_colonia_cp)
+	lo_tabla.bDibuja_bordes? << _false
+	lo_tabla.bDibuja_Columnas_Internas? << _false
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.delegacion_municipio()
+	
+	LoV << mit_manager.modelit_dataset
+	# (10/06/25 lgranados) : Se asegura que el municipio siempre se llene.
+	_if swg_dsn_admin_engine.active_design.tipo_diseno _is :principales _orif
+	    swg_dsn_admin_engine.active_design.tipo_diseno _is :trabajo _orif
+	    swg_dsn_admin_engine.active_design.tipo_diseno _is :enlace 
 	_then
-		_local LoLayoutManager    << LoLayoutDesigner.plugin(:layout_manager)
-		LoDoc  << LoLayoutManager.current_document
-		LoPagina << LoDoc.current_page
-		_if LoPagina.elements.size>0
+		# (10/06/25 lgranados) : Cuando el esquema se genere en
+		# principales entonces el municipio ser  donde se encuentre la central
+		tabla << LoV.collection(:building)
+		LoArea << swg_dsn_admin_engine.active_design.project.user!_central.user!_limite
+		pred << predicate.within(:location,LoArea)
+		Lonodo << tabla.select(pred).an_element()
+		LoTabMun << gis_program_manager.cached_dataset(:landbase).collection(:user!_municipio)
+		LoPred << predicate.interacts(:user!_limite,Lonodo.location)
+		LoSel << LoTabMun.select(LoPred)
+		_if LoSel.size = 1
 		_then
-			LoPagina.elements.empty()
+			LoMun << LoSel.an_element()
+			Lomunicipio << LoMun.user!_nombre_telmex + ", " + LoMun.user!_estado
 		_endif
-	_else
-		_return
-	_endif
-
-	_self.marco(LoPagina)
-	_self.sello(LoPagina)
-	_self.mapa(LoPagina)
-#	_local LoEtiqueta << c_texto_grafico.new("DESMONTAJE")
-#	LoEtiqueta.n
-#	LoPagina.add_element(LoEtiqueta)
-
-_endmethod
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_plano_desmontaje_cd.marco(LoPagina)
-        ##  Objetivo:              Este método genera el marco del plano Fosa de cables y
-	##                         distribuidor general.
-        ##  Parámetros de entrada: a sw_layout_page - LoPagina - Página actual del Layout Designer.
-        ##  Parámetros de salida:  .
-        ##  Regresa:               N/A
-
-        _local LoMarco << c_marco.new_with(:bounds,bounding_box.new(0,0,1,1))
-#	LoMarco.Largo << _self.Largo
-	LoMarco.Largo << 3
-	LoMarco.Alto << 1
-	LoMarco.set_fill_colour(_unset)
-	LoPagina.add_element(LoMarco)
-_endmethod
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_plano_desmontaje_cd.sello(LoPagina)
-	## Este método genera el sello del plano de desmontaje de caja
-	## de distribución
-	## Parámetros de entrada: a sw_layout_page - LoPagina - Página
-	##                        actual del Layout Designer.
-	LoSello << c_sello_proyecto_canalizacion.new_with(:bounds, bounding_box.new(420, 0, 3600, 2920))
-        LoSello.Inicializa()
-        LoPagina.add_element(LoSello)
-_endmethod
-$
-_pragma(classify_level=restricted, usage={redefinable})
-_method c_plano_desmontaje_cd.mapa(LoPagina)
-	## Este método genera el mapa del plano de desmontaje de caja
-	## de distribución
-	## Parámetros de entrada: a sw_layout_page - LoPagina - Página
-	##                        actual del Layout Designer
-	
-	_local LoViewportLayout << viewport_layout.new_with(:bounds, bounding_box.new(2540, 270, 6600, 2920))
-
-	_if LoViewportLayout.mapped? _is false
+	_elif swg_dsn_admin_engine.active_design.tipo_diseno _is :secundaria
 	_then
-
-        	_local LoMapManager << .app.plugin(:map_plugin)
-        	_local LoMapView << LoMapManager.current_map_view
-		_local LoViewBounds << LoMapView.current_view_bounds
-                _local LoViewportBounds << LoViewportLayout.bounds.new_enlarging ( 0.10 )
-		_local LoViewScale << _unset
-
-		LoViewAngle << LoMapView.viewing_angle.radians_to_degrees
-	
-		_if LoViewAngle.abs > 0.1
+		# (10/06/25 lgranados) : Si el esquema se genera en un dise o
+		# de secundarios entonces el municipio ser  donde se encuentre
+		# la CD.
+		tabla << LoV.collection(:mit_terminal_enclosure)
+		LoArea << swg_dsn_admin_engine.active_design.project.user!_central.user!_limite
+		pred << predicate.within(:location,LoArea)
+		Locd << tabla.select(pred).an_element()
+		_if Locd _isnt _unset 
 		_then
-			LoViewScale << LoMapView.view_scale
+			LoTabMun << gis_program_manager.cached_dataset(:landbase).collection(:user!_municipio)
+			LoPred << predicate.interacts(:user!_limite,Locd.location)
+			LoSel << LoTabMun.select(LoPred)
+			_if LoSel.size = 1
+			_then
+				LoMun << LoSel.an_element()
+				Lomunicipio << LoMun.user!_nombre_telmex + "," + LoMun.user!_estado
+			_endif
 		_else
-			LoViewScale << ( LoViewBounds.width / LoViewportBounds.width ).min ( LoViewBounds.height / LoViewportBounds.height )
-
-			_if ( app_cs << LoMapView.application.coordinate_system ) _isnt _unset
+			# (10/06/25 lgranados) : si no se encuentra CD entonces el
+			# municipio ser  donde se encuentre la central.
+			tabla << LoV.collection(:building)
+			LoArea << swg_dsn_admin_engine.active_design.project.user!_central.user!_limite
+			pred << predicate.within(:location,LoArea)
+			Lonodo << tabla.select(pred).an_element()
+			LoTabMun << gis_program_manager.cached_dataset(:landbase).collection(:user!_municipio)
+			LoPred << predicate.interacts(:user!_limite,Lonodo.location)
+			LoSel << LoTabMun.select(LoPred)
+			_if LoSel.size = 1
 			_then
-				LoViewScale << LoViewScale * app_cs.unit_factor 
-			_endif 
+				LoMun << LoSel.an_element()
+				Lomunicipio << LoMun.user!_nombre_telmex + ", " + LoMun.user!_estado
+			_endif	
 		_endif
-
-		LoViewportLayout.soc_name   << LoMapManager.application.spatial_object_controller.name
-		LoViewportLayout.centre     << LoViewBounds.centre
-		LoViewportLayout.view_scale << LoViewScale
-		LoViewportLayout.view_angle << LoViewAngle
-	
-		LoViewportLayout.ace_name   << LoMapView.ace_name
-		LoViewportLayout.draw_scale << 1.0   # ????
-		LoViewportLayout.world      << LoMapView.world
-	
-		display_styles << .app.get_display_styles_for ( LoMapView.ace_name )
-		display_style_name << LoMapView.current_display_style_name.write_string.as_symbol ()
-		_for item _over display_styles.fast_elements ()
-		_loop 
-			_if display_style_name _is item.scale_id
-			_then
-				display_style << item.name
-			_endif 
-		_endloop 
-
-		LoViewportLayout.display_style     << display_style.default ( display_styles.first.name )
-
-		LoViewportLayout.projection        << LoMapView.current_view_parameters ().coordinate_system
-		LoViewportLayout.coordinate_system << LoMapView.application.coordinate_system
-
 	_endif
+	
 
-	LoPagina.add_element(LoViewportLayout)
-
+	_return(Lomunicipio)
+	
 _endmethod
 $
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.etiqueta_celdas()
+
+	_super.etiqueta_celdas()
+	
+	_self.asigna_texto_celda(:tbl_colonia_cp,1,1,"COLONIA: ",35,:top_left,1)
+	_self.asigna_texto_celda(:tbl_colonia_cp,2,1,"C.P.: ",35,:top_left,1)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.llena_datos_celdas()
+
+	_super.llena_datos_celdas()
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.municipio
+	## 
+	## 
+	_return ""
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.obten_registros()
+
+	_super.obten_registros()
+
+	.o_distrito.asigna_distrito(.o_proyecto.distrito, _false)
+	
+	.pl_datos[:colonia] << .o_distrito.nombre_colonia
+	.pl_datos[:cp] << .o_distrito.codigo_postal
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.valor_casilla_central()
+
+	_return  .pl_datos[:clave_ctl] + " - " + .o_proyecto.numero_distrito
+	
+_endmethod
+$
+
 
 Ubicación: 
-Clase   c_plano_desmontaje_cd
-Fichero	c_plano_desmontaje_cd.magik
+Clase   c_sello_pie_diag_emp
+Fichero	c_sello_pie_diag_emp.magik
 
 vale, con este nuevo component exportado a .tsx, vamos a ver de que manera lo podemos invocarlo en app.tsx. Quiero que comentes el metodo anterior y lo dejes ahi
 comentado

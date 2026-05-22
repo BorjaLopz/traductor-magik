@@ -1,0 +1,149 @@
+================================================================================
+COMPONENTE: SelloEstandarConstruccion.tsx
+Clase Magik original: c_sello_estandar_construccion
+Fichero Magik original: c_sello_estandar_construccion.magik
+Número de migración: [27]
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Sello estándar para planos de construcción de red de telecomunicaciones.
+En Magik hereda de c_sello_estandar_base mediante def_slotted_exemplar.
+En TypeScript se modela como componente React funcional con estado local,
+sin clase base real (la herencia se simula con llamadas a _super comentadas).
+
+El sello compone tres tablas de datos dispuestas horizontalmente sobre
+el plano, más una cuarta sección con el nombre de la empresa.
+
+
+SLOTS MIGRADOS
+--------------
+Magik slot         → TypeScript (estado en AtributosConstruccion / PlDatos)
+─────────────────────────────────────────────────────────────────────────
+:oTipoEmpresaRazonS  → constante ENUM_TIPO_RAZON_SOCIAL (Record<string,string>)
+:valorEmpresaRazonS  → variable local dentro de resolveEmpresa()
+
+
+MÉTODOS MIGRADOS Y SU EQUIVALENCIA
+------------------------------------
+
+1. defined_attributes()
+   Magik: añade atributos al rope con layout_attribute_definition.new().
+   TypeScript: interfaz AtributosConstruccion con los mismos campos:
+     - blanco_negro    → 'SI' | 'NO'  (enum_bool)
+     - emprerazon      → string clave ('1'|'2'|'3') (enum_tipo_razon_social)
+     - fecha           → string libre
+     - colonia         → string libre
+     - municipio       → string libre
+     - codigo_postal   → string libre
+     - ruta            → string libre
+   El formulario <fieldset> en el componente renderiza cada atributo.
+
+2. enum_tipo_razon_social()
+   Magik: hash_table con claves 1,2,3 y valores separados por "|".
+   TypeScript: constante ENUM_TIPO_RAZON_SOCIAL.
+     clave '3' → "TELEFONOS|DE MEXICO|S.A.B de C.V."  → empresa TELMEX
+     clave '1' → "RED NACIONAL| ÚLTIMA MILLA|..."      → empresa RNUM
+     clave '2' → "RED  ÚLTIMA|MILLA DEL NOROESTE|..."  → empresa RUMN
+   La constante EMPRESA_KEYS mapea la clave al código corto de empresa.
+
+3. codigo_postal() / colonia() / ruta()
+   Magik: métodos que retornan "" — puntos de extensión para subclases.
+   TypeScript: funciones defaultCodigoPostal(), defaultColonia(), defaultRuta()
+   que retornan string vacío. Se usan como fallback en obtenRegistros().
+
+4. configura_tabla()
+   Magik: crea 3 tablas con coordenadas de origen calculadas acumulando
+   anchos de columnas (_local ln_desp_x, ln_desp_y).
+   TypeScript: las 3 tablas se componen como subcomponentes React:
+     - TblCtlDto      → 2 filas × 1 col  (col 70u, ren 7+8)
+     - TblCpRutaNse   → 2 filas × 3 cols (cols 15+15+15, ren 5+10)
+     - TblDelMpoFixed → 2 filas × 2 cols (cols 45+45, ren 7.5+7.5)
+   El posicionamiento absoluto de Magik (coordinate.new(x,y)) se sustituye
+   por layout flexbox horizontal con borderRight como separador de tablas.
+   Flags Magik bDibuja_Renglones_Internos?=false / bDibuja_bordes?=false
+   se reproducen omitiendo bordes en los estilos CSS correspondientes.
+
+5. etiqueta_celdas()
+   Magik: _super.etiqueta_celdas() + asigna_texto_celda en fila 1 de cada tabla.
+   TypeScript: las etiquetas (C.P., RUTA, NSE PRED, COLONIA:, DELEGACION O MPO.:)
+   están hardcodeadas en la primera fila de cada subcomponente tabla.
+
+6. llena_datos_celdas()
+   Magik: _super.llena_datos_celdas() + asigna_texto_celda por fila/col.
+         Lógica especial: si emprerazon tiene valor, split_by("|") y
+         branch por matches?("*TELEFONOS*"), matches?("*NACIONAL*"), matches?("*NOROESTE*").
+   TypeScript: función resolveEmpresa(key) que:
+     - Lee el valor de ENUM_TIPO_RAZON_SOCIAL[key]
+     - Hace split('|') → array lineas (equivale a txts)
+     - Detecta empresa por includes('TELEFONOS'/'NACIONAL'/'NOROESTE')
+     - Retorna { lineas, codigoEmpresa, fontSize }
+   La lógica de tamaño de fuente reproduce:
+     - asigna_texto_celda fontSize=35 si TELEFONOS, fontSize=23 si resto
+   El componente TblCompania renderiza las 3 líneas resultado del split.
+   El código TELMEX/RNUM/RUMN se muestra en la cabecera de la tabla compañía
+   (equivale a asigna_texto_celda(:tbl_FecDibRev,3,2,"TELMEX",30)).
+
+7. obten_registros()
+   Magik: asigna .pl_datos desde .o_proyecto y .o_distrito, con lógica
+   de override: si el atributo de usuario no está vacío, usa ese valor;
+   si no, usa el del distrito (LoMunicipiouser?, Locpuser?, Locoloniauser?).
+   TypeScript: función async obtenRegistros(attrs, proyecto) que replica
+   exactamente ese patrón para los campos: ruta, del_mpo, cp, colonia, fecha.
+   Se dispara en useEffect cada vez que cambian attrs o proyecto.
+   El resultado popula el estado datos (PlDatos) que alimenta las tablas.
+
+
+LÓGICA DE NEGOCIO CLAVE
+-----------------------
+- Override usuario vs. distrito: todos los campos de dirección (colonia,
+  municipio, cp, ruta) admiten valor manual. Si el usuario deja el campo
+  vacío, se usa el dato del distrito GIS. Esto replica el patrón:
+    _if attrs[campo].size > 0 → usar attrs, _else → usar o_distrito.campo
+
+- Split de nombre de empresa: el valor de emprerazon contiene las 3 líneas
+  del nombre comercial separadas por "|". El componente las parte y muestra
+  una por celda, igual que en Magik: txts << valorEmpresaRazonS.split_by("|").
+
+- nombre_ctl largo: si nombre_central.length > 11 → fontSize reducido (30),
+  si corto → fontSize mayor (60). Reproducción del if en llena_datos_celdas.
+
+
+DATOS MOCK
+----------
+MOCK_PROYECTO simula el objeto o_proyecto GIS con:
+  - nombre_central: 'CENTRAL NORTE'
+  - tipo_central:   'CU'
+  - cve_central:    'CTL-001'
+  - distrito.user_distrito:              'DISTRITO NORTE'
+  - distrito.numero_ruta:                'RC-2024-042'
+  - distrito.dto_nse_predominante:       'C+'
+  - distrito.nombre_delegacion_municipio:'GUSTAVO A. MADERO'
+  - distrito.codigo_postal:              '07000'
+  - distrito.nombre_colonia:             'TEPITO'
+
+
+LO QUE NO SE HA MIGRADO
+------------------------
+- La herencia real de c_sello_estandar_base (_super.*) no existe en TypeScript;
+  las llamadas a _super se han sustituido por lógica inline equivalente.
+- configura_tabla usa coordenadas absolutas (mm sobre plano de papel);
+  en TypeScript se usa flexbox — la posición exacta en un plano imprimible
+  requeriría integración con LayoutPlotEngine (componente [11]).
+- allowed_on_menu? = false no tiene equivalente en la UI web (no aplica).
+- define_shared_constant y define_attributes() son patrones de clase Magik
+  sin equivalente directo; se reemplazan por tipos TypeScript e interfaces.
+
+
+DEPENDENCIAS EXTERNAS
+---------------------
+- React (useState, useEffect)
+- Sin Turf.js ni OpenLayers: este componente no realiza cálculos espaciales
+  ni interactúa con el mapa — solo maneja datos tabulares de plano.
+
+
+INTEGRACIÓN EN App.tsx
+-----------------------
+Import:   import { SelloEstandarConstruccionUI } from './migration/SelloEstandarConstruccion';
+Entry:    DEMO_ITEMS id='27-sello-estandar-construccion', render: () => <SelloEstandarConstruccionUI />
+================================================================================

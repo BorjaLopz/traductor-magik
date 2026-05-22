@@ -57,6 +57,10 @@ import { VpCroquisProyCanUI }                     from './migration/VpCroquisPro
 import { SelloAumentosSecundariosUI }             from './migration/SelloAumentosSecundarios';
 // [26] c_plano_desmontaje_cd
 import { PlanoDesmontajeCdUI }                    from './migration/PlanoDesmontajeCd';
+// [27] c_sello_estandar_construccion
+import { SelloEstandarConstruccionUI }            from './migration/SelloEstandarConstruccion';
+// [28] c_sello_pie_diag_emp
+import { SelloPieDiagEmpUI }                      from './migration/SelloPieDiagEmp';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -495,6 +499,60 @@ const DEMO_ITEMS: DemoItem[] = [
     label      : '[26] c_plano_desmontaje_cd',
     description: 'Plano desmontaje Caja Distribución — genera_plano() compone marco(3×1) + sello_proyecto_canalizacion + viewport_layout. Escala por ratio bounds o view_scale si ángulo > 0.1°.',
     render     : () => <PlanoDesmontajeCdUI />,
+  },
+  // ── [26] c_plano_desmontaje_cd — anterior último componente migrado ─────────
+
+  // =============================================================================
+  // [27] Demo inline — c_sello_estandar_construccion
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoSelloEstandarConstruccion() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_sello_estandar_construccion</h3>
+  //       <p style={s.meta}>
+  //         Sello estándar de construcción. 3 tablas: tbl_Ctl_Dto + tbl_CP_Ruta_Nse + tbl_del_mpo.
+  //         Override usuario vs. distrito para: colonia, municipio, cp, ruta.
+  //         Split empresa por "|" → 3 líneas (TELMEX/RNUM/RUMN).
+  //       </p>
+  //       <SelloEstandarConstruccionUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id         : '27-sello-estandar-construccion',
+    label      : '[27] c_sello_estandar_construccion',
+    description: 'Sello construcción — tbl_Ctl_Dto(2f×1c) + tbl_CP_Ruta_Nse(2f×3c) + tbl_del_mpo(2f×2c,sin bordes). Override attrs usuario > distrito. Split empresa por "|" → TELMEX/RNUM/RUMN.',
+    render     : () => <SelloEstandarConstruccionUI />,
+  },
+  // ── [27] c_sello_estandar_construccion — anterior último componente migrado ──
+
+  // =============================================================================
+  // [28] Demo inline — c_sello_pie_diag_emp
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoSelloPieDiagEmp() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_sello_pie_diag_emp</h3>
+  //       <p style={s.meta}>
+  //         Sello pie diagrama empalmes. tbl_colonia_cp (2f×2c, sin bordes).
+  //         delegacion_municipio(): Turf.js booleanWithin + booleanIntersects.
+  //         Ramas: :principales/:trabajo/:enlace → building; :secundaria → CD o fallback.
+  //       </p>
+  //       <SelloPieDiagEmpUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id         : '28-sello-pie-diag-emp',
+    label      : '[28] c_sello_pie_diag_emp',
+    description: 'Sello pie diagrama empalmes — tbl_colonia_cp(2f×2c,sin bordes). delegacion_municipio() → Turf booleanWithin+booleanIntersects. Ramas: :principales/:trabajo/:enlace→building; :secundaria→CD o fallback.',
+    render     : () => <SelloPieDiagEmpUI />,
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

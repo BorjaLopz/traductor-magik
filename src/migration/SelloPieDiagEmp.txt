@@ -1,0 +1,178 @@
+================================================================================
+COMPONENTE: SelloPieDiagEmp.tsx
+Clase Magik original: c_sello_pie_diag_emp
+Fichero Magik original: c_sello_pie_diag_emp.magik
+Número de migración: [28]
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Sello de pie para diagrama de empalmes. En Magik hereda de
+c_sello_estandar_ctl_edo mediante def_slotted_exemplar con slots vacíos
+(no añade slots nuevos). En TypeScript se modela como componente React
+funcional con estado local; la herencia se simula con llamadas equivalentes
+a los métodos del padre comentadas en el código.
+
+Añade una tabla extra al sello base (tbl_colonia_cp) y un método espacial
+relevante: delegacion_municipio(), que determina el municipio del sello
+mediante queries GIS de tipo within e interacts sobre geometrías reales.
+
+
+SLOTS MIGRADOS
+--------------
+No hay slots propios en este exemplar.
+Los datos heredados de c_sello_estandar_ctl_edo se modelan como PlDatos.
+
+
+MÉTODOS MIGRADOS Y SU EQUIVALENCIA
+------------------------------------
+
+1. codigo_postal() / colonia() / municipio()
+   Magik: métodos que retornan "" — puntos de extensión para subclases.
+   TypeScript: no se generan funciones explícitas; en obtenRegistros()
+   los campos se rellenan desde o_distrito, y los valores vacíos se
+   representan como string vacío con fallback visual "(vacío)".
+
+2. configura_tabla()
+   Magik: _super.configura_tabla() + crea tbl_colonia_cp con:
+     - 2 filas × 2 columnas
+     - ren {5,5} (alturas iguales)
+     - col {22,45} (etiqueta estrecha + dato ancho)
+     - bDibuja_bordes? = false
+     - bDibuja_Columnas_Internas? = false
+     - bDibuja_Renglones_Internos? = false
+     - posición: desplazamiento X acumulando tbl_ubicacion+tbl_compania+
+       tbl_FecDibRev+tbl_Escala+tbl_pob_ctl+tbl_central;
+       desplazamiento Y acumulando tbl_ubicacion+tbl_del_mpo
+   TypeScript: subcomponente TblColoniaCp con <table> sin bordes.
+     - col 22u → width: 88px (factor 4)
+     - col 45u → width: 180px
+     - El posicionamiento absoluto de Magik (coordinate.new) se sustituye
+       por layout flexbox en el componente principal.
+
+3. delegacion_municipio() — MÉTODO ESPACIAL PRINCIPAL
+   Magik: lógica con tres ramas según tipo_diseno del diseño activo:
+
+   Rama :principales / :trabajo / :enlace:
+     1. LoV.collection(:building) → buildings
+     2. predicate.within(:location, central.user!_limite) → booleanWithin
+     3. Lonodo = tabla.select(pred).an_element() → primer building dentro
+     4. cached_dataset(:landbase).collection(:user!_municipio) → municipios
+     5. predicate.interacts(:user!_limite, Lonodo.location) → booleanIntersects
+     6. if LoSel.size = 1 → LoMun.nombre_telmex + ", " + LoMun.estado
+
+   Rama :secundaria:
+     1. Busca CD (mit_terminal_enclosure) within central.user!_limite
+     2. Si CD existe: municipio que interacta con CD.location
+        Formato: nombre + "," + estado (sin espacio, como en el original)
+     3. Si no hay CD: fallback a building (mismo algoritmo que :principales)
+
+   TypeScript: función async delegacionMunicipio() con:
+     - turf.booleanWithin(point, polygon)  ↔  predicate.within(:location, LoArea)
+     - turf.booleanIntersects(poly, point) ↔  predicate.interacts(:user!_limite, location)
+     - matches.length === 1               ↔  LoSel.size = 1
+     La función recibe collections como parámetros en vez de acceder
+     a globals (mit_manager, gis_program_manager).
+
+4. etiqueta_celdas()
+   Magik: _super.etiqueta_celdas() + asigna_texto_celda para 2 celdas:
+     - tbl_colonia_cp, fila 1, col 1 → "COLONIA: "  (fontSize 35, top_left)
+     - tbl_colonia_cp, fila 2, col 1 → "C.P.: "     (fontSize 35, top_left)
+   TypeScript: etiquetas hardcodeadas en la primera columna de TblColoniaCp.
+
+5. llena_datos_celdas()
+   Magik: solo llama _super.llena_datos_celdas(), sin lógica propia.
+   TypeScript: los datos de colonia y cp se muestran directamente en
+   la segunda columna de TblColoniaCp desde PlDatos.
+
+6. obten_registros()
+   Magik: _super.obten_registros() + asigna_distrito(_false) + rellena:
+     - .pl_datos[:colonia] ← .o_distrito.nombre_colonia
+     - .pl_datos[:cp]      ← .o_distrito.codigo_postal
+   TypeScript: función async obtenRegistros(central, distrito) que devuelve
+   PlDatos con los mismos campos. El parámetro _false de asigna_distrito
+   no tiene equivalente directo — indica que no se recalcula el área del
+   distrito; en TypeScript se ignora porque el mock siempre tiene el valor.
+
+7. valor_casilla_central()
+   Magik: _return .pl_datos[:clave_ctl] + " - " + .o_proyecto.numero_distrito
+   TypeScript: función valorCasillaCentral(datos: PlDatos): string.
+   Formato resultado: "NOR-01 - D-042"
+
+
+LÓGICA ESPACIAL — DETALLE
+--------------------------
+El método delegacion_municipio() es el único con lógica espacial real.
+Patron Magik → Turf.js:
+
+  predicate.within(:location, LoArea)
+    → turf.booleanWithin(elemento.location [Point], centralLimite [Polygon])
+    → true si el Point está completamente dentro del Polygon
+
+  predicate.interacts(:user!_limite, Lonodo.location)
+    → turf.booleanIntersects(municipio.user_limite [Polygon], nodo.location [Point])
+    → true si hay cualquier intersección geométrica
+
+  tabla.select(pred).an_element()
+    → coleccion.find(el => predicado(el))   (primer elemento que cumple)
+
+  LoSel.size = 1
+    → matches.length === 1   (exactamente un municipio coincide)
+
+La distinción de formato entre ramas es exacta al original:
+  - :principales/:trabajo/:enlace → "NOMBRE, ESTADO"  (coma + espacio)
+  - :secundaria con CD            → "NOMBRE,ESTADO"   (solo coma, sin espacio)
+  Esta diferencia existe en el Magik original y se ha preservado fielmente.
+
+
+DATOS MOCK
+----------
+MOCK_CENTRAL:
+  clave_ctl: 'NOR-01', numero_distrito: 'D-042'
+  user_limite: bbox [-99.15,-99.13] × [19.43,19.45] (EPSG:4326 simulado)
+
+MOCK_BUILDINGS:
+  B-01: [-99.140, 19.440] → dentro de CENTRAL_LIMITE ✓
+  B-02: [-99.200, 19.500] → fuera ✗
+
+MOCK_CDS (mit_terminal_enclosure):
+  CD-01: [-99.142, 19.438] → dentro de CENTRAL_LIMITE ✓
+  CD-02: [-99.300, 19.600] → fuera ✗
+
+MOCK_MUNICIPIOS:
+  GAM: bbox [-99.16,-99.12] × [19.42,19.46] → contiene edificio B-01 y CD-01
+  IZT: bbox [-99.08,-99.04] × [19.35,19.39] → no contiene ninguno
+
+Resultado esperado según tipo_diseno:
+  :principales/:trabajo/:enlace → "GUSTAVO A. MADERO, CDMX"
+  :secundaria (CD-01 existe)    → "GUSTAVO A. MADERO,CDMX"
+
+
+LO QUE NO SE HA MIGRADO
+------------------------
+- La herencia real de c_sello_estandar_ctl_edo no existe en TypeScript;
+  los campos heredados (clave_ctl, nombre_central, numero_distrito) se
+  modelan directamente en PlDatos.
+- swg_dsn_admin_engine.active_design: objeto global Magik; aquí se pasa
+  como parámetro ActiveDesign para evitar globals en TypeScript.
+- mit_manager.modelit_dataset y gis_program_manager.cached_dataset:
+  accesores globales GIS; reemplazados por arrays mock pasados como parámetros.
+- asigna_distrito(_false): el segundo parámetro _false que inhibe el
+  recálculo del área no tiene representación en TypeScript.
+- El posicionamiento en plano imprimible (coordinate.new, ln_desp_x/y)
+  requeriría integración con LayoutPlotEngine [11].
+
+
+DEPENDENCIAS EXTERNAS
+---------------------
+- React (useState, useEffect, useCallback)
+- @turf/turf: booleanWithin, booleanIntersects
+- geojson (tipos Feature, Polygon, Point)
+- Sin OpenLayers: no hay renderizado en mapa, solo queries tabulares.
+
+
+INTEGRACIÓN EN App.tsx
+-----------------------
+Import:  import { SelloPieDiagEmpUI } from './migration/SelloPieDiagEmp';
+Entry:   DEMO_ITEMS id='28-sello-pie-diag-emp', render: () => <SelloPieDiagEmpUI />
+================================================================================

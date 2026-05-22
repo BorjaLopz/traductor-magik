@@ -518,5 +518,3 @@ Instrucciones adicionales:
 - Explica brevemente el funcionamiento real del componente creado y qué lógica del código Magik se transcribió.
 - Genera un archivo .txt con el nombre de la clase TypeScript creada. Colócalo en: test-magik\src\migration\. En este .txt describe su funcionamiento.
 - Mantén el código lo más limpio y eficiente posible.
-
-En este caso quiero que sobreescribas el componente que ya hay relativo a esa clase ya que esta incompleto

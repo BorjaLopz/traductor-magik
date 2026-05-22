@@ -1,0 +1,184 @@
+================================================================================
+COMPONENTE: SelloEstandarDiagEmpal.tsx
+Clase Magik original: c_sello_estandar_diag_empal
+Fichero Magik:        c_sello_estandar_diag_empal.magik
+Autor original:       dsanchez / FAD — Sigma Tao — Enero 2005
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Sello estándar para planos de diagrama de empalme de red de cobre.
+Hereda de c_sello_estandar_base (que provee tbl_compania, tbl_FecDibRev,
+tbl_Escala) y añade dos tablas propias:
+
+  tbl_CeldaA (70mm ancho):
+    Fila 1 (7mm):  Localidad / Población
+    Fila 2 (8mm):  Nombre de la Central
+
+  tbl_CeldaB (45mm ancho):
+    Fila 1 (15mm): Siglas / Clave del Distrito
+
+Las tablas no muestran líneas internas (bDibuja_Columnas_Internas? = false,
+bDibuja_Renglones_Internos? = false).
+
+Atributos propios (defined_attributes):
+  :Localidad        — string — "Población"
+  :Nombre_Central   — string — "Nombre de la central"
+  :Siglas_Distrito  — string — "Siglas del distrito"
+
+
+FUNCIONAMIENTO REAL
+-------------------
+1. defined_attributes():
+   Extiende los atributos del padre añadiendo Localidad, Nombre_Central
+   y Siglas_Distrito. Estos atributos son configurables desde la página
+   de propiedades del objeto en el Layout Designer.
+
+2. prvCrea_Cfg_Tablas(RoCoord):
+   a. Llama al padre para crear tbl_compania + tbl_FecDibRev + tbl_Escala.
+   b. Calcula la longitud total acumulada de esas tres tablas.
+   c. Llama prvCrea_Cfg_Tbl_NomPob_NomCtl_CveDto(coordOffset) para
+      crear tbl_CeldaA y tbl_CeldaB a continuación.
+
+3. prvCrea_Cfg_Tbl_NomPob_NomCtl_CveDto(RoCoord):
+   Crea tbl_CeldaA en RoCoord:
+     - 2 filas × 1 col
+     - Fila 1: 7mm  — texto inicial "POBLACION"
+     - Fila 2: 8mm  — texto inicial "CENTRAL"
+     - Col 1:  70mm
+   Crea tbl_CeldaB en RoCoord + LnLong (offset de tbl_CeldaA):
+     - 1 fila × 1 col
+     - Fila 1: 15mm — texto inicial "Cve Dto"
+     - Col 1:  45mm
+   Tamaño de letra para todos los textos: 35 (unidades Magik).
+
+4. prvLlena_Celdas():
+   Llama al padre y luego prvLlena_Tbl_NomPob_NomCtl_CveDto() que
+   asigna los objetos c_texto_grafico a las celdas de las tablas.
+
+5. draw_content_on(window):
+   Antes de llamar al padre asigna los valores de los atributos
+   a los textos de las celdas:
+     poblacion_tbl       << localidad
+     nombre_central_tbl  << nombre_central
+     siglas_distrito_tbl << siglas_distrito
+
+6. lee_datos_BdeD():
+   Llama al padre y luego si oProyecto.existe?:
+     self.localidad       << oProyecto.localidad
+     self.nombre_central  << oProyecto.central
+     self.siglas_distrito << oProyecto.cve_distrito
+
+7. Getters/setters:
+   poblacion_tbl       → tbl_CeldaA.Celda(1,1).oElemento.sTexto
+   nombre_central_tbl  → tbl_CeldaA.Celda(2,1).oElemento.sTexto
+   siglas_distrito_tbl → tbl_CeldaB.Celda(1,1).oElemento.sTexto
+
+
+EQUIVALENCIAS MAGIK → TYPESCRIPT
+----------------------------------
+  def_slotted_exemplar(:c_sello_estandar_diag_empal, {}, :c_sello_estandar_base)
+    → interface AtributosSello extends AtributosBase
+
+  defined_attributes (3 nuevos)
+    → campos localidad / nombreCentral / siglasDist en AtributosSello
+
+  rope.new_from(_super.defined_attributes)
+    → spread de AtributosBase en AtributosSello
+
+  layout_attribute_definition.new(:Localidad, :string, ...)
+    → campo localidad: string en la interfaz
+
+  prvCrea_Cfg_Tbl_NomPob_NomCtl_CveDto(RoCoord)
+    → función crearConfigTablas(): { tblCeldaA, tblCeldaB }
+
+  oTablas.crea_tabla(2,1,:tbl_CeldaA)
+    → ConfigTabla { id:'tbl_CeldaA', anchoMm:70, filas:[{altoMm:7,...},{altoMm:8,...}] }
+
+  oTablas.crea_tabla(1,1,:tbl_CeldaB)
+    → ConfigTabla { id:'tbl_CeldaB', anchoMm:45, filas:[{altoMm:15,...}] }
+
+  LoTblA.oRenglones.elemento(1).nLongitud << 7
+    → filas[0].altoMm = 7
+
+  LoTblA.oColumnas.elemento(1).nLongitud << 70
+    → anchoMm = 70
+
+  c_texto_grafico.new("POBLACION")  /  .nTamanio << 35
+    → { texto: 'POBLACION', tamLetra: 35 }
+
+  tbl_CeldaA.oCeldas.Celda(1,1).oElemento.sTexto << RsValor
+    → tblA.filas[0].celda.texto = valor (React state)
+
+  draw_content_on(window)
+    → función drawContentOn(atributos, tblA, tblB): { tblCeldaA, tblCeldaB }
+       reasigna los textos de las celdas con los valores de los atributos
+
+  lee_datos_BdeD()
+    → async function leeDatosBdD(idProyecto): Promise<AtributosSello | null>
+       mock de PROYECTOS_MOCK con 3 proyectos de prueba (PRY-001/002/003)
+
+  _super.lee_datos_BdeD() + oProyecto.localidad/central/cve_distrito
+    → spread de datos del proyecto sobre AtributosSello
+
+
+ESTRUCTURA DE TABLAS
+---------------------
+  [tbl_compania][tbl_FecDibRev][tbl_Escala][  tbl_CeldaA  ][tbl_CeldaB]
+  (heredadas de c_sello_estandar_base)      [Localidad (7) ][ Siglas   ]
+                                            [Central   (8) ][ Dto (15) ]
+
+  Anchos: compania≈40mm · FecDibRev≈30mm · Escala≈25mm · CeldaA=70mm · CeldaB=45mm
+  Alto total: 15mm (7+8 = 15mm en CeldaA = 15mm en CeldaB) ✓
+
+
+MOCK DE PROYECTOS (leeDatosBdD)
+--------------------------------
+  PRY-001: GUADALAJARA · Central GDL Norte · Cve GDL-N
+  PRY-002: MONTERREY   · Central MTY Centro · Cve MTY-C
+  PRY-003: MEXICO DF   · Central Buenavista · Cve MEX-BV
+
+
+UI REACT (SelloEstandarDiagEmpalUI)
+-------------------------------------
+  Panel superior:
+    - Selector de proyecto (PRY-001/002/003)
+    - Botón "lee_datos_BdeD()" → carga async con 250ms de latencia simulada
+    - Mensaje de estado
+
+  Grid de edición manual:
+    - Localidad, Nombre Central, Siglas Distrito (nuevos atributos)
+    - Nombre Plano, Fecha, Revisado, Escala (atributos base)
+    Cada cambio llama a drawContentOn() y actualiza el sello en tiempo real.
+
+  Sello renderizado:
+    - Tablas base (tbl_compania, tbl_FecDibRev, tbl_Escala) en gris claro
+    - tbl_CeldaA y tbl_CeldaB resaltadas en azul (las nuevas)
+    - Badges con nombres de tabla sobre cada columna
+    - Nombre de plano debajo del sello
+
+  Tabla de estado interno:
+    - Muestra los valores actuales de los 3 getters:
+      poblacion_tbl / nombre_central_tbl / siglas_distrito_tbl
+    - Con referencia a la celda Magik equivalente
+
+
+DEPENDENCIAS
+------------
+  React (useState, useCallback)
+  Sin OpenLayers. Sin Turf.js.
+
+
+ARCHIVOS
+--------
+  SelloEstandarDiagEmpal.tsx   — componente React
+  SelloEstandarDiagEmpal.txt   — este fichero de documentación
+
+
+INVOCACIÓN EN App.tsx (entrada [79])
+--------------------------------------
+  <SelloEstandarDiagEmpalUI />
+
+  Invocación directa comentada dentro del render() de DEMO_ITEMS[79]
+  para referencia histórica.
+================================================================================

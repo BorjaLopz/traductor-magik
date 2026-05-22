@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import simboloLongitudTrazoGazas from '../assets/c_simbolo_longitud_trazo_gazas.png';
+import simboloLongitudTrazoGazas from '../../assets/assets/c_simbolo_longitud_trazo_gazas.png';
 
 // =============================================================================
 // TIPOS

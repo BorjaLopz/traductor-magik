@@ -58,49 +58,49 @@ import { SelloAumentosSecundariosUI }             from './migration/SelloAumento
 // [26] c_plano_desmontaje_cd
 import { PlanoDesmontajeCdUI }                    from './migration/PlanoDesmontajeCd';
 // [27] polyline_layout
-import { PolylineLayoutUI }                       from './migration/PolylineLayout';
+import { PolylineLayoutUI }                       from './migration/migration/PolylineLayout';
 // [28] c_simbologia_ocupacion_de_ductos
-import { SimbologiaOcupacionDeDuctosUI }          from './migration/SimbologiaOcupacionDeDuctos';
+import { SimbologiaOcupacionDeDuctosUI }          from './migration/migration/SimbologiaOcupacionDeDuctos';
 // [29] c_pep_dcs
-import { PepDcsUI }                               from './migration/PepDcs';
+import { PepDcsUI }                               from './migration/migration/PepDcs';
 // [30] c_sello_notas_sct_cruz_sub
-import { SelloNotasSctCruzSubUI }                 from './migration/SelloNotasSctCruzSub';
+import { SelloNotasSctCruzSubUI }                 from './migration/migration/SelloNotasSctCruzSub';
 // [31] symbol_layout
-import { SymbolLayoutUI }                         from './migration/SymbolLayout';
+import { SymbolLayoutUI }                         from './migration/migration/SymbolLayout';
 // [32] c_traductor
-import { TraductorUI }                            from './migration/Traductor';
+import { TraductorUI }                            from './migration/migration/Traductor';
 // [33] c_circulo_grafico
-import { CirculoGraficoUI }                       from './migration/CirculoGrafico';
+import { CirculoGraficoUI }                       from './migration/migration/CirculoGrafico';
 // [34] c_placa_fosc350c
-import { PlacaFosc350cUI }                        from './migration/PlacaFosc350c';
+import { PlacaFosc350cUI }                        from './migration/migration/PlacaFosc350c';
 // [35] c_ocupacion_de_vias
-import { OcupacionDeViasUI }                      from './migration/OcupacionDeVias';
+import { OcupacionDeViasUI }                      from './migration/migration/OcupacionDeVias';
 // [36] cuadro_de_notas_plugin
-import { CuadroDeNotasPluginUI }                  from './migration/CuadroDeNotasPlugin';
+import { CuadroDeNotasPluginUI }                  from './migration/migration/CuadroDeNotasPlugin';
 // [37] c_detalles_layout
-import { DetallesLayoutUI }                       from './migration/DetallesLayout';
+import { DetallesLayoutUI }                       from './migration/migration/DetallesLayout';
 // [38] c_simbolo_longitud_trazo_gazas
-import { SimboloLongitudTrazoGazasUI }            from './migration/SimboloLongitudTrazoGazas';
+import { SimboloLongitudTrazoGazasUI }            from './migration/migration/SimboloLongitudTrazoGazas';
 // [39] c_margen_layout
-import { MargenLayoutUI }                         from './migration/MargenLayout';
+import { MargenLayoutUI }                         from './migration/migration/MargenLayout';
 // [40] c_simbologia_plano_construccion
-import { SimbologiaPlanoConstruccionUI }          from './migration/SimbologiaPlanoConstruccion';
+import { SimbologiaPlanoConstruccionUI }          from './migration/migration/SimbologiaPlanoConstruccion';
 // [41] c_elementos_tramo_g
-import { ElementosTramoGUI }                      from './migration/ElementosTramoG';
+import { ElementosTramoGUI }                      from './migration/migration/ElementosTramoG';
 // [42] c_dibuja
-import { DibujaUI }                               from './migration/Dibuja';
+import { DibujaUI }                               from './migration/migration/Dibuja';
 // [43] c_plano_e
-import { PlanoEUI }                               from './migration/PlanoE';
+import { PlanoEUI }                               from './migration/migration/PlanoE';
 // [44] c_elemento_empalme_subterraneo_g
-import { ElementoEmpalmeSubterraneoGUI }          from './migration/ElementoEmpalmeSubterraneoG';
+import { ElementoEmpalmeSubterraneoGUI }          from './migration/migration/ElementoEmpalmeSubterraneoG';
 // [45] c_celdas_grafico
-import { CeldasGraficoUI }                        from './migration/CeldasGrafico';
+import { CeldasGraficoUI }                        from './migration/migration/CeldasGrafico';
 // [46] c_linea_grafico
-import { LineaGraficoUI }                         from './migration/LineaGrafico';
+import { LineaGraficoUI }                         from './migration/migration/LineaGrafico';
 // [47] c_vp_ubicacion_cedo
-import { VpUbicacionCedoUI }                      from './migration/VpUbicacionCedo';
+import { VpUbicacionCedoUI }                      from './migration/migration/VpUbicacionCedo';
 // [48] c_tbl_cfg_mixin
-import { TblCfgMixinUI }                          from './migration/TblCfgMixin';
+import { TblCfgMixinUI }                          from './migration/migration/TblCfgMixin';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================

@@ -1,0 +1,176 @@
+================================================================================
+CLASE: SelloCompetenciaTelmex
+ORIGEN: c_sello_competencia_telmex.magik  —  Sigma Tao / lgranados / 18-agosto-2008
+HEREDA: c_base_sello_fibra  (stub en SelloSimbologiaDiagramaEmpalmes.tsx)
+FICHERO TS: SelloCompetenciaTelmex.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Cuadro de competencia telefónica para planos de FO, asociado a un edificio
+concreto (identificado por idEdificio).
+
+Muestra una tabla de 10 filas que lista los servicios de competencia presentes
+en ese edificio:
+  Col 1 (10u): icono SVG del servicio (p_xxx de Smallworld)
+  Col 2 (27u): nombre del servicio, en color específico por tipo
+  Col 3  (7u): contador de unidades (obtenido de la BD GIS)
+
+La tabla tiene todos los bordes internos ocultos (solo el borde exterior es
+visible), creando una apariencia de lista limpia sin rejilla.
+
+── ATRIBUTOS (defined_attributes) ──────────────────────────────────────────────
+
+  11 atributos de layout (todos :string salvo idEdificio :integer):
+    pred_deshabitado   → "Predio Deshabitado"
+    tv_satelital       → "Television Satelital"
+    tv_cable           → "Television por Cable"
+    operteles          → "Operteles"
+    operteles_inalam   → "Operteles inalambrico"
+    telmex_inalam      → "Telmex Inalambrico"
+    tel_pub_compet     → "Telefonia Publica Competencia"
+    caseta_ladafon     → "Caseta Ladafon"
+    caseta_ladatel     → "Caseta LadaTel"
+    solicitud          → "Solicitud."
+    idEdificio         → id del edificio (entero, _unset por defecto)
+
+  Todos con :allowed_on_properties_page? = _false y :editor = _unset.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_sello_competencia_telmex.configura_tabla()
+TS:    configurarTabla(): void
+
+  Una sola tabla: tbl_contenido
+    Dimensiones: :ren={6×10}, :col={10,27,7} → 10 filas × 3 cols = 60u × 44u
+    Origen: oCoordInicio
+
+  Bordes ocultos (oculta_bordes_celdas):
+    :borde_der col 1, filas 1-10      → sin borde derecho en col 1
+    :borde_der_izq col 2, filas 1-10  → sin bordes laterales en col 2
+    :borde_inf filas 1-9, cols 1-3    → sin líneas horizontales internas
+
+  Resultado visual: cols 1+2 se "funden" (sin separador), solo borde exterior
+  y fila 10 con borde inferior. En SVG: separador sutil antes de col 3,
+  fondos alternos por fila para legibilidad.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_competencia_telmex.etiqueta_celdas()
+TS:    etiquetarCeldas(): void
+
+  Para cada una de las 10 filas:
+    Col 1: asigna_simbolo_celda → icono SVG (p_predio_deshabitado, etc.)
+    Col 2: asigna_texto_celda   → descripción con color específico
+    Col 3: asigna_texto_celda   → valor del atributo correspondiente
+
+  Colores de col 2 (Magik → CSS):
+    {0,0,0}               → negro          (filas 1,2,3,6,8,10)
+    {0.05981,0.05981,0.4090} → rgb(15,15,104) azul oscuro (filas 4,5 — Operteles)
+    {0,0,1}               → rgb(0,0,255)   azul puro    (fila 7 — TEL/PUB COMPET.)
+    {0,0.2953,0}          → rgb(0,75,0)    verde oscuro (fila 9 — CASETA LADATEL)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_competencia_telmex.llena_datos_celdas()
+TS:    async llena_datos_celdas(service: IGisDataService): Promise<void>
+
+  1. Si idEdificio = null → retorna sin hacer nada
+     Magik: _if _self.idEdificio _isnt _unset
+  2. Obtiene registro user!_building por id:
+     Magik: LcollTabUserBuilding.at(_self.idEdificio)
+     TS: await service.fetchBuildingInventory(idEdificio)
+  3. Si no encontrado → retorna
+     Magik: _if LoUserBuilding _isnt _unset
+  4. Llama obtener_inventario_detallado() y mapea los campos:
+     user!_linea_comp_cu    → operteles
+     user!_linea_comp_inal  → opertelesInalam
+     user!_linea_inal       → telmexInalam
+     user!_tel_pub_comp     → telPubCompet
+     user!_linea_lf         → casetaLadafon
+     user!_linea_pslt       → casetaLadatel
+  5. Actualiza las celdas de col 3 con los valores obtenidos
+     TS: llama a etiquetarCeldas() para regenerar col 3
+
+  Campos NO cargados (comentados en el Magik original):
+    pred_deshabitado (user!_deshabitado), tv_satelital, tv_cable, solicitud
+    → se mantienen vacíos, tal y como en el original.
+
+── OVERRIDE NECESARIO ──────────────────────────────────────────────────────────
+
+  CBaseSelloFibra.asignarTextoCelda() y asignarSimboloCelda() guardan
+  solo el último dato por tabla, ignorando (fila, col).
+
+  SelloCompetenciaTelmex sobreescribe AMBOS métodos con Maps per-cell:
+    cellTexts:   Map<tablaId, Map<CellKey, CeldaTexto>>
+    cellSymbols: Map<tablaId, Map<CellKey, CeldaSimbolo>>
+    CellKey = `${fila}-${col}`
+
+── CATÁLOGO DE ICONOS SVG (col 1) ──────────────────────────────────────────────
+
+  p_predio_deshabitado     → casa con X (predio sin habitante)
+  p_tv_satelital           → antena parabólica + mástil
+  p_tv_por_cable           → pantalla TV + antenas
+  p_operteles              → auricular telefónico
+  p_operteles_inalambrica  → auricular + ondas de radio
+  p_telmex_inalambrica     → auricular + símbolo T
+  p_telpub_compet          → cabina telefónica pública
+  p_caseta_ladafon         → cabina con texto "LF"
+  p_caseta_ladatel         → cabina con texto "LT"
+  p_solicitud              → documento con líneas
+
+── MOCK BD GIS (IGisDataService) ────────────────────────────────────────────────
+
+  Reemplaza gis_program_manager.cached_dataset(:gis).collections[:user!_building]
+  IDs disponibles en el demo: 101, 202, 303
+  Latencia simulada: 400ms (setTimeout)
+  Devuelve BuildingInventory con los 6 campos activos.
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ─────────────────────────────────────────────────────────────────────────────
+  :ren,{6×10}, :col,{10,27,7}                   CONT_ROWS, CONT_COLS constantes
+  asigna_simbolo_celda(:tbl,f,c,nom,tam)        asignarSimboloCelda() override
+  asigna_texto_celda(:tbl,f,c,txt,tam,al,rot,c) asignarTextoCelda() override
+  gis_program_manager.cached_dataset(:gis)      IGisDataService interface + mock
+  user!_building.at(id)                         fetchBuildingInventory(id)
+  obtener_inventario_detallado()                BuildingInventory object
+  write_string                                  String(valor)
+  {0.05981,0.05981,0.4090}                      rgb(15,15,104)
+  {0,0.2953,0}                                  rgb(0,75,0)
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+  <SelloCompetenciaTelmexUI /> muestra:
+    - Input de ID de edificio + botón "Cargar datos (llena_datos_celdas)"
+    - Estado de carga (loading) durante la consulta async
+    - Indicación de IDs disponibles (101, 202, 303)
+    - SVG de la tabla 176×240px (SCALE=4px/u)
+    - Fondos alternos de filas, separador antes de col 3, borde exterior
+    - Tabla de atributos con valor actual y fuente de BD
+    - Nota de campos NO cargados desde BD (comentados en original)
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+  - Clase completa c_base_sello_fibra (stub reutilizado de [13]).
+  - Íconos p_xxx reales de Smallworld (sustituidos por SVG inline geométrico).
+  - Campos comentados en el original (pred_deshabitado, tv_satelital,
+    tv_cable, solicitud) — no se cargan de BD exactamente igual que en Magik.
+  - Integración real con motor de planos de Smallworld.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const sello = new SelloCompetenciaTelmex();
+  sello.atributos.idEdificio = 101;
+  sello.configurarTabla();
+  sello.etiquetarCeldas();   // col 3 vacía (atributos aún sin datos)
+
+  await sello.llena_datos_celdas(mockGisServiceTelmex);
+  // Ahora: sello.atributos.operteles = '12', etc.
+  // Las celdas col 3 se han actualizado automáticamente
+
+  const textoFila4Col2 = sello.getCeldaTexto('tbl_contenido', 4, 2);
+  // → { texto: 'OPERTELES', color: [0.05981,0.05981,0.4090], ... }
+
+================================================================================

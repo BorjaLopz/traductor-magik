@@ -1,0 +1,85 @@
+================================================================================
+CLASE: RutaOpbsPlugin
+ORIGEN: ruta_opbs_plugin.magik  —  SIGC11 / egomez / 2002
+HEREDA: plugin (Smallworld)
+FICHERO TS: RutaOpbsPlugin.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Plugin de ciclo de vida del diálogo c_opbs (panel de OPBs de ruta).
+Mantiene referencia a la ruta activa y el OPB activo en el editor.
+Su única responsabilidad: abrir, cerrar y recrear el diálogo c_opbs.
+
+Patrón de apertura (guiRutaOpb / toggleDialog):
+  - Si el diálogo ya estaba abierto → cierra + vacía cache → crea instancia nueva.
+  - Si no existía → crea directamente.
+  - Siempre termina con el diálogo abierto (NO es un toggle on/off, es reset+open).
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: def_slotted_exemplar con oCurrentRuta, oCurrentOpb
+TS:    #oCurrentRuta, #oCurrentOpb   [campos privados + getters/setters]
+
+  Slots de contexto GIS activo. En el Magik original solo se declaran;
+  otro plugin padre los rellena. Aquí se exponen con setCurrentRuta/setCurrentOpb.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: init_actions()
+TS:    initActions(): void   [vacío]
+
+  En Magik registra el action :gui_ruta_opb en el framework GUI de Smallworld.
+  En React no existe ese mecanismo — el botón se declara en JSX.
+  Método mantenido por paridad de API.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: guiRutaOpb()
+TS:    toggleDialog(): void
+
+  Lógica exacta del Magik:
+    _if (d << _self.get_dialog(name)) _is _unset
+    _then  d << user:c_opbs.new_dialog(top_frame); cache_dialog
+    _else  d.close(); _self.dialogs.empty()
+           d << user:c_opbs.new_dialog(top_frame); cache_dialog
+    _endif
+    d.activate_relative_to("SIGC 11", top_frame, 250, 390)
+
+  TS:
+    if (#dialogOpen) → closeDialog() + clearCache()
+    openDialog(currentRuta, currentOpb)   // siempre termina abierto
+    activate_relative_to → CSS: position: absolute; left: 250; top: 390
+
+── ABSTRACCIÓN COpbsService ────────────────────────────────────────────────────
+
+  user:c_opbs.new_dialog() no está migrado aún → abstraído como COpbsService:
+
+  openDialog(ruta, opb)  <- user:c_opbs.new_dialog(top_frame)
+  closeDialog()          <- d.close()
+  clearCache()           <- _self.dialogs.empty()
+
+  Mock de prueba: console.log de cada llamada.
+  El cuerpo del diálogo muestra placeholder "[c_opbs — pendiente de migración]".
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- _self.get_dialog(name): Magik cachea por nombre en diccionario interno.
+  Simplificado a #dialogOpen: boolean porque el patrón siempre cierra+recrea.
+- >> d (return del diálogo): en React la visibilidad se gestiona con estado,
+  no se devuelve referencia al diálogo.
+- Registro del plugin en el framework Smallworld.
+
+── PENDIENTE ────────────────────────────────────────────────────────────────────
+
+- Migrar c_opbs.magik y sustituir el placeholder por <COpbsUI />.
+- Implementar COpbsService real contra backend REST.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  <RutaOpbsPluginUI
+    cOpbsService={mockCOpbsService}
+    initialRuta={{ id: 'RC-001', numero: 'RC-2024-001' }}
+    initialOpb={null}
+  />
+================================================================================

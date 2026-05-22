@@ -1,0 +1,98 @@
+================================================================================
+CLASE: ViewportLayoutMixin
+ORIGEN: viewport_layout_mixin.magik  —  _package sw / ahernan + rbsaldan / 2005-2007
+HEREDA: (mixin — no clase concreta)
+FICHERO TS: ViewportLayoutMixin.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Mixin de Smallworld (_package sw) que añade la capacidad de conectarse a un
+viewport de plano (Layout Designer) a cualquier elemento de layout.
+
+Expone dos slots:
+  viewport_id   → número de identificación del viewport asignado
+  viewport      → referencia al objeto viewport
+
+El método principal connect_to_viewport_on_page implementa un guard: si el
+elemento ya tiene viewport asignado (viewport_id > 0) no hace nada. Solo
+conecta si PoVp _isnt _unset.
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: viewport_layout_mixin.connect_to_viewport_on_page(a_layout_page, PoVp)
+TS:    connectToViewportOnPage(_layoutPage: LayoutPage | null, viewport: Viewport | null): void
+
+  Guard:
+    Magik: _if ( id << _self.viewport_id ) _isnt _unset _andif ( id > 0 )
+           _then _return _endif
+    TS:    if (id !== null && id !== undefined && id > 0) return;
+
+  Conexión:
+    Magik: _if PoVp _isnt _unset _then _self.viewport << PoVp _endif
+    TS:    if (viewport !== null && viewport !== undefined) {
+             this.viewport   = viewport;
+             this.viewportId = viewport.id;   // sincroniza viewport_id al conectar
+           }
+
+  NOTA: a_layout_page se recibe como primer parámetro pero NO se usa en el
+  cuerpo del método original. Se preserva en la firma TS como _layoutPage
+  (prefijo _ = parámetro intencionalmente no usado) por fidelidad al API Magik.
+
+── INTERFAZ TypeScript ──────────────────────────────────────────────────────────
+
+  interface IViewportLayoutMixin {
+    viewportId: number | null;   // Magik: viewport_id slot (_unset o > 0 si conectado)
+    viewport  : Viewport | null; // Magik: viewport slot
+  }
+
+  class ViewportLayoutMixin implements IViewportLayoutMixin { ... }
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                           TypeScript
+  ──────────────────────────────────────────────────────────────
+  _unset                          null | undefined
+  _isnt _unset                    !== null && !== undefined
+  _andif id > 0                   && id > 0
+  _self.viewport_id               this.viewportId
+  _self.viewport << PoVp          this.viewport = viewport
+  _return (sin valor)             return (void)
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+- Definición completa del mixin en _package sw (otros métodos del mixin si los hay).
+- Registro como mixin en el framework Smallworld.
+- Gestión de colecciones de viewports si existe en otras partes del mixin.
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+El componente React <ViewportLayoutMixinUI /> muestra:
+  - Tabla con 4 elementos de layout en distintos estados iniciales:
+      · viewport_id = null → Sin conectar (guard inactivo)
+      · viewport_id = 2    → Ya conectado (guard activo, Conectar deshabilitado)
+      · viewport_id = 0    → Sin conectar (0 no supera guard > 0)
+  - Selector de viewport destino (VP-Norte / VP-Sur / VP-Centro).
+  - Botón "Conectar": llama connectToViewportOnPage(PAGE_ACTIVA, vp).
+  - Botón "Reset": limpia viewport_id y viewport (simula desconexión).
+  - Filas verdes = elementos conectados (viewport_id > 0).
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const mixin = new ViewportLayoutMixin();
+
+  // Sin viewport previo → conecta
+  mixin.connectToViewportOnPage(null, { id: 1, name: 'VP-Norte' });
+  // mixin.viewportId === 1 ✔
+  // mixin.viewport.name === 'VP-Norte' ✔
+
+  // Ya conectado (id > 0) → guard, no hace nada
+  mixin.connectToViewportOnPage(null, { id: 2, name: 'VP-Sur' });
+  // mixin.viewportId === 1 (sin cambio)
+
+  // viewport_id = 0 → NO está conectado, guard no activa
+  mixin.viewportId = 0;
+  mixin.connectToViewportOnPage(null, { id: 3, name: 'VP-Centro' });
+  // mixin.viewportId === 3 ✔
+
+================================================================================

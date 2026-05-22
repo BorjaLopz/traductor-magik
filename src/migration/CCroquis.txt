@@ -1,0 +1,227 @@
+================================================================================
+CLASE: CCroquis
+ORIGEN: c_croquis.magik  —  GE Network Solutions / aegijon — 04/12/2022
+HEREDA: layout_element + viewport_layout_mixin  (stubs implícitos)
+FICHERO TS: CCroquis.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Generador de croquis de localización para planos de canalización subterránea.
+
+Opera en tres fases encadenadas:
+
+  1. arma_sector() / armarSector()
+     Toma los elementos seleccionados en el mapa (filtrados por tipo
+     :underground_route), los ordena mediante el algoritmo de encadenamiento
+     y devuelve un único sector continuo (línea ordenada sin saltos).
+
+  2. dibuja_trazo() / dibujaTrazo()
+     Aplica un buffer de 5000 unidades nativas (≈300m en el demo) al sector
+     encadenado. El resultado se usa como "trail" del mapa: define el área
+     que se mostrará en el viewport del croquis.
+
+  3. croquis_proyec_canaliz() / croquisProyecCanaliz()
+     Genera los tres elementos de layout del plano:
+       - Viewport  "Vp_Croquis_Can"  con ACE "CROQUIS_CAN"
+       - Flecha norte "norte_1"
+       - Caja de texto "Croquis de Localización"
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_croquis.ordenamiento(RoSecRope, RoSector_a)
+TS:    ordenamiento(segments: Position[][], ordered: Position[]): void
+
+  Algoritmo de encadenamiento de segmentos de línea.
+  Muta los parámetros por referencia (como Magik: sectors_rope se modifica,
+  sector_a crece con las coords conectadas).
+
+  Lógica (una pasada sobre todos los segmentos):
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ ordered vacío → inicializar con primeras coords del segmento            │
+  │ seg.first = ord.first → ya conectado (skip)                             │
+  │ seg.last  = ord.first → anteponer: ordered.unshift(...seg.slice(0,-1)) │
+  │ seg.first = ord.last  → posponer:  ordered.push(...seg.slice(1))       │
+  │ seg.last  = ord.last  → ya conectado (skip)                             │
+  │ sin coincidencia      → dejar para próxima pasada                       │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+  El `slice(0,-1)` / `slice(1)` evita duplicar el punto de unión.
+
+  Equivalencias Magik → TS:
+    RoSector_a.first_coord _is _unset     → ordered.length === 0
+    sector.add_all_first(LoSecIt)         → ordered.unshift(...seg.slice(0,-1))
+    sector.add_all_last(LoSecIt)          → ordered.push(...seg.slice(1))
+    RoSecRope.remove(LoSecRopeIt)         → segments.splice(i, 1)
+    _continue                             → i++ / no avanzar i (según caso)
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_croquis.arma_sector()
+TS:    armarSector(rutas: SegmentoRuta[]): GeoJSON.Position[]
+
+  1. Filtra :underground_route de la selección
+     Magik: _if LoTramo.rwo.rwo_type _is :underground_route
+  2. Crea sector_rope con los tramos filtrados
+     TS: segments = rutas.filter(...).map(f => [...f.geometry.coordinates])
+  3. Llama ordenamiento() en bucle hasta vaciar el rope
+     Magik: _loop ... _if LoTCanaliz.size = 0 _then _leave
+     TS: while (segments.length > 0) { this.ordenamiento(segments, ordered); }
+  4. Devuelve el sector ordenado (GeoJSON.Position[])
+
+  El guard (maxIter) evita bucles infinitos si los tramos no conectan.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_croquis.dibuja_trazo()
+TS:    dibujaTrazo(rutas, bufferKm): GeoJSON.Feature<Polygon> | null
+
+  1. Llama arma_sector para obtener el sector encadenado
+  2. Crea buffer:
+     Magik: LoSector_aux.buffer(5000)   ← 5000 unidades del CRS nativo
+     TS:    turf.buffer(lineString(ordered), bufferKm, { units: 'kilometers' })
+  3. Asigna world y set_trail:
+     Magik: LoBuffer.world << LoMapa.world; LoMapa.set_trail_from_geometry(LoBuffer)
+     TS:    devuelve el Feature<Polygon> (el trail se gestiona por estado React)
+
+  DIFERENCIA IMPORTANTE:
+    Magik usa las unidades nativas del CRS del mapa (probablemente metros UTM).
+    turf.buffer requiere WGS84 (lon/lat). El demo usa coords CDMX (~19.43°N).
+    En producción habría que reproyectar de UTM a WGS84 antes del buffer.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_croquis.croquis_proyec_canaliz()
+TS:    croquisProyecCanaliz(rutas, bufferKm): CroquisConfig
+
+  1. Obtiene el trail llamando dibujaTrazo()
+  2. Calcula bounds de referencia:
+     Magik: _if _self.bounds _isnt _unset _then LoBound = bounds _else default
+     TS:    this.bounds ?? { xMin:4400, yMin:1200, xMax:5900, yMax:2700 }
+  3. Crea viewport (inset):
+     Magik: bounding_box.new(xmin+100, ymin+200, xmax-100, ymax-200)
+     TS:    ViewportConfig { bounds, name:'Vp_Croquis_Can', aceName:'CROQUIS_CAN' }
+  4. Crea northarrow:
+     Magik: bounding_box.new(xmin, ymax-600, xmin+350, ymax)
+            northarrow_layout.new_with(:style_name, "norte_1", ...)
+     TS:    NorthArrowConfig { styleName:'norte_1', fillStyle:null, outlineStyle:null }
+  5. Crea título:
+     Magik: bounding_box.new(xmin+500, ymax-150, xmax-300, ymax-50)
+            textbox_layout.new_with(:text,"Croquis de Localización",:align_horizontal,"centre")
+     TS:    TextboxConfig { text, alignHorizontal:'centre', clip:false }
+  6. Devuelve los 3 elementos como array (Magik: LoLy_page.add_element × 3)
+
+── CONSTANTES DE CLASE ──────────────────────────────────────────────────────────
+
+  ACTIVATE_PROPERTIES_DIALOG_ON_INSERT = false
+    Magik: c_croquis.define_shared_constant(:activate_properties_dialog_on_insert?,_false)
+
+  ALLOWED_ON_MENU = false
+    Magik: c_croquis.define_shared_constant(:allowed_on_menu?,_false)
+
+  DEFINED_ATTRIBUTES
+    Magik: defined_attributes() → añade _self.viewport_attribute_definition
+    TS:    atributo 'viewport' de tipo 'viewport_ref'
+
+── DATOS MOCK — current_selection ──────────────────────────────────────────────
+
+  MOCK_SELECCION: 4 features GeoJSON LineString (coordenadas WGS84, CDMX):
+    Tramo A: [-99.150,-99.143] longitudes — extremo occidental
+    Tramo B: [-99.143,-99.140] — segmento central (enlazan A y C)
+    Tramo C: [-99.140,-99.134] — extremo oriental (entregado primero)
+    Cable servicio: tipo 'service_cable' → filtrado (no es :underground_route)
+
+  El demo demuestra el algoritmo: C→B→A en entrada, A→B→C en salida ordenada.
+
+  Reemplaza:
+    paf.plugin(:map_plugin).current_map.current_selection
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                          TypeScript
+  ─────────────────────────────────────────────────────────────────────────────
+  layout_element + viewport_layout_mixin         CCroquis class (stubs implícitos)
+  sector_rope.new()                              GeoJSON.Position[][] (array mutable)
+  sector.new()                                   GeoJSON.Position[] = []
+  sector.add_all_first(s)                        ordered.unshift(...s.slice(0,-1))
+  sector.add_all_last(s)                         ordered.push(...s.slice(1))
+  sector_rope.remove(tramo)                      segments.splice(i, 1)
+  LoTramo.rwo.rwo_type _is :underground_route    f.properties.tipo==='underground_route'
+  LoSector_aux.buffer(5000)                      turf.buffer(line, km, {units:'km'})
+  LoBuffer.world << LoMapa.world                 — (no modelado; dato GeoJSON nativo)
+  LoMapa.set_trail_from_geometry(LoBuffer)       estado React (dibujaTrazo devuelve buffer)
+  bounding_box.new(x0,y0,x1,y1)                 BoundingBox { xMin,yMin,xMax,yMax }
+  viewport_layout.new_with(:bounds,...)          ViewportConfig
+  northarrow_layout.new_with(:style_name,...)    NorthArrowConfig
+  textbox_layout.new_with(:text,...)             TextboxConfig
+  LoLy_page.add_element(el)                      CroquisConfig.elementos.push(el)
+  paf.plugin(:layout_plugin).start_layout_designer() — no modelado (fuera de React)
+  Lovi_map.map_viewport_on_map_view(vp,...)      — no modelado (OL integración pendiente)
+  _self.bounds _isnt _unset                      this.bounds !== null
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+  <CCroquisUI /> muestra:
+    - Slider de buffer (0.1..2 km)
+    - Checkboxes: mostrar cadena ordenada / buffer / layout / detalle algoritmo
+    - SVG "mapa" (420×260px) con:
+        Tramos underground en colores distintos (input desordenado)
+        Cable de servicio en gris discontinuo (filtrado)
+        Cadena ordenada en verde oscuro (resultado del ordenamiento)
+        Buffer semi-transparente azul (trail del mapa)
+        Leyenda
+    - SVG "layout" (300×220px) con:
+        Viewport centrado (azul)
+        Flecha norte esquina superior izquierda (violeta)
+        Caja de título en la parte superior (amarillo)
+    - Tabla del algoritmo de ordenamiento paso a paso
+    - Tabla de los 3 elementos de layout con sus bounds
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+  - layout_element y viewport_layout_mixin base de Smallworld (stubs implícitos).
+  - Acceso real al mapa y selección activa de Smallworld PNI.
+  - map_viewport_on_map_view(): integración del viewport con la vista del mapa.
+  - start_layout_designer(): apertura del diseñador de planos.
+  - current_document / current_page: acceso al plano activo.
+  - ACE real "CROQUIS_CAN" del sistema de estilos de Smallworld.
+  - Lógica de vp_nombre y su conexión con el viewport del plano.
+  - Conversión UTM ↔ WGS84 para el buffer (necesaria en producción con OL).
+
+── NOTA TÉCNICA — ALGORITMO DE ENCADENAMIENTO ──────────────────────────────────
+
+  El algoritmo de ordenamiento es equivalente a una búsqueda de grafo no
+  dirigido en una cadena (polychain). Complejidad: O(n²) en el peor caso,
+  donde n es el número de tramos. Apropiado para decenas de tramos (canalización
+  de un barrio), no para miles.
+
+  Si los tramos no son contiguos (hay "huecos" en la red), el algoritmo los
+  deja en la rope sin conectar. El guard de maxIter previene bucles infinitos.
+
+  Caso especial NO manejado en el original (ni en TS):
+    - Tramos que conectan pero en dirección invertida (uno comienza donde
+      termina otro pero la orientación física es la inversa). En el Magik
+      original la igualdad de coordenadas captura esto, pero el caso de
+      "same first/last" (ya conectado) podría ser ambiguo en redes con
+      bifurcaciones.
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const croquis = new CCroquis();
+  croquis.bounds = { xMin: 4400, yMin: 1200, xMax: 5900, yMax: 2700 };
+
+  // Paso 1: encadenar tramos
+  const ordered = croquis.armarSector(MOCK_SELECCION);
+  // ordered = [[-99.150,19.432],[-99.147,19.434],...,[-99.134,19.435]]  (A→B→C)
+
+  // Paso 2: buffer
+  const buffer = croquis.dibujaTrazo(MOCK_SELECCION, 0.3);
+  // buffer = GeoJSON Polygon con área ≈ 300m alrededor de la cadena
+
+  // Paso 3: layout
+  const config = croquis.croquisProyecCanaliz(MOCK_SELECCION, 0.3);
+  // config.elementos[0] → ViewportConfig  { name: 'Vp_Croquis_Can' }
+  // config.elementos[1] → NorthArrowConfig{ styleName: 'norte_1'   }
+  // config.elementos[2] → TextboxConfig   { text: 'Croquis de Localización' }
+
+================================================================================

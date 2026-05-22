@@ -1,0 +1,161 @@
+================================================================================
+CLASE: SelloSimbologiaRedSec
+ORIGEN: c_sello_simbologia_red_sec.magik  —  Sigma Tao / lgranados / 2008
+HEREDA: c_base_sello_fibra  (importado desde SelloSimbologiaDiagramaEmpalmes.tsx)
+FICHERO TS: SelloSimbologiaRedSec.tsx
+================================================================================
+
+── QUÉ HACE ────────────────────────────────────────────────────────────────────
+
+Cuadro de simbología para planos de red secundaria de fibra óptica.
+Se imprime en el plano como un "sello" (bloque de anotación) con tres secciones:
+  1. Título:    franja con texto "SIMBOLOGIA DE LA RED SECUNDARIA" en verde oscuro
+  2. Cabecera:  fila con 3 columnas (DESCRIPCION | RED EXISTENTE | RED PROYECTADA)
+  3. Contenido: área con el símbolo gráfico de la red secundaria
+
+── MÉTODOS TRANSCRITOS ─────────────────────────────────────────────────────────
+
+Magik: c_sello_simbologia_red_sec.configura_tabla()
+TS:    configurarTabla(): void
+
+  Crea tres tablas de layout:
+
+  tbl_titulo:
+    Dimensiones: :ren={8}, :col={130}  → 8 renglones × 130 columnas
+    Origen: oCoordInicio (herencia)
+
+  tbl_titulo2:
+    Dimensiones: :ren={8}, :col={60,35,35}  → 8 renglones × 3 columnas (total 130)
+    Origen: (oCoordInicio.x, oCoordInicio.y + LfDesplazaY)
+    donde LfDesplazaY = longitudTotalRenglones(['tbl_titulo']) = 8
+
+  tbl_contenido:
+    Dimensiones: :ren={110}, :col={130}  → 110 renglones × 130 columnas
+    Origen: (oCoordInicio.x, oCoordInicio.y + LfDesplazaY)
+    donde LfDesplazaY = 8 + longitudTotalRenglones(['tbl_titulo2']) = 16
+
+  NOTA: La acumulación de LfDesplazaY es CORRECTA (tbl_titulo + tbl_titulo2 = 16).
+  No hay bug de duplicado como en c_sello_simbologia_diagrama_empalmes.
+
+────────────────────────────────────────────────────────────────────────────────
+
+Magik: c_sello_simbologia_red_sec.etiqueta_celdas()
+TS:    etiquetarCeldas(): void
+
+  tbl_titulo [1,1]:
+    Magik: asigna_texto_celda(:tbl_titulo, 1, 1, "SIMBOLOGIA DE LA RED SECUNDARIA",
+               30, :centre_centre, 0, {0.0, 0.2993, 0.0})
+    TS:    texto="SIMBOLOGIA DE LA RED SECUNDARIA", tamanio=30, color=[0.0,0.2993,0.0]
+    Color: rgb(0, 76, 0) — verde oscuro
+
+  tbl_titulo2 [1,1]: "DESCRIPCION",    tamanio=20, verde oscuro
+  tbl_titulo2 [1,2]: "RED EXISTENTE",  tamanio=20, verde oscuro
+  tbl_titulo2 [1,3]: "RED PROYECTADA", tamanio=20, verde oscuro
+
+  tbl_contenido [1,1]:
+    Magik: asigna_simbolo_celda(:tbl_contenido, 1, 1, "simbologia_de_la_red_sec", 3)
+    TS:    simbolo.nombre='simbologia_de_la_red_sec', simbolo.tamanio=3
+
+── OVERRIDE asignarTextoCelda — PROBLEMA DEL STUB BASE ─────────────────────────
+
+  El stub CBaseSelloFibra.asignarTextoCelda() ignora los parámetros fila/col
+  y almacena un único CeldaTexto por tabla (TablaLayout.texto?).
+
+  tbl_titulo2 tiene 3 celdas independientes (columnas 1, 2, 3).
+  Si se usara la implementación base, cada llamada sobreescribiría la anterior
+  y solo quedaría "RED PROYECTADA" (la última).
+
+  Solución: SelloSimbologiaRedSec.asignarTextoCelda() override intercepta
+  las llamadas con tablaId === 'tbl_titulo2' y las guarda en:
+    private celdas2: Map<number, CeldaTexto>   (key = col, 1-based)
+
+  Las llamadas para otras tablas se delegan con super.asignarTextoCelda().
+
+  API de acceso:
+    getCeldasTitulo2(): Map<number, CeldaTexto>
+
+── EQUIVALENCIAS Magik → TypeScript ────────────────────────────────────────────
+
+  Magik                                             TypeScript
+  ────────────────────────────────────────────────────────────────────────────
+  property_list(:ren,{8},:col,{130})                { renglones:8, columnas:130 }
+  property_list(:ren,{8},:col,{60,35,35})           { renglones:8, columnas:130 }
+                                                     + SelloSimbologiaRedSec.COLS_TITULO2=[60,35,35]
+  .o_tablas.crea_tabla(1,1,:tbl_titulo)             crearTabla(1,1,'tbl_titulo')
+  .o_tablas.crea_tabla(1,3,:tbl_titulo2)            crearTabla(1,3,'tbl_titulo2')
+  .o_tablas.crea_tabla(1,1,:tbl_contenido)          crearTabla(1,1,'tbl_contenido')
+  LoTbl.oCoordenada_Origen << .o_coord_inicio       tabla.origen = { ...oCoordInicio }
+  coordinate.new(x, y - desplazaY)                 { x, y: oCoordInicio.y + desplazaY }*
+  longitud_total_renglones({:id})                   longitudTotalRenglones(['id'])
+  asigna_texto_celda(:id, f, c, txt, ...)           asignarTextoCelda('id', f, c, ...) [override]
+  asigna_simbolo_celda(:id, f, c, nom, tam)         asignarSimboloCelda('id', f, c, ...)
+  {0.0, 0.2993, 0.0}                               colorMagikToCSS([0.0, 0.2993, 0.0])
+                                                     → "rgb(0, 76, 0)"
+
+  * Conversión Y-up (Magik) → Y-down (SVG): y - desplazaY → y + desplazaY
+
+── SISTEMA DE TABLAS — c_base_sello_fibra ──────────────────────────────────────
+
+  Importado desde SelloSimbologiaDiagramaEmpalmes.tsx:
+    CBaseSelloFibra        — clase base stub
+    TablaLayout            — { id, renglones, columnas, origen, texto?, simbolo? }
+    CeldaTexto             — { texto, tamanio, alineacion, rotacion, color }
+    ColorMagik             — [number, number, number]  (RGB 0-1)
+    Coordenada             — { x: number; y: number }
+
+  colorMagikToCSS() no está exportada → redefinida localmente en este fichero.
+
+── SÍMBOLO "simbologia_de_la_red_sec" ───────────────────────────────────────────
+
+  En Smallworld: recurso gráfico del sistema con leyenda de la red secundaria.
+
+  En TypeScript: SVG inline representativo con estructura 3 columnas (col1=descripción,
+  col2=red existente, col3=red proyectada) y 6 filas de elementos:
+    - CABLE SUBTERRÁNEO FO:   línea azul oscuro / línea azul discontinua
+    - CABLE AÉREO FO:         línea naranja + círculos / ídem discontinua
+    - CONDUCTO PVC:           línea cyan gruesa / ídem discontinua
+    - CÁMARA DE EMPALME:      cuadrado (outline) sólido / discontinuo
+    - EMPALME FO:             diamante sólido / discontinuo
+    - NODO / ODF:             círculo sólido / discontinuo
+
+── DEMO INTERACTIVO ─────────────────────────────────────────────────────────────
+
+  <SelloSimbologiaRedSecUI /> muestra:
+    - Inputs para oCoordInicio.x/y — cambia el origen del sello
+    - SVG del sello a escala 2.0px/unidad:
+        · franja verde "SIMBOLOGIA DE LA RED SECUNDARIA"
+        · cabecera tripartita DESCRIPCION | RED EXISTENTE | RED PROYECTADA
+        · área de símbolo con la leyenda SVG inline
+    - Tabla de layout (renglones, columnas, origen) para las 3 tablas
+    - Tabla de celdas (texto/símbolo asignados, color CSS)
+      · tbl_titulo2 muestra las 3 celdas individuales
+
+── FLUJO DE USO ────────────────────────────────────────────────────────────────
+
+  const sello = new SelloSimbologiaRedSec();
+  sello.oCoordInicio = { x: 0, y: 0 };
+  sello.configurarTabla();    // crea tbl_titulo + tbl_titulo2 + tbl_contenido
+  sello.etiquetarCeldas();    // asigna textos (4 celdas) + símbolo
+
+  // Acceder a las tablas:
+  const titulo    = sello.getTablaTitulo();
+  const titulo2   = sello.getTablaTitulo2();
+  const contenido = sello.getTablaContenido();
+  const celdas2   = sello.getCeldasTitulo2();
+
+  // titulo.origen    = { x: 0, y: 0  }  (igual que oCoordInicio)
+  // titulo2.origen   = { x: 0, y: 8  }  (tbl_titulo height)
+  // contenido.origen = { x: 0, y: 16 }  (tbl_titulo + tbl_titulo2)
+  // celdas2.get(1).texto = "DESCRIPCION"
+  // celdas2.get(2).texto = "RED EXISTENTE"
+  // celdas2.get(3).texto = "RED PROYECTADA"
+
+── LO QUE NO SE TRANSCRIBIÓ ────────────────────────────────────────────────────
+
+  - Clase completa c_base_sello_fibra (solo stub en SelloSimbologiaDiagramaEmpalmes.tsx).
+  - Integración con el sistema de ventanas/planos de Smallworld.
+  - Recurso gráfico "simbologia_de_la_red_sec" real (sustituido por SVG inline).
+  - Otros métodos del sello si los hay en el fichero .magik completo.
+  - define_shared_constant(:allowed_on_menu?, _false): hook Smallworld sin equivalente React.
+
+================================================================================

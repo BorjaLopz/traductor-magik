@@ -1,0 +1,41 @@
+================================================================================
+CLASE: PolylineLayout
+ORIGEN: polyline_layout.magik
+FICHERO TS: PolylineLayout.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Define la lista de atributos editables para una polilinea de layout.
+En Magik se crea un rope con dos atributos base:
+  1) sectors    : sector_rope  (coordenadas)
+  2) line_style : line_style   (estilo de linea)
+
+La version TypeScript crea una lista equivalente de definiciones y la expone
+mediante un metodo asincrono, junto con un componente React de demo.
+
+-- METODO TRANSCRITO -----------------------------------------------------------
+
+Magik: polyline_layout.defined_attributes
+TS:    PolylineLayout.definedAttributes(): Promise<LayoutAttributeDefinition[]>
+
+Equivalencias directas:
+  - attribs << rope.new()               -> [] (array)
+  - layout_attribute_definition.new(...) -> LayoutAttributeDefinition
+  - >> attribs                          -> return attribs
+
+Se respeta que _super.defined_attributes estaba comentado en el Magik original,
+por lo que la lista parte vacia y se agregan solo los dos atributos mostrados.
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+PolylineLayoutUI
+  - Instancia PolylineLayout.
+  - Llama definedAttributes() en useEffect.
+  - Renderiza una tabla con los atributos definidos y sus valores por defecto.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Integracion con layout_attribute_definition real de Smallworld.
+- Logica de propiedades avanzadas o edicion en UI nativa.
+================================================================================

@@ -1,0 +1,103 @@
+================================================================================
+CLASE: LineaGrafico
+ORIGEN: c_linea_grafico.magik
+FICHERO TS: LineaGrafico.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Dibuja una linea recta dentro de un area (bounding box / oArea) heredada de
+c_elemento_grafico. La posicion de los extremos no es absoluta: se define con
+dos coordenadas proporcionales en [0, 1]:
+
+  - oCoordenadaMin -> (px, py) del punto inicial dentro del area
+  - oCoordenadaMax -> (px, py) del punto final   dentro del area
+
+La clase calcula los endpoints absolutos (x1, y1) - (x2, y2) y entrega:
+  1) un LineaRender plano   -> demos sin mapa
+  2) un GeoJSON Feature     -> calculos con Turf.js (length, bearing, etc.)
+  3) un ol/Feature(LineString) -> render sobre OpenLayers v10 (VectorSource)
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: new(PoCoordenadaMin, PoCoordenadaMax)
+TS:    LineaGrafico.create(area, coordMin, coordMax)
+
+Equivalencias:
+  - _self.oCoordenadaMin << PoCoordenadaMin -> this.oCoordenadaMin = coordMin
+  - _self.oCoordenadaMax << PoCoordenadaMax -> this.oCoordenadaMax = coordMax
+  - _self.sColor         << :black          -> this.sColor = 'black'
+  - _return _clone                          -> return new LineaGrafico(...)
+
+-----------------------------------------------------------------------
+
+Magik: Color (getter)
+TS:    LineaGrafico.getColor()
+
+Magik: Color << PsColor
+TS:    LineaGrafico.setColor(color)
+
+Magik: coordenadaMin << PoCoordenada
+TS:    LineaGrafico.setCoordenadaMin(coord)
+
+Magik: coordenadaMax << PoCoordenada
+TS:    LineaGrafico.setCoordenadaMax(coord)
+
+(En Magik el nombre de slot original tiene typo: oCoordendaMin/Max. Se respeta
+la intencion logica usando el slot canonico oCoordenadaMin/Max.)
+
+-----------------------------------------------------------------------
+
+Magik: Despliega()
+TS:    LineaGrafico.despliega() / toGeoJSON() / toOLFeature()
+
+Calculo (identico al Magik):
+  LnLongEnX = oArea.Xmax - oArea.Xmin
+  LnLongEnY = oArea.Ymax - oArea.Ymin
+  LnXmin    = oArea.Xmin + LnLongEnX * oCoordenadaMin.x
+  LnYmin    = oArea.Ymin + LnLongEnY * oCoordenadaMin.y
+  LnXmax    = oArea.Xmax - LnLongEnX * (1 - oCoordenadaMax.x)
+  LnYmax    = oArea.Ymax - LnLongEnY * (1 - oCoordenadaMax.y)
+
+Equivalencias directas:
+  - coords_vector.new(2) + coordinate.new(...) -> array [[x1,y1],[x2,y2]]
+  - line_style.new_with_properties(:foreground_colour, colour.called(sColor),
+                                   :width, 2)
+      -> Style + Stroke({ color: sColor, width: 2 })  (OL)
+      -> { color: sColor, width: 2 }                  (LineaRender plano)
+  - oVentana.draw_line_transform(estilo, coords)
+      -> sourceRef.current.addFeature(feature)   (OpenLayers VectorSource)
+
+El bloque _if _self.sEstilo = "DERECHA" / "IZQUIERDA" estaba comentado en el
+Magik original -> no se transcribe.
+
+-----------------------------------------------------------------------
+
+Magik: serial_slots()
+TS:    LineaGrafico.serialSlots()
+
+Solo serializa los slots propios (oCoordenadaMin, oCoordenadaMax, sColor) ya
+que la herencia de c_elemento_grafico aun no esta migrada como clase base.
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+LineaGraficoUI
+  - Renderiza un mapa OpenLayers v10 con proyeccion local (Projection 'pixels')
+    sobre el extent del area [0..100, 0..100].
+  - 4 presets de coordenadas proporcionales: diagonal completa, diagonal
+    invertida, horizontal media, vertical media.
+  - Al cambiar de preset:
+      1) crea la instancia LineaGrafico
+      2) limpia el VectorSource
+      3) inserta el nuevo ol/Feature(LineString)
+      4) calcula tambien la longitud con turf.length sobre el GeoJSON
+  - Muestra: P1, P2, color y longitud calculada por Turf.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Herencia real de c_elemento_grafico (oArea / oVentana / sNombreGrafico)
+  -> se modela como propiedad oArea directa.
+- coords_vector / colour.called(...) de Smallworld -> sustituidos por arrays
+  y strings hex/CSS.
+- Rama _if sEstilo = "DERECHA"/"IZQUIERDA" -> estaba comentada en el original.
+================================================================================

@@ -57,6 +57,50 @@ import { VpCroquisProyCanUI }                     from './migration/VpCroquisPro
 import { SelloAumentosSecundariosUI }             from './migration/SelloAumentosSecundarios';
 // [26] c_plano_desmontaje_cd
 import { PlanoDesmontajeCdUI }                    from './migration/PlanoDesmontajeCd';
+// [27] polyline_layout
+import { PolylineLayoutUI }                       from './migration/PolylineLayout';
+// [28] c_simbologia_ocupacion_de_ductos
+import { SimbologiaOcupacionDeDuctosUI }          from './migration/SimbologiaOcupacionDeDuctos';
+// [29] c_pep_dcs
+import { PepDcsUI }                               from './migration/PepDcs';
+// [30] c_sello_notas_sct_cruz_sub
+import { SelloNotasSctCruzSubUI }                 from './migration/SelloNotasSctCruzSub';
+// [31] symbol_layout
+import { SymbolLayoutUI }                         from './migration/SymbolLayout';
+// [32] c_traductor
+import { TraductorUI }                            from './migration/Traductor';
+// [33] c_circulo_grafico
+import { CirculoGraficoUI }                       from './migration/CirculoGrafico';
+// [34] c_placa_fosc350c
+import { PlacaFosc350cUI }                        from './migration/PlacaFosc350c';
+// [35] c_ocupacion_de_vias
+import { OcupacionDeViasUI }                      from './migration/OcupacionDeVias';
+// [36] cuadro_de_notas_plugin
+import { CuadroDeNotasPluginUI }                  from './migration/CuadroDeNotasPlugin';
+// [37] c_detalles_layout
+import { DetallesLayoutUI }                       from './migration/DetallesLayout';
+// [38] c_simbolo_longitud_trazo_gazas
+import { SimboloLongitudTrazoGazasUI }            from './migration/SimboloLongitudTrazoGazas';
+// [39] c_margen_layout
+import { MargenLayoutUI }                         from './migration/MargenLayout';
+// [40] c_simbologia_plano_construccion
+import { SimbologiaPlanoConstruccionUI }          from './migration/SimbologiaPlanoConstruccion';
+// [41] c_elementos_tramo_g
+import { ElementosTramoGUI }                      from './migration/ElementosTramoG';
+// [42] c_dibuja
+import { DibujaUI }                               from './migration/Dibuja';
+// [43] c_plano_e
+import { PlanoEUI }                               from './migration/PlanoE';
+// [44] c_elemento_empalme_subterraneo_g
+import { ElementoEmpalmeSubterraneoGUI }          from './migration/ElementoEmpalmeSubterraneoG';
+// [45] c_celdas_grafico
+import { CeldasGraficoUI }                        from './migration/CeldasGrafico';
+// [46] c_linea_grafico
+import { LineaGraficoUI }                         from './migration/LineaGrafico';
+// [47] c_vp_ubicacion_cedo
+import { VpUbicacionCedoUI }                      from './migration/VpUbicacionCedo';
+// [48] c_tbl_cfg_mixin
+import { TblCfgMixinUI }                          from './migration/TblCfgMixin';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -256,6 +300,292 @@ function DemoElementoNodo() {
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+// =============================================================================
+// [27] Demo — polyline_layout
+// =============================================================================
+function DemoPolylineLayout() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>polyline_layout</h3>
+      <p style={s.meta}>Atributos base de polilinea: coordenadas y estilo.</p>
+      <PolylineLayoutUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [28] Demo — c_simbologia_ocupacion_de_ductos
+// =============================================================================
+function DemoSimbologiaOcupacionDeDuctos() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_simbologia_ocupacion_de_ductos</h3>
+      <p style={s.meta}>Tabla 1x1 con simbolo "ocupacion_de_ductos".</p>
+      <SimbologiaOcupacionDeDuctosUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [29] Demo — c_pep_dcs
+// =============================================================================
+function DemoPepDcs() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_pep_dcs</h3>
+      <p style={s.meta}>Tabla PEP: titulos y valores de referencia.</p>
+      <PepDcsUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [30] Demo — c_sello_notas_sct_cruz_sub
+// =============================================================================
+function DemoSelloNotasSctCruzSub() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_sello_notas_sct_cruz_sub</h3>
+      <p style={s.meta}>Notas generales para cruce subterraneo.</p>
+      <SelloNotasSctCruzSubUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [31] Demo — symbol_layout
+// =============================================================================
+function DemoSymbolLayout() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>symbol_layout</h3>
+      <p style={s.meta}>Listado de simbolos y muestra con color/rotacion.</p>
+      <SymbolLayoutUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [32] Demo — c_traductor
+// =============================================================================
+function DemoTraductor() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_traductor</h3>
+      <p style={s.meta}>Traductor de claves para planos y PEP.</p>
+      <TraductorUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [33] Demo — c_circulo_grafico
+// =============================================================================
+function DemoCirculoGrafico() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_circulo_grafico</h3>
+      <p style={s.meta}>Circulo centrado con radio escalado.</p>
+      <CirculoGraficoUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [34] Demo — c_placa_fosc350c
+// =============================================================================
+function DemoPlacaFosc350c() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_placa_fosc350c</h3>
+      <p style={s.meta}>Simbolo con color y transformaciones.</p>
+      <PlacaFosc350cUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [35] Demo — c_ocupacion_de_vias
+// =============================================================================
+function DemoOcupacionDeVias() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_ocupacion_de_vias</h3>
+      <p style={s.meta}>Simbolo con color y transformaciones.</p>
+      <OcupacionDeViasUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [36] Demo — cuadro_de_notas_plugin
+// =============================================================================
+function DemoCuadroDeNotasPlugin() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>cuadro_de_notas_plugin</h3>
+      <p style={s.meta}>Plugin para abrir el cuadro de notas.</p>
+      <CuadroDeNotasPluginUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [37] Demo — c_detalles_layout
+// =============================================================================
+function DemoDetallesLayout() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_detalles_layout</h3>
+      <p style={s.meta}>Textos de copyright del plano de detalle.</p>
+      <DetallesLayoutUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [38] Demo — c_simbolo_longitud_trazo_gazas
+// =============================================================================
+function DemoSimboloLongitudTrazoGazas() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_simbolo_longitud_trazo_gazas</h3>
+      <p style={s.meta}>Simbolo con color y transformaciones.</p>
+      <SimboloLongitudTrazoGazasUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [39] Demo — c_margen_layout
+// =============================================================================
+function DemoMargenLayout() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_margen_layout</h3>
+      <p style={s.meta}>Margen del layout con segmentos guia.</p>
+      <MargenLayoutUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [40] Demo — c_simbologia_plano_construccion
+// =============================================================================
+function DemoSimbologiaPlanoConstruccion() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_simbologia_plano_construccion</h3>
+      <p style={s.meta}>Cuadro de simbologia del plano de construccion.</p>
+      <SimbologiaPlanoConstruccionUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [41] Demo — c_elementos_tramo_g
+// =============================================================================
+function DemoElementosTramoG() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_elementos_tramo_g</h3>
+      <p style={s.meta}>Resumen de longitud y elementos habilitados.</p>
+      <ElementosTramoGUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [42] Demo — c_dibuja
+// =============================================================================
+function DemoDibuja() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_dibuja</h3>
+      <p style={s.meta}>Dibujo de trazos con traslacion y rotacion.</p>
+      <DibujaUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [43] Demo — c_plano_e
+// =============================================================================
+function DemoPlanoE() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_plano_e</h3>
+      <p style={s.meta}>Entidad de plano: proyecto, nombre, tipo y comentario.</p>
+      <PlanoEUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [44] Demo — c_elemento_empalme_subterraneo_g
+// =============================================================================
+function DemoElementoEmpalmeSubterraneoG() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_elemento_empalme_subterraneo_g</h3>
+      <p style={s.meta}>Empalme subterraneo con margenes internos.</p>
+      <ElementoEmpalmeSubterraneoGUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [45] Demo — c_celdas_grafico
+// =============================================================================
+function DemoCeldasGrafico() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_celdas_grafico</h3>
+      <p style={s.meta}>Celda con bordes opcionales dibujados sobre el area.</p>
+      <CeldasGraficoUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [46] Demo — c_linea_grafico
+// =============================================================================
+function DemoLineaGrafico() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_linea_grafico</h3>
+      <p style={s.meta}>Linea entre dos puntos proporcionales del area (OL + Turf).</p>
+      <LineaGraficoUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [47] Demo — c_vp_ubicacion_cedo
+// =============================================================================
+function DemoVpUbicacionCedo() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_vp_ubicacion_cedo</h3>
+      <p style={s.meta}>Viewport DETALLE DE CANALIZACION (filtro + titulo).</p>
+      <VpUbicacionCedoUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [48] Demo — c_tbl_cfg_mixin
+// =============================================================================
+function DemoTblCfgMixin() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_tbl_cfg_mixin</h3>
+      <p style={s.meta}>Configuracion de bordes de tabla (titulo / detalle).</p>
+      <TblCfgMixinUI />
     </section>
   );
 }
@@ -495,6 +825,138 @@ const DEMO_ITEMS: DemoItem[] = [
     label      : '[26] c_plano_desmontaje_cd',
     description: 'Plano desmontaje Caja Distribución — genera_plano() compone marco(3×1) + sello_proyecto_canalizacion + viewport_layout. Escala por ratio bounds o view_scale si ángulo > 0.1°.',
     render     : () => <PlanoDesmontajeCdUI />,
+  },
+  {
+    id         : '27-polyline-layout',
+    label      : '[27] polyline_layout',
+    description: 'Atributos base de polilinea: coordenadas y estilo.',
+    render     : () => <DemoPolylineLayout />,
+  },
+  {
+    id         : '28-simbologia-ocupacion-ductos',
+    label      : '[28] c_simbologia_ocupacion_de_ductos',
+    description: 'Tabla 1x1 con simbolo ocupacion_de_ductos.',
+    render     : () => <DemoSimbologiaOcupacionDeDuctos />,
+  },
+  {
+    id         : '29-pep-dcs',
+    label      : '[29] c_pep_dcs',
+    description: 'Tabla PEP con titulos y valores de referencia.',
+    render     : () => <DemoPepDcs />,
+  },
+  {
+    id         : '30-sello-notas-sct-cruz-sub',
+    label      : '[30] c_sello_notas_sct_cruz_sub',
+    description: 'Notas generales para cruce subterraneo.',
+    render     : () => <DemoSelloNotasSctCruzSub />,
+  },
+  {
+    id         : '31-symbol-layout',
+    label      : '[31] symbol_layout',
+    description: 'Listado de simbolos y muestra con color/rotacion.',
+    render     : () => <DemoSymbolLayout />,
+  },
+  {
+    id         : '32-traductor',
+    label      : '[32] c_traductor',
+    description: 'Traduccion de claves para planos y PEP.',
+    render     : () => <DemoTraductor />,
+  },
+  {
+    id         : '33-circulo-grafico',
+    label      : '[33] c_circulo_grafico',
+    description: 'Circulo centrado con radio escalado.',
+    render     : () => <DemoCirculoGrafico />,
+  },
+  {
+    id         : '34-placa-fosc350c',
+    label      : '[34] c_placa_fosc350c',
+    description: 'Simbolo con color y transformaciones.',
+    render     : () => <DemoPlacaFosc350c />,
+  },
+  {
+    id         : '35-ocupacion-de-vias',
+    label      : '[35] c_ocupacion_de_vias',
+    description: 'Simbolo con color y transformaciones.',
+    render     : () => <DemoOcupacionDeVias />,
+  },
+  {
+    id         : '36-cuadro-notas-plugin',
+    label      : '[36] cuadro_de_notas_plugin',
+    description: 'Plugin para abrir el cuadro de notas.',
+    render     : () => <DemoCuadroDeNotasPlugin />,
+  },
+  {
+    id         : '37-detalles-layout',
+    label      : '[37] c_detalles_layout',
+    description: 'Textos de copyright del plano de detalle.',
+    render     : () => <DemoDetallesLayout />,
+  },
+  {
+    id         : '38-simbolo-longitud-trazo-gazas',
+    label      : '[38] c_simbolo_longitud_trazo_gazas',
+    description: 'Simbolo con color y transformaciones.',
+    render     : () => <DemoSimboloLongitudTrazoGazas />,
+  },
+  {
+    id         : '39-margen-layout',
+    label      : '[39] c_margen_layout',
+    description: 'Margen del layout con segmentos guia.',
+    render     : () => <DemoMargenLayout />,
+  },
+  {
+    id         : '40-simbologia-plano-construccion',
+    label      : '[40] c_simbologia_plano_construccion',
+    description: 'Cuadro de simbologia del plano de construccion.',
+    render     : () => <DemoSimbologiaPlanoConstruccion />,
+  },
+  {
+    id         : '41-elementos-tramo-g',
+    label      : '[41] c_elementos_tramo_g',
+    description: 'Resumen de longitud y elementos habilitados.',
+    render     : () => <DemoElementosTramoG />,
+  },
+  {
+    id         : '42-dibuja',
+    label      : '[42] c_dibuja',
+    description: 'Dibujo de trazos con traslacion y rotacion.',
+    render     : () => <DemoDibuja />,
+  },
+  {
+    id         : '43-plano-e',
+    label      : '[43] c_plano_e',
+    description: 'Entidad de plano: proyecto, nombre, tipo y comentario.',
+    render     : () => <DemoPlanoE />,
+  },
+  {
+    id         : '44-empalme-subterraneo',
+    label      : '[44] c_elemento_empalme_subterraneo_g',
+    description: 'Empalme subterraneo con margenes internos.',
+    render     : () => <DemoElementoEmpalmeSubterraneoG />,
+  },
+  {
+    id         : '45-celdas-grafico',
+    label      : '[45] c_celdas_grafico',
+    description: 'Celda con bordes opcionales dibujados sobre el area.',
+    render     : () => <DemoCeldasGrafico />,
+  },
+  {
+    id         : '46-linea-grafico',
+    label      : '[46] c_linea_grafico',
+    description: 'Linea entre dos puntos proporcionales del area (OL + Turf).',
+    render     : () => <DemoLineaGrafico />,
+  },
+  {
+    id         : '47-vp-ubicacion-cedo',
+    label      : '[47] c_vp_ubicacion_cedo',
+    description: 'Viewport DETALLE DE CANALIZACION (filtro + titulo).',
+    render     : () => <DemoVpUbicacionCedo />,
+  },
+  {
+    id         : '48-tbl-cfg-mixin',
+    label      : '[48] c_tbl_cfg_mixin',
+    description: 'Configuracion de bordes de tabla (titulo / detalle).',
+    render     : () => <DemoTblCfgMixin />,
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

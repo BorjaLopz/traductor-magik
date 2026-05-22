@@ -1,0 +1,50 @@
+================================================================================
+CLASE: Dibuja
+ORIGEN: c_dibuja.magik
+FICHERO TS: Dibuja.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Dibuja graficos en una ventana a partir de una lista de trazos, aplicando
+rotacion (0) y traslacion al sistema de coordenadas del layout.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: oVentana << RoVentana / oVentana
+TS:    setVentana() / getVentana()
+
+Equivalencia:
+  - setter/getter del slot oVentana
+
+-----------------------------------------------------------------------
+
+Magik: oLayout << RoLay / oLayout
+TS:    setLayout() / getLayout()
+
+Equivalencia:
+  - setter/getter del slot oLayout
+
+-----------------------------------------------------------------------
+
+Magik: Dibuja(oGrafico)
+TS:    Dibuja.dibuja(trazos)
+
+Equivalencias directas:
+  - LnPagXini = layout.bounds.xmin
+  - LnPagYini = layout.bounds.ymax
+  - LnAngle = 0
+  - rotate + translate de puntos
+  - fill_on/draw_on -> poligono SVG en demo
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+DibujaUI
+  - Simula un layout y un trazo poligonal.
+  - Renderiza el poligono transformado.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Uso real de transform.new(), fill_style.called y line_style.called.
+- Integracion con oVentana real de Smallworld.
+================================================================================

@@ -1,0 +1,71 @@
+================================================================================
+CLASE: ElementoEmpalmeSubterraneoG
+ORIGEN: c_elemento_empalme_subterraneo_g.magik
+FICHERO TS: ElementoEmpalmeSubterraneoG.tsx
+================================================================================
+
+-- QUE HACE -------------------------------------------------------------------
+
+Configura un empalme subterraneo, genera su descripcion y calcula la
+ubicacion interna de etiqueta y simbolo.
+
+-- METODOS TRANSCRITOS ---------------------------------------------------------
+
+Magik: new(RoObjeto)
+TS:    ElementoEmpalmeSubterraneoG.create(entidad, area)
+
+Equivalencias directas:
+  - sNombre_Simbolo << "empalme_subterraneo"
+  - sDescripcion << prvGenera_Nombre_Empalme()
+  - nLong_Grafica << 100
+
+-----------------------------------------------------------------------
+
+Magik: prvGenera_Nombre_Empalme()
+TS:    prvGeneraNombreEmpalme()
+
+Equivalencias directas:
+  - RECTO -> ER-<num>
+  - DERIVACION -> ED-<num>
+  - EN DISTRIBUIDOR -> DI-<num>
+  - LINEA -> LI-<num>
+  - NINGUNO -> NN-<num>
+
+-----------------------------------------------------------------------
+
+Magik: dfn_ubicacion_elementos_internos()
+TS:    dfnUbicacionElementosInternos()
+
+Equivalencias directas:
+  - divide area en 20 renglones
+  - posicion etiqueta en 17
+  - calcula margenes sup/inf
+  - calcula margenes del simbolo con 63/300 y 1/4
+
+-----------------------------------------------------------------------
+
+Magik: Crea_elementos_internos()
+TS:    creaElementosInternos()
+
+Equivalencia:
+  - retorna el layout interno calculado
+
+-----------------------------------------------------------------------
+
+Magik: reposicionar_Area(RoArea)
+TS:    reposicionarArea(area, ptoContacto)
+
+Equivalencias directas:
+  - centra el bounds en torno al punto de contacto
+  - usa nLong_grafica para el ancho
+
+-- COMPONENTE REACT ------------------------------------------------------------
+
+ElementoEmpalmeSubterraneoGUI
+  - Muestra la descripcion y margenes calculados.
+
+-- LO QUE NO SE TRANSCRIBIO ----------------------------------------------------
+
+- Integracion con c_elemento_empalme_g base.
+- Dibujo real del simbolo y etiquetas en el canvas.
+================================================================================

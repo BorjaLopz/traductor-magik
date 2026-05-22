@@ -1,0 +1,55 @@
+Qué se transcribió
+
+  Magik: def_slotted_exemplar con slots app, vp_nombre
+  TypeScript: Clase CSectores con #gis: SectoresGisService + vpNombre
+  Notas: app (acceso al mapa) → GisService abstraction
+  ────────────────────────────────────────
+  Magik: ordenamiento(RoSecRope, RoSector_a)
+  TypeScript: Función pura ordenamiento(rope, chain)
+  Notas: Muta ambos argumentos. Los 4 casos del Magik preservados exactos
+  ────────────────────────────────────────
+  Magik: arma_sector(LoTCanaliz)
+  TypeScript: Función pura armaSector(tCanaliz)
+  Notas: Loop LoTini/LoTfin → currSize/prevSize. Detecta "sin progreso" y arranca nueva cadena
+  ────────────────────────────────────────
+  Magik: dibuja_trazo(LoSec_Rope, LoRadio)
+  TypeScript: dibujaTrazo(secRope, radio)
+  Notas: buffer(:circular) → turf.buffer. set_trail_from_geometry → SectoresGisService
+  ────────────────────────────────────────
+  Magik: define_shared_constant(:activate_properties_dialog_on_insert?, _false)
+  TypeScript: No migrado
+  Notas: Metadatos del framework Smallworld — sin equivalente en React
+  ────────────────────────────────────────
+  Magik: defined_attributes()
+  TypeScript: No migrado
+  Notas: Atributos del viewport layout — pertenece al sistema de formularios de Magik
+
+  Pendiente al conectar con mapa real
+
+  dibujaTrazo llama turf.buffer que espera WGS84. Si las coordenadas son en UTM/proyectadas, transformar antes con ol/proj.transform. El SectoresGisService se implementa
+  igual que GisService en ArbolDistritosParaRuta.
+
+
+  -----
+
+  Problema de dominio: en la base de datos, los segmentos de una canalización/ruta de cable se almacenan como tramos sueltos sin orden garantizado. Una query devuelve un
+  sector_rope con N segmentos que pueden estar en cualquier secuencia, incluso invertidos.
+
+  armaSector + ordenamiento resuelven esto:
+  Entrada (desordenada):       Salida (encadenada):
+    B→C                          A→B→C→D→E
+    D→E                          F→G  (cadena separada, no conecta)
+    A→B
+    C→D
+    F→G
+  Conecta extremos coincidentes → reconstruye la polilínea física continua de la canalización.
+
+  dibujaTrazo: sobre esa polilínea reconstruida, aplica un buffer circular (radio configurable) y lo pinta en el mapa como "trail" — la franja visual que representa la
+  zona de influencia o corredor del trazado. En planos impresos, esa franja indica el área que ocupará el croquis.
+
+  Casos reales donde se invoca:
+  - Al generar un croquis de canalización (el viewport_layout_mixin lo delata — es parte del sistema de impresión de planos)
+  - Al visualizar el trazado completo de una ruta antes de imprimir: toma todos los segmentos que pertenecen a esa ruta, los encadena y pinta el corredor
+
+  En resumen: pre-procesado geométrico obligatorio antes de cualquier operación sobre rutas — sin él, los segmentos son un conjunto desordenado sin utilidad visual ni
+  geométrica.

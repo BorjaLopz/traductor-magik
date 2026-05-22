@@ -1,0 +1,154 @@
+================================================================================
+COMPONENTE: CListaMaterialesEsquemaRed.tsx
+Clase Magik original: c_lista_materiales_esquema_red
+Fichero Magik original: c_lista_materiales_esquema_red.magik
+Autor original: Sigma Tao / Traza: Planos fibra óptica, c. 2015-2020
+Número de migración: [93]
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Sello "LISTA DE MATERIALES" para esquemáticos de red de fibra óptica.
+En Magik hereda de :c_base_sello_fibra. Tiene un slot propio :tipo con
+valores posibles :red (elementos de red) o :estructuras.
+
+Obtiene todos los objetos GIS con construction_status="PROYECTADO" del
+ACE esquemático activo, los agrupa por tipo/especificación y los lista en
+una tabla con columnas: No | DESCRIPCION | UNIDAD | CANTIDAD.
+
+En TypeScript se modela como componente React funcional con:
+  - selectFromMap()          → simula recorrido de geometry_set del mapa
+  - elementosDeProyecto()    → selecciona hash_table según .tipo
+  - keysOrder()              → sort natural alfanumérico de claves
+  - resolveDescripcion()     → lógica de 5 prioridades para el texto
+  - resolveUnidadCantidad()  → acumula metros (route) o cuenta pzas (point)
+  - llenaDatosCeldas()       → construye array de FilaMaterial
+  - CListaMaterialesEsquemaRedUI → componente con toggle tipo + tabla
+
+
+SLOT :tipo
+----------
+Magik: define_slot_access(:tipo, :writable, :public)
+TypeScript: estado React useState<TipoLista>('red')
+Valores:
+  :red          → muestra hash_table de elementos de red (cables, CEDOs, terminales, fusiones)
+  :estructuras  → muestra hash_table de estructuras (ductos, UUB)
+Afecta: el título de la tabla y qué hash_table se consulta.
+
+
+MÉTODOS MIGRADOS Y SU EQUIVALENCIA
+------------------------------------
+
+1. select_from_map()
+   Magik: obtiene `mv.get_selectable_geometry_set()` del ACE cuyo nombre
+   contenga "esquema". Itera geometrías, filtra por:
+     - itergeo.rwo.owner.construction_status = "PROYECTADO"
+   Construye dos hash_tables:
+     LOestructuras: clave = collection|tipo_obra (underground_route), collection|spec_id (uub), collection|
+     Loelementos:  clave = collection|spec_id si tiene spec_id, else collection|
+   Además itera mit_internal_connections del owner para capturar fusiones PROYECTADO.
+   TypeScript: función selectFromMap() → [Map<string,ElementoRed[]>, Map<string,ElementoRed[]>]
+   Mock: MOCK_RED (elementos de red) + MOCK_ESTRUCTURAS; todos PROYECTADO.
+
+2. elementos_de_proyecto()
+   Magik: según .tipo selecciona ht = LOestructuras o Loelementos.
+   Aplana todos los sets de ht en LoElementosall (rope).
+   TypeScript: función elementosDeProyecto(tipo) → [ElementoRed[], Map]
+   Equivalencia:
+     .tipo _is :red         → ht = elementos
+     else                   → ht = estructuras
+     ht.keys_and_elements() → flatten en array
+
+3. obten_lista_materiales()
+   Magik: wrapper que llama elementos_de_proyecto() y devuelve (LoElemResumen, ht).
+   TypeScript: inlined dentro de llenaDatosCeldas().
+
+4. keys_Order(ht)
+   Magik: sorted_collection con order_proc basado en strings_with_numbers.
+   TypeScript: [...ht.keys()].sort() con localeCompare({numeric:true, sensitivity:'base'})
+   Efecto: "underground_route|PERFORACION" < "underground_route|ZANJA" (orden natural).
+
+5. configura_tabla()
+   Magik: crea tbl_lista_materiales con 2+renglones filas, 4 cols.
+   Dimensiones:
+     filas: altura 6mm cada una
+     col1:  6mm  (No)
+     col2:  60mm (Descripcion)
+     col3:  35mm (Unidad)
+     col4:  20mm (Cantidad)
+   Bordes ocultos fila 1: Sup/Der/Izq de todas las celdas → solo se ve la celda 1,2 con título.
+   TypeScript: tabla HTML con COL_WIDTHS={no:30, descripcion:300, unidad:175, cantidad:100}px.
+   Fila 1 col 1 vacía con border:none; título en colSpan=3 con borderTop:none.
+
+6. etiqueta_celdas()
+   Magik: asigna_texto_celda(tbl,1,2,titulo,30) + cabeceras fila 2 (No/DESCRIPCION/UNIDAD/CANTIDAD).
+   TypeScript:
+     titulo: tipo==='red' ? 'LISTA DE MATERIALES DE ELEMENTOS DE RED' : 'LISTA DE MATERIALES ESTRUCTURAS'
+     renderizado en <thead>
+
+7. llena_datos_celdas()
+   Lógica principal de descripción — prioridad:
+     1. source_collection=:sheath → external_name + spec.clase + fiber_quantity
+     2. responds_to?(:spec_id)    → spec_id.write_string
+     3. responds_to?(:tipo_conexion) → tipo_conexion.write_string
+     4. source_collection in [underground_route, figure_eight, user!_terminal_fo, uub]
+        → Iterkey.split_by("|")[2] (parte tras el separador)
+     5. else → source_collection.external_name
+   Post-procesado: si desc vacío O external_name="CEDO" → prepend external_name.
+   TypeScript: función resolveDescripcion(key, item) → string
+
+   Lógica de unidad/cantidad:
+     primary_geometry=:route:
+       source_collection=:sheath:
+         si km_real_medido → long_opt (user!_long_opt.value_in(:m))
+         si longitud<=0    → calculated_length + sum_of_slack_lengths
+       else (underground_route, etc.) → measured_length
+       unidad = "metros", cantidad = total.toFixed(2)
+     primary_geometry=:point → unidad="pzas", cantidad=items.length
+   TypeScript: función resolveUnidadCantidad(items) → {unidad, cantidad}
+
+8. actualiza_datos()
+   Magik: llena_datos_celdas() + draw_content_on(window).
+   TypeScript: cargar() con useEffect + setFilas — el render es automático en React.
+
+
+DATOS MOCK
+----------
+MODO :red — 4 grupos:
+  sheath|     → 2 cables ADSS-24 (SH-001 lon_opt=350m, SH-002 calculated=295m) → 645.00 metros
+  sheath|     → 1 cable SMF-28-48 (SH-003 long_opt=210m) → 210.00 metros
+  NOTA: en mock los sheaths con igual spec se agrupan bajo "sheath|"
+  cedo|CEDO-4F            → 2 CEDOs → 2 pzas
+  user!_terminal_fo|      → 3 terminales → 3 pzas
+  mit_internal_connection| → 4 fusiones → 4 pzas
+
+MODO :estructuras — 3 grupos:
+  underground_route|PERFORACION → 2 ductos → 220.50 metros
+  underground_route|ZANJA       → 1 ducto  → 210.00 metros
+  uub|UUB-4V                    → 2 UUB    → 2 pzas
+
+
+LO QUE NO SE HA MIGRADO
+------------------------
+- Acceso real a GIS (mv.get_selectable_geometry_set()): sustituido por mock.
+- Navegación real de structures y mit_internal_connections del owner.
+- float_format.new(:float_decimal_places,2): sustituido por toFixed(2).
+- draw_content_on(window): sustituido por render HTML/CSS.
+- Validación ren_tbl >= cont (límite de filas de tabla real).
+- figure_eight: tipo especial con key = collection|external_name+clase+metros.
+- Caso desc_mat _is _unset tras prepend de CEDO (doble-guardia del original).
+- mit_manager.modelit_dataset: no aplica en contexto web.
+
+
+DEPENDENCIAS EXTERNAS
+---------------------
+- React (useState, useEffect)
+- Sin Turf.js: no hay cálculos espaciales.
+- Sin OpenLayers: no hay renderizado en mapa.
+
+
+INTEGRACIÓN EN App.tsx
+-----------------------
+Import:  import { CListaMaterialesEsquemaRedUI } from './migration/CListaMaterialesEsquemaRed';
+Entry:   DEMO_ITEMS id='93-lista-materiales-esquema-red', render: () => <CListaMaterialesEsquemaRedUI />
+================================================================================

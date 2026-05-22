@@ -1,0 +1,146 @@
+================================================================================
+COMPONENTE: CVpPlanoProjCan.tsx
+Clase Magik original: c_vp_plano_proy_can
+Fichero Magik original: c_vp_plano_proy_can.magik
+Autor original: Sigma Tao / Physical Network Inventory, c. 2009
+Número de migración: [94]
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Viewport de layout para planos de canalización de cobre. Hereda de
+:viewport_layout. Secciona automáticamente una ruta de ductos/canalización
+en múltiples planos de papel, mostrando la sección i-ésima con su ángulo
+de rotación y marcas de continuación entre secciones.
+
+Slots principales:
+  oGeometria       → Feature<LineString> de la sección actual
+  iIndicePlano     → número de plano (1-based)
+  iNumeroSecciones → total de secciones generadas
+  oWindows         → ventana de dibujo (en TS: referencia al SVG)
+
+Atributos (defined_attributes):
+  Indice    → índice de plano a mostrar (0 = automático)
+  pozo      → 'Ninguno'|'Inicial'|'Final'|'Ambos'
+  xMin/yMin/xMax/yMax → bbox para filtro de objetos visibles
+  ajusta_al_marco → 'Si'|'No'
+
+
+MÉTODOS MIGRADOS Y SU EQUIVALENCIA
+------------------------------------
+
+1. draw_content_on(windows)
+   Magik:
+     a) Determina job_type (Cobre/Fibra_local) → obtiene LoOE
+     b) LoTramoCobre.obtener_canalizacion() → concatena route.sectors en LoSector
+     c) c_seccionamiento.new(200,1,10,21,18).do_seccionamiento(LoSector) → LoSecciones
+     d) Asigna oGeometria y view_angle de la sección iIndicePlano
+     e) Llama a _super.draw_content_on + dibuja geometría con estilo GIS
+     f) Llama DibujarMarcasDeContinuacion si hay >1 sección
+     g) Llama DibujaLineaEntrePozoIniYFin
+   TypeScript:
+     - calcSecciones(route) usa turf.lineSliceAlong y turf.length
+     - Sección activa: secciones[idx-1].geom
+     - viewAngleDeg: turf.bearing del primer segmento de la sección
+     - Rendering: SVG en vez de canvas de plano
+
+   Parámetros de c_seccionamiento.new(200, 1, 10, 21, 18):
+     scale=200 (1:200), step=1, margin=10mm, paper_w=21cm, paper_h=18cm
+     → sección efectiva ≈ 40m reales
+
+2. DibujarMarcasDeContinuacion(window, indice, geom)
+   Magik: dibuja brackets Z en los extremos de sección con letras A,B,C...
+   Tres casos:
+     iIndicePlano=1        → solo derecha (último segmento)
+     iIndicePlano=numSec   → solo izquierda (primer segmento invertido)
+     medio                 → ambos lados
+
+   Forma del bracket Z (derecho):
+     Segmento 1: perpPt(end, bear, 10, -90) → perpPt(end, bear, 8, -90)  [tick exterior]
+     Segmento 2: perpPt(end, bear,  4, -90) → perpPt(end, bear, 4, +90)  [barra cruzada, 4m]
+     Segmento 3: perpPt(end, bear,  8, +90) → perpPt(end, bear, 10, +90) [tick interior]
+
+   Forma del bracket Z (izquierdo, segmento invertido):
+     Segmento 1: perpPt(start, bear_rev, 10, +90) → (8, +90)
+     Segmento 2: perpPt(start, bear_rev,  7, +90) → (7, -90)  [barra a 7m, no 4m]
+     Segmento 3: perpPt(start, bear_rev,  8, -90) → (10, -90)
+
+   Color: rgb(175,175,93) — dorado-oliva
+   Letras: LsABC[PiIndice] para derecho, LsABC[PiIndice-1] para izquierdo
+   TypeScript: buildZMarkRight(coords) / buildZMarkLeft(coords) usan
+               turf.bearing() + turf.destination() para todos los puntos
+
+3. DibujaLineaEntrePozoIniYFin(window, plano)
+   Magik: solo ejecuta si .pozo="Inicial". Busca el viewport con .pozo="Final"
+   en la misma layout_page. Traza 4 puntos:
+     1. LoCoordPozo1 (transformada al VP inicial)
+     2. LoCoordPozo1.x, (page.height - coord.y - 200)  ← sube hasta ~top del plano
+     3. LoCoordPozo2.x, misma Y                         ← horizontal hasta pozo2
+     4. LoCoordPozo2 (transformada al VP final)
+   Resultado: línea en "U" que cruza el borde superior del plano conectando pozos.
+   TypeScript: pts2path([p1svg, [p1svg.x, topY], [p2svg.x, topY], p2svg])
+   Activada cuando pozo='Inicial' o 'Ambos'.
+
+4. objetos_visibles(PcollResultSet)
+   Magik: LcollResulSet.select(:bounds_interacting_with, LoBound)
+   donde LoBound = bounding_box.new(xMin, yMin, xMax, yMax)
+   TypeScript: objetosVisibles(secBbox, MOCK_GIS_OBJECTS)
+   Filtra objetos cuyo coord esté dentro del bbox GeoJSON de la sección.
+   En la demo el bbox de cada sección se obtiene con turf.bbox(seccion.geom).
+
+5. geometry_set_for_render
+   Magik: _super.geometry_set_for_render → filtra con objetos_visibles.
+   TypeScript: visibles = showObj ? objetosVisibles(bbox, MOCK_GIS_OBJECTS) : []
+   Renderizado como cuadros coloreados (■ cedo=azul, terminal=verde, uub=rojo).
+
+6. val_falso_verdadero
+   Magik: devuelve rope ["Ninguno","Inicial","Final","Ambos"] para el atributo :pozo.
+   TypeScript: type PozoTipo = 'Ninguno'|'Inicial'|'Final'|'Ambos'
+   Renderizado como 4 botones de selección.
+
+7. initialise_for_page
+   Magik: selection=false, trail=false, fill=unset, outline=unset.
+   TypeScript: estado inicial (no requiere implementación explícita).
+
+
+HERRAMIENTA TURF.JS UTILIZADA
+------------------------------
+  turf.length(route, {units:'meters'})       → longitud total del tramo
+  turf.lineSliceAlong(route, start, end, ...) → sección i-ésima
+  turf.bearing(p1, p2)                        → ángulo view_angle + bearing Z-marks
+  turf.destination(coord, distKm, bearing)    → perpPt → puntos del bracket Z
+  turf.bbox(feature)                          → bbox para objetos_visibles
+
+
+DATOS MOCK
+----------
+MOCK_ROUTE: 4 puntos WGS84 cerca de CDMX, ~170m total → 5 secciones × 40m
+MOCK_POZO1: primer punto de la ruta (pozo inicial)
+MOCK_POZO2: último punto de la ruta (pozo final)
+MOCK_GIS_OBJECTS: 5 objetos (1 CEDO, 2 terminales, 2 UUB) distribuidos en la ruta
+SECTION_LEN_M = 40 (equivale a c_seccionamiento.new(200,...,21,...))
+
+
+LO QUE NO SE HA MIGRADO
+------------------------
+- Acceso real a GIS (layout_document, tramo_cobre, obtener_canalizacion): mock.
+- Soporte job_type Cobre vs Fibra_local (distintas fuentes de OE).
+- Transform de coordenadas GIS→viewport con rotación real.
+- Renderizado con estilo GIS real (rwo_style_system → underground_route style).
+- Búsqueda de viewport "Final" en la misma layout_page para la línea U.
+- Ajuste dinámico de bounds del viewport (código comentado en el original).
+- draw_vtext_transform para etiqueta "PLANO NUMERO N de M" (comentado en original).
+
+
+DEPENDENCIAS EXTERNAS
+---------------------
+- React (useMemo, useState)
+- @turf/turf: length, lineSliceAlong, bearing, destination, bbox, point
+- Sin OpenLayers: rendering vía SVG inline.
+
+
+INTEGRACIÓN EN App.tsx
+-----------------------
+Import:  import { CVpPlanoProjCanUI } from './migration/CVpPlanoProjCan';
+Entry:   DEMO_ITEMS id='94-vp-plano-proy-can', render: () => <CVpPlanoProjCanUI />
+================================================================================

@@ -1,0 +1,133 @@
+================================================================================
+COMPONENTE: CTablaCablesProy.tsx
+Clase Magik original: tabla_cables_proy
+Fichero Magik original: tabla_cables_proy.magik
+Autor original: Alejandro Enriquez Gijon — GE Network Solutions, Mayo 2006
+Número de migración: [92]
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Tabla de layout que lista cables de cobre (copper_cable) agrupados por spec_id,
+mostrando capacidad, tipo, calibre y cantidad total en metros.
+En Magik hereda de :layout_element. No añade slots propios.
+
+La clase busca geometrías en el world del primer viewport del layout_page,
+filtra por rwo_type=:copper_cable y construction_status="EXISTENTE", las
+ordena por spec_id y las agrupa acumulando longitudes.
+
+NOTA: el comentario del código original dice "cables proyectados" pero el filtro
+real aplica construction_status="EXISTENTE". Se reproduce fielmente en TypeScript
+y se documenta esta inconsistencia del código original.
+
+En TypeScript se modela como componente React funcional con:
+  - Constantes CAMPOS y DATOS_COLUMNA (equivalentes a define_shared_constant)
+  - buscarElementos() async — simula la traversal de geometry_set del viewport
+  - agruparElementos() async — agrupa en Map<string, GrupoCable>
+  - ACCESSORS — map de funciones que reemplazan los métodos accessores
+  - CTablaCablesProyUI — componente principal con render de título + tabla
+
+
+CONSTANTES COMPARTIDAS — define_shared_constant
+------------------------------------------------
+:campos → CAMPOS = ['capacidad','tipo','calibre','cantidad']
+  Define el orden de las columnas en el render.
+
+:datos_columna → DATOS_COLUMNA: Record<Campo, {label, width}>
+  Magik original: property_list con [label, ancho_dmm, :accessor_method]
+  TypeScript: anchos en px proporcionales (dmm ÷ 2):
+    capacidad  → label:"Capacidad",      width:100  (orig 200dmm)
+    tipo       → label:"Tipo",           width:125  (orig 250dmm)
+    calibre    → label:"Calibre",        width:75   (orig 150dmm)
+    cantidad   → label:"Cantidad (mts)", width:150  (orig 300dmm)
+
+:altura_cabecera = 70dmm → 35px
+:altura_fila     = 50dmm → 25px
+
+
+MÉTODOS MIGRADOS Y SU EQUIVALENCIA
+------------------------------------
+
+1. buscar_elementos()
+   Magik: obtiene viewport, accede a world.geometry_set(), itera con
+   elements_with_sts(), filtra rwo_type=:copper_cable y
+   construction_status="EXISTENTE". Ordena con sorted_collection.sort_by(:spec_id).
+   TypeScript: función async buscarElementos() → Promise<CableRwo[]>
+   Filtro: .filter(c => c.rwo_type==='copper_cable' && c.construction_status==='EXISTENTE')
+   Orden: .sort((a,b) => a.spec_id.localeCompare(b.spec_id))
+
+2. agrupar_elementos()
+   Magik: hash_table con clave=spec_id.as_symbol(), vector[1]=spec_info, vector[2]=longitud_acumulada.
+   Longitud: measured_length si existe, si no calculated_length.
+   TypeScript: función async agruparElementos() → Promise<Map<string,GrupoCable>|null>
+   Equivalencias:
+     hash_table.new()               → new Map<string, GrupoCable>()
+     grupos[key] _is _unset         → !grupos.has(key)
+     grupos[key][1] << cable.spec_info → grupos.set(key, {spec_info:..., total_length:0})
+     grupos[key][2].default(0.0)+dis → grupos.get(key)!.total_length += dis
+     measured_length _isnt _unset   → cable.measured_length ?? cable.calculated_length ?? 0
+
+3. Métodos accessores — capacidad/tipo/calibre/cantidad
+   Magik: métodos de instancia que reciben vec (el vector del hash_table).
+   TypeScript: funciones puras que reciben GrupoCable:
+     capacidad(g) → `${g.spec_info.size} Ps.`     (Magik: vec[1].size.write_string+" Ps.")
+     tipo(g)      → g.spec_info.type               (Magik: vec[1].type)
+     calibre(g)   → g.spec_info.gauge              (Magik: vec[1].gauge)
+     cantidad(g)  → g.total_length.toFixed(2)      (Magik: float_format(2).format(vec[2]))
+   Todos agrupados en ACCESSORS: Record<Campo, fn> — invocados como ACCESSORS[campo](grupo).
+   Magik original usaba: _self.perform(_self.datos_columna[campo][3], elemento)
+   TypeScript replica ese dispatch dinámico con el mapa ACCESSORS.
+
+4. draw_content_on(window)
+   Magik: dibuja directamente en el canvas del plano:
+     - Líneas horizontales (sector.new_with + draw_on)
+     - Separadores verticales de columna
+     - Texto centrado con draw_vtext_transform
+     - Título "CABLE PROYECTADO A INSTALAR:" en rojo/bold (vts_aum = vtext_style + colour.called(:red))
+   TypeScript: renderizado HTML/CSS:
+     - Div título centrado con color:#cc0000 y borde superior
+     - <table> con <thead> (cabeceras) y <tbody> (filas de datos)
+     - Ancho fijo por columna (tableLayout:'fixed')
+     - Color datos: #cc0000 (equivalente a colour.called(:red) en el original)
+     - Altura de celdas corresponde a ALTURA_CABECERA/ALTURA_FILA
+
+5. default_fill_style_attribute / default_line_style_attribute
+   Magik: shared_constants para estilos de relleno y línea.
+   TypeScript: no aplicables; el render es CSS puro.
+
+6. allowed_on_menu? = false
+   Magik: impide que aparezca en el menú contextual del layout.
+   TypeScript: no aplica (contexto de selección de plano no existe aquí).
+
+
+DATOS MOCK
+----------
+4 spec_ids distintos:
+  CA-050: Aéreo, AWG-26, 50 pares → 2 cables → total 200.25m
+  CA-100: Aéreo, AWG-19, 100 pares → 2 cables EXISTENTE (1 PROYECTO filtrado) → total 425.8m
+  CA-200: Subterráneo, AWG-24, 200 pares → 1 cable → total 320.00m
+  CA-400: Subterráneo, AWG-22, 400 pares → 1 cable → total 512.75m
+Elementos filtrados: 1 cable PROYECTO (CA-100), 1 cable fiber_cable (FO-001).
+
+
+LO QUE NO SE HA MIGRADO
+------------------------
+- Acceso real a GIS (layout_page, viewport, world.geometry_set): sustituido por mock.
+- Dibujado vectorial en canvas de plano (sector, bounding_box, draw_on): sustituido por HTML/CSS.
+- draw_vtext_transform con vtext_style, font y escala real en dmm.
+- allowed_on_menu? y default_fill/line_style_attribute (no aplican en contexto web).
+- Contexto de layout_element (bounds, coordenadas reales de plano).
+
+
+DEPENDENCIAS EXTERNAS
+---------------------
+- React (useState, useEffect)
+- Sin Turf.js: no hay cálculos espaciales.
+- Sin OpenLayers: no hay renderizado en mapa.
+
+
+INTEGRACIÓN EN App.tsx
+-----------------------
+Import:  import { CTablaCablesProyUI } from './migration/CTablaCablesProy';
+Entry:   DEMO_ITEMS id='92-tabla-cables-proy', render: () => <CTablaCablesProyUI />
+================================================================================

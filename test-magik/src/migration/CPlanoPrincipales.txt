@@ -1,0 +1,120 @@
+CPlanoPrincipales.tsx — Migración de c_plano_principales.magik
+===============================================================
+
+Origen
+------
+Fichero Magik: adiciones_layout/source/planos/c_plano_principales.magik
+Clase:         c_plano_principales (extends :layout_element + :viewport_layout_mixin)
+Autor orig.:   Alejandro Enriquez Gijón / Sigma Tao (Abril 2005)
+
+Propósito
+---------
+Genera el plano completo de "Red Principal" en formato 24"×36" (9144×6096).
+Compone:
+  · Hoja (paper_size 9144 × 6096).
+  · Marco de 6×3 módulos carta (Carta_X=2160, Carta_Y=2790) con marcas
+    de doblez a lo largo de los ejes X/Y y 4 esquinas en L.
+  · Viewport principal (200,200)→(11000,8900) mapeado a la vista activa
+    GIS (CMV) de 1.2M × 1M unidades.
+  · Título "PRINCIPALES" en azul (#3025B8), fontSize 25, en
+    (9000,200)→(11000,600).
+  · (Opcional) Sello: c_pep_dcs(numero_hoja=3, total_hoja=8) +
+    c_sello_estandar("DIV DTOS").
+
+Constantes Magik (define_shared_constant)
+-----------------------------------------
+  Carta_X    = 2160       (ancho módulo carta)
+  Carta_Y    = 2790       (alto módulo carta)
+  origen     = 200        (offset esquina inferior-izq)
+  Separacion = 50         (sangría interior del marco)
+
+Tipos de marco — set_marco(:T0..:T3)
+------------------------------------
+  T0 → 4×2 módulos    (origen, origen, origen + 4·Carta_X, origen + 2·Carta_Y)
+  T1 → 4×3 módulos
+  T2 → 5×3 módulos
+  T3 → 6×3 módulos    (default usado por genera_marco)
+
+Métodos transcritos
+-------------------
+  generaPlano({tipoMarco?, conSello?}): PlanoRender
+    Orquestador. Replica Magik:
+      LoHoja = abrir_hoja(); set_paper_size(9144, 6096);
+      LoVport = agrega_viewport(LoHoja);
+      configura_plano(LoHoja, LoVport).
+
+  setMarco(tipo): Bounds
+    Devuelve el bbox del marco según múltiplos de Carta_X × Carta_Y.
+
+  generaMarco(tipo='T3'): { marco, segs }
+    1) Rectángulo interior con sangría SEPARACION.
+    2) Marcas de doblez X cada Carta_X (rango range(origen+Carta_X, marco.xmax-10, Carta_X))
+       — arriba (ymax-50 a ymax-100) + abajo (ymin+50 a ymin+100).
+    3) Marcas de doblez Y cada Carta_Y — izq + der.
+    4) 4 esquinas en L (3 puntos cada una).
+    5) Escala uniforme 1.009345 sobre todo el conjunto (transform.scale Magik).
+
+  agregaViewport(): ViewportLayout
+    Viewport (200,200)→(11000,8900) con map_extent (0,0)→(1.2M,1M).
+
+  configuraPlano(): { titulo: TextoLayout }
+    Título "PRINCIPALES" #3025B8, fontSize 25.
+
+  generaSello(): SelloRender
+    PEP DCS (150,320)→(1030,1230) + sello estándar (150,150)→(1900,300).
+
+Equivalencia técnica Magik → TypeScript
+---------------------------------------
+  bounding_box.new + .sectors
+       → 4 segmentos del rectángulo (inf/der/sup/izq).
+
+  polyline_layout.new + sectors<<...
+       → array de LineString features sobre VectorSource.
+
+  transform.new.scale(1.009345)
+       → segs.map(s => s.map(([x,y]) => [x*k, y*k])).
+
+  textbox_layout.new() + colour.new_from_hex
+       → TextoLayout { texto, bounds, color, fontSize } + Style(Text).
+
+  smallworld_product.pni_application() + plugin(:layout_plugin)
+                                       + plugin(:map_plugin).current_map_view
+       → mock-out (no se modela el SW PNI runtime).
+
+  viewport_layout.new_with(:bounds, ...) + map_viewport_on_map_view(vp, cmv, ext)
+       → ViewportLayout { bounds, fillStyle, outlineStyle, mapExtent }.
+
+  c_pep_dcs.new_with + numero_hoja + total_hoja
+  c_sello_estandar.crea_sello(titulo, bounds)
+       → SelloRender { pepDcs, pepNumeroHoja, pepTotalHoja, selloEstandar }.
+
+API pública
+-----------
+  class CPlanoPrincipales
+    marco: Bounds | null
+    vpNombre: string | null
+    setMarco(tipo: MarcoTipo): Bounds
+    generaMarco(tipo?): { marco, segs }
+    agregaViewport(): ViewportLayout
+    configuraPlano(): { titulo: TextoLayout }
+    generaSello(): SelloRender
+    generaPlano(opts?): PlanoRender
+    marcoGeoJSON(): GeoJSON.Feature<Polygon> | null
+
+  function CPlanoPrincipalesUI(): JSX.Element
+    Render OL v10 con 5 capas (hoja, viewport, sello, marco, título).
+    Controles: tipo de marco (T0..T3) + toggle sello.
+
+Notas de migración
+------------------
+· El comentario `_self.sello(LoPagina)` está comentado en el Magik original
+  — la versión TS lo expone tras toggle UI (no se invoca por defecto).
+· El bloque norte (`northarrow_layout.new_with`) también está comentado
+  en el Magik — se omite en la migración por consistencia.
+· La línea `var1 << _self` (global) es debug del autor original — se omite.
+· El comentario "antes" y `write(".marco: ", _self.marco)` son logs de
+  depuración del Magik — se omiten en TS.
+· Las constantes Marco_T0..Marco_T3 están comentadas en el código fuente
+  porque dependen de `_self.origen` que no funciona en el contexto
+  define_shared_constant (se evalúa antes del slot). Se reescriben como
+  función setMarco(tipo) en TS.

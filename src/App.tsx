@@ -63,6 +63,14 @@ import { CTablaGeoreferenciaUI }                 from './migration/CTablaGeorefe
 import { CfgBloqueTitdetEditableMixinUI }        from './migration/CfgBloqueTitdetEditableMixin';
 // [26] c_plano_desmontaje_cd
 import { PlanoDesmontajeCdUI }                    from './migration/PlanoDesmontajeCd';
+// [29] c_simbolo_grafico
+import { CSimboloGraficoUI }                     from './migration/CSimboloGrafico';
+// [30] c_gui_edita_sello_resumen_proyecto
+import { CGuiEditaSelloResumenProyectoUI }        from './migration/CGuiEditaSelloResumenProyecto';
+// [31] preview_symbol_plugin
+import { PreviewSymbolPluginUI }                  from './migration/PreviewSymbolPlugin';
+// [32] c_celdas
+import { CCeldasUI }                              from './migration/CCeldas';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -291,6 +299,48 @@ function DemoCfgBloqueTitdetEditableMixin() {
     <section style={s.section}>
       <h3 style={s.h3}>c_cfg_bloque_titdet_editable_mixin</h3>
       <CfgBloqueTitdetEditableMixinUI />
+    </section>
+  );
+}
+
+// =============================================================================
+// [29] Demo — c_simbolo_grafico
+// =============================================================================
+function DemoCSimboloGrafico() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_simbolo_grafico</h3>
+      <CSimboloGraficoUI />
+    </section>
+  );
+}
+
+// ── [29] c_simbolo_grafico — anterior último componente ──────────────────────
+function DemoPreviewSymbolPlugin() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>preview_symbol_plugin</h3>
+      <PreviewSymbolPluginUI />
+    </section>
+  );
+}
+
+// ── [31] preview_symbol_plugin — anterior último componente ──────────────────
+function DemoCCeldas() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_celdas</h3>
+      <CCeldasUI />
+    </section>
+  );
+}
+
+// ── [30] c_gui_edita_sello_resumen_proyecto — anterior último componente ──────
+function DemoCGuiEditaSelloResumenProyecto() {
+  return (
+    <section style={s.section}>
+      <h3 style={s.h3}>c_gui_edita_sello_resumen_proyecto</h3>
+      <CGuiEditaSelloResumenProyectoUI />
     </section>
   );
 }
@@ -559,6 +609,34 @@ const DEMO_ITEMS: DemoItem[] = [
     label      : '[26] c_plano_desmontaje_cd',
     description: 'Plano desmontaje Caja Distribución — genera_plano() compone marco(3×1) + sello_proyecto_canalizacion + viewport_layout. Escala por ratio bounds o view_scale si ángulo > 0.1°.',
     render     : () => <PlanoDesmontajeCdUI />,
+  },
+  // ── [28] c_cfg_bloque_titdet_editable_mixin — anterior último componente ─────
+  {
+    id         : '29-c-simbolo-grafico',
+    label      : '[29] c_simbolo_grafico',
+    description: 'Símbolo puntual GIS: catálogo sw_gis!gis_point_style (8 símbolos), :rotate/:flipped?/:mirror? → SVG transform. new() / new_from() / init_with() / serialSlots().',
+    render     : () => <DemoCSimboloGrafico />,
+  },
+  // ── [29] c_simbolo_grafico — anterior último componente ─────────────────────
+  {
+    id         : '30-c-gui-edita-sello-resumen-proyecto',
+    label      : '[30] c_gui_edita_sello_resumen_proyecto',
+    description: 'GUI editor de sello resumen proyecto: frame→modal, text_window→textarea, escribeTextoSelloAVentana()/escribeTextoAlSello() con .toUpperCase(), obtenSello() por className.',
+    render     : () => <DemoCGuiEditaSelloResumenProyecto />,
+  },
+  // ── [30] c_gui_edita_sello_resumen_proyecto — anterior último componente ─────
+  {
+    id         : '31-preview-symbol-plugin',
+    label      : '[31] preview_symbol_plugin',
+    description: 'Plugin GIS de vista previa de símbolos: sigc_style_view (merge/post), manage_actions() habilita/deshabilita sw_actions según writable?+mode, c_preview_symbol_dialog con catálogo y databus :symbol_name.',
+    render     : () => <DemoPreviewSymbolPlugin />,
+  },
+  // ── [31] preview_symbol_plugin — anterior último componente ─────────────────
+  {
+    id         : '32-c-celdas',
+    label      : '[32] c_celdas',
+    description: 'Contenedor de cuadrícula 2D: new(RnRen,RnCol) llena collCeldas con Map<pos,CCelda>; celda(ren,col) accede por índice lineal nNumCol*(ren−1)+col; serial_slots/new_from_serial; validación > 0 en setters.',
+    render     : () => <DemoCCeldas />,
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

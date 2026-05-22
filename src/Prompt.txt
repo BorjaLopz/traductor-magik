@@ -9,214 +9,200 @@ Genera un fichero extensión .tsx con el código resultante obtenido de transfor
 Devuelve el código modularizado y añade comentarios cortos explicando la equivalencia.
 Aquí está el código Magik:
 
-#% text_encoding = iso8859_1
-
-def_mixin(:c_cfg_bloque_titdet_editable_mixin)
+_package user
 $
+#remex(:c_celdas)
+$
+def_slotted_exemplar(:c_celdas,
+                     {
+                      {:nNumRen,      _unset}, # Numero de renglones que tendra celdas
+		      {:nNumCol,      _unset}, # Numero de columnas que tendra celdas
+		      {:collCeldas,   _unset}  # Coleccion de celdas
+		     }
+)
 
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_cfg_bloque_titdet_editable_mixin.cfg_tbl_titulo(pTbl)
-	#---------------------------------------------------
-	## <Req. #> : <Description>
-	##
-	#
-	# Customization for Project : 
-	#
-	#---------------- Revision History -----------------
-	# (22/07/26 des_david) : Created
-	#-------------- End Revision History ---------------
+$
+c_celdas.define_slot_access(:collCeldas,    :writable, :private)
+$
+c_celdas.define_slot_access(:nNumCol,       :writable, :private)
+$
+c_celdas.define_slot_access(:nNumRen,       :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas.celda(RnRen, RnCol)
+## Objetivo: regresa una celda de acuerdo a una posicion (ren,
+##           col) proporcionada
+## Parámetros de entrada:
+## 	Entero - RnRen - Numero de renglon en el que se encuentra la celda
+## 	Entero - RnCol - Numero de columna en la que se encuentra la celda
+## Parámetros de salida:   
+## 	c_celda - Objeto celda solicitado 
+## Regresa: c_celda - regresa un objeto celda
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	# Se valida que la celda solicitada exista
+	_if RnRen > _self.nNumren _or RnCol > _self.nNumCol
+	_then
+	   _local str
+	   str << RnRen.write_string + " " + RnCol.write_string
+	   condition.raise(:warning, :string, "La celda que se solicita no existe " + str)	
+	_endif 
 	
-	_local tbl
-	tbl << pTbl
-	totCols << pTbl.total_columnas
-	cols << {1, 2, totCols - 1, totCols}
-
-	_self.apaga_bordes_inf_sup_de_todos_rens_en_cols(tbl, cols)
-	_self.apaga_bordes_a_modo_en_contorno_sup(tbl);
-	_self.apaga_bordes_a_modo_en_contorno_inf(tbl);
-_endmethod
-$
-
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_cfg_bloque_titdet_editable_mixin.cfg_tbl_detalle(pTbl)
-	#---------------------------------------------------
-	## <Req. #> : <Description>
-	##
-	#
-	# Customization for Project : 
-	#
-	#---------------- Revision History -----------------
-	# (22/07/27 des_david) : Created
-	#-------------- End Revision History ---------------
-
-	totCols << pTbl.total_columnas
-	cols << {1, 2, totCols - 1, totCols}
-	_self.apaga_bordes_inf_sup_de_todos_rens_en_cols(pTbl, cols)
-	cols << {3, 4, 5, 6}
-	_self.apaga_todos_los_bordes_de_todos_rens_en_cols(pTbl, cols)
-	_self.prende_bordes_de_detalle(pTbl, cols)
-	cols << {5}
-	_self.prende_lineas_de_celdas_editables(pTbl, cols)
+	>> _self.collCeldas[_self.nNumCol * (RnRen-1) + RnCol ]		
 	
 _endmethod
 $
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_cfg_bloque_titdet_editable_mixin.apaga_bordes_inf_sup_de_todos_rens_en_cols(pTbl, pCols)
-	#---------------------------------------------------
-	## <Req. #> : <Description>
-	## .apaga_todos_borde_inf_sup_resp
-	## 
-	#
-	# Customization for Project : 
-	#
-	#---------------- Revision History -----------------
-	# (22/07/27 des_david) : Created
-	#-------------- End Revision History ---------------
+_pragma(classify_level=restricted)
+_method c_celdas.collCeldas << valor
 
-	totRens << pTbl.total_renglones
+	.collCeldas << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.init_with( props )
 
-	_for ren _over range(1, totRens)
+	_for key, value _over props.fast_keys_and_elements()
 	_loop
-		_for col _over pCols.fast_elements()
-		_loop
-			pTbl.activa_borde_celda(ren, col, :superior) << _false 
-			pTbl.activa_borde_celda(ren, col, :inferior) << _false 
-		_endloop				
-	_endloop	
-_endmethod
-$
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_cfg_bloque_titdet_editable_mixin.apaga_bordes_a_modo_en_contorno_sup(pTbl)
-	#---------------------------------------------------
-	## <Req. #> : activa_borde_ext_sup_resp(pTbl)
-	##
-	#
-	# Customization for Project : 
-	#
-	#---------------- Revision History -----------------
-	# (22/07/27 des_david) : Created
-	#-------------- End Revision History ---------------
-	
-	ren << 1; col << 1;
-	pTbl.activa_borde_celda(ren, col, :superior) << _false  
-	ren << 1; col << 2;
-	pTbl.activa_borde_celda(ren, col, :superior) << _false
-	pTbl.activa_borde_celda(ren, col, :derecha) << _false
-	ren << 1; col << 3;
-	pTbl.activa_borde_celda(ren, col, :superior) << _false 	
-	ren << 1; col << 4;
-	pTbl.activa_borde_celda(ren, col, :superior) << _false
-	pTbl.activa_borde_celda(ren, col, :izquierda) << _false
-	ren << 1; col << 5;
-	pTbl.activa_borde_celda(ren, col, :superior) << _false 
-_endmethod
-$
-
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_cfg_bloque_titdet_editable_mixin.apaga_bordes_a_modo_en_contorno_inf(pTbl)
-	#---------------------------------------------------
-	## <Req. #> : activa_borde_ext_inf(pTbl)
-	##
-	#
-	# Customization for Project : 
-	#
-	#---------------- Revision History -----------------
-	# (22/07/27 des_david) : Created
-	#-------------- End Revision History ---------------
-	
-	ren << 3; col << 3;
-	pTbl.activa_borde_celda(ren, col, :inferior) << _false
-	pTbl.activa_borde_celda(ren, col, :izquierda) << _false
-	pTbl.activa_borde_celda(ren, col, :derecha) << _false 
-_endmethod
-$
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_cfg_bloque_titdet_editable_mixin.apaga_todos_los_bordes_de_todos_rens_en_cols(pTbl, pCols)
-	#---------------------------------------------------
-	## <Req. #> : apaga_todos_bordes
-	##
-	#
-	# Customization for Project : 
-	#
-	#---------------- Revision History -----------------
-	# (22/07/27 des_david) : Created
-	#-------------- End Revision History ---------------
-	
-	totRens << pTbl.total_renglones
-
-	_for ren _over range(1, totRens)
-	_loop
-		_for col _over pCols.fast_elements()
-		_loop
-			pTbl.activa_borde_celda(ren, col, :superior) << _false 
-			pTbl.activa_borde_celda(ren, col, :inferior) << _false
-			pTbl.activa_borde_celda(ren, col, :derecha) << _false 
-			pTbl.activa_borde_celda(ren, col, :izquierda) << _false 
-		_endloop				
-	_endloop
-_endmethod
-$
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_cfg_bloque_titdet_editable_mixin.prende_bordes_de_detalle(pTbl, pCols)
-	#---------------------------------------------------
-	## <Req. #> : activa_bordes_ext
-	##
-	#
-	# Customization for Project : 
-	#
-	#---------------- Revision History -----------------
-	# (22/07/27 des_david) : Created
-	#-------------- End Revision History ---------------
-	
-	totRens << pTbl.total_renglones
-
-	ren << 1
-	renUlt << totRens
-	_for col  _over pCols.fast_elements()
-	_loop
-		pTbl.activa_borde_celda(ren, col, :superior) << _true
-		pTbl.activa_borde_celda(renUlt, col, :inferior) << _true
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
 	_endloop
 
-
-	colIzq << pCols[1]
-	colDer << pCols[pCols.size]
+	_return _self
 	
-	_for ren _over range(1, totRens)
-	_loop
-		pTbl.activa_borde_celda(ren, colIzq, :izquierda) << _true
-		pTbl.activa_borde_celda(ren, colDer, :derecha) << _true
-	_endloop	
 _endmethod
 $
-_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
-_method c_cfg_bloque_titdet_editable_mixin.prende_lineas_de_celdas_editables(pTbl, pCols)
-	#---------------------------------------------------
-	## <Req. #> : activa_lineas_celdas_editables
-	##
-	#
-	# Customization for Project : 
-	#
-	#---------------- Revision History -----------------
-	# (22/07/27 des_david) : Created
-	#-------------- End Revision History ---------------
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas.new(RnRen, RnCol)
+## Objetivo: Crear una instacia de celdas
+## Parámetros de entrada:
+## 	Entero - RnRen : Numero de renglones que tendra celdas 
+## 	Entero - RnCol : Numero de columna que tendra celdas
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_celdas - Un objeto celdas
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
 
-	totRens << pTbl.total_renglones
-	_for ren _over range (2, totRens - 1)
+_local LnPos # Almacena temporalmente el numero de celda a utilizar
+
+	# Asigna el numero de renglones y columnas que tendra celdas
+	_self.nNumRen << RnRen
+	_self.nNumCol << RnCol
+
+	# Crea las celdas que forman parte de celdas
+	_self.collCeldas <<  hash_table.new()
+	_for LnRen  _over range(1, _self.nNumRen ) 
+        _loop
+	   _for LnCol  _over range(1, _self.nNumCol) 
+	   _loop
+		   LnPos << _self.nNumCol * (LnRen - 1) + LnCol
+		   _self.collCeldas[LnPos] << c_celda.new(LnRen, LnCol)
+	   _endloop
+	_endloop
+	
+	_return _clone
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
 	_loop
-		_for col _over pCols.fast_elements()
-		_loop
-			pTbl.activa_borde_celda(ren, col, :inferior) << _true
-		_endloop
-	_endloop	
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_celdas.nNum_Col << RnValor
+## Objetivo: Asignar un valor permitido al slot nNumCol
+## Parámetros de entrada:
+## 	Entero - RnValor : Numero de columnas
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	# Se valida que el Numero de columnas sea mayor que cero
+	_if RnValor > 0
+	_then
+ 	   .nNumCol << RnValor
+	_else
+	   condition.raise(:warning, :string, "Error al asignar el número de columnas")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas.nNum_Ren
+## Objetivo: retornar en valor del slot nNumRen
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Entero - nNumRen : Numero de renglones
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_return .nNumRen
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_celdas.nNum_Ren << RnValor
+## Objetivo: Asignar un valor permitido al slot nNumRen
+## Parámetros de entrada:
+## 	Entero - RnValor : Numero de renglones
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	# Se valida que el numero de renglones no sea negativo
+	_if RnValor > 0
+	_then
+ 	   .nNumRen << RnValor
+	_else
+	   condition.raise(:warning, :string, "Error al asignar el número de renglón")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.serial_slots()
+
+	keys << rope.new_with(:nNumRen,:nNumCol,:collCeldas)
+	values << rope.new_with(.nNumRen,.nNumCol,.collCeldas)
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.serial_structure
+
+	>> :slotted
 	
 _endmethod
 $
 
 
 Ubicación: 
-Clase   c_tabla_georeferencia
-Fichero	c_tabla_georeferencia.magik
+Clase   c_celdas
+Fichero	c_celdas.magik
 
 vale, con este nuevo component exportado a .tsx, vamos a ver de que manera lo podemos invocarlo en app.tsx. Quiero que comentes el metodo anterior y lo dejes ahi
 comentado

@@ -1,0 +1,153 @@
+================================================================================
+COMPONENTE: TextboxLayout.tsx
+Clase Magik original: textbox_layout
+Fichero Magik:        textbox_layout.magik
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Elemento de texto para el Layout Designer de Smallworld.
+Renderiza texto dentro de un bounding box con:
+  - Word-wrap greedy (horizontal o vertical)
+  - Fuente, tamaño, color, alineación y ángulo configurables
+  - Clipping opcional al bbox
+
+Implementa los dos métodos principales de la clase Magik:
+  defined_attributes → interfaz TextboxAtribs + DEFAULT_ATRIBS (11 campos)
+  wrap_lines         → función wrapLines() con Canvas API
+
+
+ATRIBUTOS (defined_attributes)
+--------------------------------
+  Atributo Magik       TypeScript            Tipo              Default
+  ─────────────────────────────────────────────────────────────────────
+  :text                text                  string            'Introduce tu texto aquí'
+  :font_name           fontName              string            'plain'
+  :font_size           fontSize              number (pt)       6.0
+  :colour              colour                string (CSS)      '#000000'
+  :wrap                wrap                  boolean           true
+  :clip                clip                  boolean           true
+  :align_horizontal    alignHorizontal       'left'|'center'|'right'   'left'
+  :align_vertical      alignVertical         'top'|'middle'|'bottom'   'top'
+  :orientation         orientation           'left_right'|'top_bottom' 'left_right'
+  :angle               angle                 number (°)        0.0
+  :text_width          textWidth             number (1–72)     1.0
+  :text_aspect         textAspect            number (0.1–1)    1.0
+
+
+FUNCIONAMIENTO REAL
+-------------------
+1. defined_attributes():
+   Registra los 11 atributos de configuración del textbox. En TypeScript
+   se modela como interfaz TextboxAtribs + objeto DEFAULT_ATRIBS con los
+   valores por defecto de cada atributo Magik.
+
+2. wrap_lines(window, string, a_style, delims, border_chars):
+   Algoritmo greedy de ajuste de líneas:
+     a. Configura la fuente en el canvas (equivale a a_style en Magik).
+     b. Calcula borderSpace = border_chars × charHeight.
+     c. Calcula maxLineWidth  = bounds.width  - 2×borderSpace.x
+              y maxLineHeight = bounds.height - 2×borderSpace.y
+     d. Añade newline_char al final del texto (term_str) para forzar
+        el flush de la última línea.
+     e. Itera carácter a carácter:
+          · Cuando encuentra un delimitador mide el slice iFst..i-1
+            (Magik: text_bounds(window, a_style, term_str, i_fst, i-1)).
+          · left_right: si propWidth > maxLineWidth → nueva línea;
+            iFill += propHeight; si iFill > maxLineHeight → _leave (clip).
+          · top_bottom: si propHeight > maxLineHeight → nueva línea;
+            iFill += propWidth;  si iFill > maxLineWidth  → _leave (clip).
+          · '\n' explícito → siempre corta línea.
+     f. Si result.size = 0 → añade línea vacía.
+   Devuelve { lines: string[], borderSpace: {x, y} }.
+
+
+EQUIVALENCIAS MAGIK → TYPESCRIPT
+----------------------------------
+  textbox_layout (def_slotted_exemplar)
+    → interface TextboxAtribs + const DEFAULT_ATRIBS
+
+  defined_attributes (rope de 11 layout_attribute_definition)
+    → campos en TextboxAtribs
+
+  wrap_lines(window, string, a_style, delims, border_chars)
+    → export function wrapLines(ctx, atribs, bounds, border): WrapResult
+
+  a_style.cell_size → dev_char_height / nominal_scale
+    → const charHeight = atribs.fontSize
+
+  text_bounds(window, a_style, term_str, i_fst, i-1)
+    → ctx.measureText(termStr.slice(iFst, i)).width
+
+  rope.new()                → string[]
+  newline_char              → '\n'
+  _self.bounds              → BoundsRect parameter { width, height }
+  border_chars × char_height → border.x × charHeight / border.y × charHeight
+
+  draw_content_on(window)
+    → function renderTextbox(ctx, atribs, bounds): void
+       (gestiona clipping, rotación, align_horizontal/vertical, orientation)
+
+  :align_horizontal "left"/"center"/"right"
+    → ctx.textAlign = 'left' | 'center' | 'right'
+
+  :orientation :top_bottom
+    → ctx.rotate(Math.PI/2) por columna de texto
+
+
+TIPOS EXPORTADOS
+----------------
+  BoundsRect   — { width: number; height: number }
+  BorderChars  — { x: number; y: number }
+  TextboxAtribs — los 11 atributos configurables
+  WrapResult   — { lines: string[]; borderSpace: {x,y} }
+
+
+EXPORTS
+-------
+  TextboxLayoutUI    — componente React principal
+  TextboxAtribs      — interfaz de atributos
+  DEFAULT_ATRIBS     — valores por defecto
+  wrapLines          — función de ajuste de líneas
+  BoundsRect         — tipo del bounding box
+
+
+UI REACT (TextboxLayoutUI)
+---------------------------
+  Panel de controles (grupos):
+    - Contenido: textarea para :text
+    - Fuente:    font_name / font_size / colour / text_width / text_aspect
+    - Layout:    align_horizontal / align_vertical / orientation / angle / wrap / clip
+    - Márgenes:  border_chars X e Y
+
+  Canvas (400×220 px):
+    - Renderizado en tiempo real con Canvas 2D API
+    - Borde azul = bounding box
+    - Texto ajustado según wrap_lines()
+    - Rotación centrada si angle ≠ 0
+    - Clipping activo si clip = true
+
+  Tabla de debug wrap_lines():
+    - Muestra cada línea generada con su índice y longitud en caracteres
+
+
+DEPENDENCIAS
+------------
+  React (useState, useCallback, useEffect, useRef)
+  HTML5 Canvas API (measureText, fillText, rotate, clip)
+  Sin OpenLayers. Sin Turf.js.
+
+
+ARCHIVOS
+--------
+  TextboxLayout.tsx   — interfaz + algoritmo + componente React
+  TextboxLayout.txt   — este fichero de documentación
+
+
+INVOCACIÓN EN App.tsx (entrada [85])
+--------------------------------------
+  <TextboxLayoutUI />
+
+  Invocación directa comentada dentro del render() de DEMO_ITEMS[85]
+  para referencia histórica.
+================================================================================

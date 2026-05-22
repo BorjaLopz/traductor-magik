@@ -1,0 +1,166 @@
+================================================================================
+COMPONENTE: CPlacaLargaDistancia.tsx
+Clase Magik original: c_placa_larga_distancia
+Fichero Magik:        c_placa_larga_distancia.magik
+Autor original:       lgranados — Sigma Tao — 14/Diciembre/2010
+Hereda de:            c_base_sello_fibra
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Placa de identificación para cable de fibra óptica de larga distancia.
+Se coloca en el mapa/diagrama para señalizar tramos de red de fibra LD.
+
+Contiene tres zonas visuales:
+  1. Logo (tbl_3, 26 mm): símbolo "logo_sellos"
+  2. Texto de advertencia (tbl_4, 90 mm): "PRECAUCION / CABLE DE FIBRA
+     OPTICA / LARGA DISTANCIA" — sin bordes en la celda
+  3. Tabla de datos (tbl_5 + tbl_6, 4 columnas × 22.5 mm):
+       Fila 1 — RUTA [valor]  LONG.   [valor]
+       Fila 2 — POZO [valor]  EMPALME [valor]
+
+Fondo salmon: colour.new_rgb(1, 0.83, 0.75) → rgb(255, 212, 191).
+
+
+MÉTODOS MIGRADOS
+----------------
+  Magik                         TypeScript
+  ─────────────────────────────────────────────────────────────────────
+  configura_tabla()             configurarTabla(): TablaConfig[]
+  etiqueta_celdas()             (incluido en configurarTabla())
+  llena_datos_celdas()          llenarDatosCeldas() [stub vacío]
+  defined_attributes            interface PlacaAtribs
+  llena_datos_dinamicos()       llenarDatosDinamicos(tablas, atribs)
+
+
+FUNCIONAMIENTO REAL
+-------------------
+1. configurarTabla():
+   Crea y devuelve la configuración de las 6 tablas con sus dimensiones
+   en mm, posición de origen relativa a o_coord_inicio, número de
+   filas/columnas, anchos de columna y configuración de bordes por celda.
+   También incorpora las etiquetas estáticas (etiqueta_celdas):
+     · tbl_3  celda (1,1): símbolo "logo_sellos"
+     · tbl_4  celda (1,1): texto "PRECAUCION\nCABLE DE FIBRA OPTICA\nLARGA DISTANCIA"
+     · tbl_5  celdas (1,1) y (1,3): etiquetas "RUTA" y "LONG."
+     · tbl_6  celdas (1,1) y (1,3): etiquetas "POZO" y "EMPALME"
+
+2. llenarDatosCeldas():
+   Método vacío en la clase Magik original. Conservado como stub.
+   Las subclases pueden sobreescribirlo.
+
+3. llenarDatosDinamicos(tablas, atribs):
+   Clona los configs de tbl_5 y tbl_6 e inyecta los valores de usuario
+   en las celdas de valor (col 2 y col 4):
+     · tbl_5 (1,2) ← atribs.ruta    · tbl_5 (1,4) ← atribs.long
+     · tbl_6 (1,2) ← atribs.pozo   · tbl_6 (1,4) ← atribs.empalme
+
+
+CONFIGURACIÓN DE TABLAS
+-----------------------
+  id      xMm   yMm   ancho  alto   f×c  descripción
+  ───────────────────────────────────────────────────────────────────
+  tbl_1     0     0    130    50    1×1  marco principal izquierdo
+  tbl_2    50    50    120    40    1×1  sección central
+  tbl_3    50    50     26    40    1×1  celda logo (sobre tbl_2)
+  tbl_4   330    70     90    15    1×1  texto advertencia, sin bordes
+  tbl_5   330   240     90   7.5   1×4  fila RUTA / LONG.
+  tbl_6   330   340     90   7.5   1×4  fila POZO / EMPALME
+
+  Coordenadas: o_coord_inicio + offsets.
+  En Magik: coordinate.new(x + dx, y - dy) → screen y-down: yMm = dy.
+  color de relleno: colour.new_rgb(1, 0.83, 0.75) → rgb(255,212,191).
+
+
+BORDES DE CELDAS (tbl_5/tbl_6)
+--------------------------------
+  Celdas etiqueta (col 1 y 3):
+    bBorde_Izq=false, bBorde_Inf=false, bBorde_Sup=false, bBorde_Der=true
+    → Aparecen "abiertas" en 3 lados; sólo tienen borde derecho.
+  Celdas valor (col 2 y 4):
+    Todos los bordes activos (B_ALL).
+
+
+EQUIVALENCIAS MAGIK → TYPESCRIPT
+----------------------------------
+  def_slotted_exemplar(:c_placa_larga_distancia, {}, :c_base_sello_fibra)
+    → interfaz PlacaAtribs + función configurarTabla()
+
+  .o_tablas.crea_tabla(1,1,:tbl_1) / .orenglones / .ocolumnas
+    → TablaConfig { id, filas, columnas, anchoMm, altoMm }
+
+  .oCoordenada_Origen << coordinate.new(x+dx, y-dy)
+    → TablaConfig.xMm = dx, yMm = dy
+
+  .oceldas.celda(f,c).oelementos.obten_elemento(:bordes_celda)
+    → CeldaConfig.bordes: BordeCelda
+
+  .bBorde_Izq? << _false
+    → bordes.izq = false
+
+  set_fill_colour(colour.new_rgb(1, 0.83, 0.75))
+    → constante FILL = 'rgb(255,212,191)'
+
+  asigna_simbolo_celda(:tbl_3, 1,1, "logo_sellos")
+    → CeldaConfig.simbolo = 'logo_sellos'
+
+  asigna_texto_celda(:tbl_4, 1,1, texto1, 36, :top_centre)
+    → CeldaConfig.texto / tamLetra / alineacion
+
+  layout_attribute_definition.new(:ruta, :string, :description, "RUTA")
+    → campo ruta: string en PlacaAtribs
+
+  _self.asigna_texto_celda(:tbl_5,1,2,_self.ruta, 22)
+    → llenarDatosDinamicos: celdas col 2 ← atribs.ruta
+
+  ocultar << rope.new_with({1,1},{1,3}) + _for _loop ...
+    → constante B_LABEL: BordeCelda aplicada a celdas col 1 y 3
+
+  llena_datos_celdas() [vacío]
+    → llenarDatosCeldas() [stub vacío]
+
+
+ATRIBUTOS DINÁMICOS (defined_attributes)
+-----------------------------------------
+  ruta    : string  — identificador de ruta del cable LD
+  long    : string  — longitud del tramo (km / m)
+  pozo    : string  — identificador del pozo de acceso
+  empalme : string  — identificador del punto de empalme
+
+
+UI REACT (CPlacaLargaDistanciaUI)
+-----------------------------------
+  Placa SVG (580×190 px):
+    - Fondo salmon en toda la placa
+    - Zona izquierda: logo (tbl_3, ⚠ "logo_sellos")
+    - Zona centro: texto advertencia en 3 líneas sin bordes de celda (tbl_4)
+    - Zona derecha: 2 filas × 4 columnas (tbl_5 + tbl_6) con valores editables
+    - Bordes selectivos según la configuración original (B_LABEL / B_ALL)
+
+  Controles (llena_datos_dinamicos):
+    - 4 campos de texto: RUTA / LONG. / POZO / EMPALME
+    - Actualización en tiempo real de la placa SVG
+
+  Tabla de debug (expandible):
+    - Muestra los 6 TablaConfig con posición, dimensiones y texto de celdas
+
+
+DEPENDENCIAS
+------------
+  React (useState)
+  SVG nativo — sin OpenLayers ni Turf.js (componente de layout/print puro)
+
+
+ARCHIVOS
+--------
+  CPlacaLargaDistancia.tsx  — interfaces + lógica + componente React
+  CPlacaLargaDistancia.txt  — este fichero de documentación
+
+
+INVOCACIÓN EN App.tsx (entrada [86])
+--------------------------------------
+  <CPlacaLargaDistanciaUI />
+
+  Invocación directa comentada dentro del render() de DEMO_ITEMS[86]
+  para referencia histórica.
+================================================================================

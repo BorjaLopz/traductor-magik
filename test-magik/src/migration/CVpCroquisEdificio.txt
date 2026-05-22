@@ -1,0 +1,110 @@
+CVpCroquisEdificio.tsx — Migración de c_vp_croquis_edificio.magik
+==================================================================
+
+Origen
+------
+Fichero Magik: adiciones_layout/source/planos/plano_construccion_interno/c_vp_croquis_edificio.magik
+Clase:         c_vp_croquis_edificio (extends :c_vp_cobre)
+Autor orig.:   rbsaldan / GE Network Solutions (09/Mayo/2007)
+
+Propósito
+---------
+Viewport de "croquis de edificio" para plano de construcción interno.
+Compone sobre el lienzo del viewport:
+  1) Contorno (bbox del viewport) — línea negra dashed long_dash, 2u.
+  2) Geometrías GIS filtradas por colección (19 colecciones permitidas).
+  3) Símbolo NORTE configurable (3 tamaños A/B/C × 4 ubicaciones).
+     Rotado por −view_angle para mantener orientación verdadera.
+     En A/B las 2 líneas horizontales se redibujan con grosor 5.
+  4) Boundary del edificio target (`idEdificio`) — turf.buffer(6) en rojo
+     dashed short_dash, 6u.
+  5) Etiqueta inferior centrada (font bold 50pt, color #AFAF5D).
+
+Atributos editables (layout_attribute_definition)
+-------------------------------------------------
+  ajusta_al_marco   "Si"/"No"          enum val_falso_verdadero
+  Tamano            "A"/"B"/"C"        enum tamano_norte
+  Ubicacion_Norte   4 esquinas         enum ubica_norte
+  etiqueta          string libre       pie de cuadro
+  limite_edif       sector             no editable (oLimite)
+  idEdificio        integer            no editable (target)
+
+  Slot adicional Magik: :oGeometria (writable) — sector del oLimite.
+
+Colecciones aceptadas (geometry_set_for_render)
+-----------------------------------------------
+  user!_colonia, user!_eje_calle, building, user!_building,
+  underground_route, user!_central, user!_distrito, user!_manzana,
+  caseta_tel, punto_interes, infraestructura, construcciones,
+  cartog_ref_fibra_optica, cuerpos_agua, rio, user!_geografia,
+  aeropuerto, user!_carretera, ferrocarril, vias_comunicacion.
+
+Métodos transcritos
+-------------------
+  construirArco(R, c, θ1, θ2)
+    Discretiza el arco de cierra cada 1° (Magik: range(θ1, θ2)).
+
+  construirNorte(tamano: 'A'|'B'|'C')
+    Tamano A: bound 60×960 — flecha grande + 2 líneas (radio 75) + 4 arcos R=65.
+    Tamano B: bound 60×710 — flecha media + 2 líneas (radio 60) + 4 arcos R=45.
+    Tamano C: bound 50×500 — sólo flecha pequeña, sin arcos ni líneas horizontales.
+
+  drawContentOn(geomSet): CroquisRender
+    1. Contorno (5 puntos cerrados desde bounds).
+    2. Etiqueta (centro.x, ymin-75) si attrs.etiqueta no vacía.
+    3. Norte: construir → rotateAbout(centro, -viewAngle) → translate por
+       ubicación (±width*0.6+wHalf, ±height*0.5−hHalf).
+    4. Filtra geomSet por colección permitida.
+    5. Si attrs.idEdificio: encuentra building/user!_building, aplica
+       turf.buffer(6) al polygon, devuelve anillo exterior.
+
+Equivalencia técnica Magik → TypeScript
+---------------------------------------
+  sector.new + add(coord) + draw_on(window, line_style)
+       → ol/Feature(LineString) + Style(Stroke[lineDash]).
+  transform.new().rotate_about(centro, θ)
+       → rotateAbout(p, c, θ).
+  transform.new().translate(dx, dy)
+       → mapeo punto a punto con offset.
+  geometry_set.select(:collection, {symbols…})
+       → geomSet.filter(g => COLECCIONES_RENDER.has(g.collection)).
+  LoBoundary.buffer(6)
+       → turf.buffer(polygon, 6, { units: 'meters' }).
+  LcollSectores.transformed(...).bounds.width
+       → bbox del array de puntos rotados.
+  draw_vtext_transform(:bottom_centre)
+       → Style(Text) textAlign='center', textBaseline='top'.
+  colour.new_from_dec("175,175,93")
+       → '#AFAF5D'.
+  dash_pattern.long_dash / short_dash
+       → Stroke({ lineDash: [12,6] / [4,4] }).
+
+API pública
+-----------
+  class CVpCroquisEdificio
+    bounds: Bounds
+    attrs : VpAttrs
+    viewAngle: number  (grados)
+    construirArco(R, c, θ1, θ2): coords[]
+    construirNorte(tamano): { segs, bound }
+    drawContentOn(geomSet): CroquisRender
+    static geometrySetForRender(set): GeomGis[]
+
+  function CVpCroquisEdificioUI(): JSX.Element
+    OL v10 con 6 capas (contorno, geom GIS, norte, norte thick, buffer, etiqueta).
+    Controles: tamaño, ubicación norte, etiqueta, view_angle (slider), idEdificio.
+
+Notas de migración
+------------------
+· `_super.draw_content_on(windows)` se omite — el render del super
+  (c_vp_cobre) no se modela; la UI dibuja los GIS items directamente.
+· `_dynamic !current_coordinate_system! << _unset` es scope-binding Magik
+  para neutralizar transformaciones; no aplica en TS.
+· `mit_terminal_enclosure` aparece comentado en la lista original — se
+  omite (igual que en el Magik).
+· La línea Magik `LcollSectores[2].draw_on` re-renderiza el segment 2/3
+  con grosor 5 (las 2 líneas horizontales del norte). Se modela con
+  un Set<number> norteThick y un layer adicional.
+· `LoGeom.rwo.boundary.transformed(_self.transform)` aplica la
+  transformación del viewport. Aquí se omite (transformación = identidad)
+  porque la demo trabaja en coords del viewport directamente.

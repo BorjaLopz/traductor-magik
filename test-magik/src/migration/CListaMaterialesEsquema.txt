@@ -1,0 +1,134 @@
+CListaMaterialesEsquema.tsx — Migración de c_lista_materiales_esquema.magik
+===========================================================================
+
+Origen
+------
+Fichero Magik: adiciones_layout/source/Sellos/c_lista_materiales_esquema.magik
+Clase:         c_lista_materiales_esquema (extends :c_base_sello_fibra)
+
+Propósito
+---------
+Sello de layout "Lista de Materiales" que escanea la selección activa
+del esquemático del mapa GIS (current_map_view con ace_name que
+matchea "*esquema*"), filtra elementos con construction_status="PROYECTADO"
+y los agrupa por source_collection.name, construyendo una tabla 4 cols:
+
+    [No, DESCRIPCION, UNIDAD, CANTIDAD]
+
+Discriminador tipo (slot Magik :tipo)
+-------------------------------------
+  :red          → lista los elementos owner (cable, conexión, vías ópticas…)
+  :estructuras  → lista las estructuras embebidas en cada owner
+                  (underground_route, uub, etc.)
+
+Reglas de unidades
+------------------
+  primary_geometry = :route
+      → "metros"  (suma de measured_length.value_in(:m)).
+      → Si collection = :sheath y measured_length <= 0
+        → usa calculated_fiber_length.value_in(:m).
+  resto
+      → "pzas"    (cantidad = #items del equality_set).
+
+Reglas de descripción
+---------------------
+  :sheath
+      desc_mat = external_name + " " + user!_clase + " " + fiber_quantity
+      desc_uc  = ""
+  tipo_conexion presente
+      desc_mat = user!_tipo_conexion
+  :underground_route | :figure_eight | :user!_terminal_fo | :uub
+      desc_mat = key.split("|")[2] (si size>1)  ó key.split("|")[1]
+      desc_uc  = external_name
+  fallback
+      desc_mat = external_name
+
+  Magik final: desc_uc += " " + desc_mat.
+
+Métodos transcritos
+-------------------
+  selectFromMap(gis)
+    Recorre mv.get_selectable_geometry_set(), filtra owner PROYECTADO.
+    Por cada owner:
+      · Para cada owner.structures PROYECTADO → bucket estructuras.
+      · Si owner no es estructura → bucket elementos.
+        + Recorre owner.mit_internal_connections FUSION+PROYECTADO →
+          bucket "mit_internal_connection|".
+    Devuelve { estructuras, elementos } como Map<key, Set<GisItem>>.
+
+  elementosDeProyecto()
+    Selector según :tipo. Devuelve { planoLista, ht }.
+
+  obtenListaMateriales()  → alias de elementosDeProyecto().
+
+  keysOrder(ht)
+    sorted_collection.figure_order_proc(:strings_with_numbers) →
+    naturalSort con localeCompare(numeric:true).
+
+  configuraTabla()
+    Crea tabla 2+N filas × 4 cols. alturas = 6mm cada una. anchos = [6,60,35,20].
+    bordeOculto = {(1,1),(1,2),(1,3),(1,4)} → bBorde_Sup?/Der?/Izq? = false.
+
+  etiquetaCeldas()
+    Fila 1 col 2: título según tipo (size 30).
+    Fila 2: cabeceras [No, DESCRIPCION, UNIDAD, CANTIDAD] (size 20).
+
+  llenaDatosCeldas()
+    Recorre ht en orden natural. Para cada key:
+      cont += 1
+      Determina cantidad/unidad/desc_mat/desc_uc según reglas arriba.
+      Si tabla.filas >= cont → emite 4 celdas (No, descUc, unidad, cantidad).
+
+  actualizaDatos(gis): Promise<Tabla>
+    Pipeline async completo: selectFromMap → configura → etiqueta → llena.
+
+Equivalencia técnica Magik → TypeScript
+---------------------------------------
+  hash_table.new()                          → Map<string, Set<GisItem>>.
+  equality_set.new()                        → Set<GisItem>.
+  property_list.new()                       → objeto plano para "material".
+  source_collection.name                    → item.collectionName.
+  source_collection.external_name           → item.collectionExternalName.
+  measured_length.value_in(:m)              → item.measuredLengthM.
+  calculated_fiber_length.value_in(:m)      → item.calculatedFiberLengthM.
+  user!_tipo_conexion                       → item.tipoConexion.
+  user!_tipo_obra_co                        → item.tipoObraCo.
+  user!_clase + fiber_quantity              → sheathClase + sheathFiberQty.
+  spec_id                                   → item.specId.
+  sorted_collection.figure_order_proc(...)  → naturalCompare comparator.
+  asigna_texto_celda(tbl, r, c, txt, fs)    → Cell { row, col, text, fontSize }.
+  smallworld_product.pni_application()
+    .plugin(:map_plugin).current_map_view
+    .get_selectable_geometry_set()          → GisService.getSelectableGeometry().
+
+API pública
+-----------
+  class CListaMaterialesEsquema
+    tipo: TipoSello
+    tabla: Tabla | null
+    scan : ScanResult
+    selectFromMap(gis): Promise<ScanResult>
+    elementosDeProyecto(): { planoLista, ht }
+    obtenListaMateriales(): { planoLista, ht }
+    static keysOrder(ht): string[]
+    configuraTabla(): Tabla
+    etiquetaCeldas(): Cell[]
+    llenaDatosCeldas(): Cell[]
+    actualizaDatos(gis): Promise<Tabla>
+
+  function CListaMaterialesEsquemaUI(): JSX.Element
+    Renderiza la tabla como HTML <table> (sello no es geométrico).
+    Controles: tipo (red/estructuras) + ace_name (toggle filtro "*esquema*").
+
+Notas de migración
+------------------
+· La asignación Magik `.tipo << PTipo` en new_with se hace en el constructor TS.
+· Magik `material[:cantidad] +<< longitud` (acumulador int→string) se modela
+  como total numérico y `.toFixed(2)` al final (equiv. as_fixed_string(5,2)).
+· La línea `_self.draw_content_on(.window)` se omite — el sello en TS no
+  renderiza directo sobre canvas; la UI consume Tabla y dibuja HTML.
+· El ace_name lowercase.matches?("*esquema*") se traduce con regex /esquema/i.
+· `ren_tbl >= cont` (line 269) protege overflow; se respeta en TS para
+  preservar el comportamiento defensivo.
+· No se modela `mit_manager.modelit_dataset` ni `float_format.new(...)`
+  porque sólo aparecen como aliases — se sustituye por `Number.toFixed`.

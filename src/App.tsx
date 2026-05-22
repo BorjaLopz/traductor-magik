@@ -195,6 +195,26 @@ import { CElementosUI } from './migration/CElementos';
 import { CFilasUI } from './migration/CFilas';
 import { CCentralEUI } from './migration/CCentralE';
 import { CCfgBloqueTitdetEditableMixinUI } from './migration/CCfgBloqueTitdetEditableMixin';
+// [85] textbox_layout
+import { TextboxLayoutUI } from './migration/TextboxLayout';
+// [86] c_placa_larga_distancia
+import { CPlacaLargaDistanciaUI } from './migration/CPlacaLargaDistancia';
+// [87] c_sello_dist_de_ter_a_cd
+import { CSelloDistDeTerACdUI } from './migration/CSelloDistDeTerACd';
+// [88] c_leyenda_ashurado
+import { CLeyendaAshuradoUI } from './migration/CLeyendaAshurado';
+// [85] marco_layout
+import { MarcoLayoutUI } from './migration/MarcoLayout';
+// [86] c_sembrado_layout
+import { CSembradoLayoutUI } from './migration/CSembradoLayout';
+// [87] style_element_mixin
+import { StyleElementMixinUI } from './migration/StyleElementMixin';
+// [88] c_plano_principales
+import { CPlanoPrincipalesUI } from './migration/CPlanoPrincipales';
+// [89] c_lista_materiales_esquema
+import { CListaMaterialesEsquemaUI } from './migration/CListaMaterialesEsquema';
+// [90] c_vp_croquis_edificio
+import { CVpCroquisEdificioUI } from './migration/CVpCroquisEdificio';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -1623,10 +1643,10 @@ const DEMO_ITEMS: DemoItem[] = [
   //   );
   // }
   {
-    id         : '92-tabla-cables-proy',
-    label      : '[92] tabla_cables_proy',
+    id: '92-tabla-cables-proy',
+    label: '[92] tabla_cables_proy',
     description: 'Tabla copper_cable EXISTENTE agrupados por spec_id. Columnas: Capacidad/Tipo/Calibre/Cantidad(mts). buscar_elementos() filtra viewport GIS. agrupar_elementos() acumula longitud medida o calculada.',
-    render     : () => <CTablaCablesProyUI />,
+    render: () => <CTablaCablesProyUI />,
   },
   // =============================================================================
   // [93] Demo — c_lista_materiales_esquema_red
@@ -1646,10 +1666,10 @@ const DEMO_ITEMS: DemoItem[] = [
   //   );
   // }
   {
-    id         : '93-lista-materiales-esquema-red',
-    label      : '[93] c_lista_materiales_esquema_red',
+    id: '93-lista-materiales-esquema-red',
+    label: '[93] c_lista_materiales_esquema_red',
     description: 'Sello LISTA DE MATERIALES para esquemático fibra óptica. Slot .tipo (:red/:estructuras). PROYECTADO del ACE. Agrupa por clave collection|spec. 5 prioridades de descripción. Metros acumulados o pzas contadas.',
-    render     : () => <CListaMaterialesEsquemaRedUI />,
+    render: () => <CListaMaterialesEsquemaRedUI />,
   },
   // =============================================================================
   // [94] Demo — c_vp_plano_proy_can
@@ -1669,10 +1689,250 @@ const DEMO_ITEMS: DemoItem[] = [
   //   );
   // }
   {
-    id         : '94-vp-plano-proy-can',
-    label      : '[94] c_vp_plano_proy_can',
+    id: '94-vp-plano-proy-can',
+    label: '[94] c_vp_plano_proy_can',
     description: 'Viewport layout planos canalización cobre. Secciona ruta (40m/plano). Marcas Z continuación con letras A/B/C (bracket 3 segmentos, turf.destination). Línea U entre pozos. objetos_visibles por bbox.',
-    render     : () => <CVpPlanoProjCanUI />,
+    render: () => <CVpPlanoProjCanUI />,
+  },
+  {
+    id: '85-textbox-layout',
+    label: '[85] textbox_layout',
+    description: '11 atributos configurables (text/fontName/fontSize/colour/wrap/clip/alignH/alignV/orientation/angle/textWidth/textAspect) + wrap_lines(): ajuste de líneas greedy horizontal (left_right) y vertical (top_bottom) con margen border_chars y clipping.',
+    render: () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>textbox_layout</h3>
+        <p style={s.meta}>
+          11 atributos: text / fontName / fontSize / colour / wrap / clip / alignH / alignV /
+          orientation / angle / textWidth / textAspect.{' '}
+          wrap_lines() divide el texto en líneas respetando el bbox con clipping opcional.
+        </p>
+        {/* Invocación directa de referencia (sin menú selector):
+        // <TextboxLayoutUI />
+        */}
+        <TextboxLayoutUI />
+      </section>
+    ),
+  },
+  {
+    id: '86-c-placa-larga-distancia',
+    label: '[86] c_placa_larga_distancia',
+    description: 'Placa de identificación de cable de fibra óptica larga distancia — 6 tablas (tbl_1–6), fondo salmon rgb(255,212,191), logo + "PRECAUCION/CABLE DE FIBRA OPTICA/LARGA DISTANCIA" sin bordes, filas RUTA/LONG./POZO/EMPALME con bordes selectivos. 4 atributos dinámicos.',
+    render: () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>c_placa_larga_distancia</h3>
+        <p style={s.meta}>
+          Hereda de c_base_sello_fibra. configura_tabla() crea 6 tablas con posición absoluta
+          en el sheet (mm). llena_datos_dinamicos() inyecta ruta / long / pozo / empalme.
+        </p>
+        {/* Invocación directa de referencia (sin menú selector):
+        // <CPlacaLargaDistanciaUI />
+        */}
+        <CPlacaLargaDistanciaUI />
+      </section>
+    ),
+  },
+  {
+    id: '87-c-sello-dist-de-ter-a-cd',
+    label: '[87] c_sello_dist_de_ter_a_cd',
+    description: 'Sello 17×5 de distancias terminal→C.D. UbicaCoord mapea IDs (A1–S5) a posición en tbl_contenido. llena_datos_celdas(): ruta 1=edificio directo, ruta 2=distrito óptico con predicate.inside. FiltrarTerminalesConDist extrae user!_cuenta + user!_distancia_cd.',
+    render: () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>c_sello_dist_de_ter_a_cd</h3>
+        <p style={s.meta}>
+          Introduce un ID de edificio (1001–1003) o distrito óptico (5001–5002)
+          y pulsa el botón para cargar las distancias de las terminales de cobre a la C.D.
+        </p>
+        {/* Invocación directa de referencia (sin menú selector):
+        // <CSelloDistDeTerACdUI />
+        */}
+        <CSelloDistDeTerACdUI />
+      </section>
+    ),
+  },
+  {
+    id: '88-c-leyenda-ashurado',
+    label: '[88] c_leyenda_ashurado',
+    description: 'Leyenda de ashurado (layout_element): 3 cuadros con patrones diagonales. cont=1→reticulado (/ rojo + \\ verde), cont=2→/ rojo, cont=3→\\ verde. step=size/6. Atributo :Tamano (A/B/C). Canvas 2D con mapeo Magik y↑ → Canvas y↓.',
+    render: () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>c_leyenda_ashurado</h3>
+        <p style={s.meta}>
+          construir_leyenda() dibuja 3 variantes de ashurado en Canvas 2D.
+          Selecciona el tamaño con los botones de radio.
+        </p>
+        {/* Invocación directa de referencia (sin menú selector):
+        // <CLeyendaAshuradoUI />
+        */}
+        <CLeyendaAshuradoUI />
+      </section>
+    ),
+  },
+  // ── [84] c_dto_pronostico — anterior último componente migrado ──────────────
+
+  // =============================================================================
+  // [85] Demo inline — marco_layout
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoMarcoLayout() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>marco_layout</h3>
+  //       <p style={s.meta}>
+  //         Marco del plano — dos modos: NORMAL (num_mod × altura × modulo) o
+  //         CONFIG PLANO (Distritos/Itinerario/Construccion/Empalmes/Topologico).
+  //         Render OpenLayers v10 con ticks azules/rojos + esquinas_plano.
+  //       </p>
+  //       <MarcoLayoutUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '85-marco-layout',
+    label: '[85] marco_layout',
+    description: 'Marco perimetral de plano — modo NORMAL (num_mod*modulo_width × altura*modulo_height + sello) o CONFIG PLANO (Distritos1..Topologico3) con anchos/altos fijos + ticks azules/rojos + esquinas_plano. Render OL v10 + Turf.',
+    render: () => <MarcoLayoutUI />,
+  },
+  // ── [85] marco_layout — anterior último componente migrado ──────────────────
+
+  // =============================================================================
+  // [86] Demo inline — c_sembrado_layout
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoCSembradoLayout() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_sembrado_layout</h3>
+  //       <p style={s.meta}>
+  //         Plantilla de plano de detalle "sembrado". Se monta sobre marco_layout:
+  //         hereda bounds, compone referencias verticales + copyright + rejillas
+  //         de fibra óptica / obra civil + viewport "Larguillo" (50000:1).
+  //         view_angle calculado con turf.bearing(last→first) del cable.
+  //       </p>
+  //       <CSembradoLayoutUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '86-c-sembrado-layout',
+    label: '[86] c_sembrado_layout',
+    description: 'Plantilla layout "sembrado" — busca_elemento("marco_layout"), hereda bounds. Compone: 2 refs verticales (izq/der) + copyright TELMEX + cuadro escala + rejillas fibra óptica/obra civil + viewport "Larguillo" (ace_name CENTRALES, scale 50000, view_angle=turf.bearing(last→first)).',
+    render: () => <CSembradoLayoutUI />,
+  },
+  // ── [86] c_sembrado_layout — anterior último componente migrado ─────────────
+
+  // =============================================================================
+  // [87] Demo inline — style_element_mixin
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoStyleElementMixin() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>style_element_mixin</h3>
+  //       <p style={s.meta}>
+  //         Mixin Magik: dibuja un estilo (area/circle/text) rotado + escalado
+  //         al bbox del elemento, con línea opcional al objeto GIS, doblez
+  //         alrededor del viewport y punta de flecha opcional.
+  //       </p>
+  //       <StyleElementMixinUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '87-style-element-mixin',
+    label: '[87] style_element_mixin',
+    description: 'Mixin Magik: calcula_bound+draw_style — figuras (:area/:circle/:text) rotadas+escaladas al self_bounds, línea opcional a objeto GIS con doblez frente al viewport, punta opcional (obten_pto_separado+obten_pto_intersect). Render OL v10.',
+    render: () => <StyleElementMixinUI />,
+  },
+  // ── [87] style_element_mixin — anterior último componente migrado ───────────
+
+  // =============================================================================
+  // [88] Demo inline — c_plano_principales
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoCPlanoPrincipales() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_plano_principales</h3>
+  //       <p style={s.meta}>
+  //         Genera plano "Red Principal" 24"×36" (9144×6096). Marco 6×3 módulos
+  //         carta (Carta_X=2160, Carta_Y=2790) con marcas de doblez +
+  //         esquinas L + escala uniforme 1.009345. Viewport principal
+  //         mapeado a CMV 1.2M×1M. Título azul "PRINCIPALES" 25pt.
+  //       </p>
+  //       <CPlanoPrincipalesUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '88-c-plano-principales',
+    label: '[88] c_plano_principales',
+    description: 'Plano "Red Principal" 24"×36" — genera_plano() orquesta abrir_hoja(9144×6096)+agrega_viewport+configura_plano. genera_marco(T3=6×3 Carta_X×Carta_Y) con marcas doblez X/Y + 4 esquinas L + transform.scale(1.009345). Título PRINCIPALES #3025B8.',
+    render: () => <CPlanoPrincipalesUI />,
+  },
+  // ── [88] c_plano_principales — anterior último componente migrado ───────────
+
+  // =============================================================================
+  // [89] Demo inline — c_lista_materiales_esquema
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoCListaMaterialesEsquema() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_lista_materiales_esquema</h3>
+  //       <p style={s.meta}>
+  //         Sello "Lista de Materiales" — async scan de current_map_view
+  //         (ace_name ~ "*esquema*"), filtra PROYECTADO, agrupa por
+  //         source_collection.name. Tabla 4 cols (No/DESCRIPCION/UNIDAD/CANTIDAD).
+  //         Reglas: route → metros (sheath fallback calculated_fiber_length);
+  //         resto → pzas. desc_mat según collectionName.
+  //       </p>
+  //       <CListaMaterialesEsquemaUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '89-c-lista-materiales-esquema',
+    label: '[89] c_lista_materiales_esquema',
+    description: 'Sello layout "Lista de Materiales" — scan async del esquemático activo, filtra construction_status=PROYECTADO, agrupa por source_collection.name. Tabla 2+N×4 (No/DESC/UNIDAD/CANTIDAD). tipo :red|:estructuras. Reglas route→metros, sheath fallback calculated_fiber_length. natural sort.',
+    render: () => <CListaMaterialesEsquemaUI />,
+  },
+  // ── [89] c_lista_materiales_esquema — anterior último componente migrado ────
+
+  // =============================================================================
+  // [90] Demo inline — c_vp_croquis_edificio
+  // Versión comentada como referencia de invocación directa sin menú selector.
+  // La versión activa está integrada en el entry de DEMO_ITEMS más abajo.
+  // =============================================================================
+  // function DemoCVpCroquisEdificio() {
+  //   return (
+  //     <section style={s.section}>
+  //       <h3 style={s.h3}>c_vp_croquis_edificio</h3>
+  //       <p style={s.meta}>
+  //         Viewport croquis edificio — contorno dashed + geometrías GIS
+  //         (19 colecciones) + símbolo norte 3 tamaños × 4 ubicaciones,
+  //         rotado por −view_angle. Boundary del edificio target con
+  //         turf.buffer(6) en rojo dashed. Etiqueta inferior #AFAF5D.
+  //       </p>
+  //       <CVpCroquisEdificioUI />
+  //     </section>
+  //   );
+  // }
+
+  {
+    id: '90-c-vp-croquis-edificio',
+    label: '[90] c_vp_croquis_edificio',
+    description: 'Viewport croquis edificio — contorno dashed + filtro 19 colecciones GIS + símbolo NORTE 3 tamaños A/B/C (flecha+lineas+arcos discretizados 1°) × 4 ubicaciones, rotado por −view_angle. Boundary edificio target turf.buffer(6) rojo dashed. Etiqueta bold 50pt #AFAF5D.',
+    render: () => <CVpCroquisEdificioUI />,
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

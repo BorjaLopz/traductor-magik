@@ -157,6 +157,12 @@ import { CGuiEditaSelloResumenProyectoUI }        from './migration/CGuiEditaSel
 import { PreviewSymbolPluginUI }                  from './migration/PreviewSymbolPlugin';
 // [73] c_celdas
 import { CCeldasUI }                              from './migration/CCeldas';
+// [74] c_preview_symbol_dialog
+import { PreviewSymbolDialogUI }                    from './migration/PreviewSymbolDialog';
+// [75] c_elemento_entidad_g
+import { ElementoEntidadGUI }                       from './migration/ElementoEntidadG';
+// [79] c_sello_estandar_diag_empal
+import { SelloEstandarDiagEmpalUI }                 from './migration/SelloEstandarDiagEmpal';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -1192,6 +1198,48 @@ const DEMO_ITEMS: DemoItem[] = [
     render     : () => <DemoCCeldas />,
   },
 
+  {
+    id         : '77-preview-symbol-dialog',
+    label      : '[77] c_preview_symbol_dialog',
+    description: 'Diálogo de previsualización y selección de símbolos GIS — lista + canvas preview + "Insertar" posiciona symbol_layout en la página activa.',
+    render     : () => <PreviewSymbolDialogUI/>
+  },
+  {
+    id         : '78-elemento-entidad-g',
+    label      : '[78] c_elemento_entidad_g',
+    description: 'Clase base abstracta para elementos gráficos de entidad — reposicionar_Area() ancla bbox en oPtoContacto, oElementos gestiona etiquetas/símbolos hijos.',
+    render     : () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>c_elemento_entidad_g</h3>
+        <p style={s.meta}>
+          Clase abstracta: slots oArea / oPtoContacto / nLongGrafica / bHabilitar / collEtiquetas.
+          Pulsa <strong>despliega()</strong> para ver cómo reposicionar_Area() calcula el nuevo bbox.
+        </p>
+        {/* Invocación directa sin menú selector — comentada como referencia:
+        // <ElementoEntidadGUI />
+        */}
+        <ElementoEntidadGUI />
+      </section>
+    ),
+  },
+  {
+    id         : '79-sello-estandar-diag-empal',
+    label      : '[79] c_sello_estandar_diag_empal',
+    description: 'Sello diagrama empalme — hereda c_sello_estandar_base, añade tbl_CeldaA(2×1, 70mm): Población+Central y tbl_CeldaB(1×1, 45mm): Clave Dto. lee_datos_BdeD() carga localidad/central/cve_distrito.',
+    render     : () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>c_sello_estandar_diag_empal</h3>
+        <p style={s.meta}>
+          Sello para diagrama de empalmes. Selecciona proyecto y pulsa <strong>lee_datos_BdeD()</strong>
+          para cargar datos, o edita los campos manualmente. El sello se actualiza en tiempo real.
+        </p>
+        {/* Invocación directa sin menú selector — comentada como referencia:
+        // <SelloEstandarDiagEmpalUI />
+        */}
+        <SelloEstandarDiagEmpalUI />
+      </section>
+    ),
+  },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];
 

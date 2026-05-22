@@ -177,6 +177,14 @@ import { CSelloNotasAdicionalesSctUI } from './migration/CSelloNotasAdicionalesS
 import { CSelloNotasSctUI } from './migration/CSelloNotasSct';
 // [84] c_dto_pronostico
 import { CDtoPronosticoUI } from './migration/CDtoPronostico';
+// [85] textbox_layout
+import { TextboxLayoutUI } from './migration/TextboxLayout';
+// [86] c_placa_larga_distancia
+import { CPlacaLargaDistanciaUI } from './migration/CPlacaLargaDistancia';
+// [87] c_sello_dist_de_ter_a_cd
+import { CSelloDistDeTerACdUI } from './migration/CSelloDistDeTerACd';
+// [88] c_leyenda_ashurado
+import { CLeyendaAshuradoUI } from './migration/CLeyendaAshurado';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -1482,6 +1490,79 @@ const DEMO_ITEMS: DemoItem[] = [
     label: '[84] c_dto_pronostico',
     description: 'Sello layout "Resumen de materiales" (red pares cobre) — tbl_Titulo(2×2,sin bordes,borde-inf celda1,2) + tbl_pares(3×2,bordes ext+rens) + tbl_pronosticos(3×3,todos bordes). Guard lazy bTablas_creadas en drawContentOn().',
     render: () => <CDtoPronosticoUI />,
+  },
+  {
+    id: '85-textbox-layout',
+    label: '[85] textbox_layout',
+    description: '11 atributos configurables (text/fontName/fontSize/colour/wrap/clip/alignH/alignV/orientation/angle/textWidth/textAspect) + wrap_lines(): ajuste de líneas greedy horizontal (left_right) y vertical (top_bottom) con margen border_chars y clipping.',
+    render: () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>textbox_layout</h3>
+        <p style={s.meta}>
+          11 atributos: text / fontName / fontSize / colour / wrap / clip / alignH / alignV /
+          orientation / angle / textWidth / textAspect.{' '}
+          wrap_lines() divide el texto en líneas respetando el bbox con clipping opcional.
+        </p>
+        {/* Invocación directa de referencia (sin menú selector):
+        // <TextboxLayoutUI />
+        */}
+        <TextboxLayoutUI />
+      </section>
+    ),
+  },
+  {
+    id: '86-c-placa-larga-distancia',
+    label: '[86] c_placa_larga_distancia',
+    description: 'Placa de identificación de cable de fibra óptica larga distancia — 6 tablas (tbl_1–6), fondo salmon rgb(255,212,191), logo + "PRECAUCION/CABLE DE FIBRA OPTICA/LARGA DISTANCIA" sin bordes, filas RUTA/LONG./POZO/EMPALME con bordes selectivos. 4 atributos dinámicos.',
+    render: () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>c_placa_larga_distancia</h3>
+        <p style={s.meta}>
+          Hereda de c_base_sello_fibra. configura_tabla() crea 6 tablas con posición absoluta
+          en el sheet (mm). llena_datos_dinamicos() inyecta ruta / long / pozo / empalme.
+        </p>
+        {/* Invocación directa de referencia (sin menú selector):
+        // <CPlacaLargaDistanciaUI />
+        */}
+        <CPlacaLargaDistanciaUI />
+      </section>
+    ),
+  },
+  {
+    id: '87-c-sello-dist-de-ter-a-cd',
+    label: '[87] c_sello_dist_de_ter_a_cd',
+    description: 'Sello 17×5 de distancias terminal→C.D. UbicaCoord mapea IDs (A1–S5) a posición en tbl_contenido. llena_datos_celdas(): ruta 1=edificio directo, ruta 2=distrito óptico con predicate.inside. FiltrarTerminalesConDist extrae user!_cuenta + user!_distancia_cd.',
+    render: () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>c_sello_dist_de_ter_a_cd</h3>
+        <p style={s.meta}>
+          Introduce un ID de edificio (1001–1003) o distrito óptico (5001–5002)
+          y pulsa el botón para cargar las distancias de las terminales de cobre a la C.D.
+        </p>
+        {/* Invocación directa de referencia (sin menú selector):
+        // <CSelloDistDeTerACdUI />
+        */}
+        <CSelloDistDeTerACdUI />
+      </section>
+    ),
+  },
+  {
+    id: '88-c-leyenda-ashurado',
+    label: '[88] c_leyenda_ashurado',
+    description: 'Leyenda de ashurado (layout_element): 3 cuadros con patrones diagonales. cont=1→reticulado (/ rojo + \\ verde), cont=2→/ rojo, cont=3→\\ verde. step=size/6. Atributo :Tamano (A/B/C). Canvas 2D con mapeo Magik y↑ → Canvas y↓.',
+    render: () => (
+      <section style={s.section}>
+        <h3 style={s.h3}>c_leyenda_ashurado</h3>
+        <p style={s.meta}>
+          construir_leyenda() dibuja 3 variantes de ashurado en Canvas 2D.
+          Selecciona el tamaño con los botones de radio.
+        </p>
+        {/* Invocación directa de referencia (sin menú selector):
+        // <CLeyendaAshuradoUI />
+        */}
+        <CLeyendaAshuradoUI />
+      </section>
+    ),
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

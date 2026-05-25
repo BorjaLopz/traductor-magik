@@ -2,12 +2,102 @@
   "hash": "f75ad437",
   "configHash": "ab94926c",
   "lockfileHash": "3c271df2",
-  "browserHash": "28b52d50",
+  "browserHash": "55e6f572",
   "optimized": {
     "@mui/material": {
       "src": "../../node_modules/@mui/material/index.mjs",
       "file": "@mui_material.js",
       "fileHash": "782c73e7",
+      "needsInterop": false
+    },
+    "ol/Feature": {
+      "src": "../../node_modules/ol/Feature.js",
+      "file": "ol_Feature.js",
+      "fileHash": "a418e121",
+      "needsInterop": false
+    },
+    "ol/Map": {
+      "src": "../../node_modules/ol/Map.js",
+      "file": "ol_Map.js",
+      "fileHash": "27e33c1d",
+      "needsInterop": false
+    },
+    "ol/View": {
+      "src": "../../node_modules/ol/View.js",
+      "file": "ol_View.js",
+      "fileHash": "48f83482",
+      "needsInterop": false
+    },
+    "ol/format": {
+      "src": "../../node_modules/ol/format.js",
+      "file": "ol_format.js",
+      "fileHash": "86a610c4",
+      "needsInterop": false
+    },
+    "ol/format/GeoJSON": {
+      "src": "../../node_modules/ol/format/GeoJSON.js",
+      "file": "ol_format_GeoJSON.js",
+      "fileHash": "1e98904b",
+      "needsInterop": false
+    },
+    "ol/geom": {
+      "src": "../../node_modules/ol/geom.js",
+      "file": "ol_geom.js",
+      "fileHash": "2bfbd890",
+      "needsInterop": false
+    },
+    "ol/geom/LineString": {
+      "src": "../../node_modules/ol/geom/LineString.js",
+      "file": "ol_geom_LineString.js",
+      "fileHash": "ca3af2cc",
+      "needsInterop": false
+    },
+    "ol/geom/Polygon": {
+      "src": "../../node_modules/ol/geom/Polygon.js",
+      "file": "ol_geom_Polygon.js",
+      "fileHash": "9a76bc33",
+      "needsInterop": false
+    },
+    "ol/layer/Vector": {
+      "src": "../../node_modules/ol/layer/Vector.js",
+      "file": "ol_layer_Vector.js",
+      "fileHash": "3f287a79",
+      "needsInterop": false
+    },
+    "ol/proj": {
+      "src": "../../node_modules/ol/proj.js",
+      "file": "ol_proj.js",
+      "fileHash": "893e884c",
+      "needsInterop": false
+    },
+    "ol/source/Vector": {
+      "src": "../../node_modules/ol/source/Vector.js",
+      "file": "ol_source_Vector.js",
+      "fileHash": "81d9180d",
+      "needsInterop": false
+    },
+    "ol/style": {
+      "src": "../../node_modules/ol/style.js",
+      "file": "ol_style.js",
+      "fileHash": "7d4d0c37",
+      "needsInterop": false
+    },
+    "ol/style/Circle": {
+      "src": "../../node_modules/ol/style/Circle.js",
+      "file": "ol_style_Circle.js",
+      "fileHash": "a5ec7e1e",
+      "needsInterop": false
+    },
+    "ol/style/Stroke": {
+      "src": "../../node_modules/ol/style/Stroke.js",
+      "file": "ol_style_Stroke.js",
+      "fileHash": "264e5d09",
+      "needsInterop": false
+    },
+    "ol/style/Style": {
+      "src": "../../node_modules/ol/style/Style.js",
+      "file": "ol_style_Style.js",
+      "fileHash": "1823d187",
       "needsInterop": false
     },
     "react-dom/client": {
@@ -30,6 +120,86 @@
     }
   },
   "chunks": {
+    "Circle-Cfa2pvvk": {
+      "file": "Circle-Cfa2pvvk.js",
+      "isDynamicEntry": false
+    },
+    "Collection-DpRYmBBn": {
+      "file": "Collection-DpRYmBBn.js",
+      "isDynamicEntry": false
+    },
+    "Event-DXAR8nLt": {
+      "file": "Event-DXAR8nLt.js",
+      "isDynamicEntry": false
+    },
+    "Feature-DFhL74iV": {
+      "file": "Feature-DFhL74iV.js",
+      "isDynamicEntry": false
+    },
+    "GeoJSON-C-RoDr-h": {
+      "file": "GeoJSON-C-RoDr-h.js",
+      "isDynamicEntry": false
+    },
+    "GeometryCollection-9sZ4xAy5": {
+      "file": "GeometryCollection-9sZ4xAy5.js",
+      "isDynamicEntry": false
+    },
+    "LineString-CQ7TDKcW": {
+      "file": "LineString-CQ7TDKcW.js",
+      "isDynamicEntry": false
+    },
+    "MultiPolygon-CU2pbURn": {
+      "file": "MultiPolygon-CU2pbURn.js",
+      "isDynamicEntry": false
+    },
+    "Object-DolGq2cf": {
+      "file": "Object-DolGq2cf.js",
+      "isDynamicEntry": false
+    },
+    "Polygon-BePo0SOh": {
+      "file": "Polygon-BePo0SOh.js",
+      "isDynamicEntry": false
+    },
+    "Style-D0OHOC_M": {
+      "file": "Style-D0OHOC_M.js",
+      "isDynamicEntry": false
+    },
+    "Text-DOTJW4YE": {
+      "file": "Text-DOTJW4YE.js",
+      "isDynamicEntry": false
+    },
+    "View-CNu_fp1q": {
+      "file": "View-CNu_fp1q.js",
+      "isDynamicEntry": false
+    },
+    "asserts-CxKOIJBj": {
+      "file": "asserts-CxKOIJBj.js",
+      "isDynamicEntry": false
+    },
+    "intersectsextent-Bqx-JGI7": {
+      "file": "intersectsextent-Bqx-JGI7.js",
+      "isDynamicEntry": false
+    },
+    "length-BywQShYR": {
+      "file": "length-BywQShYR.js",
+      "isDynamicEntry": false
+    },
+    "math-C8anmfUQ": {
+      "file": "math-C8anmfUQ.js",
+      "isDynamicEntry": false
+    },
+    "obj-BGAAjjDC": {
+      "file": "obj-BGAAjjDC.js",
+      "isDynamicEntry": false
+    },
+    "proj-BM-4T99l": {
+      "file": "proj-BM-4T99l.js",
+      "isDynamicEntry": false
+    },
+    "rbush-Bhmx5x2S": {
+      "file": "rbush-Bhmx5x2S.js",
+      "isDynamicEntry": false
+    },
     "react-B6BdZLWZ": {
       "file": "react-B6BdZLWZ.js",
       "isDynamicEntry": false

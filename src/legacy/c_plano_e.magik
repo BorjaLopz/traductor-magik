@@ -1,0 +1,113 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Obtener los datos de un plano
+# Autor: vbluna
+# Fecha de creacion: 19-Diciembre-2005
+#
+# ---------------- Revision History -----------------
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_plano_e)
+
+$
+def_slotted_exemplar(:c_plano_e,
+    {
+	   {:sProyecto,   _unset }, # Proyecto al que pertenece el Plano
+           {:sNombre,     _unset }, # Nombre del Plano
+	   {:sTipo,       _unset }, # Tipo del Plano
+	   {:sComentario, _unset }  # Comentarios del Plano
+    }
+)
+$
+
+c_plano_e.define_slot_access(:sProyecto,    :writable, :private)
+c_plano_e.define_slot_access(:sNombre,      :writable, :private)
+c_plano_e.define_slot_access(:sTipo,        :writable, :private)
+c_plano_e.define_slot_access(:sComentario,  :writable, :private)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_e.new(PoPlano)
+## Objetivo: Crear una instancia de plano
+## Parámetros de entrada:
+## Parámetros de salida:  Una instancia de plano
+## Regresa: 
+## Fecha de última modificación: 19/12/2005
+## Autor de la modificación : vbluna
+## Descripción de la modificación: Se creo
+
+	_return _clone.init(PoPlano)
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_e.init(PoPlano)
+## Objetivo: Inicializar los atributos de un plano
+## Parámetros de entrada:
+## Parámetros de salida:   
+## Regresa: 
+## Fecha de última modificación: 19/12/2005
+## Autor de la modificación : vbluna
+## Descripción de la modificación: Se creo
+
+	.sProyecto    << PoPlano.user!_proyecto
+	.sNombre      << PoPlano.user!_nombre
+	.sTipo        << PoPlano.user!_tipo
+	.sComentario  << PoPlano.user!_comentario
+	_return _self
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_e.Proyecto
+## Objetivo: Obtiene el nombre del plano
+## Parámetros de entrada:
+## Parámetros de salida:   sProyecto
+## Regresa:                El proyecto al que pertenece el plano
+## Fecha de última modificación: 19/12/2005
+## Autor de la modificación : vbluna
+## Descripción de la modificación: Se creo
+	>> .sProyecto
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_e.Nombre
+## Objetivo: Obtiene el nombre del plano
+## Parámetros de entrada:
+## Parámetros de salida:   sNombre
+## Regresa:                El nombre del plano
+## Fecha de última modificación: 19/12/2005
+## Autor de la modificación : vbluna
+## Descripción de la modificación: Se creo
+	>> .sNombre
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_e.Tipo
+## Objetivo: Obtiene el tipo del plano
+## Parámetros de entrada:
+## Parámetros de salida:   sTipo
+## Regresa:                El tipo del plano
+## Fecha de última modificación: 19/12/2005
+## Autor de la modificación : vbluna
+## Descripción de la modificación: Se creo
+	>> .sTipo.uppercase
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_e.Comentario
+## Objetivo: Obtiene el nombre del plano
+## Parámetros de entrada:
+## Parámetros de salida:   sComentario
+## Regresa:                El comentario correspondiente al plano
+## Fecha de última modificación: 19/12/2005
+## Autor de la modificación : vbluna
+## Descripción de la modificación: Se creo
+	>> .sComentario
+_endmethod
+$

@@ -1,0 +1,65 @@
+_package user
+#remex(:c_sello_notas_sct_marg_aereo)
+$
+def_slotted_exemplar(:c_sello_notas_sct_marg_aereo, {}, :c_sello_notas_sct)
+$
+c_sello_notas_sct_marg_aereo.define_shared_constant(:allowed_on_menu?, _false  , :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct_marg_aereo.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblTitulo # Tabla que almacena el título de la tabla
+
+	LoTblTitulo << _self.oTablas.crea_tabla(2,1,:tbl_notas_grales)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# Longitud de los renglones de la tabla, esta dada en mm
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 120
+
+	# Longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 160
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct_marg_aereo.prvAsignaTexto()
+
+	_super.prvAsignaTexto()
+
+_local LsTexto << character.newLine
+     LsTexto +<<" 5.- LA UBICACIÓN DE LA INSTALACIÓN MARGINAL AÉREA CON CABLE DE "+ .s_tipo_cable 
+     LsTexto +<< character.newLine
+     LsTexto +<<" INDICADO EN ESTE PROYECTO DEBERÁ SER VERIFICADO Y PRECISADO EN EL LUGAR POR LA RESIDENCIA"
+     LsTexto +<< character.newLine
+     LsTexto +<<" GENERAL DE CONSERVACIÓN DE CARRETERAS EN EL ESTADO DE "+ .s_estado + "."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 6.- LA INSTALACIÓN MARGINAL AÉREA CON POSTES Y CABLE DE "+ .s_tipo_cable +" QUE SE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" INDICA EN ESTE PROYECTO DEBERÁ EFECTUARSE CONFORME A LAS INDICACIONES DE LA "
+     LsTexto +<< character.newLine
+     LsTexto +<<" RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS, ASÍ COMO LAS RECOMENDACIONES "
+     LsTexto +<< character.newLine
+     LsTexto +<<" QUE SEAN DERIVADAS DE LAS INSPECCIONES EN CAMPO."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 7.- LA INSTALACIÓN MARGINAL AÉREA CON POSTES Y CABLE DE "+ .s_tipo_cable +" QUE SE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" INDICA EN ESTE PROYECTO DENTRO DEL ÁREA DEL DERECHO DE VÍA, DEBERÁ EFECTUARSE EN "
+     LsTexto +<< character.newLine
+     LsTexto +<<" UNA FRANJA PARALELA AL EJE DEL CAMINO CON UN ANCHO NO MAYOR DE 2.50 M. MEDIDOS A "
+     LsTexto +<< character.newLine
+     LsTexto +<<" PARTIR DEL LIMITE DEL DERECHO DE VÍA. "
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 8.- LOS CRUZAMIENTOS SUBTERRÁNEOS Y/O AÉREOS CON CABLE "+ .s_tipo_cable +","
+     LsTexto +<< character.newLine
+     LsTexto +<<" QUE SE PRETENDAN EFECTUAR DERIVADOS DE ESTA INSTALACIÓN MARGINAL AÉREA DEBERÁN "
+     LsTexto +<< character.newLine
+     LsTexto +<<" SOLICITARSE POR SEPARADO, PRESENTANDO PLANO DETALLADO DEL PROYECTO DEL CRUZAMIENTO. "
+
+_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+	
+_endmethod
+$

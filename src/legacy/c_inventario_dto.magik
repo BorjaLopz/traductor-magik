@@ -1,0 +1,1438 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Genera la tabla Resumen de Inventarios
+# Autor: fadiaz
+# Fecha de creacion: 16-Noviembre-2004
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#   07/04/05 DSB - Los datos ya los toma del distrito que se le proporciona
+#   23/03/05 DSB - Se agrego el metodo para poder asignar la cve
+#                  de ctl y dto
+#   24/02/05 DSB - Se documento y ademas se agrego el metodo
+#                  post_initialisation () que se ejecuta al terminar de crear
+#                  la instancia
+#   25/04/05 FDIAZ - Se compeleto la documentacion
+# Reviso.
+#    DSB
+# Notas:
+# El sello se descompone en secciones
+#  Seccion     Tablas que lo componen
+#     1        Titulo
+#              Encabezado
+#     2        Tipo_Inventario
+#              Resultados
+#     3        Totales
+#              Aumentos
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_inventario_dto)
+$
+def_slotted_exemplar(:c_inventario_dto,
+                     {
+			    {:otablas,         _unset}, # almacena las tablas que compoenen el sello
+	    		    {:oWindow,         _unset}, # Ventana o canvas en el que se desplegara el sello
+			    {:oCoordOrigen ,   _unset}, # Coord donde inicia el sello			    
+	     		    {:bTablas_Creadas, _false}, # Indica si las tabals ya fueron creadas
+			    {:oDto,           _unset }  # Dto del cual tomaran los datos
+
+		     },
+		      :layout_element 
+)
+$
+c_inventario_dto.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+c_inventario_dto.define_slot_access(:oTablas,         :writable, :public)
+c_inventario_dto.define_slot_access(:oWindow,         :writable, :public)
+c_inventario_dto.define_slot_access(:oCoordOrigen,    :writable, :public)
+c_inventario_dto.define_slot_access(:bTablas_Creadas, :writable, :public)
+c_inventario_dto.define_slot_access(:oDto,            :writable, :private)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.version()
+
+## Objetivo: Este metodo se debe de modifiar cada vez que se
+## sube a VSS
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa: LA version y fecha de la ultima modificacion
+## Fecha de última modificación: 25/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+	
+   _return  "version 1.00.00.00 07/04/05 19:15 "
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.defined_attributes
+
+## Objetivo: Define los atributos del sello
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add ( layout_attribute_definition.new (	:sSiglas_Central_Distrito, string,
+                   	      	 			:description, "siglas cent dto",
+							:allowed_on_properties_page?, _false,
+							:default_value, _unset 
+						  )
+		)	
+
+	>> attribs
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+c_inventario_dto.define_attributes()
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.draw_content_on(RoWindow)
+	
+## Objetivo: Manda llamar todos los metodos necesarios para
+## dibujar el sello
+## Parámetros de entrada:
+##   RoWindow - Canvas sobre el cual se dibujara el sello
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_self.oWindow << RoWindow
+
+          LcollNumViv << _self.oDto.numero_viviendas_NSE
+
+	 _self.collPublicos << {0}
+         _self.collBaldios  << {LcollNumViv[:|LOTE BALDÍO|].write_string}	  
+         _self.collTotal    << {_self.oDto.sTotal_viviendas, _self.oDto.sTotal_Lineas,0,0,0}
+
+
+	  LcollNumViv << _self.prvordena_deacuerdo_sello(LcollNumViv)
+
+	  LcollNumLin << _self.prvordena_deacuerdo_sello(_self.oDto.numero_lineas_NSE)
+	  
+	 _self.prvAsigna_Viv_Loc << LcollNumViv.as_simple_vector()
+
+	 _self.prvAsigna_Lineas  <<  LcollNumLin.as_simple_vector()
+
+
+	 
+	 _self.oTablas.Despliega(RoWindow)
+
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_inventario_dto.post_initialisation ()
+
+## Objetivo: Acciones que se realizan despues de crear la
+## instancia 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 04/02/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+
+        _self.inicializa(coordinate.new(0,0))
+
+
+        _self.inicializa_vectores_datos("")
+	
+	# Objetivo de la siguiente validacion:
+	# El valor por default del atributo "sSiglas_Central_Distrito" es _unset
+	# Si el atributo tiene un valor asignado, significa que se cargo de un XML
+	# Si el atributo tiene _unset  significa que se cargo del plugin.
+	#  
+	# 1.- Verificar que el atributo "sSiglas_Central_Distrito" no sea vacio. 
+	#     Lo que implica que la creacion del sello viene por la carga de un XML.
+	_if _self.sSiglas_Central_Distrito _isnt _unset
+	_then
+		# Como sabemos que viene de un XML, asignamos el valor de la propiedad
+		# al metodo
+ 		_self.Siglas_CtlDto << _self.sSiglas_Central_Distrito 
+	_endif	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.inicializa(_optional RoCoord)
+
+## Objetivo: Manda llamar todos los metodos necesarios para
+## crear el sello 
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	# Se construye el objeto c_distrito_e
+	_self.oDto << c_distrito_e.new()
+
+	# Codigo necesario para reconstruir el objeto c_distrito_e
+	# Para cuando el sello es guardado y cargado como un archivo XML
+	_if _self.sSiglas_Central_Distrito _isnt _unset
+	_then
+		_self.oDto.distrito << _self.sSiglas_Central_Distrito
+	_endif
+
+
+	# Configuracion del sello transparente
+	_self.set_fill_colour(_unset )
+	
+	#-----------------------------------------------------------
+	#Se Inicializa la coordenada de origen
+	#-----------------------------------------------------------
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord
+	
+	# se pasa como parametro el layout
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	#Crea y configura cada una de las tablas 
+	_self.prvCreaCfgTablas(RoCoord)
+
+	#Se conoce el area de la tabla dibujada
+        LoArea << _self.oTablas.area_total()
+
+	#Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	#Crea a los objetos que tendra c/u de las tablas
+	_self.prvCrea_Asigna_Obj_A_Celdas()
+
+	#Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.prvCreaCfgTablas(RoCoord)
+
+## Objetivo: Manda llamar lso metodos que crean y configuran
+## las tablas que compoenen el sello
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	#-----------------------------------------------------------
+	#Se crean las tablas que conforman los titulos
+	#-----------------------------------------------------------
+	_self.prvCreaCfgTbl_Seccion1(RoCoord)
+	_self.prvCreaCfgTbl_Seccion2(RoCoord)
+	_self.prvCreaCfgTbl_Seccion3(RoCoord)
+
+	# Se asignan los objetos c_captura_texto a las celdas
+	_self.prvCreaCfgTbl_Seccion4()
+	_self.prvCreaCfgTbl_Seccion5()
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.PrvCreaCfgTbl_Seccion1(RoCoord)
+
+## Objetivo: Crea y configura las tablas que compoenen las
+## seccion 1
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	_local LoTabla     # Almacena la tabla con la que se esta trabajado
+	_local LnRenglones # Numero de renglones que contendra la tabla 
+	_local LnColumnas  # Numero de columnas que contendra la tabla
+	_local LnDesX      # Desplazamineto en X de la tabla 
+	_local LnDesY      # desplazamiento en Y de la tabla
+
+	#-----------------------------------------------------------
+	#Tabla Titulo
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas  << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Titulo)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	LoTabla.bDibuja_bordes? << _false 
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<  8
+	LoTabla.oRenglones.elemento(2).nLongitud <<  5	
+	LoTabla.oColumnas.elemento(1).nLongitud  << 78.5
+
+
+	#-----------------------------------------------------------
+	#Tabla Encabezado 
+	#-----------------------------------------------------------
+	LnRenglones << 1
+	lnColumnas  << 6
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Encabezado)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Titulo})
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	#longitudes de los renglones de la tabla, esta dada en mm
+	LoTabla.oRenglones.elemento(1).nLongitud <<  5
+	LoTabla.oColumnas.elemento(1).nLongitud  << 16
+	LoTabla.oColumnas.elemento(2).nLongitud  << 12.5
+	LoTabla.oColumnas.elemento(3).nLongitud  << 12.5
+	LoTabla.oColumnas.elemento(4).nLongitud  << 12.5
+	LoTabla.oColumnas.elemento(5).nLongitud  << 12.5
+	LoTabla.oColumnas.elemento(6).nLongitud  << 12.5
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.prvCreaCfgTbl_Seccion2(RoCoord)
+
+## Objetivo: Crea y configura las tablas que componen las
+## seccion 2
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	_local LoTabla     # almacena la tabla con la que se esta dibujando 
+	_local LnRenglones # Numero de renglones que contendra la tabla 
+	_local LnColumnas  # Numero de columnas que tendra la tabla
+	_local LnDesX      # Desplazamiento en X de la tabla
+	_local LnDesY      # Desplazamiento en Y de la tabla
+
+
+	#-----------------------------------------------------------
+	#Tabla Tipo_Inventario
+	#-----------------------------------------------------------
+	LnRenglones << 3
+	lnColumnas  << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Tipo_inventario)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Titulo, :tbl_Encabezado})
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+
+	#longitudes de los renglones de la tabla, esta dada en mm
+	LoTabla.oRenglones.elemento(1).nLongitud << 27.5
+	LoTabla.oRenglones.elemento(2).nLongitud << 16.5
+	LoTabla.oRenglones.elemento(3).nLongitud << 16.5
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  5
+
+	
+	#-----------------------------------------------------------
+	#Tabla Resultados
+	#-----------------------------------------------------------
+	LnRenglones << 11
+	lnColumnas << 6
+	
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Resultados)
+
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Titulo,:tbl_Encabezado})
+	LnDesX << _self.oTablas.Longitud_total_Columnas({:tbl_Tipo_inventario})
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+	
+	#Se asignan las longitudes de los renglones 
+	_for LnNumRen  _over  range(1,LnRenglones)
+	_loop
+	     LoTabla.oRenglones.elemento(LnNumRen).nLongitud << 5.5
+	_endloop
+	
+	#Se asignan las lonjitudes de las columnas
+	LoTabla.oColumnas.elemento(1).nLongitud << 11
+	_for LnNumCol  _over  range(2,LnColumnas)
+	_loop
+	     LoTabla.oColumnas.elemento(LnNumCol).nLongitud << 12.5
+	_endloop
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.PrvCreaCfgTbl_Seccion3(RoCoord)
+
+## Objetivo: Crea y configura las tablas que compoenen las
+## seccion 3
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	_local LoTabla     # Almacena la tabla con la que se esta trabajado
+	_local LnRenglones # Numero de renglones que contendra la tabla 
+	_local LnColumnas  # Numero de columnas que tendra la tabla
+	_local LnDesX      # Desplazamiento en X de la tabla 
+	_local LnDesY      # Desplazamiento en Y de la tabla
+
+	#-----------------------------------------------------------
+	#Tabla Totales 
+	#-----------------------------------------------------------
+	LnRenglones << 3
+	lnColumnas  << 6
+	
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Totales)
+
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Titulo,:tbl_Encabezado,:tbl_Tipo_inventario})
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+	
+	#Se asignan las longitudes de los renglones 
+	_for LnNumRen  _over  range(1,LnRenglones)
+	_loop
+	     LoTabla.oRenglones.elemento(LnNumRen).nLongitud << 5
+	_endloop
+	
+	#Se asignan las lonjitudes de las columnas
+	LoTabla.oColumnas.elemento(1).nLongitud << 16
+	_for LnNumCol  _over  range(2,LnColumnas)
+	_loop
+	     LoTabla.oColumnas.elemento(LnNumCol).nLongitud << 12.5
+	_endloop
+
+	#-----------------------------------------------------------
+	#Tabla Aumentos 
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas  << 3
+	
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Aumentos)
+
+	LoTabla.bDibuja_bordes? << _false 
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+	
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Titulo,:tbl_encabezado, :tbl_Tipo_inventario,:tbl_Totales })
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+	
+	#Se asignan las longitudes de los renglones 
+	_for LnNumRen  _over  range(1,LnRenglones)
+	_loop
+	     LoTabla.oRenglones.elemento(LnNumRen).nLongitud << 10
+	_endloop
+
+	LoTabla.oColumnas.elemento(1).nLongitud << 28.5
+	LoTabla.oColumnas.elemento(2).nLongitud << 12.5
+	LoTabla.oColumnas.elemento(3).nLongitud << 37.5
+
+
+	LoCelda << LoTabla.oCeldas.Celda(1,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true
+	LoCelda << LoTabla.oCeldas.Celda(1,3).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true
+
+	LoCelda << LoTabla.oCeldas.Celda(2,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true
+	LoCelda << LoTabla.oCeldas.Celda(2,3).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.PrvCreaCfgTbl_Seccion4()
+
+## Objetivo: Se crean los objetos de tipo c_captura_texto
+## seccion 4
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 27/04/2005
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+
+	_for LnContCol _over range(4,6)
+        _loop
+		_for LnContRen  _over range(1,11)
+		_loop
+			LoCaptura << c_captura_texto.new("XX")
+
+			_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda(LnContRen,LnContCol).oElemento << LoCaptura
+		
+		_endloop
+	_endloop
+	
+	
+_endmethod	
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.PrvCreaCfgTbl_Seccion5()
+
+## Objetivo: Se crean los objetos de tipo c_captura_texto
+## seccion 5
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 27/04/2005
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+
+	LnContRen  << 3
+
+	_for LnContCol  _over range(4,6)
+	_loop
+		LoCaptura << c_captura_texto.new("XX")
+		LoCaptura.nTamanio << 2
+		LoCaptura.sAlineacion << :centre_centre
+		_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(LnContRen,LnContCol).oElemento << LoCaptura
+		
+	_endloop
+
+	
+	
+_endmethod	
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.prvCrea_Asigna_Obj_A_Celdas()
+
+## Objetivo: Manda llamar los metodos que crean y asignan los objetos
+##	a las celdas de las secciones
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_self.prvCrea_Asigna_Obj_A_Celdas_Seccion1()
+	_self.prvCrea_Asigna_Obj_A_Celdas_Seccion2()
+	_self.prvCrea_Asigna_Obj_A_Celdas_Seccion3()		
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.prvCrea_Asigna_Obj_A_Celdas_Seccion1()
+
+## Objetivo: Crea y asigna los objetos a las celdas de las
+## tablas de la seccion 1
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	#-----------------------------------------------------------
+	#Tabla Titulo
+	#-----------------------------------------------------------
+
+	_local LoCveCtlDto # Almacena la clave de la central y del dto
+	_local LoTit       # Almacena el titulo de inventario 
+	
+	#se crean los objetos que almacenara la tabla
+	LoCveCtlDto  << c_texto_grafico.new(" ")
+	LoCveCtlDto.nTamanio << 35
+
+	#se crean los objetos que almacenara la tabla
+	LoTit  << c_texto_grafico.new("INVENTARIO")
+	LoTit.nTamanio << 25
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(1,1).oElemento << LoCveCtlDto	
+	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(2,1).oElemento << LoTit
+	
+
+	#-----------------------------------------------------------
+	#Tabla Encabezado 
+	#-----------------------------------------------------------
+
+        _local LoTit1 # Almacena el titulo Viv.Loc
+        _local LoTit2 # Almacena el titulo Vineas
+        _local LoTit3 # Almacena el titulo Const
+        _local LoTit4 # Almacena el titulo F. Pen
+        _local LoTit5 # Almacena el titulo Tot. Sat	
+
+	
+	#se crean los objetos que almacenara la tabla
+	LoTit1  << c_texto_grafico.new("VIV.LOC.")
+	LoTit1.nTamanio << 25
+	
+	LoTit2  << c_texto_grafico.new_from(LoTit1,"LINEAS")
+	LoTit3  << c_texto_grafico.new_from(LoTit1,"CONST.")
+	LoTit4  << c_texto_grafico.new_from(LoTit1,"F.PEN")
+	LoTit5  << c_texto_grafico.new_from(LoTit1,"TOT.SAT")
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Encabezado).oCeldas.Celda(1,2).oElemento << LoTit1
+	_self.oTablas.elemento(:tbl_Encabezado).oCeldas.Celda(1,3).oElemento << LoTit2
+	_self.oTablas.elemento(:tbl_Encabezado).oCeldas.Celda(1,4).oElemento << LoTit3
+	_self.oTablas.elemento(:tbl_Encabezado).oCeldas.Celda(1,5).oElemento << LoTit4
+	_self.oTablas.elemento(:tbl_Encabezado).oCeldas.Celda(1,6).oElemento << LoTit5	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.prvCrea_Asigna_Obj_A_Celdas_Seccion2()
+
+## Objetivo: Crea y asigna los objetos a las celdas de las
+## tablas de la seccion 2
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	#-----------------------------------------------------------
+	#Tabla Tipo de inventario
+	#-----------------------------------------------------------
+        _local LoRes # Almacena el titulo de Residencial
+	_local LoCom # Almacena el titulo de Comercial
+        _local LoInd # Almacena el titulo de Industrial
+	
+	# Creacion de los objetos 
+	LoRes  << c_texto_grafico.new("RESIDENCIAL")
+	LoRes.nTamanio << 20
+	LoRes.sOrientacion << :top_bottom
+	
+	LoCom  << c_texto_grafico.new_from(LoRes,"COMERCIAL")
+	LoInd  << c_texto_grafico.new_from(LoRes,"INDUSTRIAL")
+
+	# Asignación de los objetos
+	_self.oTablas.elemento(:tbl_Tipo_inventario).oCeldas.Celda(1,1).oElemento << LoRes
+	_self.oTablas.elemento(:tbl_Tipo_inventario).oCeldas.Celda(2,1).oElemento << LoCom
+	_self.oTablas.elemento(:tbl_Tipo_inventario).oCeldas.Celda(3,1).oElemento << LoInd
+
+	#-----------------------------------------------------------
+	#Tabla Resultados
+	#-----------------------------------------------------------
+
+	# Se crean los objetos que almacenara la tabla - Titulo de los renglones
+	LoTitA  << c_texto_grafico.new("A")
+	LoTitA.nTamanio << 25	
+	LoTitB  << c_texto_grafico.new_from(LoTitA,"B")
+	LoTitC  << c_texto_grafico.new_from(LoTitA,"C")
+	LoTitD  << c_texto_grafico.new_from(LoTitA,"D")
+	LoTitE  << c_texto_grafico.new_from(LoTitA,"E")
+	LoTit1  << c_texto_grafico.new_from(LoTitA,"1a.")
+	LoTit2  << c_texto_grafico.new_from(LoTitA,"2a.")
+	LoTit3  << c_texto_grafico.new_from(LoTitA,"3a.")
+	LoTitP  << c_texto_grafico.new_from(LoTitA,"P")
+	LoTitM  << c_texto_grafico.new_from(LoTitA,"M")
+	LoTitL  << c_texto_grafico.new_from(LoTitA,"L")
+
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 1,1).oElemento << LoTitA
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 2,1).oElemento << LoTitB
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 3,1).oElemento << LoTitC
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 4,1).oElemento << LoTitD
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 5,1).oElemento << LoTitE
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 6,1).oElemento << LoTit1
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 7,1).oElemento << LoTit2
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 8,1).oElemento << LoTit3
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( 9,1).oElemento << LoTitP
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda(10,1).oElemento << LoTitM
+	_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda(11,1).oElemento << LoTitL
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.prvCrea_Asigna_Obj_A_Celdas_Seccion3()
+
+## Objetivo: Crea y asigna los objetos a las celdas de las
+## tablas de la seccion 3
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	#-----------------------------------------------------------
+	#Tabla Totales
+	#-----------------------------------------------------------
+        _local LoPub # Almacena el titulo de Publicos
+	_local LoBal # Almacena el titulo de Baldios
+        _local LoTot # Almacena el titulo de total
+	
+	# Creacion de los objetos 
+	LoPub  << c_texto_grafico.new("PUBLICOS")
+	LoPub.nTamanio << 20
+	
+	LoBal  << c_texto_grafico.new_from(LoPub,"BALDIOS")
+	LoTot  << c_texto_grafico.new_from(LoPub,"TOTAL")
+
+	# Asignación de los objetos
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(1,1).oElemento << LoPub
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(2,1).oElemento << LoBal
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(3,1).oElemento << LoTot
+
+
+	_local LoTacha # Objeto que contiene una cuadricula
+	
+	# Asignación de los objetos tachados en el renglon de publicos
+
+	LoTacha  << c_tachado_grafico.new()
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(1,2).oElemento << LoTacha
+	LoTacha  << c_tachado_grafico.new()
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(1,4).oElemento << LoTacha
+	LoTacha  << c_tachado_grafico.new()	
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(1,5).oElemento << LoTacha
+	LoTacha  << c_tachado_grafico.new()	
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(1,6).oElemento << LoTacha	
+	
+
+	# Asignación de los objetos tachados en el renglon de Baldios
+
+	LoTacha  << c_tachado_grafico.new()
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(2,3).oElemento << LoTacha
+	LoTacha  << c_tachado_grafico.new()
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(2,4).oElemento << LoTacha
+	LoTacha  << c_tachado_grafico.new()	
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(2,5).oElemento << LoTacha
+	LoTacha  << c_tachado_grafico.new()	
+	_self.oTablas.elemento(:tbl_Totales).oCeldas.Celda(2,6).oElemento << LoTacha	
+
+	
+	#-----------------------------------------------------------
+	#Tabla Aumentos
+	#-----------------------------------------------------------
+        _local LoAumSec # Almacena el titulo de aumento de secundarios
+	_local LoAumPri # Almacena el titulo de aumentos principales
+
+	
+	# Creacion de los objetos 
+	LoAumSec  << c_texto_grafico.new("AUMENTO SEC.")
+	LoAumSec.nTamanio << 30
+	#LoAumSec.sColor << "red"
+	
+	LoAumPri  << c_texto_grafico.new_from(LoAumSec,"AUMENTO PRINC.")
+
+
+	# Asignación de los objetos
+	_self.oTablas.elemento(:tbl_Aumentos).oCeldas.Celda(1,1).oElemento << LoAumSec
+	_self.oTablas.elemento(:tbl_Aumentos).oCeldas.Celda(2,1).oElemento << LoAumPri
+
+
+	LoTxt  << c_texto_grafico.new("Alex 1,2")
+	LoTxt.nTamanio << 50
+	LoTxt.sColor << "red"
+	LoTxt.sAlineacion << :centre_right
+	
+
+	LoCapTxt1  << c_captura_texto.new("P 1,3")
+	LoCapTxt1.nTamanio << 5
+	LoCapTxt1.sColor << "red"
+	LoCapTxt1.sAlineacion << :centre_left
+	LoCapTxt1.nMargen_Izq << - 12.5
+	_self.oTablas.elemento(:tbl_Aumentos).oCeldas.Celda(1,3).oElemento << LoCapTxt1
+
+
+	LoCapTxt1  << c_captura_texto.new("P 1,3")
+	LoCapTxt1.nTamanio << 5
+	LoCapTxt1.sColor << "red"
+	LoCapTxt1.sAlineacion << :centre_left
+	LoCapTxt1.nMargen_Izq << - 12.5
+	_self.oTablas.elemento(:tbl_Aumentos).oCeldas.Celda(2,3).oElemento << LoCapTxt1	
+
+	
+
+_endmethod 
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.inicializa_vectores_datos(PsId_Dto)
+
+## Objetivo: recibir el identificador de distrito y realizar la
+## consulta para obtener los datos necesarios para esta tabla
+## Parámetros de entrada:
+## 	PsId_Dto - Identificador del distrito
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_local ExisteDto << _true   # Bandera para saber si existem el Dto
+        #  _self.oDistrito.identificador_distrito(PsId_Dto)
+
+	_if ExisteDto = _true 
+	_then
+	   _self.collRes_A  << {"","","","",""}  
+	   _self.collRes_B  << {"","","","",""}  
+ 	   _self.collRes_C  << {"","","","",""}  
+           _self.collRes_D  << {"","","","",""}  
+           _self.collRes_E  << {"","","","",""}  
+           _self.collCom_1A << {"","","","",""}  
+           _self.collCom_2A << {"","","","",""}  
+ 	   _self.collCom_3A << {"","","","",""}  
+	   _self.collInd_P  << {"","","","",""}  
+	   _self.collInd_L  << {"","","","",""}  
+	   _self.collInd_M  << {"","","","",""}  
+
+	   _self.collPublicos << {0}
+	   _self.collBaldios  << {0}
+	   _self.collTotal    << {0,0,0,0,0}
+	   
+           _self.collAumento_Sec   << "0+0=0"
+	   _self.collAumento_princ << "0+100=100"
+
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collRes_A << RcollValores
+
+## Objetivo: Asignar los valores del NSE Residenciales A al renglon 
+##           que lo debe contener (1)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 1, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Residencial (Nivel A) debe ser de 5.")	
+   _endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collRes_B << RcollValores
+
+## Objetivo: Asignar los valores del NSE Residenciales B al renglon 
+##           que lo debe contener (2)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 2, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Residencial (Nivel B) debe ser de 5.")	
+   _endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collRes_C << RcollValores
+
+## Objetivo: Asignar los valores del NSE Residenciales C al renglon 
+##           que lo debe contener (3)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 3, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Residencial (Nivel C) debe ser de 5.")	
+   _endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collRes_D << RcollValores
+
+## Objetivo: Asignar los valores del NSE Residenciales D  al renglon 
+##           que lo debe contener (4)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 4, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Residencial (Nivel D) debe ser de 5.")
+   _endif 	   
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collRes_E << RcollValores
+
+## Objetivo: Asignar los valores del NSE Residenciales E  al renglon 
+##           que lo debe contener (5)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 5, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Residencial (Nivel E) debe ser de 5.")
+   _endif 	   
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collCom_3A << RcollValores
+
+## Objetivo: Asignar los valores del NSE Comercios de tercera  al renglon 
+##           que lo debe contener (8)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 8, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Comercial (Nivel 3a) debe ser de 5.")	
+   _endif
+
+_endmethod
+
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collCom_1A << RcollValores
+
+## Objetivo: Asignar los valores del NSE Comercios de segunda  al renglon 
+##           que lo debe contener (6)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 6, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Comercial (Nivel 1a) debe ser de 5.")	
+   _endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collCom_2A << RcollValores
+
+## Objetivo: Asignar los valores del NSE Comercios de segunda  al renglon 
+##           que lo debe contener (7)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 7, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Comercial (Nivel 2a) debe ser de 5.")	
+   _endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collCom_3A << RcollValores
+
+## Objetivo: Asignar los valores del NSE Comercios de tercera  al renglon 
+##           que lo debe contener (8)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 8, RcollValores, 5)
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Comercial (Nivel 3a) debe ser de 5.")	
+   _endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collInd_P << RcollValores
+	
+## Objetivo: Asignar los valores del NSE Industria Pesada  al renglon 
+##           que lo debe contener (9)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios
+       
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 9, RcollValores, 5)	
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Indus (Nivel P) debe ser de 5.")	
+   _endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collInd_M << RcollValores
+
+## Objetivo: Asignar los valores del NSE Industria Mediana  al renglon 
+##           que lo debe contener (10)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 10, RcollValores, 5)	
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Indus (Nivel M) debe ser de 5.")	
+   _endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collInd_L << RcollValores
+
+## Objetivo: Asignar los valores del NSE IL al renglon que lo debe contener (11)
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   # Se valida que la coleccion tenga los 5 elementos necesarios 
+   _if RcollValores.size = 5
+   _then
+      _self.AsignaCelda(:tbl_Resultados, 11, RcollValores, 5)	
+   _else
+      condition.raise(:warning, :string, "El número de elementos del vector Indus (Nivel L) debe ser de 5.")	
+   _endif
+   
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.AsignaCelda(RoTabla, RoRenglon ,RcollValores, RnTotal_Elementos)
+
+## Objetivo: Asignar los valores de una coleccion a un renglon determinado
+## Parámetros de entrada:
+##      RoTabla - Tabla a la cual se le asignara los valores
+##      RoRenglon - numero del renglon en el cual se insertaran los valores
+## 	RcollValores - Valores que van en el renglon
+##      RnTotal_elementos - numero de elementos que se asignaran de la coleccion
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	
+        _for LnCont  _over range(1,RnTotal_Elementos ) 
+	_loop
+		_self.AsignaCelda2(RoTabla,RoRenglon, LnCont+1, RcollValores[LnCont]) 
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.AsignaCelda2(RoTabla, RoRenglon, RoColumna ,RoValor)
+
+## Objetivo: Asigna un valor a una celda determinada por renglon y columna, de la tabla RoTabla
+##
+## Parámetros de entrada:
+## 	RoTabla - Nombre de la tabla en la que se desea asignar un valor
+##      RoRenglon, RoColumna - Numero del renglon y de la columna donse se insertara
+##                el valor
+##      RoValor - Valor que se insertara en la celda 
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+   # si no existe el objeto que almacenara los datos lo crea		
+   _if _self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RoRenglon,RoColumna).oElemento _is unset
+   _then
+      _local LoDato  # Objeto de texto para asignar texto a una celda			
+      
+      LoDato  << c_texto_grafico.new(RoValor.write_string)
+      LoDato.nTamanio << 25
+      _self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RoRenglon,RoColumna).oElemento << LoDato
+   _else
+      _self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RoRenglon,RoColumna).oElemento.sTexto << RoValor.write_string
+   _endif	  
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collAumento_Sec << RsValor
+
+## Objetivo: Asigna los valores al renglon (1) Aumento sec que esta contenido 
+##           en la tabla Aumentos
+##
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+
+	   _self.AsignaCelda2(:tbl_Aumentos, 1, 3 ,RsValor)
+
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collAumento_princ << RsValor
+
+## Objetivo: Asigna los valores al renglon (2) Aumento princ que esta contenido 
+##           en la tabla Aumentos
+##
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+
+   	   _self.AsignaCelda2(:tbl_Aumentos, 2, 3 ,RsValor)
+
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collPublicos << RcollValores
+
+## Objetivo: Asigna los valores al renglon (1) de la tabla
+## totales. El renglon de publicos
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_if RcollValores.size = 1
+	_then
+	   _self.AsignaCelda2(:tbl_Totales,  1, 3 ,RcollValores[1])
+	_else	
+	   condition.raise(:warning, :string, "El número de elementos de Públicos debe ser uno.")
+	_endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collBaldios  << RcollValores
+
+## Objetivo: Asigna los valores al renglon (2) de la tabla
+## totales. El renglon de baldios
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	_if RcollValores.size = 1
+	_then
+	   _self.AsignaCelda2(:tbl_Totales,  2, 2 ,RcollValores[1])
+	_else	
+	   condition.raise(:warning, :string, "El número de baldíos debe ser de uno.")
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.collTotal << RcollValores
+
+## Objetivo: Asigna los valores al renglon (3) de la tabla
+## totales. El renglon de total
+## Parámetros de entrada:
+## 	RcollValores - Valores que van en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_if RcollValores.size = 5
+	_then
+	   _self.AsignaCelda2(:tbl_Totales,  3, 2 ,RcollValores[1])
+	   _self.AsignaCelda2(:tbl_Totales,  3, 3 ,RcollValores[2])
+	   _self.AsignaCelda2(:tbl_Totales,  3, 4 ,RcollValores[3])
+	   _self.AsignaCelda2(:tbl_Totales,  3, 5 ,RcollValores[4])
+	   _self.AsignaCelda2(:tbl_Totales,  3, 6 ,RcollValores[5])	   
+	_else	
+	   condition.raise(:warning, :string, "El número de totales debe ser de cinco.")
+	_endif
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.Siglas_CtlDto << RsValor
+
+## Objetivo: Asigna La clave de la central y dto a la tabla
+## Parámetros de entrada:
+## 	RsValor - Valor que va en el renglon
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 23/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_self.sSiglas_Central_Distrito << RsValor	
+
+	
+        _self.AsignaCelda2(:tbl_Titulo, 1, 1,_self.sSiglas_Central_Distrito)
+
+        _self.oDto << c_distrito_e.new()
+	_self.oDto.distrito << _self.sSiglas_Central_Distrito
+	
+        #write(_self.oDto.numero_viviendas_NSE.p)
+_endmethod
+$
+
+
+#_pragma(classify_level=restricted, usage={redefinable})
+#_private _method c_inventario_dto.prvAsigna_Cve_Ctl_Dto << PsValor
+#
+#      _self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(1,1).oElemento.stexto << PsValor
+#
+#	
+#_endmethod
+#$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.prvAsigna_Viv_Loc << PcollsValor
+
+## Objetivo: Se muestran los datos de vivienda localidad
+## Parámetros de entrada:  
+##    coleccion - PcollsValor : Coleccion que contiene los elementos a mostrar
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_if  PcollsValor.size <= 11 
+	_then
+		_local LnRenglon   # Contador de renglones
+		LnRenglon << 1
+	
+		#Se obtienen cada uno de los datos y se imprimen	
+		_for LsValor  _over  PcollsValor.fast_elements()
+		_loop
+			_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( LnRenglon,2).oElemento.stexto << LsValor
+			
+			LnRenglon << LnRenglon + 1
+		_endloop
+	_else
+		condition.raise(:warning, :string, "El numero de datos Viv_Loc en la tabla Tbl_Resultados debe ser maximo de 11 elementos.")
+		
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_inventario_dto.prvAsigna_Lineas << PcollsValor
+
+## Objetivo: Se muestran los datos de lineas
+## Parámetros de entrada:  
+##    coleccion - PcollsValor : Coleccion que contiene los elementos a mostrar
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_if  PcollsValor.size <= 11 
+	_then
+		_local LnRenglon   # Contador de renglones
+		LnRenglon << 1
+	
+		#Se obtienen cada uno de los datos y se imprimen	
+		_for LsValor  _over  PcollsValor.fast_elements()
+		_loop
+			_self.oTablas.elemento(:tbl_Resultados).oCeldas.Celda( LnRenglon,3).oElemento.stexto << LsValor
+			
+			LnRenglon << LnRenglon + 1
+		_endloop
+	_else
+		condition.raise(:warning, :string, "El numero de datos Viv_Loc en la tabla Tbl_Resultados debe ser maximo de 11 elementos.")
+		
+	_endif
+	
+_endmethod
+
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.Agrega_LYM(RoLym)
+
+## Objetivo: Permite agregar todos los elementos Layout a la pagina
+## Parámetros de entrada:  
+##    :layout_manager - RoLym : Referencia al LayoutManager
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_inventario_dto.prvOrdena_DeAcuerdo_Sello(Rcoll)
+
+## Objetivo: Permite ordenar los elementos de acuerdo al sello
+## Parámetros de entrada:  
+##    coleccion - Rcoll : Coleccion que contiene los elementos
+## Parámetros de salida:   NA
+## Regresa: 
+##    rope - Lista ordenada de elementos
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   _local LcollOrdenada   # Coleccion de datos a ordenar
+	
+   LcollOrdenada << rope.new()
+
+   LcollOrdenada.add(Rcoll[:|RESIDENCIAL A|].write_string)
+   LcollOrdenada.add(Rcoll[:|RESIDENCIAL B|].write_string)
+   LcollOrdenada.add(Rcoll[:|RESIDENCIAL C|].write_string)
+   LcollOrdenada.add(Rcoll[:|RESIDENCIAL D|].write_string)
+   LcollOrdenada.add(Rcoll[:|RESIDENCIAL E|].write_string)
+   LcollOrdenada.add(Rcoll[:|COMERCIAL 1ª.|].write_string)
+   LcollOrdenada.add(Rcoll[:|COMERCIAL 2ª.|].write_string)
+   LcollOrdenada.add(Rcoll[:|COMERCIAL 3ª.|].write_string)
+   LcollOrdenada.add(Rcoll[:|INDUSTRIAL PESADA|].write_string)
+   LcollOrdenada.add(Rcoll[:|INDUSTRIAL MEDIANA|].write_string)
+   LcollOrdenada.add(Rcoll[:|INDUSTRIAL LIGERA|].write_string)
+  
+   _return LcollOrdenada
+   
+_endmethod

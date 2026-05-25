@@ -1,0 +1,100 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Proporcionar la clase que dibuja una rejilla dentro de la celda
+# Autor: dsanchez
+# Fecha de creacion: 6-Diciembre-2004
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#
+# Reviso.
+# dsanchez
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_tachado_grafico)
+
+$
+def_slotted_exemplar(:c_tachado_grafico,
+		     {
+			     {:sNombre_Grafico, _unset} # Nombre del grafico
+
+		     },
+		     :c_elemento_grafico
+)
+$
+c_tachado_grafico.define_slot_access(:sNombre_grafico,    :writable, :private)
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tachado_grafico.new()
+## Objetivo: Crea un nuevo objeto de la clase c_tachado_grafico
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA  
+## Regresa: 
+## 	c_tachado_grafico - Objeto c_tachado_grafico
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+	
+	_return _clone
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tachado_grafico.Despliega()
+## Objetivo: Realizar el dibujo de la rejilla
+## Parámetros de entrada: NA
+## Parámetros de salida: NA  
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+_local LoCoordenada  # Coordenadas que se usaran para dibujar las líneas	
+_local LoEstiloLinea # Propipedades con las que se va a dibujar la línea
+_local LnX 	     # Posición en X donde se dibujará la línea
+_local LnY 	     # Posición en Y donde se dibujará la línea
+
+	# Se crea un objeto estilo linea
+	LoEstiloLinea << line_style.new_with_properties(
+                  :foreground_colour, colour.called("black"), 
+                  :width, 2)
+
+	# Se crea un objeto coordenada
+        LoCoordenada << coords_vector.new(2)
+
+	#Se dibujan primero las líneas horizontales separadas 1 mm
+	LnX << _self.oArea.Xmin
+	_loop
+	        LnX << LnX + 10
+	        _if LnX > _self.oArea.XMax 
+	        _then
+	        	_leave
+	        _endif	
+		LoCoordenada[1] << coordinate.new(LnX , _self.oArea.YMin)
+		LoCoordenada[2] << coordinate.new(LnX , _self.oArea.YMax)
+		
+		_self.oVentana.draw_line_transform( LoEstiloLinea, LoCoordenada)
+	_endloop	
+
+	#Se dibujan primero las lineas horizontales separadas 1 mm	
+	LnY << _self.oArea.Ymin
+	_loop
+	        LnY << LnY + 10
+
+		_if LnY > _self.oArea.YMax 
+	        _then
+	        	_leave
+	        _endif		        
+	        
+		LoCoordenada[1] << coordinate.new(_self.oArea.XMin , LnY)
+		LoCoordenada[2] << coordinate.new(_self.oArea.XMax , LnY)
+		
+		_self.oVentana.draw_line_transform( LoEstiloLinea, LoCoordenada)
+	_endloop		 
+	
+_endmethod
+$

@@ -1,0 +1,119 @@
+_package user
+$
+def_slotted_exemplar(:c_sello_lista_cables,
+{
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_lista_cables.configura_tabla()
+
+
+	LoTabla << .o_tablas.crea_tabla(1,1,:tbl_titulo)
+	LoTabla.ocoordenada_origen << .o_coord_inicio
+	LoTabla.orenglones.elemento(1).nlongitud << 20
+	LoTabla.ocolumnas.elemento(1).nlongitud  << 100
+
+ 	LoTabla << .o_tablas.crea_tabla(1,3,:tbl_subtitulos)
+        ln_desp_y << .o_tablas.longitud_total_renglones({:tbl_titulo})
+	LoTabla.ocoordenada_origen << coordinate.new( .o_coord_inicio.x, .o_coord_inicio.y-ln_desp_y)
+	LoTabla.orenglones.elemento(1).nlongitud << 20
+	LoTabla.ocolumnas.elemento(1).nlongitud  << 33
+	LoTabla.ocolumnas.elemento(2).nlongitud  << 33
+	LoTabla.ocolumnas.elemento(3).nlongitud  << 34
+
+
+
+	LoCables << rope.new()
+
+	_if _self.DistritoOptico _isnt _unset 
+	_then
+		LoCables << c_distrito.obten_cables_secundarios_agrupados(_self.DistritoOptico)
+	_endif
+
+	_if LoCables.size >1
+	_then
+		LoTotRenglones << LoCables.size
+	_else
+		LoTotRenglones << 1
+	_endif
+
+	LoTabla << .o_tablas.crea_tabla(LoTotRenglones,3,:tbl_contenido)
+        ln_desp_y << .o_tablas.longitud_total_renglones({:tbl_subtitulos}) +
+		     .o_tablas.longitud_total_renglones({:tbl_titulo})
+	LoTabla.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,
+						      .o_coord_inicio.y-ln_desp_y)
+	LoTabla.orenglones.elemento(1).nlongitud<< 20
+	_for ren _over range(1,LoTotRenglones)
+	_loop
+		LoTabla.orenglones.elemento(ren).nlongitud<< 10
+	_endloop
+
+	LoTabla.ocolumnas.elemento(1).nlongitud  << 33
+	LoTabla.ocolumnas.elemento(2).nlongitud  << 33
+	LoTabla.ocolumnas.elemento(3).nlongitud  << 34
+
+
+
+
+          
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_lista_cables.defined_attributes
+	## 
+	## 
+_local LcollAtributos
+
+	LcollAtributos << rope.new_from(_super.defined_attributes)
+
+	LcollAtributos.add(layout_attribute_definition.new(:DistritoOptico, :integer,
+							   :description, "Distrito Optico",
+							   :default_value, _unset,
+							   :allowed_on_properties_page?, _false,
+							   :editor, _unset))
+	
+	_return LcollAtributos
+_endmethod
+$
+c_sello_lista_cables.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_lista_cables.etiqueta_celdas()
+
+	_self.asigna_texto_celda(:tbl_Titulo,1,1,"CANTIDAD DE CABLE A PROYECTAR",40)
+
+	#Subtitulos
+	_self.asigna_texto_celda(:tbl_subtitulos,1,1,"CAPACIDAD ",25,:centre_centre,0,{0,0,0})
+	_self.asigna_texto_celda(:tbl_subtitulos,1,2,"TIPO DE CABLE",25,:centre_centre,0,{0,0,0})
+	_self.asigna_texto_celda(:tbl_subtitulos,1,3,"LONGITUD (MTS.)",25,:centre_centre,0,{0,0,0})
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_lista_cables.llena_datos_celdas()
+	## 
+	##
+
+	_global dato
+	dato  << 0
+	_local lpl_datos << c_distrito.obten_cables_secundarios_agrupados(_self.DistritoOptico)
+	_local cont << 0
+	_for datos _over lpl_datos.fast_elements()
+	_loop
+		cont +<< 1
+		_self.asigna_texto_celda(:tbl_contenido,cont,1,datos[:capacidad]
+					 ,25,:centre_centre,0,{0,0,0})
+		_self.asigna_texto_celda(:tbl_contenido,cont,2,datos[:tipo]
+					 ,25,:centre_centre,0,{0,0,0})
+		# (12/08/15 hramosr) : Se cambia el write_string_formal(2) por  write_string.
+		_self.asigna_texto_celda(:tbl_contenido,cont,3,datos[:longitud].write_string_normal(1)
+					 ,25,:centre_centre,0,{0,0,0}) 
+
+		_if datos[:longitud] > 1000		
+		_then
+		    dato << datos[:longitud]
+		_endif
+	_endloop	
+_endmethod 
+$

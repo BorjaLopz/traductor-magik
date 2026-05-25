@@ -1,0 +1,63 @@
+#----------------------------------------------------------------
+# ruta_opbs_plugin.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: egomez
+#
+# Date: 06/03/02
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package sw
+$
+#remex(:ruta_opbs_plugin)
+$
+def_slotted_exemplar(:ruta_opbs_plugin,
+                    {
+			    {:oCurrentRuta,_unset,:readable,:private},
+			    {:oCurrentOpb,_unset,:readable,:private}
+                    },
+		    :plugin )
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method ruta_opbs_plugin.init_actions()
+	
+	## 
+	## 
+	_self.add_action(sw_action.new(:gui_ruta_opb,
+				       :engine, _self,
+				       :enabled?,_true,
+				       :action_message, :guiRutaOpb|()|))
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method ruta_opbs_plugin.guiRutaOpb() 
+	## 
+	##
+	
+	name << :c_opbs
+	_if (d << _self.get_dialog(name) ) _is _unset
+	_then
+		# Create and cache the dialog
+		d << user:c_opbs.new_dialog( _self.top_frame )
+		_self.cache_dialog( name, d )
+	_else
+		d.close()
+		_self.dialogs.empty()
+		
+		d << user:c_opbs.new_dialog( _self.top_frame )
+		_self.cache_dialog( name, d )
+	_endif
+	d.activate_relative_to( "SIGC 11", _self.top_frame,250,390)
+				#_self.x_offset, _self.y_offset)
+
+	#_global e
+	#e<<d
+	>> d
+_endmethod
+$
+

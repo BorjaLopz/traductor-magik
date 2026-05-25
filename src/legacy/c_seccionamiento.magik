@@ -1,0 +1,255 @@
+_package sw
+$
+def_slotted_exemplar(:c_seccionamiento,
+{
+	{:oGeometria,  _unset,    :writable,:private},
+	{:nEscala,     0,         :writable,:public},
+	{:collVistas,  rope.new(),:readable,:private},
+	{:nMinModulos, 0,         :writable,:public},
+	{:nMaxModulos, 0,         :writable,:public},
+	{:nDefModAncho,0.0,       :writable,:public},
+	{:nDefModAlto, 0.0,       :writable,:public}
+})
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.do_seccionamiento(PoGeometria)
+	## PoGeometria debe ser sector
+	##
+_local LoLineaSector
+_local LoLineaSectorRope
+_local LfAngulo
+_local LoCentro
+_local LfLongitud
+_local LoArea
+_local LbBanderaFin?
+_local LnModulosConsiderados
+_local LoGeom1
+_local LoGeom2
+_local LnTmp
+## 
+       _if PoGeometria _is _unset 
+       _then
+	       _return
+       _else
+	       (LoGeom1,LoArea,LoCentro,LfAngulo)<<_self.get_linea_maxima_ajustada(PoGeometria,.nMaxModulos)
+	       (LoArea,LnModulosConsiderados)<<_self.get_area_reducida(LoGeom1,LoCentro,LfAngulo,.nMaxModulos)
+	       .collVistas.add({LoArea,LoGeom1,LfAngulo,LnModulosConsiderados})
+
+	       _if LoGeom1.line_length>=PoGeometria.line_length
+	       _then
+		       _return
+	       _else
+		       (LoGeoms,LnTmp)<<PoGeometria.cut_to_length(LoGeom1.line_length)
+		       _if LoGeoms _isnt _unset _andif LoGeoms[2].line_length>0
+		       _then
+			       _self.do_seccionamiento(LoGeoms[2])
+		       _else
+			       _return
+		       _endif
+	       _endif
+       _endif 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.get_area(PnModulos,_optional PoCentro,PfAngle)
+	## 
+	## PfAngle angulo en grados
+_local LoArea
+_local LoTranformacion
+
+       LoArea<<bounding_box.new(0,0,PnModulos*.nDefModAncho*.nEscala,.nDefModAlto*.nEscala)
+       LoArea.bounds.centre<<PoCentro.default(LoArea.bounds.centre)
+       LoArea<<LoArea.transformed(transform.new().rotate_about(PoCentro.default(LoArea.bounds.centre),
+							       PfAngle.default(0).degrees_to_radians))
+       
+       _return LoArea
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.get_area_reducida(PoGeometria,PoCentro,PfAngulo,PnModulos)
+	## PoGeometria  debe ser una geometria que tenga sectors
+	## PfAngulo en radianes.
+_local LnModulos
+
+        LnModulos<<PnModulos
+	LoArea<<_self.get_area(PnModulos,PoCentro,PfAngulo.radians_to_degrees)
+	
+	_if PoGeometria.sectors.within?(LoArea)
+	_then
+		# Seguir buscando el area minima
+		(LoArea,LnModulos)<<_self.get_area_reducida(PoGeometria,PoCentro,PfAngulo,PnModulos-1)
+	_else
+		# Si no entra en el area de Pnmodulos calcular un Area con PnModulos+1
+		# modulos.
+		LoArea<<_self.get_area(LnModulos+1,PoCentro,PfAngulo.radians_to_degrees)
+		LnModulos<<LnModulos+1
+	_endif
+	_return (LoArea,LnModulos)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.get_geometria
+	## 
+	## 
+	>>.oGeometria
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.get_linea_maxima_ajustada(PoGeometria,PnModulos)
+	## PoGeometria debe ser un sector
+	## 
+_local LnModulos
+_local LoGeometria
+_local LoLineaSector
+_local LfLongitud
+_local LoLineaSectorRope
+_local LfAngulo
+_local LoCentro
+_local LoArea
+
+#write("long =", PoGeometria.line_length)
+#write(.nDefModAncho," X ",.nEscala," = ",.nDefModAncho*.nEscala)
+        LnModulos<<PnModulos
+	LoGeometria<<PoGeometria
+
+	LoLineaSector<<sector.new()
+	LoLineaSector.add_coord(LoGeometria.first_coord)
+	LoLineaSector.add_coord(LoGeometria.last_coord)
+
+	#_self.test_vista(LoLineaSector,_false)
+	# Calcular la longitud
+	LfLongitud<<LoLineaSector.line_length
+
+	LoLineaSectorRope<<LoLineaSector.as_sector_rope()
+	_if LoLineaSectorRope.size = 1
+	_then
+		LfAngulo << 0.00
+	_else
+		LfAngulo<<LoLineaSectorRope.angle_at_coordinate(LoLineaSectorRope.last_coord)
+	_endif
+	
+	#LoCentro<<LoLineaSectorRope.mid_point
+	LoCentro<<PoGeometria.as_sector_rope().mid_point
+	LoArea<<_self.get_area(LnModulos,LoCentro,LfAngulo.radians_to_degrees)
+	#_self.test_vista(LoArea,_false)
+	_if PoGeometria.overlaps?(LoArea)
+	_then
+		#write("entro ")
+		_if LfLongitud>=.nDefModAncho*.nEscala
+		_then
+			#write("Entro al siguiente if")
+			(LoGeom1,LoGeom2)<<LoGeometria.cut_to_length(LfLongitud-.nDefModAncho*.nEscala)
+			(LoGeometria,LoArea,LoCentro,LfAngulo)<<_self.get_linea_maxima_ajustada(LoGeom1[1],LnModulos)
+		_else
+			(LoGeom1,LoGeom2)<<LoGeometria.cut_to_length(LfLongitud/2)
+			(LoGeometria,LoArea,LoCentro,LfAngulo)<<_self.get_linea_maxima_ajustada(LoGeom1[1],LnModulos)
+		_endif
+	_endif
+	_return (LoGeometria,LoArea,LoCentro,LfAngulo)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.get_seccionamiento()
+	## 
+	## 
+
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.get_vistas()
+	## 
+	## 
+	>>.collVistas
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.init(_optional PnEscala,
+			      PnMinModulos,PnMaxModulos,
+			      PDefModAncho,PDefModAlto) #En centimetros.
+	## 
+	##
+	.nEscala<<PnEscala
+	.collVistas<<rope.new()
+	.nMinModulos<<PnMinModulos
+	.nMaxModulos<<PnMaxModulos
+	.nDefModAncho<<PDefModAncho
+	.nDefModAlto<<PDefModAlto
+	>>_self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.new(_optional PnEscala,
+			      PnMinModulos,PnMaxModulos,
+			      PDefModAncho,PDefModAlto)
+	## 
+	##
+	>>_clone.init(PnEscala.default(0),
+		      PnMinModulos.default(0),
+		      PnMaxModulos.default(0),
+		      PDefModAncho.default(0.0),
+		      PDefModAlto.default(0.0))
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.prueba
+	## 
+	## 
+	#secciona<<c_seccionamiento.new(200,1,12,21.59,27.94)
+	secciona<<c_seccionamiento.new(200,1,12,2,3)
+	secciona.do_seccionamiento(mapa.trail.sectors.as_sector())
+	vistas<<secciona.get_vistas()
+	secciona.test_vista(vistas[1][1],_false)
+
+	ld<<paf.plugin(:layout_plugin).start_layout_designer()
+	lm<<ld.plugin(:layout_manager)
+	mapper<<ld.plugin(:viewport_mapper)
+
+	doc<<lm.current_document
+	page<<doc.current_page
+
+	vp<<c_vp_plano_proy_can.new_with(:bounds,bounding_box.new(0,0,2160*vistas[1][4],2790))
+	#mapper.clear_viewport_mapping()
+
+	# 1- mapper.map_viewport_on_map_view(vp,mv,vistas[1][1].bounds.transformed(transform.new().scalexy(1.2,1.2)).bounds,_true)
+
+	 2- mapper.map_viewport_on_map_view(vp,mv,vistas[1][1].bounds.new_enlarging(1.2), _true)
+
+	view_scale << mapper.sys!perform(:scale_for|()|, 
+					 vistas[1][1].bounds,
+					 vp.bounds.new_enlarging(0.20),_true)
+	
+	#vp.view_scale<<50000
+	vp.view_scale<<view_scale
+	vp.view_angle<<vistas[1][3].radians_to_degrees
+	page.add_element(vp)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.set_geometria<<PoGeometria
+	## 
+	## 
+	.oGeometria<<PoGeometria
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_seccionamiento.test_vista(PoVista,PoConGoto?)
+	## 
+	##
+
+	LoCurrentMap<<smallworld_product.pni_application().plugin(:map_plugin).current_map
+	trilo<<map_trail.new(LoCurrentMap)
+	_for coor _over PoVista.sectors[1].fast_elements()
+	_loop
+		trilo.add_coordinate(coor)
+	_endloop
+	LoCurrentMap.set_trail_from_geometry(trilo)
+	_if PoConGoto?
+	_then
+		smallworld_product.pni_application().plugin(:map_plugin).current_map_view.goto(trilo)
+	_endif
+	
+_endmethod
+$

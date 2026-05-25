@@ -1,0 +1,1061 @@
+_package user
+$
+
+def_slotted_exemplar(:c_sello_microcanalizacion,
+{
+#	{:col_tablas,    _unset,  :writable},
+	{:o_tramo,       _unset,  :writable},
+	{:o_proyecto,    _unset, :writable},
+	{:o_area,        _unset,  :writable},
+	{:s_tipo_plano,   _unset,  :writable},
+	{:otipoempresar,      _unset, :writable}, # catalogo para empresa que revisa
+	{:valor_empreviso,    _unset, :writable} # Valor para empresa que revisa
+
+}, {:c_base_sello_fibra} )
+$
+
+c_sello_microcanalizacion.define_shared_constant(:allowed_on_menu?, _false    , :public)
+$
+_method c_sello_microcanalizacion.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add(layout_attribute_definition.new(:empreviso, :string,
+						    :description, "Empresa que revisa",	    
+                                                    :enum_method, :enum_tipo_empresar))
+
+	attribs.add(layout_attribute_definition.new(:telefono, :string,
+						    :description, "TELEFONO",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:dir_area, :string,
+						    :description, "DIRECCION AREA",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:responsable_area, :string,
+						    :description, "RESPONSABLE AREA",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:poblacion, :string,
+						    :description, "Poblacion",
+	                                            :default_value, _unset ))    
+
+	attribs.add(layout_attribute_definition.new(:municipio, :string,
+						    :description, "Delegación o Municipio",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:colonia, :string,
+						    :description, "Colonia",
+	                                            :default_value, _unset ))    
+
+	attribs.add(layout_attribute_definition.new(:codigo_postal, :string,
+						    :description, "Codigo Postal",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:calles, :string,
+						    :description, "Calles",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:dtos_afectados, :string,
+						    :description, "Distritros",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:pep, :string,
+						    :description, "PEP",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:desmontaje,      :string,
+		                                    :description,     "desmontaje",
+						     :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:principal,       :string,
+		                                    :description,     "principal",
+						     :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:reconcentracion, :string,
+		                                    :description,     "reconcentracion",
+						     :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:secundarios,     :string,
+		                                    :description,     "secundarios",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:ruta,     :string,
+		                                    :description,     "Ruta",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:opb,     :string,
+		                                    :description,     "opb",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:oei,     :string,
+		                                    :description,     "OEI",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:oe,     :string,
+		                                    :description,     "OE",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:domicilio,     :string,
+		                                    :description,     "Dirección",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:fecha,     :string,
+		                                    :description,     "fecha",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:programa,     :string,
+		                                    :description,     "programa",
+						    :default_value, _unset ))
+
+	# (22/12/27 des_aaron) : totales
+	attribs.add(layout_attribute_definition.new(:totales_en_canal_ml,     :string,
+		                                    :description,     "canal",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:totales_en_canal_dv,     :string,
+		                                    :description,     "canal",
+						    :default_value, _unset ))
+
+
+
+	
+	attribs.add(layout_attribute_definition.new(:totales_en_tramo_ml,     :string,
+		                                    :description,     "tramo",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:totales_en_tramo_dv,     :string,
+		                                    :description,     "tramo",
+						    :default_value, _unset ))
+
+	
+	attribs.add(layout_attribute_definition.new(:totales_en_ruta_ml,     :string,
+		                                    :description,     "ruta",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:totales_en_ruta_dv,     :string,
+		                                    :description,     "ruta",
+						    :default_value, _unset ))
+
+	# (22/12/27 des_aaron) : suministro	
+	attribs.add(layout_attribute_definition.new(:suministro_codo_90,     :string,
+		                                    :description,     "pvc26.7mm",
+						    :default_value, _unset ))	
+
+	attribs.add(layout_attribute_definition.new(:suministro_cople,     :string,
+		                                    :description,     "pvc26.7mm",
+						    :default_value, _unset ))	
+
+	attribs.add(layout_attribute_definition.new(:suministro_conector,     :string,
+		                                    :description,     "pvc26.7mm",
+						    :default_value, _unset ))	
+
+	attribs.add(layout_attribute_definition.new(:suministro_const_radial,     :string,
+		                                    :description,     "pvc019mm",
+						    :default_value, _unset ))	
+
+	attribs.add(layout_attribute_definition.new(:suministro_const_radial_cepa,     :string,
+		                                    :description,     "pvc019mm",
+						    :default_value, _unset ))	
+	
+	>> attribs
+	
+_endmethod
+$
+
+c_sello_microcanalizacion.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.enum_tipo_empresar
+
+	.oTipoEmpresaR    << hash_table.new()
+	.oTipoEmpresaR[1] << "TELMEX"
+	.oTipoEmpresaR[2] << "ULTIMA_MILLA"
+	.oTipoEmpresaR[3] << "ULTIMA_MILLA_N"	
+	_return .oTipoEmpresaR
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.asigna_celdas_a_colorear()
+## Asigna las celdas que van en color diferente
+## vbluna(17-nov-2006)
+
+	_local lst_celdas_color << rope.new()
+
+	lst_celdas_color.add({:tbl_Operacion,1,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_Operacion,1,4,.o_color_linea})
+	lst_celdas_color.add({:tbl_Operacion,1,6,.o_color_linea})
+
+	_return lst_celdas_color
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_microcanalizacion.asigna_longitud_columnas(po_tabla, pcol_longitud)
+
+	_for n_col, n_long _over pcol_longitud[:col].fast_keys_and_elements()
+	_loop
+		po_tabla.Columna(n_col).nLongitud << n_long
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_microcanalizacion.asigna_tamanios_celda(po_tabla, pn_num_ren, pn_num_col,
+							          pcol_tamanio)
+	_for n_col _over range(1,pn_num_col)
+	_loop
+		_for n_ren _over range(1,pn_num_ren)
+		_loop
+			po_tabla.celda(n_ren,n_col).nTamanio << pcol_tamanio[n_col]
+		_endloop
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_microcanalizacion.asigna_texto_linea_celda(ps_nom_tabla, pn_num_ren,
+							       pn_num_col, ps_texto, pn_tamanio)
+
+	o_texto << c_texto_linea_grafico.new(ps_texto)
+	o_texto.nTamanio << pn_tamanio
+
+	lo_tabla << .o_tablas.elemento(ps_nom_tabla)
+	lo_celda << lo_tabla.oceldas.celda(pn_num_ren,pn_num_col)
+	
+	lo_celda.oelemento << o_texto
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.col_tablas
+
+	>> .col_tablas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.col_tablas << p_tablas
+
+	.col_tablas << p_tablas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.configura_color_sello()
+
+	_super.configura_color_sello()
+	
+	_for n_ren _over range(1,4)
+	_loop
+		_if _self.attributes[:blanco_negro].value = "SI"
+		_then
+
+		.col_tablas[:tbl_const_can].b_blanco_negro? << _true
+		
+		.col_tablas[:tbl_referencia].celda(n_ren,2).sColor <<
+			colour.new_rgb(0.0,0.0,0.0)
+		_else
+
+		.col_tablas[:tbl_const_can].b_blanco_negro? << _false
+			
+		.col_tablas[:tbl_referencia].celda(n_ren,2).sColor <<
+			colour.new_rgb(.o_color_linea[1],.o_color_linea[2],.o_color_linea[3])
+		_endif
+	_endloop
+
+	 
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_microcanalizacion.configura_tabla()
+
+	.o_color_linea <<  {1.0, 0.0, 0.0}
+	
+	.col_tablas << property_list.new()
+	
+	_local lo_tabla         
+	_local ln_desp_y
+
+	_local pl_marco        << property_list.new()
+	_local pl_empresa      << property_list.new()
+	_local pl_division     << property_list.new()
+	_local pl_proyecto     << property_list.new()
+	_local pl_poblacion    << property_list.new()
+	_local pl_plano        << property_list.new()
+	_local pl_escala       << property_list.new()
+	_local pl_proyectista  << property_list.new()
+	_local pl_referencia   << property_list.new()
+	_local pl_aprobo       << property_list.new()
+	_local pl_operacion    << property_list.new()
+	
+	pl_marco[:ren] << {277}
+	pl_marco[:col] << {210}
+	pl_empresa[:ren] << {30}
+	pl_empresa[:col] << {25,150}
+	pl_division[:col] << {40,80}
+	pl_proyecto[:ren] << {10}
+	pl_proyecto[:col] << {175}
+	pl_poblacion[:col] << {40,80}
+	pl_plano[:ren] << {10}
+	pl_plano[:col] << {30,33.5,33.5}
+	pl_escala[:ren] << {10}
+	pl_escala[:col] << {20,35,20,20}
+	pl_proyectista[:col] << {30,67}
+	pl_referencia[:col] << {30,65}
+	pl_aprobo[:ren] << {10}
+	pl_aprobo[:col] << {25,72}
+	pl_operacion[:ren] << {10}
+	pl_operacion[:col] << {35,10,15,10,15,10}
+
+	# - Marco del sello - #
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_MarcoSello)
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+	_self.asigna_medidas_tabla(lo_tabla, pl_marco)
+
+	# - Tabla Empresa - #
+	lo_tabla << .o_tablas.crea_tabla(1,2,:tbl_Empresa)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 17.5 * 10,
+						      .o_coord_inicio.y - 3.5 * 10)
+	_self.asigna_medidas_tabla(lo_tabla, pl_empresa)
+	lo_tabla.bDibuja_columnas_internas? << _false
+	
+	# - Tabla División - #
+	lo_coord << coordinate.new(.o_coord_inicio.x + 45 * 10, .o_coord_inicio.y - 38.5 *10)
+	lo_tabla << c_tbl_Linea_Horizontal.new(_self,lo_coord,5,25,120,_false)
+	_self.asigna_longitud_columnas(lo_tabla, pl_division)
+	lo_tabla.Dibuja_Columnas_Internas? << _false
+	lo_tabla.Dibuja_Renglones_Internos? << _false
+	lo_tabla.asigna_etiquetas({"DIR. DIVISIONAL","ÁREA","DIRECCION","TELEFONO","RESPONSABLE"})
+	_self.asigna_tamanios_celda(lo_tabla,5,2,{35,30})
+	.col_tablas[:tbl_division] << lo_tabla
+
+	# - Tabla Proyecto - #
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_Proyecto)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 17.5 * 10,
+						      .o_coord_inicio.y - 68.5 * 10)
+	_self.asigna_medidas_tabla(lo_tabla, pl_proyecto)
+
+	# - Tabla Poblacion - #
+	lo_coord << coordinate.new(.o_coord_inicio.x + 45 * 10, .o_coord_inicio.y - 81.5 *10)
+	lo_tabla << c_tbl_Linea_Horizontal.new(_self,lo_coord,7,40,120,_false)
+	_self.asigna_longitud_columnas(lo_tabla, pl_poblacion)
+	lo_tabla.Dibuja_Columnas_Internas? << _false
+	lo_tabla.Dibuja_Renglones_Internos? << _false
+
+	# (17/05/11 edwaldo) : Se agrega codigo para colocar
+	#leyenda NCO o CENTRAL dependiendo del tipo de proyecto
+	
+#	LoProyecto << swg_dsn_admin_engine.active_design.project
+#	_if LoProyecto.name.matches?("*FALC*")
+#	_then
+#		lo_tabla.asigna_etiquetas({"POBLACION","DELEGACION O MPO.","COLONIA Y C.P.",
+#				   "CALLES","NCO","DTOS. AFECT.","PEP"})
+#	_else 
+		lo_tabla.asigna_etiquetas({"POBLACION","DELEGACION O MPO.","COLONIA Y C.P.",
+				   "CALLES","CENTRAL","DTOS. AFECT.","PEP"})
+#	_endif
+	
+	_self.asigna_tamanios_celda(lo_tabla,6,2,{35,30})
+	lo_tabla.Celda(7,1).nTamanio << 42
+	lo_tabla.Celda(7,2).nTamanio << 42
+	.col_tablas[:tbl_poblacion] << lo_tabla
+
+	# - Tabla Plano - #
+	lo_tabla << .o_tablas.crea_tabla(1,3,:tbl_PlanoNum)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 6 * 10,
+						      .o_coord_inicio.y - 124.5 * 10)
+	_self.asigna_medidas_tabla(lo_tabla, pl_plano)
+	lo_tabla.bDibuja_columnas_internas? << _false
+
+	# - Tabla Escala - #
+	lo_tabla << .o_tablas.crea_tabla(1,4,:tbl_EscalaRuta)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 109 * 10,
+						      .o_coord_inicio.y - 124.5 * 10)
+	_self.asigna_medidas_tabla(lo_tabla, pl_escala)
+	lo_tabla.bDibuja_columnas_internas? << _false
+
+	# - Tabla Proyectista- #
+	lo_coord << coordinate.new(.o_coord_inicio.x + 6 * 10, .o_coord_inicio.y - 137.5 *10)
+	lo_tabla << c_tbl_Linea_Horizontal.new(_self,lo_coord,4,25,97,_false)
+	_self.asigna_longitud_columnas(lo_tabla, pl_proyectista)
+	lo_tabla.Dibuja_Columnas_Internas? << _false
+	lo_tabla.Dibuja_Renglones_Internos? << _false
+	lo_tabla.asigna_etiquetas({"PROYECTO","SUPERVISO","FECHA","PROGRAMA"})
+	_self.asigna_tamanios_celda(lo_tabla,4,2,{35,30})
+	.col_tablas[:tbl_proyectista] << lo_tabla
+
+	# - Tabla Proyecto Referencias- #
+	lo_coord << coordinate.new(.o_coord_inicio.x + 109 * 10, .o_coord_inicio.y - 137.5 *10)
+	lo_tabla << c_tbl_Linea_Horizontal.new(_self,lo_coord,4,19,95,_true)
+	lo_tabla.Titulo_renglon(1).nLongitud << 6
+	_self.asigna_longitud_columnas(lo_tabla, pl_referencia)
+	lo_tabla.Dibuja_Columnas_Internas? << _true
+	lo_tabla.Dibuja_Renglones_Internos? << _false
+	lo_texto << c_texto_grafico.new("REFERENCIAS")
+	lo_texto.nTamanio << 45
+	lo_tabla.asigna_Celda_A_Titulo(lo_texto)
+	lo_tabla.asigna_etiquetas({"DESMONTAJE","RECONCENTRACION","SECUNDARIOS",
+					     "PRINCIPALES"})
+	_self.asigna_tamanios_celda(lo_tabla,4,2,{28,25})
+	.col_tablas[:tbl_referencia] << lo_tabla
+
+	# - Tabla Aprobó - #
+	lo_tabla << .o_tablas.crea_tabla(1,2,:tbl_Aprobo)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 6 * 10,
+						      .o_coord_inicio.y - 165.5 * 10)
+	_self.asigna_medidas_tabla(lo_tabla, pl_aprobo)
+	lo_tabla.bDibuja_columnas_internas? << _false
+
+	# - Tabla Operación - #
+	lo_tabla << .o_tablas.crea_tabla(1,6,:tbl_Operacion)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 109 * 10,
+						      .o_coord_inicio.y - 165.5 * 10)
+	_self.asigna_medidas_tabla(lo_tabla, pl_operacion)
+	lo_tabla.bDibuja_columnas_internas? << _false
+
+        _local LnAnchoTblSimbologia << 60
+        _local LoCoordenada
+	
+	#-----------------------------------------------------------
+	#Tabla Simbologia
+	#-----------------------------------------------------------
+	# (10/07/22 lgranados) : Se cambia metodo original debido a que
+	# se requiere la tabla de simbologia completa.
+	LoCoordenada << coordinate.new(.o_coord_inicio.x + 6 *10, .o_coord_inicio.y - 178.5 *10)
+        lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_simbologia)
+	lo_tabla.orenglones.elemento(1).nlongitud << 85
+	lo_tabla.ocolumnas.elemento(1).nlongitud << 60
+	lo_tabla.oCoordenada_Origen << LoCoordenada
+	#-----------------------------------------------------------
+	#Tabla Construccion de canalizacion
+	#-----------------------------------------------------------
+        LoCoordenada << coordinate.new(LoCoordenada.x + (LnAnchoTblSimbologia + 5) * 10,
+				       LoCoordenada.y )
+	lo_tabla << c_construccion_microcanalizacion.new(_self, LoCoordenada)
+	.col_tablas[:tbl_const_can] << lo_tabla
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.draw_content_on(window)
+
+	_super.draw_content_on(window)
+	_for tabla _over .col_tablas.fast_elements()
+	_loop
+		
+		tabla.Despliega(window)
+	_endloop
+
+	_self.llena_datos_celdas()
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_microcanalizacion.etiqueta_celdas()
+
+	_local a_sch
+
+	a_sch <<  swg_dsn_admin_engine.active_scheme
+
+
+	_if a_sch _isnt _unset _andif
+	    (a_project << a_sch.project) _isnt _unset _andif
+	    (a_ctl << a_project.user!_central) _isnt _unset 
+	_then
+		_if a_ctl.user!_area = "MEXICALI" _orif
+		    a_ctl.user!_area = "TIJUANA-ENSENADA"
+		_then
+			_self.asigna_simbolo_celda(:tbl_Empresa,1,1,"logo_ultima_milla_n")
+			_self.asigna_texto_celda(:tbl_Empresa,1,2,"RED ULTIMA MILLA DEL NOROESTE S.A. DE C.V.",65)
+		_else
+			_self.asigna_simbolo_celda(:tbl_Empresa,1,1,"logo_ultima_milla")
+			_self.asigna_texto_celda(:tbl_Empresa,1,2,"RED NACIONAL ULTIMA MILLA S.A. DE C.V.",70)
+		_endif
+
+	_else
+		_self.asigna_simbolo_celda(:tbl_Empresa,1,1,"logo_telmex_ep")
+		_self.asigna_texto_celda(:tbl_Empresa,1,2,"TELEFONOS DE MEXICO S.A. DE C.V.",80)	
+	_endif
+		
+
+	
+	_self.asigna_texto_celda(:tbl_Proyecto,1,1,"PROYECTO DE MICROCANALIZACION",80)
+	
+	_self.asigna_texto_celda(:tbl_PlanoNum,1,1,"PLANO No.",40)
+	_self.asigna_texto_celda(:tbl_PlanoNum,1,2,"DE",40)
+	_self.asigna_texto_celda(:tbl_EscalaRuta,1,1,"ESCALA",40)
+	# (11/09/29 lgranados) : Se agrega la tabla de simbología
+	_self.asigna_simbolo_celda(:tbl_simbologia,1,1,"simbolos_microcanalizacion")
+		
+	LoProyecto << swg_dsn_admin_engine.active_design.project
+	_if LoProyecto.name.matches?("*FALC*")
+	_then
+		_self.asigna_texto_celda(:tbl_EscalaRuta,1,3,"TRAYECT",40)
+	_else
+		_self.asigna_texto_celda(:tbl_EscalaRuta,1,3,"RUTA",40)
+	_endif
+	
+	_self.asigna_texto_celda(:tbl_Aprobo,1,1,"APROBO",40)
+	_self.asigna_texto_celda(:tbl_Operacion,1,1,"OPERACION",40)
+	_self.asigna_texto_celda(:tbl_Operacion,1,3,"OEI",40)
+	_self.asigna_texto_celda(:tbl_Operacion,1,5,"OE",40)
+
+	_self.asigna_texto_linea_celda(:tbl_PlanoNum,1,2," ",40)
+	_self.asigna_texto_linea_celda(:tbl_PlanoNum,1,3," ",40)
+	_self.asigna_texto_linea_celda(:tbl_EscalaRuta,1,2," ",40)
+	_self.asigna_texto_linea_celda(:tbl_EscalaRuta,1,4," ",40)
+	_self.asigna_texto_linea_celda(:tbl_Aprobo,1,2," ",40)
+	_self.asigna_texto_linea_celda(:tbl_Operacion,1,2," ",40)
+	_self.asigna_texto_linea_celda(:tbl_Operacion,1,4," ",40)
+	_self.asigna_texto_linea_celda(:tbl_Operacion,1,6," ",40)
+
+	_for n_ren _over range(1,4)
+	_loop
+		.col_tablas[:tbl_referencia].celda(n_ren,2).sColor <<
+			colour.new_rgb(.o_color_linea[1],.o_color_linea[2],.o_color_linea[3])
+		.col_tablas[:tbl_referencia].celda(n_ren,2).sEstilo << "Bold"
+	_endloop
+	 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.fecha_elaboracion
+
+	_local ld_fecha_hoy << date_now()
+	_return c_traductor.mes(ld_fecha_hoy.month_number, _true) +"-"+ ld_fecha_hoy.year.write_string
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.inicializa( properties )
+
+	# vbluna(23-feb-07)
+	# - Se agrega el parámetro: properties como resultado de las
+	#   modificaciones para almacenar los valores del sello
+	#   en archivo .xml
+
+	_if .o_proyecto _is _unset _andif
+	    swg_dsn_admin_engine.active_scheme _isnt _unset 
+	_then
+		.o_proyecto << swg_dsn_admin_engine.active_scheme.project
+	_endif
+	_super.inicializa( properties )
+	.o_tramo << c_tramo_can.new()
+	_if .o_proyecto _isnt _unset 
+	_then
+		.o_area  << c_area_telmex.new( .o_proyecto.user!_central.user!_area.write_string)
+	_endif
+	
+
+	.viewport_principal << c_vp_plano_proy_can
+	
+	_if _self.origen_xml?
+	_then
+		_for key, tabla_gral  _over .col_tablas.fast_keys_and_elements()
+		_loop
+			tabla_gral.oLayout << _self
+			tabla_gral.oTablas.o_Layout << _self
+			_for k, tabla _over tabla_gral.oTablas.tablas.fast_keys_and_elements()
+			_loop
+				tabla.oLayout << _self
+			_endloop
+		_endloop
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_microcanalizacion.llena_datos_celdas()
+
+
+
+	_local pl_datos << _self.obten_registros()
+	# (22/12/27 des_aaron) : ###############################
+	pl_datos        << _self.info_sello_propiedades(pl_datos)
+	# ######################################################
+	
+	_if ( _self.attributes[:empreviso] _isnt _unset _andif
+	      _self.attributes[:empreviso].value) _isnt  _unset _andif
+	    _self.attributes[:empreviso].value.size > 0
+	_then	
+		.valor_empreviso << "logo_" +  _self.attributes[:empreviso].value.write_string.lowercase
+		
+		_if .valor_empreviso.uppercase.matches?("*TELMEX*")
+		_then
+			.valor_empreviso << 	.valor_empreviso + "_EP"
+			txttitulo << "TELEFONOS DE MEXICO S.A DE C.V."
+			_self.asigna_texto_celda(:tbl_Empresa,1,2, txttitulo ,80)	
+		_elif .valor_empreviso.uppercase.matches?("*ULTIMA_MILLA")
+			_then 
+				#txttitulo << "RED NACIONAL ULTIMA MILLA"
+                                txttitulo << "RED NACIONAL ÚLTIMA MILLA, S.A.P.I. DE C.V"
+					_self.asigna_texto_celda(:tbl_Empresa,1,2, txttitulo ,60)
+			_elif .valor_empreviso.uppercase.matches?("*ULTIMA_MILLA_N")
+			_then
+				#txttitulo << "RED ULTIMA MILLA DEL NOROESTE"
+				txttitulo << "RED ÚLTIMA MILLA DEL NOROESTE, S.A.P.I. DE C.V"
+                         	_self.asigna_texto_celda(:tbl_Empresa,1,2, txttitulo ,60)
+			_endif
+		
+			_self.asigna_simbolo_celda(:tbl_Empresa,1,1, .valor_empreviso.uppercase)
+                      
+			
+		_else
+			#		write(:logo_por_default)			 
+			_self.asigna_simbolo_celda(:tbl_Empresa,1,1,"logo_telmex_ep")
+			txttitulo << "TELEFONOS DE MEXICO S.A DE C.V."
+			_self.asigna_texto_celda(:tbl_Empresa,1,2, txttitulo ,80)
+		_endif
+
+	
+	     _local ls_tramos << "TRAMO No: " + pl_datos[:num_tramo] + " / " + pl_datos[:tot_tramos]
+
+             
+	     .col_tablas[:tbl_division].asigna_valores(pl_datos[:division])
+	     .col_tablas[:tbl_poblacion].asigna_valores(pl_datos[:poblacion])	 
+	     .col_tablas[:tbl_proyectista].asigna_valores(pl_datos[:proyectista])
+
+	     _self.asigna_texto_celda(:tbl_Aprobo,1,2, .o_proyecto.user!_vb.write_string,40)
+
+	     .col_tablas[:tbl_referencia].asigna_valores(pl_datos[:referencia])
+	    
+	     _self.asigna_texto_linea_celda(:tbl_PlanoNum,1,2,ls_tramos,40)
+	     
+	     _self.asigna_texto_linea_celda(:tbl_EscalaRuta,1,4,pl_datos[:ruta],40)
+	   
+	     _self.asigna_texto_linea_celda(:tbl_Operacion,1,2,pl_datos[:opb],40)
+	     _self.asigna_texto_linea_celda(:tbl_Operacion,1,4,pl_datos[:oei],40)
+	     _self.asigna_texto_linea_celda(:tbl_Operacion,1,6,pl_datos[:oe],40)
+	     
+	     .o_tablas.elemento(:tbl_Operacion).oCeldas.Celda(1,2).oElemento.sEstilo << "Bold"
+	     .o_tablas.elemento(:tbl_Operacion).oCeldas.Celda(1,4).oElemento.sEstilo << "Bold"
+	     .o_tablas.elemento(:tbl_Operacion).oCeldas.Celda(1,6).oElemento.sEstilo << "Bold"
+	     
+	     _if .s_tipo_plano <> :desmontaje_cd
+	     _then
+		     .col_tablas[:tbl_const_can].asigna_informacion( .o_tramo.ruta, .o_tramo)		
+	     _endif
+
+	     # START CHANGE
+	     # (22/12/27 des_aaron) : tomar los valores de las propiedades
+	     # para llenar las celdas de sello de construccion de canalizacion
+	     #
+	     .col_tablas[:tbl_const_can].asigna_informacion_editable(pl_datos)		 
+	     #
+	     # END CHANGE
+	     
+	     
+	     
+##	write(:llena_datos_celdas)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_microcanalizacion.llena_datos_dinamicos()
+
+	_local ls_escala << _self.escala()
+	_local ls_num_hoja << "HOJA : " + _self.layout_page.page_number().write_string
+	_local ls_total_hojas << "/" + _self.layout_page.number_of_pages().write_string
+
+	_self.asigna_texto_linea_celda(:tbl_EscalaRuta,1,2,ls_escala,40)
+	_self.asigna_texto_linea_celda(:tbl_PlanoNum,1,3,ls_num_hoja+ls_total_hojas,40)
+
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_microcanalizacion.obten_registros()
+
+	#.s_tipo_plano <<  _self.tipo_plano()
+	
+	_local pl_datos << property_list.new()
+	_local pl_datos_div << property_list.new()
+	_local pl_datos_pob << property_list.new()
+	_local pl_datos_proy << property_list.new()
+	_local pl_datos_ref << property_list.new()
+
+	pl_datos_div[:division]       << .o_proyecto.user!_central.user!_division
+	pl_datos_div[:area]           << .o_proyecto.user!_central.user!_area
+	pl_datos_div[:direccion]      << ""
+	pl_datos_div[:telefono]       << ""
+	pl_datos_div[:responsable]    << ""
+
+	
+	_if  ( _self.attributes[:dir_area] _isnt _unset _andif
+	       _self.attributes[:dir_area].value) _isnt _unset _andif
+	     _self.attributes[:dir_area].value.write_string.size > 0
+	_then
+		LsNombre<< _self.attributes[:dir_area].value.write_string.uppercase
+		pl_datos_div[:direccion] << LsNombre
+	_else
+			pl_datos_div[:direccion] << " " 
+	_endif
+
+	_if  ( _self.attributes[:telefono] _isnt _unset _andif
+	       _self.attributes[:telefono].value) _isnt _unset _andif
+	     _self.attributes[:telefono].value.write_string.size > 0
+	_then
+		LsNombre<< _self.attributes[:telefono].value.write_string.uppercase
+		pl_datos_div[:telefono] << LsNombre
+	_else
+			pl_datos_div[:telefono] << " " 
+	_endif
+
+	_if  ( _self.attributes[:responsable_area] _isnt _unset _andif
+	       _self.attributes[:responsable_area].value) _isnt _unset _andif
+	     _self.attributes[:responsable_area].value.write_string.size > 0
+	_then
+		LsNombre<< _self.attributes[:responsable_area].value.write_string.uppercase
+		pl_datos_div[:responsable] << LsNombre
+	_else
+			pl_datos_div[:responsable] << " " 
+	_endif
+
+	pl_datos_proy[:proyectista]   << .o_proyecto.user!_proyectista_proyecto.default("")
+	pl_datos_proy[:supervisor]    << .o_proyecto.user!_supervisor.default("")
+	pl_datos_proy[:fecha]         << .o_proyecto.user!_fecha_entrega.default("").write_string
+	pl_datos_proy[:programa]      << .o_proyecto.user!_programa.default("")
+
+
+	_if  ( _self.attributes[:fecha] _isnt _unset _andif
+	       _self.attributes[:fecha].value) _isnt _unset _andif
+	     _self.attributes[:fecha].value.write_string.size > 0
+	_then
+		LsMunNombre<< _self.attributes[:fecha].value.write_string.uppercase
+		pl_datos_proy[:fecha] << LsMunNombre
+	_else
+		pl_datos_proy[:fecha] << " " 
+	_endif
+	
+
+	_if  ( _self.attributes[:programa] _isnt _unset _andif
+	       _self.attributes[:programa].value) _isnt _unset _andif
+	     _self.attributes[:programa].value.write_string.size > 0
+	_then
+		LsMunNombre<< _self.attributes[:programa].value.write_string.uppercase
+		pl_datos_proy[:programa] << LsMunNombre
+	_else
+		pl_datos_proy[:programa] << " " 
+	_endif
+
+
+##	
+	_if  ( _self.attributes[:poblacion] _isnt _unset _andif
+	       _self.attributes[:poblacion].value) _isnt _unset _andif
+	     _self.attributes[:poblacion].value.write_string.size > 0
+	_then
+		LsMunNombre<< _self.attributes[:poblacion].value.write_string.uppercase
+		pl_datos_pob[:poblacion] << LsMunNombre
+	_else
+			pl_datos_pob[:poblacion] << " " 
+	_endif
+
+	
+	_if  ( _self.attributes[:municipio] _isnt _unset _andif
+	       _self.attributes[:municipio].value) _isnt _unset _andif
+	     _self.attributes[:municipio].value.write_string.size > 0
+	_then
+		LsMunNombre<< _self.attributes[:municipio].value.write_string.uppercase
+		pl_datos_pob[:del_mpo] << LsMunNombre
+	_else
+			pl_datos_pob[:del_mpo] << " " 
+	_endif
+
+	
+	# (12/09/07 adcuesta) : asigna la colonia dada por el user.
+	_if  ( _self.attributes[:colonia] _isnt _unset _andif
+	       _self.attributes[:colonia].value) _isnt _unset _andif
+	      _self.attributes[:colonia].value.write_string.size > 0
+	_then
+		LsColoniaNombre<< _self.attributes[:colonia].value.write_string.uppercase
+		pl_datos_pob[:colonia] << LsColoniaNombre
+	_else
+		pl_datos_pob[:colonia] << ""
+	_endif
+	
+	_if  ( _self.attributes[:codigo_postal] _isnt _unset _andif
+	       _self.attributes[:codigo_postal].value) _isnt _unset _andif
+	       _self.attributes[:codigo_postal].value.write_string.size > 0
+	_then
+		codigo_postal<< _self.attributes[:codigo_postal].value.write_string.uppercase
+		pl_datos_pob[:colonia] << pl_datos_pob[:colonia] +  %space  +   codigo_postal
+
+	_endif
+	
+
+	_if  ( _self.attributes[:calles] _isnt _unset _andif
+	       _self.attributes[:calles].value) _isnt _unset _andif
+	     _self.attributes[:calles].value.write_string.size > 0
+	_then
+		LscallesNombre<< _self.attributes[:calles].value.write_string.uppercase
+		pl_datos_pob[:calles] << LsCallesNombre
+	_else
+			pl_datos_pob[:calles] << ""
+	_endif
+
+
+	pl_datos_pob[:central]        << .o_proyecto.user!_central.user!_nombre.write_string + " - " +
+					 .o_proyecto.user!_central.user!_central.write_string
+
+
+
+	
+		_if  ( _self.attributes[:dtos_afectados] _isnt _unset _andif
+	       _self.attributes[:dtos_afectados].value) _isnt _unset _andif
+	     _self.attributes[:dtos_afectados].value.write_string.size > 0
+	_then
+		Lsdtos<< _self.attributes[:dtos_afectados].value.write_string.uppercase
+		pl_datos_pob[:dtos_afectados] << Lsdtos
+	_else
+			pl_datos_pob[:dtos_afectados] << ""
+	_endif
+	
+
+#	pl_datos_pob[:pep_can]        << .o_proyecto.pep_cons_can
+
+	_if  ( _self.attributes[:pep] _isnt _unset _andif
+	       _self.attributes[:pep].value) _isnt _unset _andif
+	     _self.attributes[:pep].value.write_string.size > 0
+	_then
+		LsPep<< _self.attributes[:pep].value.write_string.uppercase
+		pl_datos_pob[:pep] << Lspep
+	_else
+			pl_datos_pob[:pep] << ""
+	_endif
+
+	
+
+	
+	#
+	# END CHANGE
+
+	
+#	_local lcol_attrib << {:desmontaje,:reconcentracion,:secundarios,:principal}
+#	
+#	_for att _over lcol_attrib.fast_elements()
+#	_loop
+#		w(att)
+#		pl_datos_ref[att] << " "
+#
+#		ls_pep << _self.attributes[att].value.write_string.lowercase.as_symbol()
+#                
+#		
+#		_if (s_nom_metodo << c_traductor.metodo_pep(ls_pep)) _isnt _unset
+#		_then
+#			w(s_nom_metodo.as_symbol())
+#			pl_datos_ref[att] << " " + .o_proyecto.perform(s_nom_metodo.as_symbol())
+#		_endif
+#	_endloop
+
+
+	_if  ( _self.attributes[:desmontaje] _isnt _unset _andif
+	       _self.attributes[:desmontaje].value) _isnt _unset _andif
+	     _self.attributes[:desmontaje].value.write_string.size > 0
+	_then
+		LsPep<< _self.attributes[:desmontaje].value.write_string.uppercase
+		pl_datos_ref[:desmontaje] << Lspep
+	_else
+			pl_datos_ref[:desmontaje] << ""
+	_endif
+
+	_if  ( _self.attributes[:reconcentracion] _isnt _unset _andif
+	       _self.attributes[:reconcentracion].value) _isnt _unset _andif
+	     _self.attributes[:reconcentracion].value.write_string.size > 0
+	_then
+		LsPep<< _self.attributes[:reconcentracion].value.write_string.uppercase
+		pl_datos_ref[:reconcentracion] << Lspep
+	_else
+			pl_datos_ref[:reconcentracion] << ""
+	_endif
+
+
+	_if  ( _self.attributes[:secundarios] _isnt _unset _andif
+	       _self.attributes[:secundarios].value) _isnt _unset _andif
+	     _self.attributes[:secundarios].value.write_string.size > 0
+	_then
+		LsPep<< _self.attributes[:secundarios].value.write_string.uppercase
+		pl_datos_ref[:secundarios] << Lspep
+	_else
+			pl_datos_ref[:secundarios] << ""
+	_endif
+
+	
+	_if  ( _self.attributes[:principal] _isnt _unset _andif
+	       _self.attributes[:principal].value) _isnt _unset _andif
+	     _self.attributes[:principal].value.write_string.size > 0
+	_then
+		LsPep<< _self.attributes[:principal].value.write_string.uppercase
+		pl_datos_ref[:principal] << Lspep
+	_else
+			pl_datos_ref[:principal] << ""
+	_endif
+	
+	
+	pl_datos[:division] << pl_datos_div
+	pl_datos[:poblacion] << pl_datos_pob
+	pl_datos[:proyectista] << pl_datos_proy
+	pl_datos[:referencia] << pl_datos_ref
+
+
+	# se corrige la llamada al método para obtener el :num_tramo
+	pl_datos[:num_tramo] << .o_tramo.numero_tramo
+	pl_datos[:tot_tramos] << _self.tramos_en_ruta()
+		
+
+	_return pl_datos
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_sello_microcanalizacion.serial_slots()
+
+	(keys,values) << _super.serial_slots()
+
+	keys.add_all_last( rope.new_with(:col_tablas))
+	values.add_all_last( rope.new_with(.col_tablas))
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.tramos_en_ruta()
+	_try
+		_return .o_tramo.ruta.get_tramos().size.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.escala()
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/09/12 des_leo) : Created
+	#-------------- End Revision History ---------------
+
+
+	
+	_local lo_viewports
+	_local lo_viewport
+	
+        _try
+		lo_viewports << _self.layout_page.all_elements_of(masked_viewport_layout)
+		
+		_for view _over lo_viewports.fast_elements()
+		_loop
+			# se obtiene el viewport que tiene asignado algún valor en
+			# .sTipoPlano, asegurando que no se tome la escala del croquis
+			
+			_if view _isnt _unset 
+			_then
+				lo_viewport << view
+			_endif
+		_endloop
+		
+		lo_escala << lo_viewport.view_scale.rounded
+		ls_escala << "1:" + lo_escala.write_string
+		
+		_return ls_escala
+		
+	_when does_not_understand
+		_return "F/E"
+	_endtry
+	
+_endmethod
+$
+
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.tipo_de_plano
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/09/14 des_leo) : Created
+	#-------------- End Revision History ---------------
+
+	_local tipo_plano
+	_local oLayoutPlugin
+
+	opaf << smallworld_product.pni_application()
+	_if opaf _isnt _unset 
+	_then
+		oLayoutPlugin   << opaf.plugin(:layout_plugin)
+		oLayoutDesigner << oLayoutPlugin.dialogs[:layout_designer]
+		oLayoutManager  << oLayoutDesigner.plugin(:layout_manager)    
+		LoDoc << oLayoutManager.current_document
+
+		w("LoDoc ---> ", LoDoc, %tab, LoDoc.user!_tipo_plano ) 
+		_if LoDoc _isnt _unset _andif
+		    LoDoc.user!_tipo_plano _isnt _unset
+		_then
+			tipo_plano << LoDoc.user!_tipo_plano	
+		_endif
+	_else
+		tipo_plano << :canalizacion
+	_endif
+
+	_return tipo_plano
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.valor_propiedad(Propiedad, dato_actual)
+	## 
+	##
+	_if _self.attributes[Propiedad]  _isnt _unset  _andif
+	    _self.attributes[Propiedad].value _isnt _unset _andif
+	    _self.attributes[Propiedad].value.write_string.size > 0
+	_then
+		LoPropiedad << _self.attributes[Propiedad].value.write_string.uppercase
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_microcanalizacion.info_sello_propiedades(pl_datos)
+
+
+	pl_datos[:opb]           <<  _self.valor_propiedad(:opb,"")
+	pl_datos[:oei]           <<  _self.valor_propiedad(:oei,"")
+	pl_datos[:oe]            <<  _self.valor_propiedad(:oe,"")
+	pl_datos[:ruta]          <<  _self.valor_propiedad(:ruta,"")
+	
+	# (22/12/27 des_aaron) : totales
+	pl_datos[:totales_en_canal_ml]           <<  _self.valor_propiedad(:totales_en_canal_ml,         "")
+	pl_datos[:totales_en_canal_dv]           <<  _self.valor_propiedad(:totales_en_canal_dv,         "")	
+	pl_datos[:totales_en_tramo_ml]           <<  _self.valor_propiedad(:totales_en_tramo_ml,         "")
+	pl_datos[:totales_en_tramo_dv]           <<  _self.valor_propiedad(:totales_en_tramo_dv,         "")
+	pl_datos[:totales_en_ruta_ml]            <<  _self.valor_propiedad(:totales_en_ruta_ml,          "")
+	pl_datos[:totales_en_ruta_dv]            <<  _self.valor_propiedad(:totales_en_ruta_dv ,         "")
+
+	pl_datos[:suministro_codo_90]            <<  _self.valor_propiedad(:suministro_codo_90,          "")
+	pl_datos[:suministro_cople]              <<  _self.valor_propiedad(:suministro_cople ,           "")
+	pl_datos[:suministro_conector]           <<  _self.valor_propiedad(:suministro_conector,         "")
+	pl_datos[:suministro_const_radial]       <<  _self.valor_propiedad(:suministro_const_radial,     "")
+	pl_datos[:suministro_const_radial_cepa]  <<  _self.valor_propiedad(:suministro_const_radial_cepa,"")
+	
+	_return pl_datos
+
+	
+_endmethod
+$

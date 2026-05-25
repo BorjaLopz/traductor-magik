@@ -1,0 +1,134 @@
+Clase Magik: c_vp_plano_proy_can
+Hereda de: viewport_layout
+Archivo fuente: src/legacy/c_vp_plano_proy_can.magik
+Archivo migrado: src/migration/CVpPlanoProyCan.tsx
+
+=============================================================================
+PROPÓSITO
+=============================================================================
+Viewport de layout que renderiza una sección (plano) de la canalización
+proyectada. El tramo completo se divide en N secciones mediante
+c_seccionamiento; este viewport muestra únicamente la sección iIndicePlano.
+
+Soporta dos tipos de proyecto:
+  - Cobre:      obtiene el OE desde layout_document.user!_oe
+  - Fibra_local: obtiene el OE desde layout_document.oe_lo
+
+=============================================================================
+SLOTS → PROPIEDADES TS
+=============================================================================
+oGeometria       → oGeometria: turf.Feature<turf.LineString> | null
+iIndicePlano     → iIndicePlano: number
+iNumeroSecciones → iNumeroSecciones: number
+oWindows         → no migrado (el canvas OL sustituye al window Magik)
+
+=============================================================================
+ATRIBUTOS DE LAYOUT (defined_attributes)
+=============================================================================
+ajusta_al_marco  string   "Si"       enum: val_falso_verdadero
+Indice           integer  0          índice de la sección a mostrar
+pozo             string   "Ninguno"  enum: Ninguno/Inicial/Final/Ambos
+xMin             float    0.0        bounding box del viewport
+yMin             float    0.0
+xMax             float    0.0
+yMax             float    0.0
+
+=============================================================================
+MÉTODOS → FUNCIONES TS
+=============================================================================
+
+defined_attributes()
+  → constante DEFINED_ATTRIBUTES (array de objetos)
+
+val_falso_verdadero()
+  → tipo PozoUbicacion = 'Ninguno' | 'Inicial' | 'Final' | 'Ambos'
+  → constante VAL_POZO_UBICACION: PozoUbicacion[]
+
+initialise_for_page(a_layout_page)
+  → initializeForPage(): void
+  Resetea oGeometria, iIndicePlano, iNumeroSecciones.
+  El parámetro a_layout_page no se usa en el original (fidelidad al API Magik).
+
+objetos_visibles(PcollResultSet)
+  → objetosVisibles(features: GeoJSON.Feature[]): GeoJSON.Feature[]
+  Filtra features que intersectan con el bounding box [xMin,yMin,xMax,yMax]
+  usando turf.booleanIntersects.
+
+geometry_set_for_render
+  → geometrySetForRender(resultSet): GeoJSON.Feature[] | null
+  Llama a objetosVisibles sobre el result set del super.
+
+DibujaLineaEntrePozoIniYFin(PoWindow, PoPlano)
+  → dibujaLineaEntrePozos(coordPozo1, coordPozo2, alturaPlano1, alturaPlano2, offsetY)
+  Dibuja línea en S entre el pozo inicial (en este viewport) y el pozo final
+  (en otro viewport hermano del mismo layout).
+  En Magik localiza el viewport hermano recorriendo layout_page.all_elements_of();
+  en TS los datos del hermano se pasan como parámetro.
+  Sólo activo cuando this.pozo === 'Inicial'.
+
+DibujarMarcasDeContinuacion(PoWindow, PiIndice, PoGeom)
+  → dibujarMarcasDeContinuacion(indice, coordsSvg, scale)
+  Dibuja marcas en forma de corchete-C en los extremos del segmento para
+  indicar continuación hacia otro plano.
+    iIndicePlano = 1              → sólo marca derecha (extremo final del tramo)
+    iIndicePlano = iNumeroSecciones → sólo marca izquierda (extremo inicial)
+    en otro caso                  → ambas marcas
+  Las etiquetas usan SECTION_LABELS[i-1] ("A","B","C"...).
+  Distancias: 10*100, 8*100, 7*100, 4*100 unidades de mapa.
+
+draw_content_on(windows)
+  → drawContentOn(tramoCobre, secciones): resultado | null
+  1. Determina iIndicePlano desde el atributo Indice (>0) o deja 0.
+  2. Acumula coordenadas de toda la canalizacion del tramoCobre.
+  3. Si hay secciones: asigna iNumeroSecciones, oGeometria (sección i-ésima)
+     y el ángulo de rotación del viewport.
+  4. Si no hay secciones (ahernan 09/08/25): iNumeroSecciones=1, iIndicePlano=1.
+  5. Llama a dibujarMarcasDeContinuacion si iNumeroSecciones > 1.
+  En Magik también dibuja la geometría, la línea entre pozos y el label;
+  en TS retorna los datos de render para que el componente React los consuma.
+
+=============================================================================
+DECISIONES DE DISEÑO
+=============================================================================
+
+obten_pto_separado(distance, angleDeg):
+  Función helper getOffsetPoint(seg, distance, angleDeg).
+  Calcula un punto offset desde el extremo final del segmento, rotado
+  angleDeg grados respecto a la dirección del segmento.
+  -90 → perpendicular derecha, +90 → perpendicular izquierda.
+
+LsABC << "ABCDEFGHIjk" (indexado 1-based en Magik):
+  → constante SECTION_LABELS = 'ABCDEFGHIjk'.split('')  (0-based en TS)
+  LsABC[PiIndice]   → SECTION_LABELS[indice - 1]
+  LsABC[PiIndice-1] → SECTION_LABELS[indice - 2]
+
+Cross-viewport (DibujaLineaEntrePozoIniYFin):
+  En Magik recorre layout_page.all_elements_of(c_vp_plano_proy_can) para
+  encontrar el viewport con pozo="Final". En TS esta responsabilidad sube
+  al nivel de página/layout, que pasa las coordenadas del pozo final como
+  parámetro a dibujaLineaEntrePozos.
+
+Tipo de proyecto (Cobre / Fibra_local):
+  En el mock se incluye la canalizacion directamente en TramoCobre.
+  En producción este valor llega de swg_dsn_admin_engine.active_scheme.project.job_type.
+
+=============================================================================
+DEPENDENCIAS
+=============================================================================
+- @turf/turf: booleanIntersects, bboxPolygon, getCoords
+- src/migration/Seccionamiento.tsx: tipo Seccion (vista producida por do_seccionamiento)
+
+=============================================================================
+ESTADO DE MIGRACIÓN
+=============================================================================
+[x] defined_attributes
+[x] val_falso_verdadero
+[x] initialise_for_page
+[x] objetos_visibles
+[x] geometry_set_for_render
+[x] DibujaLineaEntrePozoIniYFin
+[x] DibujarMarcasDeContinuacion
+[x] draw_content_on (lógica de negocio)
+[ ] Integración con OL Map real (render de features sobre mapa OL)
+[ ] Integración con c_seccionamiento real
+[ ] Resolución de tipo de proyecto desde swg_dsn_admin_engine

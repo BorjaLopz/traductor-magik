@@ -1,0 +1,162 @@
+Clase Magik: c_pep
+Hereda de: c_base_sello_cobre
+Archivo fuente: src/legacy/c_pep.magik
+Archivo migrado: src/migration/CPep.tsx
+
+=============================================================================
+PROPÓSITO
+=============================================================================
+Sello de layout que muestra datos del PEP (Plan de Ejecución del Proyecto)
+para planos de red cobre y FO. Contiene:
+  - OPB/OEI/OE referencias + programa + OT
+  - PEP (número de plan de ejecución)
+  - Referencias (desmontaje/canalización/principal/reconcentración)
+  - Proyecto (proyectista, supervisor, supervisor Telmex)
+  - Ruta (número de ruta o trayectoria FO)
+
+=============================================================================
+SLOTS → PROPIEDADES TS
+=============================================================================
+oTipoEmpresaR   → oTipoEmpresaR: Record<number, TipoEmpresaR>
+valor_empreviso → valorEmpreviso: string | null
+
+=============================================================================
+ATRIBUTOS DE LAYOUT (defined_attributes)
+=============================================================================
+empreviso         string   ''   empresa que revisa (enum: RNUM/RNUMN/TELMEX)
+desmontaje        string   ''   referencia de desmontaje
+canalizacion      string   ''   referencia de canalización
+principal         string   ''   referencia de principales
+reconcentracion   string   ''   referencia de reconcentración
+pep               string   ''   número de PEP
+opb               string   ''   OPB del distrito
+oei               string   ''   OEI del distrito
+oe                string   ''   OE de construcción
+programa_proyecto string   ''   programa del proyecto
+ot                string   ''   número de orden de trabajo
+
+=============================================================================
+ENUM_TIPO_EMPRESAR
+=============================================================================
+1 → 'RNUM'    (Magik: MULTIMA_MILLA)
+2 → 'RNUMN'   (Magik: ULTIMA_MILLA_N)
+3 → 'TELMEX'
+
+=============================================================================
+ESTRUCTURA DE TABLAS (configura_tabla)
+=============================================================================
+tbl_OPB               7×3   ren [7,8,8,8,8,8,8] col [26,26,26] mm
+                             col 1: etiquetas (OPB/OEI/OEs/PROG/OT)
+                             col 2: valores en verde (o_color_linea)
+                             col 3: reservada (oe_reco/oe_desm en ren 4/5)
+tbl_PEP               1×2   ren [9] col [26,52] mm
+                             col 1: "PEP", col 2: número PEP en verde
+tbl_Referencias_Titulo 1×1  ren [5] col [78] mm — header "REFERENCIAS"
+tbl_Referencias_Detalle 4×2 ren [5,5,5,5] col [39,39] mm
+                             col 1: DESMONTAJE/CANALIZACION/PRINCIPAL/RECONCENTRACION
+                             col 2: valores en verde
+tbl_Proyecto          3×3   ren [5,10,10] col [26,26,26] mm
+                             ren 1: PROYECTO/SUPERVISO/RNUM (headers)
+                             ren 2: nombres (proyectista/supervisor/supervisorTelmex) en verde
+                             ren 3: reservada
+tbl_Ruta              1×3   ren [7] col [26,26,26] mm
+                             col 1: "RUTA: N", col 2: "PLANO: N", col 3: "DE: N"
+
+o_color_linea = {0.0, 0.8, 0.3} → rgb(0,204,77) (verde)
+
+=============================================================================
+MÉTODOS → FUNCIONES TS
+=============================================================================
+
+defined_attributes()
+  → constante DEFINED_ATTRIBUTES (11 entradas)
+
+enum_tipo_empresar()
+  → constante ENUM_TIPO_EMPRESAR: Record<1|2|3, TipoEmpresaR>
+
+configura_tabla()
+  → configuraTablaDef(): Map<TablaId, TablaLayout>
+  Crea las 6 tablas con dimensiones del Magik original.
+
+etiqueta_celdas()
+  → etiquetaCeldas(): void
+  Pone cabeceras: OPB/OEI/OEs/PROG/OT, PEP, REFERENCIAS,
+  DESMONTAJE/CANALIZACION/PRINCIPAL/RECONCENTRACION, PROYECTO/SUPERVISO/RNUM, RUTA.
+
+valor_propiedad(propiedad, dato_actual)
+  → valorPropiedad(propiedad, datoActual): string
+  Si this.attributes[propiedad] no vacío → usa ese valor (uppercase).
+  Sino → usa datoActual. Permite sobreescribir datos GIS con valores editados.
+
+info_sello_propiedades(pl_datos)
+  → infoSelloPropiedades(datos): DatosPep
+  Aplica valorPropiedad a todos los campos relevantes del sello.
+
+obten_registros()
+  → obtenRegistros(datos): DatosPep
+  En Magik: accede a swg_dsn_admin_engine.active_scheme.project, o_distrito,
+  o_proyecto para obtener OPB/OEI/OE/PEP y trayectoria FO.
+  En TS: recibe datos ya resueltos, luego aplica infoSelloPropiedades.
+
+llena_datos_celdas()
+  → llenaDatosCeldas(datos): void
+  Asigna los valores a las celdas de las 6 tablas.
+  Las celdas de datos (col 2 de OPB, col 2 de Referencias, col 2-3 de Proyecto)
+  se marcan como negrita y con o_color_linea.
+
+llena_datos_dinamicos()
+  → llenaDatosDinamicos(nPlano, nTotal): void
+  Rellena tbl_Ruta col 2/3 con "PLANO: N" / "DE: N".
+
+asigna_celdas_a_colorear()
+  → asignaCeldasAColorear(): Array<{tabla, r, c, color}>
+  Retorna lista de celdas a pintar en verde (o_color_linea):
+  PEP col2, OPB col2 (7 filas), Referencias_Detalle col2 (4 filas),
+  Ruta (1,1), Proyecto (2,1), Proyecto (2,2), Proyecto (2,3).
+
+=============================================================================
+DECISIONES DE DISEÑO
+=============================================================================
+
+DatosPep como DTO:
+  En Magik los datos vienen de swg_dsn_admin_engine (GIS runtime).
+  En TS se inyectan como parámetro. La función infoSelloPropiedades
+  permite sobrescribir cualquier campo con el valor del atributo editable.
+
+Ruta FO vs Cobre:
+  En Magik: si tipo_plano es :fosa_cables_fo o :diagrama_empalmes,
+  la ruta viene de trayectoria.user!_numero_trayectoria; sino de
+  o_proyecto.numero_ruta. En TS: el llamador resuelve cuál usar
+  y lo pasa en datos.ruta.
+
+empreviso (RNUM header):
+  Si this.attributes.empreviso no vacío, sobreescribe tbl_Proyecto(1,3)
+  con el valor uppercase y actualiza valorEmpreviso.
+
+substitute_character(%space, %newline) para nombres de proyectistas:
+  En TS: string.replace(/ /g, '\n') para multi-línea en celda.
+
+=============================================================================
+DEPENDENCIAS
+=============================================================================
+- React 18 (useState) — solo para el viewer
+- c_base_sello_cobre: o_distrito, o_proyecto (super, no migrado aquí)
+- GIS real: swg_dsn_admin_engine, o_distrito.opb/oei/oe/pep_referencias,
+  o_proyecto.proyectista_disenio, trayectoria FO
+
+=============================================================================
+ESTADO DE MIGRACIÓN
+=============================================================================
+[x] defined_attributes (11 atributos)
+[x] enum_tipo_empresar
+[x] configura_tabla (6 tablas)
+[x] etiqueta_celdas
+[x] valor_propiedad
+[x] info_sello_propiedades
+[x] obten_registros (datos inyectados)
+[x] llena_datos_celdas
+[x] llena_datos_dinamicos
+[x] asigna_celdas_a_colorear
+[ ] Lookup real desde GIS (swg_dsn_admin_engine, o_distrito, o_proyecto)
+[ ] Resolución de ruta FO vs Cobre (tipo_plano)
+[ ] Integración con c_base_sello_cobre (o_distrito, o_proyecto, tipo_plano)

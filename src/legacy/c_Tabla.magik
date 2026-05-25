@@ -1,0 +1,929 @@
+_package user
+$
+#remex(:c_tabla)
+$
+def_slotted_exemplar (:c_tabla,
+        {
+           {:sNombre,                    _true},# Nombre con el que se identifica la tabla
+	   {:bDibuja_columnas_internas,  _true},# indica si debe o no dibujar las lineas
+                                                # verticales  internas de la tabla
+           {:bDibuja_renglones_internos, _true},# Indica si se debe o no dibujar las lineas
+		                                # horizontales
+	   {:oRenglones,                _unset},# Coleccion de filas que representa a los renglones
+   	   {:oColumnas,                 _unset},# Coleccion de filas que representa a las columnas
+	   {:oCeldas,                   _unset},# Coleccion de celdas que almacena las celdas
+           {:oLayout,                   _unset},# Layout al que pertnece la tabla
+	   {:ocoordenada_origen,        _unset},# Coordenada donde inicia a dibujar la tabla y esta
+	                                        # representa el punto superior izquierdo
+	   {:sColorLinea,               _unset} # Color de la línea
+        } 
+)
+$
+c_tabla.define_slot_access( :sNombre,                    :writable, :private)
+$
+c_tabla.define_slot_access( :bDibuja_columnas_internas,  :writable, :private)
+$
+c_tabla.define_slot_access( :bDibuja_renglones_internos, :writable, :private)
+$
+c_tabla.define_slot_access( :oCeldas,                    :writable, :private)
+$
+c_tabla.define_slot_access( :oColumnas,                  :writable, :private)
+$
+c_tabla.define_slot_access( :oCoordenada_origen,         :writable, :private)
+$
+c_tabla.define_slot_access( :oLayout,                    :writable, :private)
+$
+c_tabla.define_slot_access( :oRenglones,                 :writable, :private)
+$
+c_tabla.define_slot_access( :sColorLinea,                :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.Agrega_LYM( layout_page )
+## Objetivo: 
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+	
+	_for LnRe _over range(1,_self.oRenglones.Total_Elementos)
+	_loop
+		_for LnCo _over range(1, _self.oColumnas.Total_Elementos)
+		_loop
+			# Se utiliza elemento, para almacenar objetos c_captura_texto
+			_if _self.oCeldas.celda(LnRe,LnCo).oElemento <> _unset
+			_then
+			      LoElemento << _self.oCeldas.celda(LnRe,LnCo).oElemento
+
+			      # Solo si el objeto es de tipo c_captura_texto
+			      # de lo contrario se ignora
+			      _if LoElemento.is_kind_of?(c_base_layout)
+			      _then
+        			      LoElem_Cap << LoElemento.Obten_Elemento_captura
+				      layout_page.add_element(LoElem_Cap)
+			      _endif
+			_endif
+		_endloop
+	_endloop
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.bDibuja_bordes? << RbValor
+## Objetivo: Asignar un valor al slot bDibuja_columnas_internas
+##           Indica si los bordes externos de la tabla se dibujaran	
+## Parámetros de entrada: 
+##    Boolean - RbValor - Verdad, Si se dibujan las columnas externas
+##                        Falso, No se sibujan las columnas externa
+##
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+## 20/12/05 DSB Se modificaron los comentarios	
+
+	# Borde Superior
+	_for LnCo _over range(1, _self.oColumnas.Total_Elementos)
+	_loop
+		_local LnRe # Numero del rengon que se utilizara
+		LnRe << 1
+		_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+		_then
+		      _local LoCelda # Objeto que contiene la celda
+		      
+		      LoCelda << _self.oCeldas.celda(LnRe,LnCo).oElementos.obten_elemento(:bordes_celda)
+		      LoCelda.color_linea << _self.color_linea
+		      LoCelda.bBorde_Sup? << RbValor
+		_endif
+	_endloop
+
+	#Borde Inferior
+	_for LnCo _over range(1, _self.oColumnas.Total_Elementos)
+	_loop
+		_local LnRe # Numero del renglon que se utilizara
+		
+		LnRe << _self.oRenglones.Total_Elementos
+		_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+		_then
+		      _local LoCelda # Objeto que contiene la celda
+		      
+      		      LoCelda << _self.oCeldas.celda(LnRe,LnCo).oElementos.obten_elemento(:bordes_celda)
+		      LoCelda.color_linea << _self.color_linea
+		      LoCelda.bBorde_Inf? << RbValor
+		_endif
+	_endloop	
+
+	#Borde Izquierdo
+	_for LnRe _over range(1, _self.oRenglones.Total_Elementos)
+	_loop
+		_local LnCo # Número de columna que se utilizara
+		
+		LnCo << 1
+		_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+		_then
+		      _local LoCelda # Objeto que contiene la celda
+		      
+		      LoCelda << _self.oCeldas.celda(LnRe,LnCo).oElementos.obten_elemento(:bordes_celda)
+		      LoCelda.color_linea << _self.color_linea
+		      LoCelda.bBorde_Izq? << RbValor
+		_endif
+	_endloop
+
+	#Borde Derecho
+	_for LnRe _over range(1, _self.oRenglones.Total_Elementos)
+	_loop
+		_local LnCo # Número del renglon que se utilizara
+		
+		LnCo << _self.oColumnas.Total_Elementos
+		_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+		_then
+		      _local LoCelda # Objeto que contiene la celda
+		      
+      		      LoCelda << _self.oCeldas.celda(LnRe,LnCo).oElementos.obten_elemento(:bordes_celda)
+		      LoCelda.color_linea << _self.color_linea
+		      LoCelda.bBorde_Der? << RbValor
+		_endif
+	_endloop	
+	
+	.bDibuja_columnas_internas << RbValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.bDibuja_columnas_internas?
+## Objetivo: Conocer si se dibujan columnas internas, este
+## valor se almacena en el slot bDibuja_columnas_internas
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  
+##    Boolean - RbValor - Verdad, Si se dibujan las columnas internas
+##                        Falso, No se dibujan las columnas internas
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Documentacion
+
+	_return .bDibuja_columnas_internas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.bDibuja_columnas_internas? << RbValor
+## Objetivo: Asignar un valor al slot bDibuja_columnas_internas
+## y configurar las celdas para que se dibujen de acuerdo al
+## valor proporcionado
+## Parámetros de entrada: 
+##    Boolean - RbValor - Verdad, Si se dibujan las columnas internas
+##                        Falso, No se sibujan las columnas internas
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Documentacion
+
+	_for LnRe _over range(1,_self.oRenglones.Total_Elementos)
+	_loop
+		_for LnCo _over range(1, _self.oColumnas.Total_Elementos-1)
+		_loop
+
+			_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+			_then
+			      _local LoCelda # Objeto que contiene la celda	
+			      
+			      LoCelda << _self.oCeldas.celda(LnRe,LnCo).oElementos.obten_elemento(:bordes_celda)
+			      LoCelda.color_linea << _self.color_linea
+			      LoCelda.bBorde_Der? << RbValor
+			_endif
+			
+		_endloop
+	_endloop		
+	
+	.bDibuja_columnas_internas << RbValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.bDibuja_renglones_internos?
+##  Objetivo: Conocer si se dibujan renglones internos
+##  Parámetros de entrada: NA
+##  Parámetros de salida:  NA
+##  Regresa:  
+##     Boolean - RbValor - Verdad, Si se dibujan los renglones internos
+##                         Falso, No se sibujan los renglones internos
+##  Fecha de última modificación : 28 / Octubre / 2004
+##  Autor de la modificación fdiaz
+##  Descripción de la modificación : Creación
+
+	_return .bDibuja_renglones_internos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.bDibuja_renglones_internos? << RbValor
+## Objetivo: Asignar un valor al slot bDibuja_renglones_internos
+## Parámetros de entrada: 
+##    Boolean - RbValor - Verdad, Si se dibujan los renglones internos
+##                        Falso, No se sibujan los renglones internos
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Documentación
+
+	_for LnRe _over range(1,_self.oRenglones.Total_Elementos-1)
+	_loop
+		_for LnCo _over range(1, _self.oColumnas.Total_Elementos)
+		_loop
+
+			_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+			_then
+			      _local LoCelda # Objeto que contiene la celda	 
+			      
+			      LoCelda << _self.oCeldas.celda(LnRe,LnCo).oElementos.obten_elemento(:bordes_celda)
+			      LoCelda.color_linea << _self.color_linea
+			      LoCelda.bBorde_Inf? << RbValor
+
+			_endif
+			
+		_endloop
+	_endloop
+	
+	.bDibuja_renglones_internos << RbValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.Calcula_area_tabla(RoLayout)
+## Objetivo: calcula el área que ocupa la tabla
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+	
+_local LnCx	# Coordenada X superior izquierda del layout      
+_local LnCy     # Coordenada Y superior izquierda del layout 	  
+_local LnPosX1  # Coordenada X inferior izquierda                 
+_local LnPosY1	# Coordenada Y inferior izquierda		  		
+_local LnPosX2  # Coordenada X superior derecha                   
+_local LnPosY2	# Coordenada Y superior derecha			  						
+_local LoPuntos # Almacena coordenas 
+_local LoCaja	# Almacena el area
+
+	#Se almacenan las coordenadas de la tabla a generar
+	LoPuntos << coords_rope.new()
+	LoPuntos.empty()
+	
+	#Coordenadas superior izquierda del layout
+	LnCx << _self.oCoordenada_Origen.x
+	LnCy << _self.oCoordenada_Origen.y
+	
+	_for LnRe _over range(1,_self.oRenglones.Total_Elementos)
+	_loop
+		_for LnCo _over range(1, _self.oColumnas.Total_Elementos)
+		_loop
+			
+			#Coordenada inferior izquierda
+			LnPosX1 <<  RoLayout.Bounds.Xmin +
+				    _self.oColumnas.Inicia_Elemento(LnCo) 
+			LnPosY1 <<  RoLayout.Bounds.Ymax -
+				    _self.oRenglones.Inicia_Elemento(LnRe) -
+				    _self.ORenglones.Elemento(LnRe).nLongitud
+			
+			#Coordenada superior derecha
+			LnPosX2 <<  RoLayout.Bounds.Xmin +
+				    _self.oColumnas.Inicia_Elemento(LnCo) +
+				    _self.OColumnas.Elemento(LnCo).nLongitud
+			LnPosY2 <<  RoLayout.Bounds.Ymax -
+				    _self.oRenglones.Inicia_Elemento(LnRe)
+
+			#Se agrega el desplazamiento
+			LnPosX1 << LnPosX1 + LnCx
+			LnPosY1 << LnPosY1 + LnCy
+
+			LnPosX2 << LnPosX2 + LnCx
+			LnPosY2 << LnPosY2 + LnCy
+			
+			#Se crea el objeto area para esa celda
+			LoPuntos.add(coordinate(LnPosX1,LnPosY1))
+			LoPuntos.add(coordinate(LnPosX2,LnPosY2))
+			
+		_endloop
+	_endloop
+	
+        LoCaja << Lopuntos.bounds
+	
+	_return LoCaja
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.color_linea
+	## 
+	## 
+	_return .sColorLinea
+	
+_endmethod
+$
+_method c_tabla.color_linea << RsColor
+	## 
+	##
+	.sColorLinea << colour.new_rgb(RsColor[1],RsColor[2],RsColor[3])
+	
+	_for LnRe _over range(1,_self.oRenglones.Total_Elementos)
+	_loop
+		_for LnCo _over range(1, _self.oColumnas.Total_Elementos)
+		_loop
+			_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+			_then
+		      
+			      LoCelda << _self.oCeldas.celda(LnRe,LnCo).oElementos.obten_elemento(:bordes_celda)
+			      LoCelda.color_linea << _self.sColorLinea
+			      
+			_endif
+			
+		_endloop
+	_endloop	
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.Despliega(RoVentana)
+## Objetivo: Genera  la tabla a dibujar
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Se documentó
+
+_local LnPosX		# Contador para calcular columnas internas
+_local LnPosY		# Contador para calcular renglones internos
+_local LnCont		# Se utiliza para saber cuando abandonar los ciclos
+_local LnCx       	# Coordenada X superior izquierda del layout
+_local LnCy		# Coordenada Y superior izquierda del layout
+_local LnContador       # Contador para agregar las lineas a dibujar a oLista
+_local oPuntos 		# Almacena las coordenas de las lineas que se dibujaran
+_local oLista		# Alamacena todas las coordenadas de las lineas a dibujar
+
+   # Se generan las áreas para cada celda que tenga un elemento asignado
+   _self.genera_areas()
+
+   LnContador << 0	
+   oLista <<  property_list.new()
+   oPuntos << coords_rope.new()
+   oPuntos.empty()
+
+   # Coordenadas superior izquierda del layout
+   LnCx << _self.oCoordenada_Origen.x
+   LnCy << _self.oCoordenada_Origen.y
+
+   # Se dibuja el contorno exterior de la tabla
+   LnContador << 1
+   oPuntos.add(coordinate(LnCx,LnCy))
+   oPuntos.add(coordinate(LnCx + _self.oColumnas.Longitud_Total(), LnCy))
+   oPuntos.add(coordinate(LnCx + _self.oColumnas.Longitud_Total(),LnCy - _self.oRenglones.Longitud_Total()))
+   oPuntos.add(coordinate(LnCx, LnCy - _self.oRenglones.Longitud_Total()))
+   oPuntos.add(coordinate(LnCx,LnCy))
+   
+   oLista[LnContador] << {:area, :white, :black, oPuntos.copy()}
+
+      _if _self.bDibuja_columnas_internas? = _true _then 
+      
+	      # Se agregan las columnas
+	      LnPosX << 0  
+	      LnCont << 1
+	      _loop
+		      oPuntos.empty()   
+		      
+		      # Se obtiene la longitud de cada columna y se va a acumulando
+		      LnPosX << LnPosX + _self.oColumnas.elemento(LnCont).nLongitud
+		      oPuntos.add(coordinate(LnCx + LnPosX, LnCy))
+		      oPuntos.add(coordinate(LnCx + LnPosX, LnCy - _self.oRenglones.Longitud_Total()))
+
+		      LnContador << LnContador + 1
+		      oLista[LnContador] << {:area, :white, :black, oPuntos.copy()}
+
+		      _if LnCont >= _self.oColumnas.Total_Elementos  _then _leave _endif
+		      LnCont << LnCont + 1
+	      _endloop
+      _endif
+
+      _if _self.bDibuja_renglones_internos? = _true  _then
+	      # Se agregan los renglones
+	      LnPosY << 0  
+	      LnCont << 1
+	      _loop
+		      oPuntos.empty()   
+		      
+		      # Se obtiene la longitud de cada renglon y se va a acumulando
+		      LnPosY << LnPosY + _self.oRenglones.elemento(LnCont).nLongitud
+		      oPuntos.add(coordinate(LnCx, LnCy - LnPosY))
+		      oPuntos.add(coordinate(LnCx + _self.oColumnas.Longitud_Total(), LnCy -LnPosY ))
+
+		      LnContador << LnContador + 1
+		      oLista[LnContador] << {:area, :white, :black, oPuntos.copy()}
+
+		      _if LnCont >= _self.oRenglones.Total_Elementos  _then _leave _endif
+		      LnCont << LnCont + 1
+	      _endloop
+      _endif      
+
+   _self.Imprime(RoVentana)
+   
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.genera_areas()
+## Objetivo: Genera el area que ocupa la tabla
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+_local LnCx        # Coordenada X superior izquierda del layout
+_local LnCy	   # Coordenada Y superior izquierda del layout 	
+_local LnPosX1	   # Coordenada X inferior izquierda
+_local LnPosY1	   # Coordenada Y inferior izquierda		
+_local LnPosX2	   # Coordenada X superior derecha
+_local LnPosY2	   # Coordenada Y superior derecha							
+_local LoAreaCelda # Nueva area
+
+	# Coordenadas superior izquierda del layout
+	LnCx << _self.oCoordenada_Origen.x
+	LnCy << _self.oCoordenada_Origen.y
+	
+	_for LnRe _over range(1,_self.oRenglones.Total_Elementos)
+	_loop
+		_for LnCo _over range(1, _self.oColumnas.Total_Elementos)
+		_loop
+		
+			# Coordenada inferior izquierda
+			LnPosX1 <<  _self.oLayout.Bounds.Xmin +
+				    _self.oColumnas.Inicia_Elemento(LnCo) 
+			LnPosY1 <<  _self.oLayout.Bounds.Ymax -
+				    _self.oRenglones.Inicia_Elemento(LnRe) -
+				    _self.ORenglones.Elemento(LnRe).nLongitud
+			
+			# Coordenada superior derecha
+			LnPosX2 <<  _self.oLayout.Bounds.Xmin +
+				    _self.oColumnas.Inicia_Elemento(LnCo) +
+				    _self.OColumnas.Elemento(LnCo).nLongitud
+			LnPosY2 <<  _self.oLayout.Bounds.Ymax -
+				    _self.oRenglones.Inicia_Elemento(LnRe)
+
+			# Se agrega el desplazamiento
+			LnPosX1 << LnPosX1 + LnCx
+			LnPosY1 << LnPosY1 + LnCy
+
+			LnPosX2 << LnPosX2 + LnCx
+			LnPosY2 << LnPosY2 + LnCy
+			
+			# Se crea el objeto area para esa celda
+			LoAreaCelda << bounding_box.new(LnPosX1,LnPosY1,LnPosX2,LnPosY2)
+
+			_if _self.oCeldas.celda(LnRe,LnCo).oElemento <> _unset
+			_then
+			      _self.oCeldas.celda(LnRe,LnCo).oElemento.oArea << LoAreaCelda
+			_endif
+
+			_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+			_then
+			      _self.oCeldas.celda(LnRe,LnCo).oElementos.oArea << LoAreaCelda
+			_endif
+
+			_if _self.oCeldas.celda(LnRe,LnCo).oElementos_captura <> _unset
+			_then
+			      _self.oCeldas.celda(LnRe,LnCo).oElementos_captura.oArea << LoAreaCelda
+			_endif
+			
+		_endloop
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.Imprime(RoVentana)
+## Objetivo: Genera la tabla a dibujar
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación :
+## 07/03/05 FAD Se elimino la distincion entre clases que
+##              heredan de elemento grafico	
+	
+
+	# Se calcula para cada celda la coordenada para mostrar el texto
+	_for LnRe _over range(1,_self.oRenglones.Total_Elementos)
+	_loop
+		_for LnCo _over range(1, _self.oColumnas.Total_Elementos)
+		_loop
+
+			#Se despliega el elemento que no es coleccion * * * * * 
+			_if _self.oCeldas.celda(LnRe,LnCo).oElemento <> _unset
+			_then
+				
+                            LoElemento << _self.oCeldas.celda(LnRe,LnCo).oElemento
+			    
+			    _self.oCeldas.celda(LnRe,LnCo).oElemento.oVentana << RoVentana
+			    _self.oCeldas.celda(LnRe,LnCo).oElemento.Actualiza_Area_Elemento()	    
+			    _self.oCeldas.celda(LnRe,LnCo).oElemento.Despliega()
+
+			_endif
+
+			_if _self.oCeldas.celda(LnRe,LnCo).oElementos <> _unset
+			_then
+			
+			    # Se despliega el elemento que es coleccion	
+			    _self.oCeldas.celda(LnRe,LnCo).oElementos.oVentana << RoVentana
+    			    _self.oCeldas.celda(LnRe,LnCo).oElementos.Despliega()
+			_endif
+
+		_endloop
+	_endloop
+
+_endmethod	
+$
+_pragma(classify_level=restricted)
+_method c_tabla.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.new(RnRenglones,RnColumnas, _optional PsColorLinea)
+## Objetivo: Crear una nueva instancia del objeto
+## Parámetros de entrada:
+##   Entero - RnRenglones - Número de renglones
+##   Entero - RnColumnas  - Número de columnas
+## Parámetros de salida:   NA
+## Regresa:  
+##  c_Tabla - Un objeto tabla
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	# Cuando se crea el objeto, la coordenada de origen es 0,0
+	# Esquina superior derecha del layout
+        _self.oCoordenada_Origen << coordinate.new(0,0)
+
+	# Se crean las celdas
+	_self.oCeldas << c_celdas.new(RnRenglones, RnColumnas)
+	
+	# Se crea M instancias de la clase Fila (Columnas)
+        _self.oColumnas << c_filas.new(RnColumnas)
+
+	# Se crean N instancias la clase Fila (Renglones)
+	_self.oRenglones << c_filas.new(RnRenglones)
+
+	_if PsColorLinea _is _unset
+	_then
+		_self.color_linea << {0.0, 0.0, 0.0}
+	_else
+		_self.color_linea << PsColorLinea
+	_endif
+	
+	_self.bDibuja_renglones_internos? << _true
+	_self.bDibuja_columnas_internas? << _true
+	_self.bDibuja_Bordes? << _true
+
+	_return _clone
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tabla.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.oCeldas
+## Objetivo: Acceder al objeto celdas, que se almacena en el
+## slot oCeldas
+## Parámetros de entrada:
+##   Entero - RnRenglon - Numero de renglon
+##   Entero - RnColumna - Numero de columna
+## Parámetros de salida:   N/A
+## Regresa:  Objeto Celda - Una celda
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	_return .oCeldas
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tabla.oCeldas << valor
+
+	.oCeldas << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.oColumnas
+## Objetivo: Permite acceder al objeto columnas, que se
+## almacena en el slot oColumnas
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa:  
+##  c_filas - columnas
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	_return .oColumnas
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tabla.oColumnas << valor
+
+	.oColumnas << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.oCoordenada_Origen 
+	
+## Objetivo: Obtener la coordenada origen 
+## Parámetros de entrada: NA
+## Parámetros de salida: NA
+## Regresa:
+##   Coordinate - oCoordenada_Origen - Coordenada origen
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .oCoordenada_Origen 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.oCoordenada_Origen << RoCoordenada
+## Objetivo: Asignar la coordenada origen
+## Parámetros de entrada:
+##    Coordinate - RoCoordenada - Coordenada origen
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+## Nota: La coordenada esta en pixeles 
+
+_Local LnX # Coordenada X del Origen de la tabla
+_local LnY # Coordenada Y del Origen de la tabla
+	
+	LnX << RoCoordenada.x 
+	LnY << RoCoordenada.y 
+	
+	.oCoordenada_Origen << coordinate.new(LnX, LnY)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.oLayout
+## Objetivo: Obtener el objeto Layout
+## Parámetros de entrada: NA
+## Parámetros de salida: NA
+## Regresa: Layout - RoLay - Objeto Layout
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .oLayout 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.oLayout << RoLay
+## Objetivo: Asignar el objeto Layout
+## Parámetros de entrada:
+##    Layout - RoLay - Objeto Layout
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	.oLayout << RoLay
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla.oRenglones
+## Objetivo: Permite acceder al objeto renglon, que se almacena
+## en el slot oRenglones
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   c_filas - Renglones
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación (fdiaz
+## Descripción de la modificación : Creación
+
+	_return .oRenglones
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tabla.oRenglones << valor
+
+	.oRenglones << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tabla.serial_slots()
+
+	keys << rope.new_with(:bDibuja_columnas_internas,:bDibuja_renglones_internos,:oRenglones,
+			:oColumnas,:oCeldas,:ocoordenada_origen,:ColorLinea)
+	values << rope.new_with(.bDibuja_columnas_internas,.bDibuja_renglones_internos,.oRenglones,
+			.oColumnas,.oCeldas,.oCoordenada_Origen,.sColorLinea)
+	
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tabla.serial_structure
+
+	>> :slotted
+		
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_tabla.celda(pRen, pCol)
+	#---------------------------------------------------
+	## <Req. #> : Regresa la celda que se ubica en pRen, pCol
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	_local cel
+	cel << .oCeldas.celda(pRen, pCol)	
+	_return cel
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted)
+_method c_tabla.activa_borde_celda(pRen, pCol, pBordeUbicacion) << pActivo
+	#---------------------------------------------------
+	## <Req. #> : Sincroniza la activación de los bordes de dos
+	## celdas. La celda q se ubica en pRen, pCol y la celda
+	## adyacente.
+	## Ejemplo:
+	## Si la tabla es de un renglon por dos columnas
+	## Se desea deshabilitar, que no se vea, el borde de la derecha de la celda [1,1]
+	## su celda adyacente es la celda [1,2] y a está se la
+	## deshabilitará el borde izq.
+	## 
+	## 
+	
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+	_local cel, celAdyacente, totRens, totCols
+
+	celAdyacente << _unset 
+	totRens << _self.orenglones.total_elementos
+	totCols << _self.oColumnas.total_elementos
+	cel << _self.celda(pRen, pCol)
+
+	cel.bordes(pBordeUbicacion) << pActivo
+	_if pBordeUbicacion = :derecha
+	_then
+		_if pCol < totCols
+		_then
+			celAdyacente << _self.celda(pRen , pCol + 1)
+			bordeAdyacente << :izquierda
+		_endif
+
+	_elif pBordeUbicacion = :izquierda 
+	_then
+		_if pCol > 1 
+		_then
+			celAdyacente << _self.celda(pRen , pCol - 1)
+			bordeAdyacente << :derecha					
+		_endif
+
+	_elif pBordeUbicacion = :superior 
+	_then
+		_if pRen > 1
+		_then
+			celAdyacente << _self.celda(pRen - 1, pCol)
+			bordeAdyacente << :inferior					
+		_endif
+
+	_elif pBordeUbicacion = :inferior 
+	_then
+		_if pRen < totRens
+		_then
+			celAdyacente << _self.celda(pRen + 1, pCol)
+			bordeAdyacente << :superior
+		_endif
+	_else
+		condition.raise(:warning, :string, "ERROR en el nombre de la orientación " + pBordeUbicacion )	
+	_endif
+	_if celAdyacente _isnt _unset 
+	_then
+		celAdyacente.bordes(bordeAdyacente) << pActivo			
+	_endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_tabla.nombre << valor
+
+	.sNombre << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tabla.nombre
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	_return .sNombre
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_tabla.total_columnas
+	#---------------------------------------------------
+	## <Req. #> : Regresa la cantidad de columnas que  conforman la
+	## tabla 
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/08/09 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	 _return _self.oColumnas.total_elementos
+	 
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_tabla.total_renglones
+	#---------------------------------------------------
+	## <Req. #> : Regresa la cantidad de renglones que conforman la tabla
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/08/09 des_david) : Created
+	#-------------- End Revision History ---------------
+	_return _self.oRenglones.Total_Elementos	
+_endmethod
+$
+
+
+

@@ -1,0 +1,63 @@
+# Nombre de la empresa: SIGTAO SOFTWARE, S.A. DE C.V.
+# Traza:
+# Objetivo:
+# Autor:             Steve Hall (Ten Sails Consulting)
+# Fecha de creación: 09/03/06
+
+#
+# Registrar visualizador de planos.
+#
+smallworld_product.register_application( :visualizador_planos,
+					 :application,
+					 :resource_module_name,        :layout_gui,
+					 :description,                 "Visualizador de planos",
+					 :external_name,               "Visualizador de planos",
+					 :gui_definition_file_name,    "visualizador_planos_gui.xml",
+					 :config_definition_file_name, "visualizador_planos_config.xml",
+					 :can_update_database?,        _false,
+					 :hidden,                      _true 
+                                       )
+$
+
+# Register the Layout Designer application
+
+smallworld_product.register_application( :layout_designer,
+					 :application,
+					 :resource_module_name,        :layout_gui,
+# Autor:                          vnguzman
+# ID de requerimiento:            Falla 888788
+# Fecha de modificación:          Lunes 15 de Mayo de 2006
+# Descripción de la modificación: Pongo textos en español de
+#                                 las líneas comentadas
+					 :description,                 "Planos",
+					 :external_name,               "Diseñador de Planos",
+#					 :description, "Layouts",
+#					 :external_name, "Layout Designer - Smallworld Core",
+#fin de la modificación
+					 :gui_definition_file_name,    "designer_gui.xml",
+					 :config_definition_file_name, "designer_config.xml",
+					 :can_update_database?,        _false,
+					 :hidden,                      _true 
+                                      )
+$
+
+# Register the Layout Preview application
+smallworld_product.register_application( :layout_preview,
+					 :application,
+					 :resource_module_name, :layout_gui,
+# Autor:                          vnguzman
+# ID de requerimiento:
+# Fecha de modificación:          Lunes 15 de Mayo de 2006
+# Descripción de la modificación: Pongo textos en español de
+#                                 las líneas comentadas
+					 :description,                 "Plano Libre",
+					 :external_name,               "Plano Libre",
+#					 :description, "Quick Layout",
+#					 :external_name, "Quick Layout - Smallworld Core",
+#fin de la modificación
+					 :gui_definition_file_name,    "preview_gui.xml",
+					 :config_definition_file_name, "preview_config.xml",
+					 :can_update_database?,        _false,
+					 :hidden,                      _true
+		                       )
+$

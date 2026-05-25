@@ -1,0 +1,356 @@
+_package user
+$
+def_slotted_exemplar(:c_guarda_objetos_vp,
+                     {
+			     {:oElementos,                _unset},
+			     {:oEstructuras,              _unset},
+			     {:oCanalizacion,             _unset},
+			     {:oResulSet,                 _unset},
+			     {:oLista,                    _unset}
+			     
+		     }
+)
+$
+c_guarda_objetos_vp.define_slot_access(:oCanalizacion, :writable, :private)
+$
+c_guarda_objetos_vp.define_slot_access(:oElementos,    :writable, :private)
+$
+c_guarda_objetos_vp.define_slot_access(:oEstructuras,  :writable, :private)
+$
+c_guarda_objetos_vp.define_slot_access(:oLista,        :writable, :private)
+$
+c_guarda_objetos_vp.define_slot_access(:oResulSet,     :writable, :private)
+$
+c_guarda_objetos_vp.define_shared_constant(:objetos,       #Nombre del objeto,      
+		                            rope.new_with(:mit_terminal_enclosure,
+							  :building,
+							  :splice_closure,
+							  :uub,
+							  :underground_route,
+							  :copper_terminal,
+							  :pole,
+							  :user!_tba_anotacion,
+							  :mit_presentation_object,
+							  :aerial_route,
+							  :copper_splice,
+							  :figure_eight,
+							  :user!_registro_tablero,
+							  :sheath,
+							  :access_point,
+							  :copper_cable,
+							  :user!_building,
+							  :user!_eje_calle,
+							  :building_geoms,
+							  :underground_route_geoms,
+							  :aerial_route_geoms,
+							  :uub_geoms,
+							  :pole_geoms,
+							  :splice_closure_geoms,
+							  :sheath_geoms,
+							  :mit_terminal_enclosure_geoms,
+							  :access_point_geoms,
+							  :figure_eight_geoms,
+							  :copper_terminal_geoms,
+							  :copper_splice_geoms,
+							  :copper_cable_geoms,
+							  :user!_eje_calle_esquema,
+							  :structure_annotation,
+							  :user!_reserva,
+							  :user!_bajante,
+							  :anchor,
+							  :user!_empalme_distribucion,
+							  :user!_anotacion_reserva_fo,
+							  :user!_terminal_fo,
+							  :user!_ont_anotacion,
+							  :user!_distrito_optico,
+							  #rhernan nvos. objs. geoms.
+							  :user!_empalme_distribucion_geoms,
+							  :user!_anotacion_reserva_fo_geoms,
+							  :user!_terminal_fo_geoms
+						        ),
+		                           :public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.Canalizacion
+	## 
+	## 
+	_return .oCanalizacion
+		     
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.Canalizacion << PoCanalizacion
+	## 
+	## 
+	.oCanalizacion << PoCanalizacion
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.elementos
+	## 
+	## 
+	_return .oElementos
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.elementos << Pobjetos
+	## 
+	## 
+	.oElementos << Pobjetos
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.Estructuras
+	## 
+	## 
+	_return .oEstructuras
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.Estructuras << PoEstructuras
+	## 
+	## 
+	.oEstructuras << PoEstructuras
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.genera_lista()
+	## fhramire
+	## Version 11.9.1
+	## Se guardan los datos que pueden ser configurados en el plano
+	## para modificar la visibilidad de este, esta configuracion
+	## puede ser de Rotacion, Mov Horizontal y Mov Vertical
+	## Los elementos solo son los de la tabla:
+	ocho << rope.new()                    
+	elementos << property_list.new()
+
+	_for i _over _self.elementos.elements()
+	_loop
+	    _if i.source_collection.name = "figure_eight"
+	    _then		
+		gaza << rope.new()
+		gaza.add(:figure_eight)
+		gaza.add(i.id)   # id
+		gaza.add(1.0)    # rot
+		gaza.add(1.0)    # hor
+		gaza.add(1.0)    # ver		
+		ocho.add(gaza)
+	    _endif                                   
+	_endloop
+ 
+	_if ocho.size > 0
+	_then
+	    elementos[:gazas] << ocho	
+	_endif	
+
+	##  Guardando Canalizaciones y Ruta Aerea
+	ruta_canal << rope.new()
+	ruta_aerea << rope.new()
+	_for i _over _self.Canalizacion.elements()
+	_loop		  	    
+	    canal << rope.new()
+	    aerea << rope.new()
+	    _if i.source_collection.name _is :underground_route
+	    _then
+		canal.add(:underground_route)
+		canal.add(i.id)   # id
+		canal.add(1.0)    # rot
+		canal.add(1.0)    # hor
+		canal.add(1.0)    # ver		
+		ruta_canal.add(canal)
+	    _elif i.source_collection.name _is :aerial_route
+	    _then
+		aerea.add(:aerial_route)
+		aerea.add(i.id)   # id
+		aerea.add(1.0)    # rot
+		aerea.add(1.0)    # hor
+		aerea.add(1.0)    # ver		
+		ruta_aerea.add(aerea)
+	    _endif    
+	_endloop
+	_if ruta_canal.size > 0
+	_then
+	    elementos[:canalizaciones] << ruta_canal	
+	_endif
+	_if ruta_aerea.size > 0
+	_then
+	    elementos[:aerea] << ruta_aerea	
+	_endif		
+
+	##  Guardando Pozos, Building 
+	pozos     << rope.new()
+	centrales << rope.new()
+	postes    << rope.new()
+	_for i _over _self.Estructuras.elements()
+	_loop	
+	    _if i.source_collection.name = "uub"
+	    _then 
+	        pozo << rope.new()
+		pozo.add(:uub)
+		pozo.add(i.id)   # id
+		pozo.add(1.0)    # rot
+		pozo.add(1.0)    # hor
+		pozo.add(1.0)    # ver		
+		pozos.add(pozo)
+	    _elif i.source_collection.name = "pole"
+	    _then 
+	        poste << rope.new()
+		poste.add(:pole)
+		poste.add(i.id)   # id
+		poste.add(1.0)    # rot
+		poste.add(1.0)    # hor
+		poste.add(1.0)    # ver		
+		postes.add(poste)
+	    _elif i.source_collection.name = "building"
+	    _then
+		nodo   << rope.new()
+		nodo.add(:building)
+		nodo.add(i.id)   # id
+		nodo.add(1.0)    # rot
+		nodo.add(1.0)    # hor
+		nodo.add(1.0)    # ver		
+		centrales.add(nodo)		    
+	    _endif	    
+	_endloop
+	_if pozos.size > 0
+	_then
+	    elementos[:pozos] << pozos	
+	_endif
+	_if centrales.size > 0
+	_then
+	    elementos[:centrales] << centrales	
+	_endif
+	_if postes.size > 0
+	_then
+	    elementos[:postes] << postes	
+	_endif
+
+	_return elementos 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.genera_lista_gsfr()
+	## 
+	##
+
+	# (16/10/07 bernardoa) : Asignacion de variables
+	_local LoRwoSet << rwo_set.new()
+	_local ht << hash_table.new()	
+
+	# (16/10/07 bernardoa) : No tiene sentido generar el
+	# rwo_set y no asignarlo ...
+	#_self.oResulSet.rwo_set()
+	_for LoElemento _over _self.oResulSet.fast_elements()
+	_loop
+		# (17/06/01 bernardoa) : Sino se validan los rwo unset
+		# la adicion de elementos al set se detiene junto con todo el
+		# proceso de despliegue
+		_if LoElemento     _isnt _unset _andif
+		    LoElemento.rwo _isnt _unset 
+		_then
+			LoRwoSet.add(LoElemento.rwo)
+		_endif		
+	_endloop
+
+	# Filtrado para un listado de objetos
+	LoRwoSetFiltrado << LoRwoSet.select_collection(_self.objetos)
+	
+	# (16/10/07 bernardoa) : Se reemplaza elements() por fast_elements()
+	#_for obj _over _self.oResulSet.rwo_set().elements()
+	_for obj _over LoRwoSetFiltrado.fast_elements()
+	_loop
+		LoObjeto << obj.source_collection.name
+		# (16/10/07 bernardo) : Ya no es necesario validar objeto
+		# vs objetos permitidos (operacion n*m)
+		#_if  _self.objetos.includes?(LoObjeto) 
+		#_then
+		
+	        anotacion << rope.new()
+		simbolo << rope.new()
+		simbolo.add(LoObjeto)
+		anotacion.add(LoObjeto)
+		
+		## Validar si son elementos de esquemas, estos elementos no
+		## tienen ID.
+		_if obj.responds_to?(:id)
+		_then
+			simbolo.add(obj.id)
+			anotacion.add(obj.id)
+		_else
+			simbolo.add(obj.rwo_id.unique_id)
+			anotacion.add(obj.rwo_id.unique_id)
+		_endif
+		
+		simbolo.add(1.0)
+		anotacion.add(1.0)
+		simbolo.add(1.0)
+		anotacion.add(1.0)
+		simbolo.add(1.0)
+		anotacion.add(1.0)		
+		
+		nom1 << LoObjeto + :_sim
+		_if _not ht.includes_key?(nom1)
+		_then
+			ht[nom1] << rope.new()
+		_endif
+		
+		nom2 << LoObjeto + :_ano
+		_if _not ht.includes_key?(nom2)
+		_then
+			ht[nom2] << rope.new()
+		_endif
+		
+		ht[nom1].add(simbolo)
+		ht[nom2].add(anotacion)
+		
+		## fhramire
+		## Se agrega los datos para configurar las anotaciones
+		## del pozo en Tipo Pozo 11_7_2_a		
+		_if LoObjeto = "uub"
+		_then	
+			nom3 << LoObjeto + :_ano_tipo
+			_if _not ht.includes_key?(nom3)
+			_then
+				ht[nom3] << rope.new()
+			_endif
+			ht[nom3].add(anotacion.copy())
+		_endif
+		# (16/10/07 bernardoa) : Eliminacion por operacion n*m 
+		#_endif
+	_endloop 
+	_return ht
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.init()
+	## 
+	## 
+	#_super.init()
+	.oLista << property_list.new()
+	_return _self
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.new()
+	## 
+	## 
+	_return _clone.init()
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.oResulSet
+	## 
+	## 
+	_return .oResulSet
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_guarda_objetos_vp.oResulSet << ResulSet
+	## 
+	## 
+	.oResulSet << ResulSet
+_endmethod
+$

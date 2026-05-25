@@ -1,0 +1,206 @@
+#----------------------------------------------------------------
+#
+# Nobre de la empresa:  Sigma Tao
+# Traza:                Planos
+# Objetivo:             Genera el sello de capacidad de cables
+# Autor:                Viridiana Baltazar
+# Fecha de creacion:    09-Marzo-2006
+#
+#----------------------------------------------------------------
+
+_package user
+#remex(:c_sello_reconcentracion)
+$
+
+def_slotted_exemplar(:c_sello_reconcentracion,
+{
+	{:LsvEtiquetas,  _unset,  :writable}
+}, :c_base_sello_cobre )
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_reconcentracion.configura_tabla()
+##Crea las tablas del sello 
+# Autor:                          vnguzman
+# ID de requerimiento:            Plano de bajantes
+# Fecha de modificación:          Martes 4 de Abril de 2006
+# Descripción de la modificación: Modifico la forma de las tablas
+	_local LoCelda
+
+	LnRenglones << 11
+	LnColumnas  << 8
+
+	LoTabla << .o_tablas.crea_tabla(LnRenglones, LnColumnas, :tbl_reconcentracion)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << .o_coord_inicio
+
+	#Longitudes de los renglones de la tabla, dada en mm
+	LoTabla.oRenglones.elemento(1).nLongitud << 10
+	
+	_for LnReng _over range(2, LnRenglones)
+	_loop
+		LoTabla.oRenglones.elemento(LnReng).nLongitud << 5
+	_endloop
+
+	#Longitudes de las columnas de la tabla, dada en mm
+	_for LnCol _over range(1, LnColumnas)
+	_loop
+		LoTabla.oColumnas.elemento(LnCol).nLongitud << 13
+	_endloop
+
+	#Oculta los bordes
+	_for LnPos _over range(1, LnColumnas-1)
+	_loop
+		LoCelda << LoTabla.oCeldas.Celda(1, LnPos).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Der? << _false
+	_endloop
+
+	_for LnPos _over range(1, LnColumnas/2)
+	_loop
+		LoCelda << LoTabla.oCeldas.Celda(2, 2*LnPos-1).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Der? << _false
+	_endloop
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_reconcentracion.etiqueta_celdas()
+# Autor:                          vnguzman
+# ID de requerimiento:            Plano de bajantes
+# Fecha de modificación:          Martes 4 de Abril de 2006
+# Descripción de la modificación: Modifico las etiquetas
+	#-----------------------------------------------------------
+	# ASIGNA LAS ETIQUETAS FIJAS DEL SELLO
+	#-----------------------------------------------------------
+	_local LoCeldas                                << .o_tablas.elemento(:tbl_reconcentracion).oCeldas
+	.LsvEtiquetas                                << simple_vector.new(4)
+	LoTexto                                        << c_texto_grafico.new("TABLA DE BAJANTES")
+	LoTexto.nTamanio                               << 40
+	LoTexto.nMargen_Izq                            << 13
+        LoCeldas.Celda(1,4).oElemento                  << LoTexto
+	.LsvEtiquetas[1]                              << simple_vector.new_with("Precableado", "Reconcentración", "Reconexión", "Rehabilitación")
+	_for LnN, LsValor _over .LsvEtiquetas[1].keys_and_elements()
+	_loop
+		LoTexto                                << c_texto_grafico.new(LsValor)
+		LoTexto.nTamanio                       << 20
+		LoTexto.nMargen_Izq                    << 13
+		LoCeldas.Celda(2, 2*LnN-1).oElemento   << LoTexto
+	_endloop
+	.LsvEtiquetas[1]                                << simple_vector.new_with("UC", "Total")
+        _for LnPos _over range(1, 4)
+	_loop
+		LoTexto << c_texto_grafico.new(.LsvEtiquetas[1][1])
+		LoTexto.nTamanio << 20
+		LoCeldas.Celda(3, 2*LnPos-1).oElemento << LoTexto
+                LoTexto << c_texto_grafico.new(.LsvEtiquetas[1][2])
+		LoTexto.nTamanio << 20		
+		LoCeldas.Celda(3, 2*LnPos).oElemento   << LoTexto
+	_endloop
+	.LsvEtiquetas[1] << simple_vector.new_with("CALEAE", "CACLAE", "CALEFA", "CACLFA", "CALEED", "CACLED", "CALESU", "CACLSU")
+	_for LnN, LsValor _over .LsvEtiquetas[1].keys_and_elements()
+	_loop
+		LoTexto << c_texto_grafico.new(LsValor)
+		LoTexto.nTamanio << 20
+		LoCeldas.Celda(3 + LnN, 1).oElemento << LoTexto
+	_endloop
+	.LsvEtiquetas[2] << simple_vector.new_with("CARSAE", "CARSFA", "CARSED", "CARSSU", "CARCAE", "CARCFA", "CARCED", "CARCSU")
+	_for LnN, LsValor _over .LsvEtiquetas[2].keys_and_elements()
+	_loop
+		LoTexto << c_texto_grafico.new(LsValor)
+		LoTexto.nTamanio << 20
+		LoCeldas.Celda(3 + LnN, 3).oElemento << LoTexto
+	_endloop
+	.LsvEtiquetas[3] << simple_vector.new_with("CAA014", "CAS014")
+	_for LnN, LsValor _over .LsvEtiquetas[3].keys_and_elements()
+	_loop
+		LoTexto << c_texto_grafico.new(LsValor)
+		LoTexto.nTamanio << 20
+		LoCeldas.Celda(3 + LnN, 5).oElemento << LoTexto
+	_endloop
+	.LsvEtiquetas[4] << simple_vector.new_with("CARLAE", "DADLAE", "CARLED", "DADLED", "CARLFA", "DADLFA", "CARLSU", "DADLSU")
+	_for LnN, LsValor _over .LsvEtiquetas[4].keys_and_elements()
+	_loop
+		LoTexto << c_texto_grafico.new(LsValor)
+		LoTexto.nTamanio << 20
+		LoCeldas.Celda(3 + LnN, 7).oElemento << LoTexto
+	_endloop
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_reconcentracion.llena_datos_celdas()
+	## 
+	##
+	_local LoCeldas << .o_tablas.elemento(:tbl_reconcentracion).oCeldas
+
+	#-----------------------------------------------------------
+	# ASIGNA LAS ETIQUETAS DINÁMICAS DEL SELLO
+	#-----------------------------------------------------------
+	_local LcollTotalUcs << simple_vector.new(4)
+	_for i _over 1.upto(4)
+	_loop
+		LcollTotalUcs[i] << simple_vector.new(8)
+	_endloop
+	_for LoLlave, LoElemento _over _self.ucs().fast_keys_and_elements()
+	_loop
+		_for LoN _over 1.upto(4)
+		_loop
+			_if .LsvEtiquetas[LoN].includes_by_equality?(LoLlave[1].write_string)
+			_then				
+				_if LcollTotalUcs[Lon][.LsvEtiquetas[LoN].index_equal_of(LoLlave[1].write_string)] _is unset
+				_then
+					LcollTotalUcs[Lon][.LsvEtiquetas[LoN].index_equal_of(LoLlave[1].write_string)]<<LoElemento[:cantidad]
+				_else
+					LcollTotalUcs[Lon][.LsvEtiquetas[LoN].index_equal_of(LoLlave[1].write_string)]+<<LoElemento[:cantidad]
+				_endif
+
+				_leave
+			_endif
+		_endloop
+	_endloop
+	_local LnColumnas
+	_local LsNumero << "0"
+	_for LnN _over 1.upto(4)
+	_loop
+                _if LnN <> 3
+                _then
+                        LnColumnas << 8
+                _else
+                        LnColumnas << 2
+                _endif
+                _for LnM _over 1.upto(LnColumnas)
+                _loop
+                        _if LcollTotalUcs[LnN][LnM] _isnt _unset
+                        _then
+                                LsNumero << LcollTotalUcs[LnN][LnM].floor.write_string
+			_else
+				LsNumero << "0"
+                        _endif
+
+			 LoTexto << c_texto_grafico.new(LsNumero)
+                         LoTexto.nTamanio << 20
+                         LoCeldas.Celda(3 + LnM, 2*LnN).oElemento << LoTexto
+
+                _endloop
+        _endloop
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_reconcentracion.ucs()
+	##
+	##
+	_local LocollBajantes    << equality_set.new()
+	_local LocollElement_sec << equality_set.new()
+
+	_local LsNom_dist << swg_dsn_admin_engine.active_scheme.user!_distrito
+	LocollBajantes << gis_program_manager.cached_dataset(:gis).collections[:user!_bajante].select(predicate.eq(:user!_distrito, LsNom_dist))
+
+        _local LoCostea << sw:c_administrador_costeo.new()
+	(LocollUcs, LocollFaltas) << LoCostea.get_elementos(LocollBajantes)
+	LocollUcs.add_all(LocollFaltas)
+	_return LocollUcs
+_endmethod

@@ -1,0 +1,180 @@
+#----------------------------------------------------------------
+# Empresa:  Sigma Tao
+# Traza:    Planos 
+# Objetivo: Crear la placa de identificacion para principales
+# Autor:    lgranados
+# Fecha de creacion: 13-Diciembre-2010
+#
+#----------------------------------------------------------------
+
+_package user
+$
+
+def_slotted_exemplar(:c_placa_principales,
+{}, :c_base_sello_fibra)
+$
+_method c_placa_principales.configura_tabla()
+
+	#----------------------------------------------------------
+	# Tabla 1
+	#-----------------------------------------------------------
+        lo_tabla << .o_tablas.crea_tabla(1,1, :tbl_1)
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+	lo_tabla.orenglones.elemento(1).nlongitud << 50
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 130
+	#----------------------------------------------------------
+	# Tabla 2
+	#-----------------------------------------------------------
+        lo_tabla << .o_tablas.crea_tabla(1,1, :tbl_2)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 50,
+						      .o_coord_inicio.y - 50)
+	lo_tabla.orenglones.elemento(1).nlongitud << 40
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 120
+	#-----------------------------------------------------------
+	#  Tabla 3
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1, 1, :tbl_3)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 50,
+						      .o_coord_inicio.y - 50)
+	lo_tabla.orenglones.elemento(1).nlongitud << 40
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 26
+	#-----------------------------------------------------------
+	#  Tabla 4
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,6, :tbl_4)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 330,
+						      .o_coord_inicio.y - 110)
+	lo_tabla.orenglones.elemento(1).nlongitud << 7.5
+	_for n_col _over range(1,6)
+	_loop
+		lo_tabla.ocolumnas.elemento(n_col).nlongitud  << 15
+	_endloop
+	ocultar << rope.new_with({1,1},{1,3},{1,5})
+	_for elem _over ocultar.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Inf? << _false
+		lo_celda.bBorde_Sup? << _false
+	_endloop
+	#-----------------------------------------------------------
+	#  Tabla 5
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,6, :tbl_5)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 330,
+						      .o_coord_inicio.y - 215)
+	lo_tabla.orenglones.elemento(1).nlongitud << 7.5
+		_for n_col _over range(1,6)
+	_loop
+		lo_tabla.ocolumnas.elemento(n_col).nlongitud  << 15
+	_endloop
+	ocultar << rope.new_with({1,1},{1,3},{1,5})
+	_for elem _over ocultar.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Inf? << _false
+		lo_celda.bBorde_Sup? << _false
+	_endloop
+	#-----------------------------------------------------------
+	#  Tabla 6
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,4, :tbl_6)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 330,
+						      .o_coord_inicio.y - 310)
+	lo_tabla.orenglones.elemento(1).nlongitud << 7.5
+	_for n_col _over range(1,4)
+	_loop
+		lo_tabla.ocolumnas.elemento(n_col).nlongitud  << 22.5
+	_endloop
+	ocultar << rope.new_with({1,1},{1,3})
+	_for elem _over ocultar.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Inf? << _false
+		lo_celda.bBorde_Sup? << _false
+	_endloop	
+	
+	_self.set_fill_colour(colour.new_rgb(0.82,0.91,1))
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_placa_principales.llena_datos_celdas()
+
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_placa_principales.etiqueta_celdas()
+
+	texto1 << "SIGLAS"+%newline
+	texto1 +<< "CENTRAL"
+
+	_self.asigna_simbolo_celda(:tbl_3,1,1,"logo_sellos")
+	
+	_self.asigna_texto_celda(:tbl_4, 1,1, texto1, 26,:top_left)
+	_self.asigna_texto_celda(:tbl_4, 1,3, "CABLE", 26,_unset)
+	_self.asigna_texto_celda(:tbl_4, 1,5, "CAPACIDAD", 25,_unset)
+	
+	_self.asigna_texto_celda(:tbl_5, 1,1, "CALIBRE", 26,_unset)
+	_self.asigna_texto_celda(:tbl_5, 1,3, "CUENTA", 26,_unset)
+	_self.asigna_texto_celda(:tbl_5, 1,5, "INDICADOR", 25, _unset)
+	
+	_self.asigna_texto_celda(:tbl_6, 1,1, "FECHA", 26,_unset)
+	_self.asigna_texto_celda(:tbl_6, 1,3, "CONSTRUCTOR", 26,_unset)
+
+			
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_placa_principales.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add(layout_attribute_definition.new(:sgl_ctl, :string,
+						:description, "SIGLAS CENTRAL"))
+	attribs.add(layout_attribute_definition.new(:cable, :string,
+						:description, "CABLE"))
+	attribs.add(layout_attribute_definition.new(:capacidad, :string,
+						:description, "CAPACIDAD"))
+	attribs.add(layout_attribute_definition.new(:calibre, :string,
+						:description, "CALIBRE"))
+	attribs.add(layout_attribute_definition.new(:cuenta, :string,
+						:description, "CUENTA"))
+	attribs.add(layout_attribute_definition.new(:indicador, :string,
+						:description, "INDICADOR"))
+	attribs.add(layout_attribute_definition.new(:fecha, :string,
+						:description, "FECHA"))
+	attribs.add(layout_attribute_definition.new(:constructor, :string,
+						:description, "CONSTRUCTOR"))
+	
+
+	>>attribs
+_endmethod
+$
+c_placa_principales.define_attributes()
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_placa_principales.llena_datos_dinamicos()
+	## 
+	## 
+	# (10/12/10 lgranados) : Se asignan los valores capturados por
+	# el usuario.
+	
+	_self.asigna_texto_celda(:tbl_4,1,2,_self.sgl_ctl,28)
+	_self.asigna_texto_celda(:tbl_4,1,4,_self.cable,28)
+	_self.asigna_texto_celda(:tbl_4,1,6,_self.capacidad,28)
+	
+	_self.asigna_texto_celda(:tbl_5,1,2,_self.calibre,28)
+	_self.asigna_texto_celda(:tbl_5,1,4,_self.cuenta,28)
+	_self.asigna_texto_celda(:tbl_5,1,6,_self.indicador,28)
+	
+	_self.asigna_texto_celda(:tbl_6,1,2,_self.fecha,28)
+	_self.asigna_texto_celda(:tbl_6,1,4,_self.constructor,28)
+	
+_endmethod
+$

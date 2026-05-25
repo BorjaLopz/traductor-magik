@@ -1,0 +1,6 @@
+_package sw
+$
+plot_window.define_pseudo_slot(:symbols_modificados,_unset ,:writable,:public)
+$
+plot_window.define_pseudo_slot(:symbols_size,_unset ,:writable,:public)
+$

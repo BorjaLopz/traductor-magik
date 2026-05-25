@@ -1,0 +1,580 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Representa los datos de un distrito
+# Autor: dsanchez
+# Fecha de creacion: 06-Abril-2005
+#
+# ---------------- Revision History -----------------
+# Ult Mod.
+#  08/04/05 DSB - Los metodos que regresan colecciones,
+#                 regresan colecciones con -1 cuando el dto no existe
+#  08/04/05 DSB - Se agrego un metodo para obtener las
+#                 iniciales de los NSE
+#  07/04/05 DSB - 19:15 Se generaron los metodos para obtener
+#                 el total de viviendas y lineas
+#  07/04/05 DSB - 10:25 se pusieron algunos valores para que funcione 
+#  06/04/05 DSB - Se creo
+# Reviso.
+# fdiaz 
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_distrito_e)
+
+$
+def_slotted_exemplar(:c_distrito_e,
+    {
+	   {:sDistrito,          _unset }, # identificador del distrito
+	   {:sNSE_Predominante,  _unset }, # NSE predominante
+	   {:sTotal_Viviendas,   _unset }, # Total de viviendas del distrito
+	   {:sTotal_Lineas,      _unset }, # Total de lineas del distrito	   
+           {:oDto,               _unset }, # datos del distrito 
+	   {:collLotes,          _unset }, # lotes del distrito
+           {:collNumViv,         _unset }, # Numero de viviendas
+           {:collNumLin,         _unset }, # Numero de lineas
+	   {:sValor_Defecto,     "vacio"},  # valor que regresa cuando no hay proyecto
+                                           # seleccionado	   
+           {:collDet_Lote,         _unset } # Numero de lineas                                           
+
+    }
+)
+$
+c_distrito_e.define_slot_access(:sDistrito,             :writable, :private)
+c_distrito_e.define_slot_access(:sNSE_predominante,     :writable, :private)
+c_distrito_e.define_slot_access(:sTotal_Viviendas,      :writable, :private)
+c_distrito_e.define_slot_access(:sTotal_Lineas,         :writable, :private)
+c_distrito_e.define_slot_access(:oDto,                  :writable, :public)
+c_distrito_e.define_slot_access(:collLotes,             :writable, :private)
+c_distrito_e.define_slot_access(:collNumViv,            :writable, :private)
+c_distrito_e.define_slot_access(:collNumLin,            :writable, :private)
+c_distrito_e.define_slot_access(:sValor_defecto,        :writable, :private)
+c_distrito_e.define_slot_access(:collDet_Lote,          :writable, :private)
+
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.version()
+
+## Objetivo: Este metodo se debe de modifiar cada vez que se
+## sube a VSS
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa: LA version y fecha de la ultima modificacion
+## Fecha de última modificación: 25/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+	
+   _return  "version 1.00.00.04 08/04/05 22:45 "
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.new()
+## Objetivo: Crear una instancia de celda
+## Parámetros de entrada:
+## Parámetros de salida:   NA
+## Regresa: 
+## Fecha de última modificación: 25/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+   _self.sDistrito          << _unset 	
+   _self.sNSE_predominante  << _unset
+   _self.oDto               << _unset 
+   _self.collLotes          << _unset 
+   _self.collNumViv         << _unset 
+   _self.collNumLin         << _unset
+   _self.collDet_lote      << _unset
+
+   _return _clone
+
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.distrito << RsValor
+	## 
+	## 
+
+	.sDistrito << RsValor
+
+	_self.prvLeer_Distrito_BdD()
+        _self.prvObtener_NumViv_Lineas_por_Dto(_self.collLotes)		   
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.distrito
+
+	_return .sDistrito
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private  _method c_distrito_e.prvLeer_Distrito_BdD()
+
+## Objetivo: obtener el proyecto de acuerdo al valor que se le proporcione 
+##           como parametro
+## Parámetros de entrada:
+## 	 - RsValor - Clave con la que identifica el proyecto
+##
+## Parámetros de salida:   NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se escribio la consulta correcta para obtener
+##                el proyecto
+##   17/01/05 DSB Creacion
+
+
+ _local LoPAF
+ _local LoDtos_BD     # Tabla de la B de D donde se almacenan los distritos
+ _local LoPred_Dto    # Sentencia que se define para la busqueda
+ 
+ _local LoLotes_BD    # Tabla de la B de D donde se almacenan los lotes
+ _local LoPred_Lotes  # Sentencia que se define para la busqueda
+
+       LoPAF     << smallworld_product.pni_application()
+
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+       # Prepara todo lo relacionado para obtener los datos de DISTRITO 
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+       
+       LoDtos_BD  << LoPAF.database.collection(:landbase, :user!_distrito)
+       
+     
+       LoPred_Dto << predicate.eq(:user!_distrito, _self.sDistrito)
+
+       # selecciono el distrito para obtener su informacion
+       _self.oDto << LoDtos_BD.select(LoPred_Dto).an_element()
+
+       _if _self.oDto _isnt _unset 
+       _then
+
+          #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+          # Prepara todo lo relacionado para obtener los datos de LOTES
+          #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+
+          LoLotes_BD << LoPAF.database.collection(:landbase,:user!_lote)
+       
+          # predicado para obtener los lotes que estan en el dto
+          LoPred_Lotes << predicate.within(:user!_limite, _self.oDto.user!_limite)
+
+          # selecciona los lotes que esten dentro del dto
+          _self.collLotes << LoLotes_BD.select(LoPred_lotes) 
+	       
+       _endif
+     
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+   # Prepara todo lo relacionado para obtener los datos de DETALE
+   # DE LOTE
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+
+   _self.collDet_Lote  << LoPAF.database.collection(:landbase, :user!_detalle_lote)
+
+
+       
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.sNSE_predominante
+	## 
+	## 
+
+	LbTodoBien << _self.prvValida_Distrito()
+
+        _if LbTodoBien 
+	_then
+	   _if .sNSE_predominante _is _unset  
+	   _then
+	      _self.prvGeneraNSE_predominante()
+	   _endif
+
+	   _return .sNSE_Predominante.write_string
+
+	_else
+	   _return _self.sValor_defecto
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.sTotal_Viviendas
+	## 
+	## 
+
+	LbTodoBien << _self.prvValida_Distrito()
+
+        _if LbTodoBien 
+	_then
+	   _if .sTotal_Lineas _is _unset  
+	   _then
+	      _self.prvGeneraTotales_Viviendas_Lineas()
+	   _endif
+
+	   _return .sTotal_Viviendas.write_string
+
+	_else
+	   _return _self.sValor_defecto
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.sTotal_Lineas
+	## 
+	## 
+
+	LbTodoBien << _self.prvValida_Distrito()
+
+        _if LbTodoBien 
+	_then
+	   _if .sTotal_Lineas _is _unset  
+	   _then
+	      _self.prvGeneraTotales_Viviendas_Lineas()
+	   _endif
+
+	   _return .sTotal_Lineas.write_string
+
+	_else
+	   _return _self.sValor_defecto
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.numero_Viviendas_NSE
+
+## Objetivo: regresa en un vector el numero de viviendas de cada uno de los
+## NSE del distrito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   hast_table : numero de lineas por NSE del dto	
+## Fecha de última modificación:
+##   07/05/05 DSB Se creo
+
+
+	LbTodoBien << _self.prvValida_Distrito()
+
+        _if LbTodoBien 
+	_then
+
+	   _return _self.collNumViv
+
+	_else
+           _if _self.collDet_lote _is _unset 
+	   _then
+              _return _self.sValor_defecto
+	   _else
+	      _return _self.crea_inicializa_vector(-1)		   
+	   _endif
+	   
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.numero_Lineas_NSE
+
+## Objetivo: regresa en un vector el numero de lineas de cada uno de los
+## NSE del distrito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   hast_table : numero de lineas por NSE del dto	
+## Fecha de última modificación:
+##   07/05/05 DSB Se creo
+
+	LbTodoBien << _self.prvValida_Distrito()
+
+        _if LbTodoBien 
+	_then
+  	   _return _self.collNumLin
+
+	_else
+           _if _self.collDet_lote _is _unset 
+	   _then
+              _return _self.sValor_defecto
+	   _else
+	      _return _self.crea_inicializa_vector(-1)		   
+	   _endif
+	   
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_distrito_e.prvValida_Distrito()
+
+## Objetivo: validar que se tenga un registro, si no existe
+## lanza una excepcion
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   boleano : true todo se encuentra bien
+##             falso hay un error	
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _if _self.oDto _is _unset 
+   _then
+      _return _false 
+   _else
+      _return _true 
+   _endif	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.crea_inicializa_vector(PnValor)
+
+## Objetivo: Crear e inicializar un vector 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   06/04/05 DSB Creacion
+
+	Lcoll << hash_table.new()
+
+	_for enum _over _self.collDet_Lote.field(:user!_nivel_socio).type.enumerator.sorted_values.elements()
+	_loop	
+		Lcoll[enum.sys!name.as_symbol()] << PnValor
+	_endloop
+
+	_return lcoll
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_distrito_e.prvSumaVectores(Rcoll_1, Rcoll_2)
+
+## Objetivo: Suma dos vectores
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   06/04/05 DSB Creacion
+
+	
+   _if Rcoll_1.size = Rcoll_2.size 
+   _then
+      _for LySim  _over Rcoll_1.keys()
+      _loop
+         rcoll_1[LySim] <<  rcoll_1[LySim] + rcoll_2[LySim]
+      _endloop
+   _else
+      condition.raise(:warning, :string, "Las colecciones son de diferente tamaño. (c_distrito_e)")	
+   _endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_distrito_e.prvObtener_NumViv_Lineas_por_Lote(RoLote)
+
+## Objetivo: Generar el numero de viviendas y el numero de
+## lineas por lote
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##    hash_table, hash_table : dos colecciones,
+##     	       la primera numero de viviendas del lote
+##     	       la segunda numero de lineas del lote	
+## Fecha de última modificación:
+##   06/04/05 DSB Creacion
+
+   LbTodoBien << _self.prvValida_Distrito()	
+
+  _if LbTodoBien 
+  _then
+
+       LcollNumViv << _self.crea_inicializa_vector(0)
+       LcollNumLin << _self.crea_inicializa_vector(0)
+	
+	_for LoDetalle  _over RoLote.user!_detalle_lotes.elements()
+	_loop
+                LyNSE << LoDetalle.user!_nivel_socio.write_string.as_symbol() 
+
+		# incremento el numero de viviendas al que corresponde el detalle
+		LcollNumViv[LyNSE] << LcollNumViv[LyNSE] + 1
+
+		# incremento el numero de lineas al que corresponde al detalle
+		LcollNumLin[LyNSE] << LcollNumLin[LyNSE] + LoDetalle.user!_cantidad_servicios
+	 _endloop
+
+	_return   LcollNumViv,  LcollNumLin
+  _else
+	_return _unset , _unset 
+  _endif
+	
+
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_distrito_e.prvObtener_NumViv_Lineas_por_Dto(RoLotes)
+
+## Objetivo: Generar el numero de viviendas y el numero de
+## lineas por distrito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   06/04/05 DSB Creacion
+
+ _local LcollViv_lote
+ _local LcollLin_lote
+
+
+   LbTodoBien << _self.prvValida_Distrito()	
+
+  _if LbTodoBien 
+  _then
+ 
+      _Self.collNumViv << _self.crea_inicializa_vector(0)
+      _self.collNumLin << _self.crea_inicializa_vector(0)
+ 
+      _for LoLote  _over RoLotes.fast_elements()
+      _loop
+  	   
+         (LcollViv_Lote, LcollLin_Lote) << _self.prvObtener_NumViv_Lineas_por_Lote(LoLote)
+       
+         _self.prvSumaVectores(_self.collNumViv, LcollViv_lote)
+         _self.prvSumaVectores(_self.collNumLin, LcollLin_lote)
+   	
+      _endloop
+
+   _endif    
+      
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_distrito_e.prvGeneraNSE_predominante()
+	## 
+	## 
+
+   LnNumViv_NSE_Pred << _Self.collNumViv.an_Element()
+   LsNSE_Pred        << _Self.collNumViv.a_key()
+	
+   _for LySim  _over _self.collNumViv.keys()
+   _loop
+      _if _self.collNumViv[LySim] >  LnNumViv_NSE_Pred 
+      _then
+          LnNumViv_NSE_Pred << _self.collNumViv[LySim]
+          LsNSE_Pred        << LySim.write_string
+      _endif
+   _endloop
+
+   _self.sNSE_predominante <<  LsNSE_Pred
+   
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_distrito_e.prvGeneraTotales_Viviendas_Lineas()
+
+
+  _local LnTotViv << 0
+  _local LnTotLin << 0	
+	
+   _for LySim  _over _self.collNumViv.keys()
+   _loop
+
+          LnTotViv << _self.collNumViv[LySim] + LnTotViv
+          LnTotLin << _self.collNumLin[LySim] + LnTotLin
+
+   _endloop
+
+   _self.sTotal_viviendas <<  LnTotViv
+   _self.sTotal_lineas    <<  LnTotLin	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.existe?
+
+## Objetivo: regresa si se encontro el dto que se solicito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   boleano : true  SI existe el dto
+##             falsp NO existe el dto	
+## Fecha de última modificación:
+##   07/05/05 DSB Se creo
+
+	_return _self.oDto _isnt _unset 
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito_e.obten_inicial_NSE(PsNSE)
+
+## Objetivo: obtienen las iniciales de lso NSE
+## Parámetros de entrada:
+##  String - PsNSE : NSE del cual se desea obtener su inicial 	
+## Parámetros de salida:  NA
+## Regresa:
+##   Strign: Inicial del NSE
+## Fecha de última modificación:
+##   07/05/05 DSB Se creo
+	
+	_if PsNSE = "INDUSTRIAL LIGERA"
+	_then
+	   _return "IL"
+	_elif PsNSE = "INDUSTRIAL PESADA"
+	_then
+	   _return "IP"
+	_elif PsNSE = "RESIDENCIAL E"
+	_then
+	   _return "E"		
+	_elif PsNSE = "COMERCIAL 1ª."
+	_then
+	   _return "1ª"		
+	_elif PsNSE = "COMERCIAL 2ª."
+	_then
+	   _return "2ª"		
+	_elif PsNSE = "INDUSTRIAL MEDIANA"
+	_then
+	   _return "IM"		
+	_elif PsNSE = "RESIDENCIAL A"
+	_then
+	   _return "A"				
+	_elif PsNSE = "LOTE BALDÍO"
+	_then
+	   _return "LB"		
+	_elif PsNSE = "COMERCIAL 3ª."
+	_then
+	   _return "3ª"				
+	_elif PsNSE = "RESIDENCIAL B"
+	_then
+	   _return "B"				
+	_elif PsNSE = "RESIDENCIAL C"
+	_then
+	   _return "C"				
+	_elif PsNSE = "RESIDENCIAL D"
+	_then
+	   _return "D"				
+	_endif
+	
+_endmethod
+$

@@ -1,0 +1,111 @@
+#----------------------------------------------------------------
+# c_servicios_estilos.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: dvalenci
+#
+# Date: 11/02/02
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+
+# Comentarios
+remex(:c_servicios_estilos)
+$
+
+_package user
+$
+
+#-------------------------------A T R I B U T O S - D E - L A - C L A S E ------------------
+def_slotted_exemplar ( :c_servicios_estilos,{
+                       {:st_arbol,_unset}
+		       })
+$
+
+#--------------------------------------  V A R I A B L E S ---------------------------------
+c_servicios_estilos.define_shared_variable(:singleton,_unset,:private)
+$
+#--------------------------------------  G E N E R A L E S  --------------------------------
+
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_servicios_estilos.new()
+	## 
+	## 
+	_return _clone.init()
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_servicios_estilos.init()
+	## 
+	##
+	_return _self
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_servicios_estilos.singleton()
+	## 
+	## 
+	_if _self.singleton _is _unset 
+	_then
+		_self.singleton<<_self.new()
+	_endif
+	_return _self.singleton
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_servicios_estilos.obtener_estilo_blanco_y_negro_txt(PoRwo_est,_optional Pc_construccion)
+	## Metodo para la obtencion del estilo blanco y negro en base
+	## al estado de construccion de los objetos
+	## este metodo funciona solo para textos
+	## Dvalenci 28 de Julio 2011
+
+	_if PoRwo_est.class_name = :gis_text_style
+	_then
+		LoEstilo << PoRwo_est.actual_text_styles[:left_right]
+	_elif PoRwo_est.class_name = :rwo_style
+	_then
+		LoEstilo << PoRwo_est.actual_text_style
+	_else
+		_return PoRwo_est
+	_endif
+
+	_if Pc_construccion = "PROYECTADO"
+	_then
+		LoFont << font.new_logical("bold")
+		LoColor << colour.called(:red)
+		LoEscalaX << LoEstilo.xscale + (LoEstilo.xscale * 0.10).truncated
+		LoEscalaY << LoEstilo.Yscale + (LoEstilo.xscale * 0.10).truncated
+	_else
+		LoFont << font.new_logical("plain")
+		_if Pc_construccion _is _unset 
+		_then
+			LoColor << colour.called(:black)
+		_else
+			LoColor << colour.called(:green)			
+		_endif
+		LoEscalaX << LoEstilo.xscale
+		LoEscalaY << LoEstilo.Yscale			
+	_endif
+	
+	LoEstilo << LoEstilo.copy_with_properties(:font,LoFont,
+						  :yscale,LoEscalaY,
+						  :xscale,LoEscalaX,
+						  :colour,LoColor)
+	_return LoEstilo
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_servicios_estilos.obtiener_estilo_blanco_y_negro_linea(rwo_est)
+	## 
+	## 
+	
+_endmethod
+$

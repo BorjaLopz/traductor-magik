@@ -1,0 +1,465 @@
+_package sw
+$
+#
+# Steve Hall (Ten Sails Spain) 23/06/04
+# Acciones para controlar longitud y ángulo del trail.
+#
+layout_view.action_definitions.add_all ( {
+		sw_action_def.new( :set_trail_length,
+				   :enabled?, _false,				   
+				   :action_message, :set_trail_length|()| ),
+		sw_action_def.new( :set_trail_angle,
+				   :enabled?, _false,				   
+				   :action_message, :set_trail_angle|()| ) } )
+$
+_pragma(classify_level=restricted)
+_method layout_view.add_popup_actions ( mode_name, a_menu )
+	## 
+	## Add a couple of popup actions to A_MENU.
+	## MODE_NAME could be used to determine the type of actions to
+	## put in the menu.
+	##
+	_if a_menu _is _unset 
+	_then 
+
+		_return 
+	_endif
+
+	_if ( an_element << _self.current_element ) _isnt _unset
+	_then
+		action_list << _self.framework.actions_for ( an_element )
+		add_separator? << _false
+
+		_if action_list _isnt _unset _andif
+		    action_list.size > 0
+		_then
+			_for act _over action_list.fast_elements ()
+			_loop
+				_if add_separator? _is _false
+				_then
+					add_separator? << _true
+					separator_item.new ( a_menu )
+				_endif
+				_self.add_popup_action ( act, a_menu )
+			_endloop
+		_endif
+
+		_if an_element.edit_by_trail? _is _true _andif
+		    ( act << _self.action ( :edit_coordinates ) ) _isnt _unset 
+		_then
+			separator_item.new ( a_menu )
+			_self.add_popup_action ( act, a_menu )
+		_endif
+		
+		_if ( act << _self.action ( :element_properties ) ) _isnt _unset
+		_then
+			separator_item.new ( a_menu )
+			_self.add_popup_action ( act, a_menu )
+		_endif
+
+		#
+                # (08/10/22 jtlelo) : Modified. Valida que se active la acción
+		# "activate_gui_direcciona_empalmes" cuando se selecciona con
+		# el botón derecho del mouse el sello "c_sello_estudio_transmision".
+		#
+		
+		_if an_element.class_name _is :c_sello_estudio_transmision _andif
+		    (act << _self.framework.framework.component(:direcciona_empalmes).action(:activate_gui_direcciona_empalmes)) _isnt _unset 
+		_then
+			_self.framework.framework.component(:direcciona_empalmes).glEngine << an_element
+			separator_item.new ( a_menu )
+			_self.add_popup_action ( act, a_menu )
+		_endif
+		#############################################
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_view.agregar_datos_viewports(l_datos, list_viewports)
+	## 
+	##
+	_if l_datos _isnt _unset 
+	_then
+		_for an_viewport _over list_viewports.elements()
+		_loop
+		   an_viewport.elementos_bd_gis << l_datos[:elementos_bd_gis]
+		   an_viewport.elementos_bd_lb << l_datos[:elementos_bd_lb]
+		   an_viewport.elementos_modificados << l_datos[:elementos_modificados]
+		   an_viewport.geoms_symbols_size << l_datos[:geoms_symbols_size]
+		_endloop
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=advanced)
+_method layout_view.check_trail_actions ()
+	## 
+	## Sets enabled state of actions
+	##       polygon and polyline
+	## based on the contents of the trail
+	##
+
+	_if .trail _is _unset
+	_then
+		_self.set_trail_actions ( _false )
+	_else 
+		n_points << _self.trail.n_points
+		be_area << n_points > 1 _andif _self.trail.closed?
+		_self.action ( :insert_polyline ).enabled? << n_points > 1
+		_self.action ( :set_trail_length ).enabled? << n_points > 1
+		_self.action ( :set_trail_angle ).enabled? << n_points > 1
+		_self.action ( :insert_polygon ).enabled? << n_points > 2 _orif be_area 
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_view.guardar_datos_viewport(an_viewport)
+	## 
+	##
+	_local l_datos_viewport << property_list.new()
+	l_datos_viewport[:elementos_bd_gis] << an_viewport.elementos_bd_gis
+	l_datos_viewport[:elementos_bd_lb] << an_viewport.elementos_bd_lb
+	l_datos_viewport[:elementos_modificados] << an_viewport.elementos_modificados
+	l_datos_viewport[:geoms_symbols_size] << an_viewport.geoms_symbols_size
+	
+	an_viewport.elementos_bd_gis << _unset
+	an_viewport.elementos_bd_lb << _unset 
+	an_viewport.elementos_modificados  << _unset
+	an_viewport.geoms_symbols_size << _unset
+
+	an_viewport.data_vp_copy << l_datos_viewport
+	_return l_datos_viewport
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_private _method layout_view.int!copy_elements ( element_list )
+	## 
+	## Copies ELEMENT_LIST to the windows CLIPBOARD as XML text. 
+	## 
+	_dynamic !print_float_precision! << 12
+	(l_elementos,l_datos) << _self.obtener_inf_copiado(element_list)
+
+	strm << internal_text_output_stream.new()
+	serial_xml_thing.write_thing_to ( element_list, strm )
+	win << _self.application.top_frame 
+	win.clipboard_text << strm.string
+
+	_self.agregar_datos_viewports(l_datos,l_elementos)
+
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_view.int!do_render_elements ( element_list, _optional render_dependents? )
+	## 
+	## Internal method for rendering elements and their dependents.
+	##
+
+	_protect 
+		_for an_element _over element_list.fast_elements ()
+		_loop
+			# (15/01/20 bernardoa) : Solo si la seleccion incluye el elemento
+			# que se desea dibujar, realizamos la operacion
+			_if .selection.includes?(an_element)			
+			_then				
+				_self.render_element ( an_element, render_dependents? )			
+			_endif			
+		_endloop
+	_protection 
+		_self.notify_post_render ( :complete )
+	_endprotect 
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_private _method layout_view.int!pastable_elements ()
+	## 
+	## Returns a rope containg elements which are pastable in the
+	## current layout
+	## Returns unset when nothing is available for paste operation
+	##
+		 
+	result << rope.new ()
+	
+	_try _with cond 
+		win << _self.application.top_frame 
+		string << win.clipboard_text.default ( "" )
+		# (02/10/2012 lunal) : Modified.
+		# Se comenta la linea por performace al momento de copiar
+		# elementos en el self.
+		
+		#string << string.substitute_string ( %return, "" )
+		#
+		#
+		strm << internal_text_input_stream.new ( string )
+		a_rope << serial_xml_thing.read_thing_from ( strm )
+		_for thing _over a_rope.fast_elements ()
+		_loop
+			_if thing.is_kind_of? ( layout_element )
+			_then
+				result.add ( thing )
+			_endif
+		_endloop
+	_when error 
+		# Ignore any errors
+		#write ( cond.report_contents_string )
+	_endtry
+
+	_if result.size > 0 
+	_then
+		_return result
+	_endif
+
+	# Returns unset when nothing is pastable
+	
+_endmethod
+$
+_method layout_view.int!set_trail_angle ( ang )
+#
+# Realiza el cambio de longitud.
+#
+ang << ang.convert_to ( :radian )
+.trail.set_angle ( ang )
+_endmethod
+$
+_method layout_view.int!set_trail_length ( len )
+#
+# Realiza el cambio de longitud.
+#
+len_dmm << 10 * len.value	
+.trail.set_length ( len_dmm )
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_view.obtener_inf_copiado(element_list)
+	## 
+	##
+_local l_viewports << rope.new()
+_local l_datos
+
+    _for an_element _over element_list.elements()
+    _loop
+	    _if an_element.is_kind_of?(viewport_layout)
+	    _then
+		    l_viewports.add_last(an_element)
+		    l_datos << _self.guardar_datos_viewport(an_element)			
+	    _endif
+    _endloop	
+
+    _return l_viewports,l_datos
+    
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_view.paste_elements ()
+	## 
+	## Tries to get the contents of the clipboard text (XML) and creates
+	## elements from it and adds the elements to the document (drawing).
+	##
+
+	_if ( result << _self.int!pastable_elements () ) _is _unset
+	_then
+		_return
+	_endif
+	
+	# Should we offset the new elements a bit (say 10x10cm ?)
+	# So that it is clear when one copies from the same drawing
+	_if ( a_page << _self.current_page ) _isnt _unset 
+	_then
+		tr << transform.new ().translate ( 100, -100 )
+		_for an_element _over result.fast_elements ()
+		_loop
+			an_element.transform_in_situ ( tr )
+			_if an_element.responds_to?(:actualizar_geoms_symbols_size|()|)
+			_then
+				an_element.actualizar_geoms_symbols_size()
+			_endif
+			a_page.add_element ( an_element )
+
+		_endloop
+
+		_self.set_selection_from_candidates ( result, :select, _unset )
+	_endif 
+
+	# And put the newly created elements back on the clipboard
+	# again.
+	
+	_self.int!copy_elements ( result )
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_view.prompt_for_value(key,mgr,def_value,engine,message)
+	##
+	## Activate a value prompter (taken from map_trail_plugin)
+	##
+	label << _self.message(key + :_label)
+	props << property_list.new_with(:label,label,
+					:length,10)
+	p << managed_value_prompter.new_dialog(_self.framework,props)
+	p.value_mgr << mgr
+	p.default_value << def_value
+	p.engine << engine
+	p.ok_selector << message
+	p.activate(_self.message(key))
+	_return p
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_view.replace_selection_with ( new_selection, _optional select_type, coord )
+	## 
+	## SELECT_TYPE being :select or :box_select (or unset which
+	## assumes box_select)
+	##
+	
+	# Undraw the set current selection (by giving it an outline
+	# style explicitly, it should only render the outline and not
+	# it's contents) 
+	_self.draw_set ( .selection, line_style.called(:black) )
+
+	# Move this to the .init() 
+	_if .current_selection _is _unset 
+	_then
+		.current_selection << geometry_selection_set.new()
+	_endif
+	
+	_if select_type _is :select _andif coord _isnt _unset 
+	_then
+		event_pixel_coord << .window.event_pixel_for ( coord )
+		_if ( thing << .current_selection.get_next_selection ( event_pixel_coord ) ) _is _unset 
+		_then
+			.current_selection << geometry_selection_set.new ( new_selection, event_pixel_coord,
+									   _self.pixel_hit_radius )
+			thing << .current_selection.get_next_selection ( event_pixel_coord )
+		_endif
+		
+		_if thing _isnt _unset 
+		_then
+			.selection << rope.new_with ( thing )
+		_else
+			.selection << rope.new ()
+		_endif
+	_else
+		# Set the new selection
+		.selection << rope.new_from ( new_selection )
+		.current_selection.empty ()
+	_endif
+	
+	# Draw the new selection in a background thread
+	_self.render_selection ( .selection )
+
+	# Check if the selection is a single geometry type layout
+	# element 
+	_self.check_selection ()
+	
+	# Check the appropriate actions
+	_self.check_actions ()
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_view.selection_transformed ( a_transform, transform_string )
+	## 
+	## Transforms the currently selected objects with given
+	## A_TRANSFORM.
+	##
+	## Performs a undraw and draw on the selected objects and
+	## restarts the dynamic transform manager.
+	##
+
+	# Stop the transform manager 
+	_self.stop_transform_manager ()
+
+	# Undraw the current selection 
+	_self.undraw_set ( .selection )
+
+	# Get the bounds of the untransformed elements 
+	bb << _self.selection_bounds
+	
+	_for el _over .selection.fast_elements ()
+	_loop
+		el.transform_in_situ ( a_transform )
+	_endloop
+
+	render_set << rope.new()
+	# We should actually work our way from the bottom to the top
+	# and see which elements overlap 'bb', so that they can be
+	# redrawn.
+	_if ( a_page << _self.current_page ) _isnt _unset _andif
+	    ( element_list << a_page.elements ) _isnt _unset 
+	_then
+		geom_set << geometry_set.new_from ( element_list )
+		geom_set.remove_all ( .selection )
+		_for an_element _over geom_set.fast_elements ()
+		_loop
+			_if ( bb_in << an_element.bounds ).interacts_with? ( bb )
+			_then
+				render_set.add_last ( an_element )
+				# Update 'bb' as more objects might need to be redrawn
+				bb << bb.union ( bb_in )
+			_endif 
+		_endloop
+	_endif 
+
+	
+	_for el _over .selection.fast_elements ()
+	_loop
+		render_set.add_last ( el )
+	_endloop
+	
+	# Notify other components the object(s) has changed
+	# Do this before rendering starts
+	_self.notify_selection_changed ()
+
+	# Then render the 'render_set' in a background thread
+	_self.render_elements ( render_set, _false )
+
+_endmethod
+$
+_pragma(classify_level=advanced)
+_method layout_view.set_trail_actions ( enabled? )
+	## 
+	## 
+	
+	_self.action ( :insert_polyline ).enabled? << enabled?
+	_self.action ( :insert_polygon  ).enabled? << enabled?
+	_self.action ( :set_trail_length  ).enabled? << enabled?
+	_self.action ( :set_trail_angle  ).enabled? << enabled?
+	
+_endmethod
+$
+_method layout_view.set_trail_angle()
+#
+# Saca un prompter para cambiar el ángulo del
+# segmento actual del trail.
+#
+	ang << .trail.current_segment_angle()
+	ang << angle_value.new ( ang, :radian )
+	int << unit_interval.new ( :degree, -180, 180, _false, _true ) 
+	mgr << unit_value_manager.new_with_properties ( :degree,
+		       :value_required?, _true,
+		       :interval, int,
+		       :validating?, _false )
+	dlg << _self.prompt_for_value( :angle, mgr, ang,
+				       _self, :|int!set_trail_angle()| )
+	>> dlg
+_endmethod
+$
+_method layout_view.set_trail_length()
+#
+# Saca un prompter para cambiar la longitud del
+# segmento actual del trail.
+#
+	len << .trail.current_segment_length()
+	len << length_value.new ( 0.1*len, :mm )
+	int << unit_interval.new ( :mm, 0, 1.0/0, _true, _false ) 
+	mgr << unit_value_manager.new_with_properties ( :mm,
+		       :value_required?, _true,
+		       :interval, int )
+	dlg << _self.prompt_for_value( :length, mgr, len,
+				       _self, :|int!set_trail_length()| )
+	>> dlg
+_endmethod
+$

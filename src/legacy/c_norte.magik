@@ -1,0 +1,284 @@
+#----------------------------------------------------------------
+# c_ejemplo_north.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: Rhernan
+#
+# Date: 05/05/16
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+# remex(:c_norte)
+$ 
+def_slotted_exemplar (:c_norte,
+                       {{:limites, _unset ,:writable, :public},
+			{:oFlag, _false,:writable,:private}},
+                        {:layout_element, :viewport_layout_mixin})
+$
+c_norte.define_shared_constant(:activate_properties_dialog_on_insert?,
+						 _false,
+		 				 :public)
+$
+c_norte.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_norte.defined_attributes
+# Objetivo: Definir los atributos de la clase que seran
+#           visualizados en el cuadro de dialogo de las propiedades de
+#           la clase.
+# Parametros de Entrada: Ninguno.
+# Parametros de Salida: Ninguno
+# Regresa: La definicio de los atributos.
+#   attribs: Definicion de los atributos.
+# Fecha de ultima modificacion: 2/Mrz./2005.
+# Autor de la modificacion: rbsaldan.
+# Descripcion de la modificacion: Metodo nuevo.
+
+_local LcollAtributos
+	## Atributos basicos de la clase.
+	LcollAtributos << rope.new_from( _super.defined_attributes)
+
+	## Atributos basicos de la clase correspondientes a un viewport.
+	LcollAtributos.add ( _self.viewport_attribute_definition )
+
+	LcollAtributos.add ( layout_attribute_definition.new (:Tamano, :string,
+							      :description, "Norte",
+							      :default_value, "A",
+							      :allowed_on_properties_page?, _true,
+							      :enum_method, :tamano_norte,
+							      :editor, _unset))
+	
+
+	>> LcollAtributos
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_norte.tamano_norte
+	## 
+	## 
+## Objetivo: Regresar un arreglo con los  valores "Si, "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasTipoPlano
+## Fecha de ultima modificacion: 12/4/2005
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasTipoPlano    ##Arreglo con los valores para los diferentes marcos.
+	LasTipoPlano<<rope.new()
+	## Agrega valores para identificar los tamanos del norte.
+	LasTipoPlano.add("A")
+	LasTipoPlano.add("B")
+	LasTipoPlano.add("C")
+	>> LasTipoPlano
+_endmethod
+$
+c_norte.define_attributes ()
+$
+_method c_norte.depends_on?(another)
+# Objetivo: Indica si hay dependencia entre el simbolo y another.
+# Parametros de Entrada:
+#     another: 
+# Parametros de Salida: Ninguno
+# Regresa: _false o _true
+# Fecha de ultima modificacion: 2/Mrz./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+	>> _super(viewport_layout_mixin).depends_on?(another)
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_norte.update_references ( reference_table )
+# Objetivo: Actualizar las referecias con el viewport.
+# Parametros de Entrada:
+#     reference_table: Tabla de referencias.
+# Parametros de Salida: Ninguno
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 2/Mrz./2004
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+	# 
+	# Conflict resolver method calls viewport_layout_mixin
+	_super(viewport_layout_mixin).update_references ( reference_table )
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_norte.initialise_for_page(a_layout_page)
+	## 
+	##
+	# Objetivo: Actualizar las referecias con el viewport.
+	# Parametros de Entrada:
+	#     reference_table: Tabla de referencias.
+	# Parametros de Salida: Ninguno
+	# Regresa: Ninguno.
+	# Fecha de ultima modificacion: 19/05./2005
+	# Autor de la modificacion: rhernan
+	# Descripcion de la modificacion: Metodo nuevo.
+	_self.outline_style<<_unset
+	_self.set_fill_colour(_unset)
+	.oFlag<<_false
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_norte.construir_arco(PnRadio,PoCentro,PnAngIni,PnAngFin)
+	## 
+	##  
+	Lcollsector<<sector.new()
+	_for LnAng _over PnAngIni.upto(PnAngFin)
+	_loop 
+		LnX << PoCentro.x+PnRadio * cos(LnAng.degrees_to_radians) 
+		LnY << PoCentro.y+PnRadio * sin(LnAng.degrees_to_radians)	  
+		Lcollsector.add(coordinate(LnX,LnY))	  
+	_endloop
+	_return  Lcollsector
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_norte.construir_norte(PoSecRop,PsTamano)
+	## 
+	##
+_local Lcollsector
+_local LoBound
+
+        LoBound<<_self.bounds
+	_if PsTamano="A"
+	_then
+		# Flecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+5,_self.bounds.centre.y))        
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,460)) ##
+		Lcollsector.add(Lcollsector.last_coord+coordinate(-30,-230))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(20,-15))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,-670))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(30,-15))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,240))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(-20,10))
+		Lcollsector.add(Lcollsector.first_coord)
+		PoSecRop.add(Lcollsector)
+
+		# Linea Horizontal Izquierda
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x-15,_self.bounds.centre.y))
+		Lcollsector.add(Lcollsector.last_coord-coordinate(75,0))
+		PoSecRop.add(Lcollsector)
+
+		# Linea Horizontal Derecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+15,_self.bounds.centre.y))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(75,0))
+		PoSecRop.add(Lcollsector)
+
+		# Circulo
+		PoSecRop.add(_self.construir_arco(65,_self.bounds.centre,20,70))
+		PoSecRop.add(_self.construir_arco(65,_self.bounds.centre,110,160))
+		PoSecRop.add(_self.construir_arco(65,_self.bounds.centre,200,250))
+		PoSecRop.add(_self.construir_arco(65,_self.bounds.centre,290,340))
+
+		# Bound del Norete 
+		LoBound << bounding_box.new(0,0,60,960)
+		
+	_elif  PsTamano="B"
+	_then
+		# Flecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+5,_self.bounds.centre.y))       
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,320))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(-25,-170))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(15,-15))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,-470))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(30,-15))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,170))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(-20,10))
+		Lcollsector.add(Lcollsector.first_coord)
+		PoSecRop.add(Lcollsector)
+
+		# Linea Horizontal Izquierda
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x-15,_self.bounds.centre.y))
+		Lcollsector.add(Lcollsector.last_coord-coordinate(60,0))
+		PoSecRop.add(Lcollsector)
+
+		# Linea Horizontal Derecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+15,_self.bounds.centre.y))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(60,0))
+		PoSecRop.add(Lcollsector)
+
+		# Circulo
+		PoSecRop.add(_self.construir_arco(45,_self.bounds.centre,20,70))
+		PoSecRop.add(_self.construir_arco(45,_self.bounds.centre,110,160))
+		PoSecRop.add(_self.construir_arco(45,_self.bounds.centre,200,250))
+		PoSecRop.add(_self.construir_arco(45,_self.bounds.centre,290,340))
+
+		# Bound del Norete
+		LoBound << bounding_box.new(0,0,60,710)
+	_elif  PsTamano="C"
+	_then
+		# Flecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+2.5,_self.bounds.centre.y))       
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(0,230))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(-20,-116))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(10,-10))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(0,-330))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(20,-10))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(0,120))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(-10,+10))
+		Lcollsector.add(Lcollsector.first_coord)
+		PoSecRop.add(Lcollsector)
+		LoBound << bounding_box.new(0,0,50,500)
+		
+	_endif       
+	_return PoSecRop,LoBound
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_norte.draw_content_on(window)
+	## 
+	##  
+_local LcollSectores<<sector_rope.new()
+_local LcollSector
+
+
+	# Ajusta el bound del norte con sangria izquierda y superior de
+	# 4 cm.
+	
+	_if .limites _isnt _unset 
+	_then
+		_if .limites.is_kind_of?(bounding_box)
+		_then
+			LoBound<<bounding_box.new(.limites.xmin+400,
+						  .limites.ymax-400-_self.bounds.height,
+						  .limites.xmin+400+_self.bounds.width,
+						  .limites.ymax-400)
+			_self.bounds << LoBound
+		_endif
+	_endif
+
+        (LcollSectores,LoBound)<<_self.construir_norte(LcollSectores,_self.tamano)
+	Lobound.centre<<_self.bounds.centre
+	_self.bounds << LoBound
+
+	# Ajusta al angulo del viwport
+	LoVp<<_self.viewports.an_element()
+	_if LoVp _isnt _unset
+	_then 
+		LcollSectores<<LcollSectores.transformed(
+				       transform.new().rotate_about(_self.bounds.centre,-LoVp.view_angle.degrees_to_radians))
+	_endif
+
+	# Dibuja norte
+	LcollSectores.draw_on(window,line_style.new(colour.called(:black),2))
+	_if _self.tamano="A" _or _self.tamano="B"
+	_then
+		LcollSectores[2].draw_on(window,line_style.new(colour.called(:black),5))
+		LcollSectores[3].draw_on(window,line_style.new(colour.called(:black),5))
+	_endif
+	
+
+_endmethod 
+$

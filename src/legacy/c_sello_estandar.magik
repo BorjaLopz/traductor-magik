@@ -1,0 +1,61 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Generar una instancia de acuerdo al sello que soliciten
+# Autor: Alejandro Diaz 
+# Fecha de creacion: 02-Febrero-2005
+# 
+# ---------------- Revision History -----------------
+#  Ult Mod.
+#  06/05/05  DSB  - Se modifico el llamado del dello para div_dtos
+#                   metodo crea_sello
+#  04/02/05 18:30 DSB   Se modifico el metodo crea_sello
+#  Reviso
+#  DSB
+# -------------- end revision history ---------------
+
+
+_package user
+#remex(:c_sello_estandar)
+
+$
+def_slotted_exemplar(:c_sello_estandar,
+		     {}
+)
+$
+c_sello_estandar.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar.crea_sello(RsNomSello, RoBounding)
+
+## Objetivo: crear una instacia de acuerdo al sello que
+## soliciten 
+## Parámetros de entrada:
+##   string RsNomSello- Nombre o identificador del sello
+## Parámetros de salida:  NA
+## Regresa:
+##   c_sello_estandar -  instancia del sello que se solicito
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se quito el llamado al
+## metodo inicializa
+## 06/05/05  Se manda llamar el sello que tiene el enombre de
+## estado, anteriormente tenia localidad	
+
+	_local LoSello  # LAmacena el sello que regresara el metodo
+
+	_if RsNomSello = "CONSTRUCCION"
+	_then
+          LoSello << c_sello_estandar_construccion.new_with(:bounds, RoBounding)
+	_elif  RsNomSello = "DIAGRAMA_EMPALMES"
+	     _then
+                LoSello << c_sello_estandar_diag_empal.new_with(:bounds, RoBounding)
+	     _else
+                LoSello << c_sello_estandar_ctl_edo.new_with(:bounds, RoBounding)
+	_endif
+
+        _return LoSello
+
+_endmethod
+$

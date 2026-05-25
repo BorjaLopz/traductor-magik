@@ -1,0 +1,298 @@
+_package user
+$
+#remex(:c_arbol_cables_fo_cedo)
+$
+def_slotted_exemplar(:c_arbol_cables_fo_cedo,
+                     {
+	                {:list,      _unset, :writable},
+	                {:tree_item, _unset, :writable}
+                     },
+		     :model)
+$
+c_arbol_cables_fo_cedo.define_pseudo_slot(:cable_seleccionado,_unset,:writable)
+$
+c_arbol_cables_fo_cedo.define_pseudo_slot(:empalme_seleccionado,rope.new(),:writable)
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.activate_in(p_frame)
+	## Se activa la interface con los cables que se detectan conectados
+	## a la Central en el Proyecto Activo.		
+	
+	p_frame.maximizable? << _false
+	p_frame.default_resize? << _false
+	p_frame.title << "SELECCIONAR CABLE DE FIBRA OPTICA PARA PLANO DE DIAGRAMA DE EMPALMES"
+	
+	_local l_button_width << 80 
+	_local l_rc << rowcol.new(p_frame, _unset, 1, _unset,
+				  :row_resize_values, {100, 0},
+				  :resize_x?, _true, :resize_y?, _true)
+
+	_local l_style_holder << string_styles_holder.new_with()
+	l_style_holder.add_text_style(:green_bold, :green, _false, font.new_logical("bold", 12))
+
+	.tree_item << tree_item.new(l_rc,
+				    :model,         _self,
+				    :message_on_no_data?,   _true,
+				    :data_selector, {:|llena_arbol()|},
+				    :col_alignment, :fill,
+				    :row_alignment, :fill,
+				    :width,         600,
+				    :select_notifier,                 :|selected()|,
+				    :value_changed_notifier, :|valor_cambiado()|,
+				    :style_holder, l_style_holder,
+				    :mode,           :one)
+			  
+	_local l_brc << rowcol.new(l_rc, 1, _unset, :pixel, :style, :button_box, :col_alignment, :right, :top_spacing, 2)
+	button_item.new_safe(l_brc, "Generar Plano de Cable Seleccionado",  _self, :|genera_plano_cable()|,
+			     :min_width, l_button_width)
+	button_item.new_safe(l_brc, "Salir",   _self, :|cancelar()|,    :min_width, l_button_width)
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.llena_arbol()
+	## Metodo que regresa una lista para llenar el arbol con los
+	## cables de fo que esten conectados a la central.        
+	.list << _self.cables_central()
+	>> .list	
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.cables_central()
+	_local l_styled_Existente << styled_string.new(:green_bold,:value,:valor)
+	_local l_styled_Proyectado << styled_string.new(:red,:value,:valor)
+	
+	_local l_distritos     << rope.new()
+	_local l_Cables      << rope.new()
+
+	#datos deproyecto y diseno.
+	_local L_osch        << swg_dsn_admin_engine.active_design
+	_local L_oproyecto    << L_osch.project
+
+	#datos para central
+	_local l_building    << L_oproyecto.user!_central.building
+	_local l_nodos_central << equality_property_list.new()
+	l_nodos_central[l_building] <<  rope.new()
+		
+	#datos para distrito
+	_local L_odistrito      << L_osch.user!_distrito_optico
+
+	_if L_odistrito _isnt _unset 
+	_then
+
+	_local l_cedos_distrito << equality_property_list.new()
+	_local L_oCedos         <<  L_odistrito.obten_cedos_contenidos()
+
+	_local l_list     << rope.new()
+	_local mcables    << equality_set.new()
+	_local LoCables << hash_table.new()
+	
+	_for iterCedo _over L_oCedos.fast_elements() 
+		_loop
+			mcables << iterCedo.get_downstream_cables()			
+			_for l_cab _over mcables.fast_elements()
+			_loop
+				_if l_cedos_distrito[ IterCedo] _isnt _unset 
+				_then
+					l_cedos_distrito[ IterCedo].add(l_cab)
+				_else
+					l_cedos_distrito[ IterCedo] << equality_set.new_with(l_cab)
+				_endif
+				
+			_endloop	     						
+		_endloop
+		
+		#LA CENTRAL  ES  AHORA AQUI LA RAIZ DEL ARBOL	
+		l_text         << "Distrito " + L_odistrito.user!_distrito
+		l_valor        << property_list.new_with(:trayectoria, L_odistrito,:valor, l_text)
+		l_display_tree << display_tree.new(L_odistrito, l_valor)
+		l_display_tree.styled_string << l_styled_Proyectado
+		
+		_if L_odistrito.construction_status = "EXISTENTE"
+		_then		
+			l_display_tree.styled_string << l_styled_Existente 
+		_endif
+		
+		l_display_tree.set_children_method(_self,:llena_cedos|()|,l_cedos_distrito)
+		
+		l_distritos.add(l_display_tree)
+		
+		_return l_distritos
+
+	_else
+		paf << smallworld_product.pni_application()
+		paf.show_message("El cedo cedo no existe o el diseño no es de fibra óptica")
+		
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.llena_cedos(p_cedos_distrito)
+	#---------------------------------------------------
+	##  Objetivo  : <Description>
+	##
+	
+	_local l_list << rope.new()
+	_local l_styled_Existente << styled_string.new(:green_bold,:value,:valor)
+	_local l_styled_Proyectado << styled_string.new(:red,:value,:valor)
+	
+	l_cedos_distrito << p_cedos_distrito
+	
+	_for l_key,l_elem _over l_cedos_distrito.keys_and_elements()
+	_loop
+		l_text << "Cedo: " + l_key.user!_identificacion.write_string
+		l_valor << property_list.new_with(:cedo,l_key,:valor, l_text)
+		l_display_tree << display_tree.new(l_key, l_valor)
+		l_display_tree.styled_string << l_styled_Proyectado 
+		_if l_key.construction_status = "EXISTENTE"
+		_then
+			l_display_tree.styled_string << l_styled_Existente 
+		_endif
+		
+		l_display_tree.set_children_method(_self,:llena_cables|()|,l_elem)
+		l_list.add(l_display_tree)
+		
+	_endloop
+	
+    _return l_list
+    
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.llena_cables(p_cables)
+	
+
+	
+	_local l_cables << rope.new()
+	_local l_styled_string_exi << styled_string.new(:green,
+							:toggle, :check,
+							:value, :valor)
+	
+	_local l_styled_string_proy << styled_string.new(:red,
+							 :toggle, :check,
+							 :value, :valor)
+	
+	_for l_cab _over p_cables.elements()
+	_loop
+		_if l_cab.user!_numero_cable _isnt _unset 
+		_then
+			l_string <<  " Num. Cable " + l_cab.user!_numero_cable.write_string +
+				     "  " + l_cab.trace_description + "   " +
+				     l_cab.construction_status    
+		_else
+			l_string <<  l_cab.trace_description + "   " +
+				     l_cab.construction_status + "   NUMERO DE CABLE  "
+		_endif
+		
+		
+		l_valor << property_list.new_with(:elemento,l_cab,:valor, l_string, :check, _false)
+		l_display_tree << display_tree.new(l_cab, l_valor)
+		l_display_tree.styled_string << l_styled_string_proy
+		
+		_if l_cab.construction_status = "EXISTENTE"
+		_then
+			l_display_tree.styled_string << l_styled_string_exi
+		_endif
+
+
+		# INICIO DEL CAMBIO
+		# (14/10/08 bflores) :  temporalmente dehshabilitar lista de empalmes
+		#
+		###l_display_tree.set_children_method(_self,:llena_empalmes|()|,l_cab, .LoEnlace.user!_tipo_de_enlace ,l_display_tree)
+		#
+		# FIN DEL CAMBIO
+
+		
+		l_cables.add(l_display_tree)		    
+		
+	_endloop
+	
+	_return l_cables
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.activados()
+	
+	## Regresa una lista de los Cables de FO activados por el usuario.
+	
+	_local RoHT << rope.new()
+	
+	ld_man << .list.an_element().parent
+	
+	_for dt _over ld_man.fast_trees()
+	_loop
+
+	    _if dt.value[:check] _isnt _unset _andif
+		dt.value[:check] _andif
+		dt.value[:elemento].source_collection.name = :sheath
+	    _then
+		      RoHT.add(dt.value[:elemento] )
+	    _endif
+
+	_endloop
+	>> RoHT
+
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.genera_plano_cable()
+	## Tomar el Cable de FO,  Seleccionado por el usuario, para generar
+	## su Plano de RuTa.
+	paf << smallworld_product.pni_application()
+	mapa << paf.plugin(:map_plugin)
+	mapa.current_map.trail.clear()
+	
+	cable_seleccionado << _self.activados()
+	
+	_if cable_seleccionado.size = 0
+	_then
+	    condition.raise(:user_error, :string,
+		            "No se ha seleccionado Cable de FO")
+	_elif cable_seleccionado.size > 1
+	_then
+	    condition.raise(:user_error, :string,
+		            "Debe Seleccionar solo un Cable de FO")
+	_endif	
+	
+	Paf.plugin(:gen_planos).cables_activados_fo << cable_seleccionado
+	
+	LoEng   << c_engine_ruta_cables.new()
+	LoPlano << c_plano_diagrama_de_empalmes.new(LoEng)
+	
+	LoPlano.genera_plano(swg_dsn_admin_engine.active_design.user!_distrito_optico)
+	
+	_self.quit()
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.cancelar()
+	## Termita la interface.
+	
+	_self.quit()
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.selected(p_selection)
+## metodo que limpia la seleccion de la lista.
+	
+    .tree_item.refresh()	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_cables_fo_cedo.valor_cambiado(p_tree, p_value_id, p_new_value, p_undo_value, p_editor)
+	## 
+	##
+	_if p_tree.key.source_collection.name _is :sheath _andif p_new_value _is _true
+	_then
+	    _self.cable_seleccionado << p_tree.key	  
+	_endif
+	
+_endmethod
+$

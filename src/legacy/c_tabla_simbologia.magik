@@ -1,0 +1,431 @@
+_package user
+$
+def_slotted_exemplar(:c_tabla_simbologia,
+      {
+	      {:oTablas,       _unset},# Contiene las tabals que componen a la tabla
+	      {:oLayout,       _unset},# Layout al que pertenece la tabla 
+	      {:oCoordOrigen,  _unset} # Coordenada origen de la tabla
+      }
+)
+$
+c_tabla_simbologia.define_slot_access(:oCoordOrigen,    :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.Despliega(RoVentana)
+## Objetivo: Desplegar las tablas que componen a la tabla simbologia
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 13/12/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.Despliega(RoVentana)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.Llena_Elementos(RcollElementos)
+## Objetivo: Asigna los objetos que se contendra en cada una de
+##           las celdas que compoenen a  la tabla detalle
+## Parámetros de entrada:
+##   RcollElementos - Coleccion de elementos que se presentaran
+##                    en la tabla detalle
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 13/12/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_local LnNumRen << 1 # número del renglon en el que se estan asignado los objetos
+	_local LoTexto  # Texto grafico que se asignara a la primera columna de elementos
+	_local LoExistente # Simbolo grafico que se asignara en la columna existente
+	_local LoBase # Texto grafico el cual se tomara como base para crear otros objetos
+	_local LoBaseSG # Simbolo grafico el cual se tomará como base para crear otros objetos
+
+	# se crea el objeto base en el cual se configuran los detalles,
+	# como tamanio, alineacion del resto de los objetos
+	LoBase << c_texto_grafico.new("BASE")
+	LoBase.nTamanio << 17
+	LoBase.sAlineacion << :centre_left
+
+	# se crea el objeto base en el cual se configuran los detalles,
+	# como margen izq, der, sup, inf, etc
+	LoBaseSG << c_simbolo_grafico.new("Granja")
+	LoBaseSG.nMargen_izq << 1
+	LoBaseSG.nMargen_der << 1
+	LoBaseSG.nMargen_sup << 1
+	LoBaseSG.nMargen_inf << 1	
+	
+	_for LoElemento _over RcollElementos.fast_elements()
+	_loop
+	   LoTexto  << c_texto_grafico.new_from(LoBase, LoElemento[1] )
+	   LoTexto.nMargen_izq << 0.5
+  	   _self.oTablas.elemento(:tbl_EleSimbologia).oCeldas.Celda(LnNumRen, 1).oElemento << LoTexto
+	   
+   	   LoExistente << c_simbolo_grafico.new_from(LoBaseSG,LoElemento[2])
+	   LoExistente.grupo_estilos << :default
+     	   _self.oTablas.elemento(:tbl_SimSimbologia).oCeldas.Celda(LnNumRen, 1).oElemento << LoExistente
+     	   
+      	   LoProyectado << c_simbolo_grafico.new_from(LoBaseSG,LoElemento[3])
+	   LoProyectado.grupo_estilos << :default
+     	   _self.oTablas.elemento(:tbl_SimSimbologia).oCeldas.Celda(LnNumRen, 2).oElemento << LoProyectado
+     	   
+	   LnNumRen << LnNumRen + 1
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.Llena_Lista()
+## Objetivo: crea y llena una lista para probar la funcionalidad
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: Una coleccion de los objetos que se debe enviar a
+##          la tabla
+## Fecha de última modificación: 13/12/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_local LcollLista
+
+	LcollLista << hash_table.new()
+
+	LcollLista[ 1] << {"CANALIZACION CON POZO TELMEX","CANALIZACION CON POZO","CANALIZACION CON POZO P"}
+        LcollLista[ 2] << {"CAJA DE DISTRIBUCION","CAJA","CAJA DE DISTRIBUCION P"}
+	LcollLista[ 3] << {"POSTE TELMEX","POSTE DE TELMEX 1","POSTE DE TELMEX P"}
+        LcollLista[ 4] << {"POSTE LUZ","POSTE DE LUZ 1"," "}
+        LcollLista[ 5] << {"REGISTRO AJENO","REGISTRO AJENO"," "}
+        LcollLista[ 6] << {"COLADERA PLUVIAL","COLADERA PLUVIAL"," "}
+        LcollLista[ 7] << {"CANALIZACION DE GAS","CNALIZACION DE GAS"," "}
+        LcollLista[ 8] << {"CANALIZACION DE AGUA","CANALIZACION DE AGUA"," "}
+        LcollLista[ 9] << {"CANALIZACION DE DRENAJE","CANALIZACION DE DRENAJE"," "}
+        LcollLista[10] << {"CABLE DE LUZ","CABLE DE LUZ"," "}
+        LcollLista[11] << {"ARBOL","ARBOL 1"," "}	
+	
+	
+	_return LcollLista
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.new(RoLayout, RoCoord)
+## Objetivo: Crear una instancia de la tabla simbologia
+## Parámetros de entrada:
+##    RoLayout - layout al que pertenecera
+##    RoCoord  - Coordenada donde iniciara a dibujarse la tabla
+## Parámetros de salida:   NA
+## Regresa: 
+##    c_tabla_simbologia - regresa una instancia  
+## Fecha de última modificación: 13/12/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_self.oLayout      << RoLayout
+	_self.oCoordOrigen << RoCoord
+	
+	_self.oTablas << c_tablas.new(_self.oLayout)
+
+	_self.prvCrea_Cfg_Tablas()
+
+	_self.prvLlena_Tbl_Titulo()
+	
+	_return _clone 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.oLayout
+
+	>> .oLayout
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})  
+_method c_tabla_simbologia.oLayout << layout
+
+	.oLayout << layout
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.oTablas
+
+	>> .oTablas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.oTablas << p_tablas
+
+	.oTablas << p_tablas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.Pon_Elementos(RcollElementos)
+## Objetivo: Asignar los valores que corresponden a las celdas
+##           que componen a la tabla detalle, aqui no se crean
+##           los objetos, solo se asigna algun atributo  
+## Parámetros de entrada:
+##   RcollElementos - Coleccion de elementos que debe tener la
+##                    tabla detalle
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 13/12/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_local LnNumRen << 1 # número del renglon en el que se esta cambiando un atributo
+	
+	_for LoElemento  _over RcollElementos.fast_elements()
+	_loop
+  	   _self.oTablas.elemento(:tbl_EleSimbologia).oCeldas.Celda(LnNumRen, 1).oElemento.sTexto << LoElemento[1]
+	   
+     	   _self.oTablas.elemento(:tbl_SimSimbologia).oCeldas.Celda(LnNumRen, 1).oElemento.sNombre_grafico << LoElemento[2]
+
+     	   _self.oTablas.elemento(:tbl_SimSimbologia).oCeldas.Celda(LnNumRen, 2).oElemento.sNombre_grafico << LoElemento[3]
+     	   
+	   LnNumRen << LnNumRen + 1
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tabla_simbologia.prvCrea_Cfg_Detalle(RoCoord)
+## Objetivo: Crea y configura la tabla que almacena el detalle 
+##           de la tabla
+## Parámetros de entrada:
+## RoCoord - Coordenada donde iniciara a dibujarse la tabla
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 13/12/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	#-------------------------
+	# elementos detalle
+	#-------------------------
+	_local LoTblElementos # tabla de elementos
+	
+	LoTblElementos << _self.oTablas.crea_tabla(11,1,:tbl_EleSimbologia)
+
+	# Coordenada donde iniciara la tabla
+	LoTblElementos.oCoordenada_Origen << RoCoord
+
+	# longitudes de los renglones de la tabla, esta dada en mm
+	_for LnNumRen  _over range(1, LoTblElementos.oRenglones.Total_elementos) 
+	_loop
+ 	   LoTblElementos.oRenglones.elemento(LnNumRen).nLongitud << 7
+	_endloop
+
+	# longitud de las columnas, esta dada en mm 
+	LoTblElementos.oColumnas.elemento(1).nLongitud  << 30
+
+	#-------------------------
+	# Simbolo detalle
+	#-------------------------
+	
+	_local LoTblSimbolos # tabla que contiene los simbolos
+	
+	LoTblSimbolos << _self.oTablas.crea_tabla(11,2,:tbl_SimSimbologia)
+
+	# lineas internas de la tabla no se dibujaran
+	LoTblSimbolos.bDibuja_Columnas_Internas?  << _true 
+	LoTblSimbolos.bDibuja_Renglones_Internos? << _false
+
+        _local LnLongY # longitud total (renglones) de la tabla tbl_eleSimbologia
+	_local LnLongX # longitud total (columnas) de la tabla tbl_eleSimbologia
+	_local LoCoordSimbolos # Coordenada donde iniciara a dibujarse la tabla simbolos
+	
+	# coordenada donde iniciara la tabla que representa elementos y simbolos
+	LnLongY << _self.oTablas.Elemento(:tbl_eleSimbologia).oRenglones.Longitud_total()
+	LnLongX << _self.oTablas.Elemento(:tbl_eleSimbologia).oColumnas.Longitud_total()
+
+	LoCoordSimbolos << coordinate.new(RoCoord.x+ LnLongX, RoCoord.y)	
+	LoTblSimbolos.oCoordenada_Origen << LoCoordSimbolos
+
+	# longitudes de los renglones de la tabla, esta dada en mm
+	_for LnNumRen  _over range(1, LoTblSimbolos.oRenglones.Total_elementos) 
+	_loop
+ 	   LoTblSimbolos.oRenglones.elemento(LnNumRen).nLongitud << 7
+	_endloop
+
+	# longitud de las columnas, esta dada en mm 
+	LoTblSimbolos.oColumnas.elemento(1).nLongitud  << 15
+	LoTblSimbolos.oColumnas.elemento(2).nLongitud  << 15
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tabla_simbologia.prvCrea_Cfg_Tablas()
+## Objetivo: Manda llamar todos los metodos necesarios para
+##           crear y configurar las tablas que componen a la
+##           tabla simbologia
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 13/12/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_local LnAltura # altura de la tabla titulo
+        _local LoCoord  # Coordenada para lña tabla detalle
+	
+	LnAltura << _self.prvCrea_Cfg_Tbl_Titulo(_self.oCoordOrigen)
+	
+	# se calcula la coordenada donde se dibujara la siguiente tabla,
+	# pero incluyendo el desplazamianto en y "LnAltura" de la tabla anterior
+	LoCoord  << coordinate.new(_self.oCoordOrigen.x, _self.oCoordOrigen.y - LnAltura)
+	
+	_self.prvCrea_Cfg_Detalle(LoCoord)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tabla_simbologia.prvCrea_Cfg_Tbl_Titulo(RoCoord)
+## Objetivo: Crea y configura la tabla que almacena el titulo
+##           de la tabla
+## Parámetros de entrada:
+## RoCoord - Coordenada donde iniciara a dibujarse la tabla
+## Parámetros de salida:  NA
+## Regresa:
+##  Entero: LnAltura: Altura de las tablas que se crean en este
+## metodo
+## Fecha de última modificación: 13/12/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_local LnLong      # Longitud de la tabla
+        _local LoCoordSub  # Coordenada donde iniciará la tabla subtitulo
+	_local LoTblTitulo # Almacena la tabla titulo
+	_local LoTblSub    # Almacena la tabla subtitulo
+	_local LnAltura    # Altura de las dos tablas tit y sub
+
+	#-------------------------
+	# Titulo
+	#-------------------------
+	LoTblTitulo << _self.oTablas.crea_tabla(1,1,:tbl_TitSimbologia)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# longitudes de los renglones de la tabla, esta dada en mm 
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 5
+
+	# longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 60
+
+	#-------------------------
+	# SubTitulo
+	#-------------------------
+	LoTblSub << _self.oTablas.crea_tabla(1,3,:tbl_SubSimbologia)
+
+
+	# coordenada donde iniciara la tabla que representa el Subtitulo
+	LnLong << _self.oTablas.Elemento(:tbl_titSimbologia).oRenglones.Longitud_total()
+	LoCoordSub << coordinate.new(RoCoord.x, RoCoord.y - LnLong)
+
+	
+	# Coordenada donde iniciara la tabla
+	LoTblSub.oCoordenada_Origen << LoCoordSub
+	
+	# longitudes de los renglones de la tabla, esta dada en mm 
+	LoTblSub.oRenglones.elemento(1).nLongitud << 3
+
+	# longitud de las columnas, esta dada en mm 
+	LoTblSub.oColumnas.elemento(1).nLongitud  << 30
+	LoTblSub.oColumnas.elemento(2).nLongitud  << 15
+	LoTblSub.oColumnas.elemento(3).nLongitud  << 15
+
+	LnAltura << _self.oTablas.Longitud_total_renglones({:tbl_titSimbologia,
+							    :tbl_SubSimbologia})
+	_return LnAltura
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tabla_simbologia.prvLlena_Tbl_Titulo()
+## Objetivo: Asigna el objeto que se contendra en cada una de
+##           las celdas
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 16/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	_local LoTitulo     # texto grafico que tiene el titulo
+	_local LoElemento   # Texto Grafico que tiene el elemento 
+	_local LoExistente  # Texto grafico que tiene existente
+	_local LoProyectado # Texto grafico que tiene proyectado
+
+	# se crean los objetos que almacenara la tabla
+	LoTitulo     << c_texto_grafico.new("SIMBOLOGIA")
+	LoElemento   << c_texto_grafico.new("ELEMENTO")
+	LoExistente  << c_texto_grafico.new("EXISTENTE")
+	LoProyectado << c_texto_grafico.new("PROYECTADO")
+	
+
+	# Tamaño de la letra
+	LoTitulo.nTamanio     << 26
+	LoElemento.nTamanio   << 20
+	LoExistente.nTamanio  << 20
+	LoProyectado.nTamanio << 20	
+
+
+	# asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_TitSimbologia).oCeldas.Celda(1,1).oElemento << LoTitulo
+	
+	_self.oTablas.elemento(:tbl_SubSimbologia).oCeldas.Celda(1,1).oElemento << LoElemento
+	_self.oTablas.elemento(:tbl_SubSimbologia).oCeldas.Celda(1,2).oElemento << LoExistente
+	_self.oTablas.elemento(:tbl_SubSimbologia).oCeldas.Celda(1,3).oElemento << LoProyectado
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.serial_slots()
+
+	keys << rope.new_with( :oTablas )
+	values << rope.new_with( .oTablas )
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_simbologia.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$

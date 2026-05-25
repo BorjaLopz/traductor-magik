@@ -1,0 +1,125 @@
+Clase Magik: layout_series_plugin
+Hereda de: layout_series_plugin (SW framework plugin)
+Archivo fuente: src/legacy/layout_series_plugin.magik
+Archivo migrado: src/migration/LayoutSeriesPlugin.tsx
+
+=============================================================================
+PROPÓSITO
+=============================================================================
+Plugin de series de planos. Gestiona la generación de documentos de layout
+en serie (one page per frame/area). Sus responsabilidades:
+  1. Detectar el tipo de plano activo (ruta/compa/esquematico/trayectoria/…)
+  2. Leer la configuración (ace_name, display_style, style_group) desde planos_config.xml
+  3. Propagar sectors_buffer a todos los viewports del documento
+  4. Coordinar layout_series_engine.update_document (hilo separado en Magik)
+  5. Responder al databus SW (:post_render_sets) dibujando áreas de ruta
+
+=============================================================================
+SHARED VARIABLES → MÓDULO STATE
+=============================================================================
+mismo_cedo_id                    → mismo_cedo_id: string | null
+elementos_plano_trayectoria      → elementos_plano_trayectoria: Record<string, unknown[]>
+elementos_plano_ruta             → elementos_plano_ruta: Record<string, unknown[]>
+propiedades_plano_ruta           → propiedades_plano_ruta: PropiedadesPlano
+propiedades_plano_trayectoria    → propiedades_plano_trayectoria: PropiedadesPlano
+propiedades_plano_esquematico_ftth → propiedades_plano_esquematico_ftth: PropiedadesPlano
+
+Todas como variables de módulo (singleton), expuestas via LayoutSeriesPluginState.
+
+=============================================================================
+MÉTODOS → FUNCIONES TS
+=============================================================================
+
+propiedades_plano(ace_name, display_style, style_group)
+  → propiedadesPlano(aceName, displayStyle, styleGroup, xmlLoader): ConfigPlano
+  Resetea elementos_plano_ruta[:elementos/:sellos] a [].
+  Evalúa flags en propiedades_plano_ruta y propiedades_plano_trayectoria
+  en orden de prioridad (plano_ruta > plano_ruta_compa > plano_esquematico_ftth
+  > plano_trayectoria > plano_ruta_lar > plano_ruta_lar_gral > plano_ftth).
+  Si ningún flag activo, devuelve los parámetros de entrada sin modificar.
+
+obten_propiedades_desde_xml(tipo_plano)
+  → obtenPropiedadesDesdeXml(tipoPlano, config): ConfigPlano | null
+  En Magik: lee planos_config.xml via simple_xml, filtra por tipo_plano,
+  devuelve lista con ace_name/display_style/style_group.
+  En TS: recibe Map<TipoPlano, ConfigPlano>; retorna el entry o null.
+  El XML se reemplaza por config en memoria (inyectable en tests).
+
+actualizar_sectors(an_document, a_sectors)
+  → actualizarSectors(document, sectors): void
+  Recorre todas las páginas del documento buscando viewports
+  c_vp_ruta_de_cables_fo / c_vp_comparticion_infra y les asigna
+  elementosBdGis['sectors_buffer']. También lo asigna en la master page.
+
+sectors_buffer(an_document)
+  → sectorsBuffer(document): unknown | null
+  Obtiene y limpia el sectors_buffer del primer viewport de la master page.
+
+int!make_document()
+  → makeDocument(document, frames, xmlLoader, onProgress?): Promise<void>
+  En Magik: método de hilo (handler.new). En TS: async.
+  Llama propiedadesPlano(), luego layout_series_engine.update_document
+  (delegado al motor externo, no migrado), lanza render y limpia hilo.
+
+agrega_particulares()
+  → no migrado como método público
+  Depende de layout_designer/layout_manager/layout_series dialogs (SW UI).
+
+agrega_particulares_diag_empalmes_falc()
+  → no migrado como método público
+  Depende de esquema_tab_plugin (SW GIS plugin UI).
+
+sw_databus_data_requested(type)
+  → dataBusDataRequested(type, onDrawAreas?): void
+  Solo maneja 'post_render_sets'. Si planoRuta activo y hay areas_ruta,
+  llama onDrawAreas con el array. En integración OL: añadir features a capa.
+
+add_as_producer / remove_as_producer
+  → no migrado (depende de SW databus infrastructure).
+
+=============================================================================
+DECISIONES DE DISEÑO
+=============================================================================
+
+Shared state como módulo-level variables:
+  En Magik son define_shared_variable en la clase (singleton de hecho).
+  En TS son variables de módulo. Se exponen via LayoutSeriesPluginState
+  para permitir reset en tests sin recrear la clase.
+
+xmlLoader como inyección de dependencia:
+  El original llama smallworld_product.get_data_file("planos_config.xml").
+  En TS se inyecta una función (tipo: TipoPlano) => ConfigPlano que en
+  producción lee el fichero y en tests usa el MOCK_XML_CONFIG.
+
+int!make_document como async:
+  El método de hilo Magik se convierte a async/await. layout_series_engine
+  es un motor externo no migrado; el cuerpo deja el hook onProgress para
+  integración futura.
+
+agrega_particulares y dialogs SW:
+  Dependen de la infraestructura de dialogs Smallworld (layout_designer,
+  layout_manager, etc.) que no existe en TS. No se migran como métodos
+  autónomos; la lógica de negocio (añadir elementos a páginas) se delegará
+  al componente de layout React cuando se integre.
+
+=============================================================================
+DEPENDENCIAS
+=============================================================================
+- React 18 (useState) — solo para el viewer
+- No requiere turf ni OL en la lógica de negocio
+
+=============================================================================
+ESTADO DE MIGRACIÓN
+=============================================================================
+[x] define_shared_variable (5 variables de módulo)
+[x] propiedades_plano
+[x] obten_propiedades_desde_xml (via Map en lugar de XML real)
+[x] actualizar_sectors
+[x] sectors_buffer
+[x] int!make_document (async stub)
+[x] sw_databus_data_requested
+[ ] agrega_particulares (depende de SW UI dialogs)
+[ ] agrega_particulares_diag_empalmes_falc (depende de esquema_tab_plugin)
+[ ] add_as_producer / remove_as_producer (depende de SW databus)
+[ ] Lectura real de planos_config.xml
+[ ] Integración con layout_series_engine.update_document

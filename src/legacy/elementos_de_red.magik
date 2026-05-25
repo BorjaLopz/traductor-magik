@@ -1,0 +1,33 @@
+#----------------------------------------------------------------
+# elementos_de_red.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: llruiz
+#
+# Date: 04/11/08
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+
+_package user
+$
+
+def_slotted_exemplar(:elem_red_panel, {
+                                       {:elem_red, rope.new()}
+				       {:elem_carto, rope_new()}
+				       }, :model)
+$
+
+elem_red_panel.defined_shared_constant(:red, {:uub, :mit_terminal_enclosure, :sheath,
+				              :copper_cable, :building, :underground_route})
+$
+
+elem_rec_panel.defined_shared_constant(:cartografia, {:cgeje_calle, :manzana, :user!_lote,
+				                      :user!_distrito})
+$
+
+

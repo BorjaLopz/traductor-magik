@@ -1,0 +1,12 @@
+_package sw
+$
+_pragma(classify_level=basic)
+_method layout_attribute_definition.allowed_on_properties_page? << value
+	## vbluna (04-Oct-2006)
+	## Se crea el método para mostrar u ocultar el atributo en la
+	## ventana de propiedades de un layout_element
+
+	>> .properties[:allowed_on_properties_page?] << value
+	
+_endmethod
+$

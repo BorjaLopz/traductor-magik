@@ -1,0 +1,834 @@
+#----------------------------------------------------------------
+# c_vp_gral_est_pob.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rbsaldan
+#
+# Date: 02/Mayo/2007
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+remex(:c_vp_plano_construccion_interno)
+$
+def_slotted_exemplar(:c_vp_plano_construccion_interno,
+		     {
+			     {:ofloors, _unset,:writable,:public},
+			     {:collLimTerminales,_unset,:writable,:public},
+			     {:collLimDistritos,_unset,:writable,:public},
+			     {:oRegTabs,_unset,:writable,:public}
+			     
+		     },:c_vp_cobre)
+$
+
+c_vp_plano_construccion_interno.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+c_vp_plano_construccion_interno.define_shared_variable(:lista_distritos,rope.new(),:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_construccion_interno.defined_attributes
+	## Objetivo: Definir los atributos de la clase self.
+	## Parametros de Entrada: Ninguno.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: LcollAtributos.
+	## Fechad de la ultima modificacion: 02/Mayo/2007
+	## Autor de la modificacion: rbsaldan
+	## Descripcion de la modificacion: Metodo Nuevo.
+	
+_local LcollAtributos
+       LcollAtributos << rope.new_from(_super.defined_attributes)
+       
+       LcollAtributos.add(layout_attribute_definition.new(:nombre_edificio, :string,
+							  :description, "Nombre del Edificio",
+							  :default_value, "",
+							  :allowed_on_properties_page?, _true,
+							  :editor, _unset))
+       
+       LcollAtributos.add(layout_attribute_definition.new(:show_info_add, :string,
+							  :description, "Muestra nombre del plano y nombre del distrito (en la esquina inferior derecha). ",
+							  :default_value, "Si",
+							  :allowed_on_properties_page?, _true,
+							  :enum_method, :val_falso_verdadero,
+							  :editor, _unset))
+       
+       LcollAtributos.add(layout_attribute_definition.new(:texto_adicional, :string,
+							  :description, "Texto Adicional al nombre y tipo del edificio.",
+							  :default_value, "",
+							  :allowed_on_properties_page?, _true,
+							  :editor, _unset))
+
+#       LcollAtributos.add(layout_attribute_definition.new(:nombre_dto, :string,
+#							  :description, "Nombre del Distrito",
+#							  :default_value, "",
+#							  :allowed_on_properties_page?, _false,
+#							  :editor, _unset))
+       
+       LcollAtributos.add(layout_attribute_definition.new(:nombre_dto, :string,
+							  :description, "Lista de Dtos Internos",
+							  :default_value, "",
+							  :allowed_on_properties_page?, _true,
+							  :enum_method, :lista_dtos,
+							  #:get_method,:get_dto,
+							  :editor, _unset))
+       
+       LcollAtributos.add(layout_attribute_definition.new(:edo_const_dto, :string,
+							  :description, "Edo. Construccion.",
+							  :default_value, "",
+							  :allowed_on_properties_page?, _false,
+							  :editor, _unset))
+       
+       >> LcollAtributos
+_endmethod
+$
+c_vp_plano_construccion_interno.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_construccion_interno.val_falso_verdadero
+## Objetivo: Regresar un arreglo con los  valores "Si", "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasSiNo
+## Fecha de ultima modificacion: 18/Jun./2009
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasSiNo    ##Arreglo con los valores "Si", "No"
+	LasSiNo<<rope.new()
+
+	## Agrega los valores "Si", "No"
+	LasSiNo.add("Si")
+	LasSiNo.add("No")
+
+	>> LasSiNo
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_construccion_interno.lista_dtos
+## Objetivo: Regresar un arreglo con los  valores De los distritos.
+## Parametros de Salida: Ninguno
+## Regresa: LcollDtos
+## Fecha de ultima modificacion: 18/Jun./2009
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LcollDtos    ##Arreglo con los nombres de los distritos.
+	LcollDtos<<rope.new()
+
+	_for LsNombreDto _over _self.lista_distritos.fast_elements()
+	_loop
+		LcollDtos.add(LsNombreDto)
+	_endloop
+
+	>> LcollDtos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_construccion_interno.get_dto
+	## 
+	## 
+	write("c_vp_plano_construccion_interno.get_dto : ",_self.nombre_dto)
+_local LcollTabDtos
+_local LcollRes
+
+       LcollTabDtos<<gis_program_manager.cached_dataset(:landbase).collections[:user!_distrito]
+       LcollRes<<LcollTabDtos.select(predicate.eq(:user!_distrito,_self.nombre_dto))
+       LoDto<<LcollRes.an_element()
+  
+       _return LoDto
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_construccion_interno.attribute_changed(attribute_name,old_value,new_value )
+	## 
+	## 
+#	write("c_vp_plano_construccion_interno.attribute_changed")
+#	write("attribute_name = ",attribute_name)
+#	write("old_value      = ",old_value)
+#	write("new_value      = ",new_value)
+_local LoDto
+
+	_if attribute_name=:nombre_dto
+	_then
+		LoDto<<_self.get_dto
+		_if LoDto _isnt _unset 
+		_then
+			LoApp<<smallworld_product.pni_application()
+			LoAppManager<<LoApp.plugin(:application_manager)
+			LoMapManager<<LoAppManager.map_manager
+				
+			_self.edo_const_dto<<LoDto.construction_status.write_string
+			_if LoDto.user!_limite _isnt _unset
+			_then
+				# Fuera Del Edificio
+				_self.centre<< _self.geometry_set_for_render.geom_bounds.centre
+			_elif LoDto.user!_limite_edificio
+			_then
+				# Dentro del edificio.
+				_self.centre<<LoDto.user!_limite_edificio.bounds.centre
+			_endif
+			
+		_else
+			_self.edo_const_dto<<""
+		_endif
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_construccion_interno.initialise_for_page(a_layout_page)
+	## documentacion: ver metodo draw_content_on de la clase viewport_layout
+	## Objetivo: Este metodo se ejecutan cuando se agrega un objeto
+	## self en la pagina layout_page.
+	## Parametros de Entrada: a_layout_page : pagina actual.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: No regresa datos..
+	## Fechad de la ultima modificacion: 02/Mayo/2007
+	## Autor de la modificacion: rbsaldan
+	## Descripcion de la modificacion: Metodo Nuevo.
+
+#	_if _self.oLimite _isnt _unset 
+#	_then
+#		_if _self.oLimite.bounds.width>_self.oLimite.bounds.height
+#		_then
+#			#Configurar Pagina 124 cm (Ancho) X 84 cm (Largo)
+#			a_layout_page.set_paper_size(124*100,84*100)
+#			#_self.bounds<<a_layout_page.bounds
+#		_endif
+#	_else
+#		#Configurar Pagina 80 cm (Ancho) X 80 cm (Largo)
+#		a_layout_page.set_paper_size(124*100,84*100)
+#		#_self.bounds<<a_layout_page.bounds
+#	_endif
+	
+	_self.selection<<_false
+	_self.trail<<_false
+	_self.set_fill_colour(_unset)
+	_self.outline_style<<_unset
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_plano_construccion_interno.post_initialisation()
+	## 
+	## 
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.geometry_set_for_render
+	## 
+	## Returns the geometry set which is used in the rendering
+	## code. Based the the visibility attribute the geometry set
+	## needs to get its own TableControl from either the Ace, the
+	## CurrentObjectControl or it has one already.
+	##
+_local LcollGeometrias  # Geometrias que deben dibujarse en el viewport.
+
+        # Obtener los objetos correspondientes al plano base.
+	LcollGeometrias<<_super.geometry_set_for_render
+#	_if LcollGeometrias _isnt _unset
+#	_then
+#		LcollGeometrias<<LcollGeometrias.select(:collection,{#:estudio_poblacion,
+#								     :drafting_lines,
+#								     :user!_central,
+#								     :user!_distrito,
+#								     :building,
+#								     :mit_terminal_enclosure,
+#								     :user!_manzana,
+#							             :user!_municipio,
+#							             :radio_atencion,
+#							             :user!_zona_crecimiento,
+#							             :central_propuesta,
+#							             :enlace_estudio_poblacion,
+#							             :user!_oficina_comercial,
+#							             :user!_centro_trabajo,
+#								     :cuadro_demanda})
+#	_endif
+	_if LcollGeometrias _isnt _unset
+	_then
+		.ofloors<<LcollGeometrias.select(:collection,{:mit_floor}).rwo_set()
+		.oRegTabs<<LcollGeometrias.select(:collection,{:user!_registro_tablero}).rwo_set()
+		.collLimTerminales<<LcollGeometrias.select(:collection,{:user!_limite_terminal}).rwo_set()
+		.collLimDistritos<<LcollGeometrias.select(:collection,{:user!_distrito}).rwo_set()
+		
+		#LcollGeometrias.select(:collection,{:access_point}).rwo_set().p
+		_if LcollGeometrias.select(:collection,
+						       {:mit_room,
+							:mit_floor,
+							:mit_building_structure,
+							:user!_limite_terminal,
+							:user!_distrito,
+							:access_point}).rwo_set().empty?.not
+		_then
+			LcollGeometrias<<
+				LcollGeometrias.exclude_rwos(
+					LcollGeometrias.select(:collection,
+							       {:mit_room,
+								:mit_floor,
+								:mit_building_structure,
+								:user!_limite_terminal,
+								:user!_distrito,
+								:access_point}).rwo_set())
+		_endif
+	_endif
+	>> LcollGeometrias
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.DibujaTexto(PoWindow,PsTexto,PsEdoConst,PoCoord,PyJust,
+						    _optional PiScaleFont,PoColor)
+	## 
+	##
+_local PiLongTexto       # Longitud del texto.
+_local PiLongExtra       # Longitud extra que se agrega a la longitud del texto.
+_local LoFontBold        # Font Bold
+_local LoTextStyle       # Estilo normal.
+_local LoTextStyleProy   # Estilo para Proyectado
+_local LoTextStyleExis   # Estilo para Existente
+_local LsTexto           # Texto a escribir.
+
+	LoFontBold << font.new_with_properties(:type,:logical,
+					       :name,"bold",
+					       :point_size,PiScaleFont.default(175),
+					       :orientation,:left_right)
+	
+	
+	LsTexto<<PsTexto.default("") # No hay cuenta para la terminal
+	
+	LoTextStyle<<text_style.new_with_properties(:colour,PoColor.default(colour.called(:black)),
+						    :font,LoFontBold)
+	LoTextStyleProy<<text_style.new_with_properties(:colour,colour.called(:red),
+							:font,LoFontBold)
+	LoTextStyleExis<<text_style.new_with_properties(:colour,colour.called(:green),
+							:font,LoFontBold)
+	
+	_if PsEdoConst="EXISTENTE"
+	_then
+		PoWindow.draw_vtext_transform(LoTextStyleExis,PoCoord.x,PoCoord.y,LsTexto,
+					      _unset, _unset, _unset, _unset, PyJust )
+	_elif PsEdoConst="PROYECTADO"
+	_then
+		PoWindow.draw_vtext_transform(LoTextStyleProy,PoCoord.x,PoCoord.y,LsTexto,
+					      _unset, _unset, _unset, _unset, PyJust )
+	_elif PsEdoConst="DESMONTAJE"
+	_then
+		PiLongTexto<<(LoTextStyleProy.font.string_width(PsTexto)/2.0)
+		PiLongExtra<<(LoTextStyleProy.font.string_width("["))
+		PiLongTexto<<PiLongTexto+PiLongExtra
+		PoWindow.draw_vtext_transform(LoTextStyleProy,PoCoord.x-PiLongTexto,PoCoord.y,"[",
+					      _unset, _unset, _unset, _unset, PyJust )
+		
+		PoWindow.draw_vtext_transform(LoTextStyleExis,PoCoord.x,PoCoord.y,LsTexto,
+					      _unset, _unset, _unset, _unset, PyJust)
+		
+		PoWindow.draw_vtext_transform(LoTextStyleProy,PoCoord.x+PiLongTexto,PoCoord.y,"]",
+					      _unset, _unset, _unset, _unset, PyJust)
+	_else
+		PoWindow.draw_vtext_transform(LoTextStyle,PoCoord.x,PoCoord.y,LsTexto,
+					      _unset, _unset, _unset, _unset, PyJust)
+		
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.DibujaLimitesDeTerminal(PoWindow)
+	## 
+	##
+	_if .collLimTerminales _is _unset _orif
+	   .collLimTerminales.empty?
+       _then
+	       _return 
+	_endif
+	_for LoLimTerm _over .collLimTerminales.fast_elements()
+	_loop
+		LoColor<<colour.new_rgb(1.0,0.0,0.66)
+		
+		LoGeomOld<<LoLimTerm.user!_limite_edificio
+		LoGeomNew<<pseudo_area.new_from(LoGeomOld)
+		LoTransform<<transform.new().scalexy(_self.transform.xscale*6,
+						     _self.transform.yscale).
+			     rotate(_self.transform.rotation).
+			     translate(_self.transform.xshift,
+				       _self.transform.yshift)
+	
+		LoGeomNew<<LoGeomNew.transformed(LoTransform)
+		LoMovX<<(LoGeomNew.bounds.width/6.0)*2.5
+		LoGeomNew<<LoGeomNew.transformed(transform.new().translate(-LoMovX,0))
+
+		LoGeomNew.draw_boundary_on(PoWindow,_true,line_style.new(LoColor,2))
+	_endloop
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.DibujaLimiteDeDistrito(PoWindow)
+	## 
+	## 
+	_if .collLimDistritos _is _unset _orif
+	   .collLimDistritos.empty?
+       _then
+	       _return 
+	_endif
+	_for LoLimDist _over .collLimDistritos.fast_elements()
+	_loop
+		_if LoLimDist.construction_status="EXISTENTE"
+		_then
+			LoColor<<colour.called(:green)
+		_else
+			LoColor<<colour.called(:red)
+		_endif
+		
+		LoGeomOld<<LoLimDist.user!_limite_edificio
+		LoGeomNew<<pseudo_area.new_from(LoGeomOld)
+		LoTransform<<transform.new().scalexy(_self.transform.xscale*6.2,
+						     _self.transform.yscale).
+			     rotate(_self.transform.rotation).
+			     translate(_self.transform.xshift,
+				       _self.transform.yshift)
+
+		LoGeomNew<<LoGeomNew.transformed(LoTransform)
+		LoMovX<<(LoGeomNew.bounds.width/6.0)*2.5
+		LoGeomNew<<LoGeomNew.transformed(transform.new().translate(-LoMovX,0))
+
+		LoGeomNew.draw_boundary_on(PoWindow,_true,line_style.new(LoColor,2,dash_pattern.estilo_tm3))
+	_endloop
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.DibujaPisos(PoWindow)
+	## 
+	##
+_local LfScaleFont
+_local LcollNSEs    # Tabla hash con los nse del piso
+_local LsNSEs       # String con los nse del piso
+_local LcollRegTabs
+       _if .oFloors _is _unset _orif
+	   .oFloors.empty?
+       _then
+	       _return 
+       _endif
+       
+       #LfScaleFont<<(300000)/_self.view_scale
+       
+       
+       _for LoFloor _over .ofloors.fast_elements()
+       _loop
+	       LoBoundOld<<LoFloor.floor_plan.bounds
+	       LoBoundNew<<bounding_box.new_centred(LoBoundOld.centre.x,
+						    LoBoundOld.centre.y,
+						    LoBoundOld.width*3,
+						    LoBoundOld.height/2.0)
+	       LoBoundNew<<LoBoundNew.transformed(_self.transform)
+
+	       # El tamano del font sera 1/5 de lo alto del piso
+	       LfScaleFont<<LoBoundNew.bounds.height/5.0  
+
+	       # DiBujar Piso
+	       LoBoundNew.draw_boundary_on(PoWindow,_true,line_style.new(colour.called(:black),2))
+	       
+	       # Dibujar Nivel de piso
+	       LsMsg<<"Nivel "+LoFloor.name.default("No tiene numero de piso")
+	       LoCoord<<coordinate.new(LoBoundNew.bounds.xmin+LfScaleFont,
+				       LoBoundNew.bounds.ymax-LfScaleFont)
+	       _self.DibujaTexto(.oWindows,LsMsg,"",LoCoord,:base_left,LfScaleFont)
+	       
+	       LsMsg<<"Deptos: "+LoFloor.user!_cantidad_deptos.default("0").write_string
+	       LoCoord<<coordinate.new(LoBoundNew.bounds.xmin+LfScaleFont,
+				       LoBoundNew.bounds.centre.y)
+	       _self.DibujaTexto(.oWindows,LsMsg,"",LoCoord,:base_left,LfScaleFont)
+	       
+	       # Dibujar Nums. de Departamento
+	       (LcollDeptos,LsDeptos)<<LoFloor.get_numeros_de_deptos()
+	       LoCoord<<coordinate.new(LoBoundNew.bounds.xmin+LfScaleFont,
+				       LoBoundNew.bounds.ymin+LfScaleFont)
+	       _self.DibujaTexto(.oWindows,LsDeptos,"",LoCoord,:base_left,LfScaleFont)
+	       
+	       
+	       # Dibujar niveles socio economicos por piso
+	       (LcollNSEs,LsNSEs)<<LoFloor.niveles_socioeconomicos
+	       LoCoord<<coordinate.new(LoBoundNew.bounds.xmax-LfScaleFont,
+				       LoBoundNew.bounds.ymax-LfScaleFont)
+	       _self.DibujaTexto(.oWindows,LsNSEs,"",LoCoord,:base_right,LfScaleFont,
+				 colour.called(:blue))
+	       
+	       
+	       # Dibujar Total Lineas de Cobre
+	       LiTotLinCUTelmex<<0
+	       LiTotLinCUTelmexComer<<0
+	       LiTotLinCUCompet<<0
+	       LiTotLinInTelmex<<0
+	       LiTotLinInCompet<<0
+	       LiTotLinLadaFon<<0
+	       LiTotLinPslt<<0
+	       LiTotLinTelPubCompet<<0
+	       _for LoDepto _over LoFloor.mit_rooms.fast_elements()
+	       _loop
+		       _if {"A","B","C"}.includes_by_equality?(LoDepto.user!_nivel_socio.default(""))
+		       _then
+			       LiTotLinCUTelmex<<LiTotLinCUTelmex+LoDepto.user!_linea_cu
+		       _else
+			       LiTotLinCUTelmexComer<<LiTotLinCUTelmexComer+LoDepto.user!_linea_cu
+		       _endif
+		       LiTotLinCUCompet<<LiTotLinCUCompet+LoDepto.user!_linea_comp_cu
+		       LiTotLinInTelmex<<LiTotLinInTelmex+LoDepto.user!_linea_inal
+		       LiTotLinInCompet<<LiTotLinInCompet+LoDepto.user!_linea_comp_inal
+		       LiTotLinLadaFon<<LiTotLinLadaFon+LoDepto.user!_linea_lf
+		       LiTotLinPslt<<LiTotLinPslt+LoDepto.user!_linea_pslt
+		       LiTotLinTelPubCompet<<LiTotLinTelPubCompet+LoDepto.user!_tel_pub_comp
+		       
+	       _endloop
+	       _self.DibujaLineasTel(.oWindows,:linea_cobre,LiTotLinCUTelmex,LoBoundNew,LfScaleFont)
+	       _self.DibujaLineasTel(.oWindows,:linea_cobre_comer,LiTotLinCUTelmexComer,LoBoundNew,LfScaleFont)
+	       _self.DibujaLineasTel(.oWindows,:linea_cobre_compet,LiTotLinCUCompet,LoBoundNew,LfScaleFont)
+	       _self.DibujaLineasTel(.oWindows,:linea_inalam,LiTotLinInTelmex,LoBoundNew,LfScaleFont)
+	       _self.DibujaLineasTel(.oWindows,:linea_inalam_compet,LiTotLinInCompet,LoBoundNew,LfScaleFont)
+	       _self.DibujaLineasTel(.oWindows,:linea_ladafon,LiTotLinLadaFon,LoBoundNew,LfScaleFont)
+	       _self.DibujaLineasTel(.oWindows,:linea_pslt,LiTotLinPslt,LoBoundNew,LfScaleFont)
+	       _self.DibujaLineasTel(.oWindows,:linea_tel_pub_compet,LiTotLinTelPubCompet,LoBoundNew,LfScaleFont)
+       _endloop
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.DibujaLineasTel(PoWindow,PyTipoLinea,PiTotal,LoBound,PfScaleFont)
+	## 
+	## 
+	_if PiTotal>0
+	_then
+		LsMsg<<PiTotal.write_string+" "
+		_if PyTipoLinea=:linea_cobre
+		_then
+			
+			LoCoord<<coordinate.new(LoBound.bounds.xmax-100,
+						LoBound.bounds.ymin+PfScaleFont)
+			LoImg<<_self.BuildIconStartingOn(LoCoord,:linea_cobre,12)
+			LoImg[1].fill_on(PoWindow,fill_style.new(colour.called(:green)))
+		_elif PyTipoLinea=:linea_cobre_comer
+		_then 
+			LoCoord<<coordinate.new(LoBound.bounds.xmax-200,
+						LoBound.bounds.ymin+PfScaleFont)
+			LoImg<<_self.BuildIconStartingOn(LoCoord,:linea_cobre_comer,12)
+			LoImg[1].fill_on(PoWindow,fill_style.new(colour.called(:green)))
+			LoImg[2].draw_on(PoWindow,colour.called(:green))	
+		_elif PyTipoLinea=:linea_cobre_compet
+		_then
+			LoCoord<<coordinate.new(LoBound.bounds.xmax-300,
+						LoBound.bounds.ymin+PfScaleFont)
+			LoImg<<_self.BuildIconStartingOn(LoCoord,:linea_cobre_compet,12)
+			LoImg[1].draw_on(PoWindow,colour.called(:green))
+			LoImg[2].draw_on(PoWindow,colour.called(:green))
+		_elif PyTipoLinea=:linea_inalam
+		_then 
+			LoCoord<<coordinate.new(LoBound.bounds.xmax-400,
+						LoBound.bounds.ymin+PfScaleFont)
+			_self.DibujaTexto(.oWindows,"IN","",LoCoord,:centre_centre,PfScaleFont*0.4,
+					  colour.called(:green))
+		_elif PyTipoLinea=:linea_inalam_compet
+		_then 
+			LoCoord<<coordinate.new(LoBound.bounds.xmax-100,
+						LoBound.bounds.ymin+PfScaleFont*2)
+			_self.DibujaTexto(.oWindows,"IN","",LoCoord,:centre_centre,PfScaleFont*0.4,
+					  colour.called(:green))
+			LoImg<<_self.BuildIconStartingOn(LoCoord,:linea_inalam_compet,12)
+			LoImg[1].draw_on(PoWindow,colour.called(:green))
+			LoImg[2].draw_on(PoWindow,colour.called(:green))
+		_elif PyTipoLinea=:linea_ladafon
+		_then
+			LoCoord<<coordinate.new(LoBound.bounds.xmax-200,
+						LoBound.bounds.ymin+PfScaleFont*2)
+			LoImg<<_self.BuildIconStartingOn(LoCoord,:linea_ladafon,12)
+			LoImg[1].fill_on(PoWindow,fill_style.new(colour.called(:green)))
+			LoImg[2].draw_on(PoWindow,colour.called(:green))
+		_elif PyTipoLinea=:linea_pslt
+		_then
+			LoCoord<<coordinate.new(LoBound.bounds.xmax-300,
+						LoBound.bounds.ymin+PfScaleFont*2)
+			LoImg<<_self.BuildIconStartingOn(LoCoord,:linea_pslt,12)
+			LoImg[1].fill_on(PoWindow,fill_style.new(colour.called(:green)))
+			LoImg[2].draw_on(PoWindow,colour.called(:green))
+		_elif PyTipoLinea=:linea_tel_pub_compet
+		_then
+			LoCoord<<coordinate.new(LoBound.bounds.xmax-400,
+						LoBound.bounds.ymin+PfScaleFont*2)
+			LoImg<<_self.BuildIconStartingOn(LoCoord,:linea_tel_pub_compet,12)
+			LoImg[1].draw_on(PoWindow,colour.called(:green))
+			LoImg[2].draw_on(PoWindow,colour.called(:green))
+		_endif
+		
+		_self.DibujaTexto(.oWindows,LsMsg+" ","",LoCoord,:centre_right,PfScaleFont,
+				  colour.called(:green))
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.DibujaTerminales(PoWindow)
+	##
+_local LfScaleFont  # Escala de los fonts.
+_local LiIdx        # Contador.
+_local LI_ANG   # Constante. Cada LI_ANG grados se escribira la etiqueta de una terminal.
+
+	_if .oFloors _is _unset _orif
+	    .oFloors.empty?
+	_then
+		_return 
+	_endif
+	
+	LfScaleFont<<(300000)/(_self.view_scale*1.3)	
+	
+	_for LoRecTab _over .oRegTabs.fast_elements()
+	_loop
+		LcollRelatedObjs<<related_objects_provider.get_related_items_for(LoRecTab)
+#		LcollRelatedObjs<<rope.new_with("EXISTENTE","DESMONTAJE","PROYECTADO","EXISTENTE",
+#				       "DESMONTAJE","PROYECTADO")
+		LiIdx<<0
+		LI_ANG<<60
+		_for LoRec _over LcollRelatedObjs.fast_elements()
+		_loop
+			_if LoRec.is_kind_of?(copper_terminal)
+			_then
+				LsEdoCons<<LoRec.construction_status # Asignar estado de construccion de la terminal
+				LsMsg<<LoRec.user!_cuenta      # Asignar nombre de la terminal(user!_cuenta)
+				_if LsEdoCons="DESMONTAJE"
+				_then
+					LiRadio<<190
+				_else
+					LiRadio<<120
+				_endif
+				LiAng<<(LI_ANG*LiIdx).degrees_to_radians
+				LoCoord<<LoRecTab.inside_location.coord.transformed(_self.transform)
+				LoCoord<<LoCoord+coordinate.new(LiRadio*LiAng.cos,LiRadio*LiAng.sin)
+				_self.DibujaTexto(.oWindows,LsMsg,LsEdoCons,LoCoord,:centre_centre,
+						  LfScaleFont)
+				LiIdx+<<1
+			_endif
+		_endloop
+	_endloop 
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.BuildIconStartingOn(PoCoordinate,PyTipo,PfSize)
+	## 
+	## 
+_local LcollIcon
+_local LiLonSegment
+       LcollIcon<<sector.new()
+       LiLongSegment<<PfSize.default(30)
+       _if PyTipo=:linea_cobre
+       _then
+	       LcollIcon<<rope.new()
+	       LcollIcon.add(circle.new(PoCoordinate,PfSize))
+
+       _elif PyTipo=:linea_cobre_comer
+       _then
+	       LcollIcon<<rope.new()
+	       LcollIcon.add(circle.new(PoCoordinate,PfSize))
+	       
+	       LcollSectorRope<<sector_rope.new()
+	       #---
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate.new(PoCoordinate.x-PfSize,PoCoordinate.y-PfSize*1.25))
+	       LcollSector.add(coordinate.new(PoCoordinate.x+PfSize,PoCoordinate.y+PfSize*1.25))
+	       LcollSectorRope.add(LcollSector)
+	       
+	       LcollIcon.add(LcollSectorRope)
+       _elif PyTipo=:linea_cobre_compet
+       _then
+	       LcollIcon<<rope.new()
+	       LcollIcon.add(circle.new(PoCoordinate,PfSize))
+	       
+	       LcollSectorRope<<sector_rope.new()
+	       #---
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate.new(PoCoordinate.x-PfSize,PoCoordinate.y-PfSize*1.25))
+	       LcollSector.add(coordinate.new(PoCoordinate.x+PfSize,PoCoordinate.y+PfSize*1.25))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollIcon.add(LcollSectorRope)
+	       
+       _elif PyTipo=:linea_inalam_compet
+       _then
+	       LcollIcon<<rope.new()
+	       LcollIcon.add(circle.new(PoCoordinate,PfSize))
+
+	       LcollSectorRope<<sector_rope.new()
+	       
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate+coordinate(PfSize*(float.pi*0.25).cos,
+						       PfSize*(float.pi*0.25).sin))
+	       LcollSector.add(PoCoordinate+coordinate((PfSize*0.75)*(float.pi*0.25).cos,
+						       (PfSize*0.75)*(float.pi*0.25).sin))
+	       LcollSectorRope.add(LcollSector)
+	       #---
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate+coordinate(PfSize*(float.pi*0.75).cos,
+						       PfSize*(float.pi*0.75).sin))
+	       LcollSector.add(PoCoordinate+coordinate((PfSize*0.75)*(float.pi*0.75).cos,
+						       (PfSize*0.75)*(float.pi*0.75).sin))
+	       LcollSectorRope.add(LcollSector)
+	       #---
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate+coordinate(PfSize*(float.pi*1.25).cos,
+						       PfSize*(float.pi*1.25).sin))
+	       LcollSector.add(PoCoordinate+coordinate((PfSize*0.75)*(float.pi*1.25).cos,
+						       (PfSize*0.75)*(float.pi*1.25).sin))
+	       LcollSectorRope.add(LcollSector)
+	       #---
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate+coordinate(PfSize*(float.pi*1.75).cos,
+						       PfSize*(float.pi*1.75).sin))
+	       LcollSector.add(PoCoordinate+coordinate((PfSize*0.75)*(float.pi*1.75).cos,
+						       (PfSize*0.75)*(float.pi*1.75).sin))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollIcon.add(LcollSectorRope)
+       _elif Pytipo=:linea_ladafon
+       _then
+	       LcollIcon<<rope.new()
+	       LcollIcon.add(circle.new(PoCoordinate,PfSize*0.8))
+
+	       LcollSectorRope<<sector_rope.new()
+	       
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate-coordinate(PfSize,PfSize))
+	       LcollSector.add(LcollSector.last+coordinate(2*PfSize,0))
+	       LcollSector.add(LcollSector.last+coordinate(0,2*PfSize))
+	       LcollSector.add(LcollSector.last+coordinate(-2*PfSize,0))
+	       LcollSector.add(LcollSector.last+coordinate(0,-2*PfSize))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate+coordinate(-PfSize,PfSize))
+	       LcollSector.add(PoCoordinate+coordinate(PfSize,-PfSize))
+	       LcollSectorRope.add(LcollSector)
+	       
+	       LcollIcon.add(LcollSectorRope)
+       _elif Pytipo=:linea_pslt
+       _then
+	       LcollIcon<<rope.new()
+	       LcollIcon.add(circle.new(PoCoordinate,PfSize*0.8))
+
+	       LcollSectorRope<<sector_rope.new()
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate-coordinate(PfSize,PfSize))
+	       LcollSector.add(LcollSector.last+coordinate(2*PfSize,0))
+	       LcollSector.add(LcollSector.last+coordinate(0,2*PfSize))
+	       LcollSector.add(LcollSector.last+coordinate(-2*PfSize,0))
+	       LcollSector.add(LcollSector.last+coordinate(0,-2*PfSize))
+	       LcollSectorRope.add(LcollSector)
+	       
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate-coordinate(PfSize,PfSize))
+	       LcollSector.add(PoCoordinate+coordinate(PfSize,PfSize))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate+coordinate(-PfSize,PfSize))
+	       LcollSector.add(PoCoordinate+coordinate(PfSize,-PfSize))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollIcon.add(LcollSectorRope)
+       _elif PyTipo=:linea_tel_pub_compet
+       _then
+	       LcollIcon<<rope.new()
+	       LcollIcon.add(circle.new(PoCoordinate,PfSize*0.8))
+
+	       LcollSectorRope<<sector_rope.new()
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(PoCoordinate-coordinate(PfSize,PfSize))
+	       LcollSector.add(LcollSector.last+coordinate(2*PfSize,0))
+	       LcollSector.add(LcollSector.last+coordinate(0,2*PfSize))
+	       LcollSector.add(LcollSector.last+coordinate(-2*PfSize,0))
+	       LcollSector.add(LcollSector.last+coordinate(0,-2*PfSize))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollIcon.add(LcollSectorRope)
+       _endif
+       
+       _return LcollIcon
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_plano_construccion_interno.draw_content_on(windows)
+	## documentacion: ver metodo draw_content_on de la clase viewport_layout
+	##
+
+	.oWindows<<windows
+
+	_super.draw_content_on(windows,_true)
+
+	_if _self.mapped?.not
+	_then
+		_return
+	_endif
+
+	_self.DibujaLimitesDeTerminal(windows)
+	_self.DibujaLimiteDeDistrito(windows)
+	_self.DibujaPisos(windows)
+	_self.DibujaTerminales(windows)
+
+	# Escribir Nombre Edificio
+	 LsMsg<<_self.nombre_edificio
+	 LoCoord<<coordinate.new(_self.bounds.centre.x,_self.bounds.ymin-250)
+	 _self.DibujaTexto(.oWindows,LsMsg,"",LoCoord,:centre_centre)
+
+	 # Escribir Texto Adicional
+	 LsMsg<<_self.texto_adicional
+	 LoCoord<<coordinate.new(_self.bounds.centre.x,_self.bounds.ymin-480)
+	 _self.DibujaTexto(.oWindows,LsMsg,"",LoCoord,:centre_centre)
+	 
+	 
+	 _if _self.show_info_add="No"
+	 _then
+		 _return 
+	 _endif
+	 
+	 # Escribir Plano de Construccion
+	 LsMsg<<"PLANO DE"
+	 LoCoord<<coordinate.new(_self.bounds.xmax-500,_self.bounds.ymin-250)
+	 _self.DibujaTexto(.oWindows,LsMsg,"",LoCoord,:centre_centre)
+	 
+	 LsMsg<<"CONSTRUCCIÓN"
+	 LoCoord<<coordinate.new(_self.bounds.xmax-500,_self.bounds.ymin-480)
+	 _self.DibujaTexto(.oWindows,LsMsg,"",LoCoord,:centre_centre)
+
+	 LsMsg<<_self.nombre_dto.write_string
+	 LsEdoConst<<_self.edo_const_dto.default("")
+	 LoCoord<<coordinate.new(_self.bounds.xmax-500,_self.bounds.ymin-710)
+	 _self.DibujaTexto(.oWindows,LsMsg,LsEdoConst,LoCoord,:centre_centre)
+	 
+_endmethod
+$
+#_pragma(classify_level=restricted)
+#_method c_vp_plano_construccion_interno.get_y(PoBound,PiNRengs,PiRenY,PbAbajo?)
+#	## 
+#	##
+#
+#	LiConstante<<PoBound.bounds.height/PiNRengs
+#	_if PbAbajo?
+#	_then
+#		LiRenY<<PoBound.bounds.ymin+PiNRengs*LiConstante
+#	_else
+#		LiRenY<<PoBound.bounds.ymax-PiNRengs*LiConstante
+#	_endif
+#	
+#	_return LiRenY
+#_endmethod
+#$
+#_pragma(classify_level=restricted)
+#_method c_vp_plano_construccion_interno.get_x(PoBound,PiNCols,PiColX,PbIzquierdo?)
+#	## 
+#	##
+#
+#	LiConstante<<PoBound.bounds.width/PiNCols
+#	_if PbIzquierdo?
+#	_then
+#		LiColX<<PoBound.bounds.xmin+PiNCols*LiConstante
+#	_else
+#		LiColX<<PoBound.bounds.xmax-PiNCols*LiConstante
+#	_endif
+#	
+#	_return LiColX
+#_endmethod
+#$

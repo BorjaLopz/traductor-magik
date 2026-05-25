@@ -1,0 +1,1257 @@
+#centralizada.
+#
+_package user
+$
+def_slotted_exemplar(:c_geom_set_layout,
+                     {
+			     {:oApp, _unset, :readable, :public},
+			     {:oAppLayoutDesigner, _unset, :writable, :public},
+			     {:oRegistro, _unset, :writable, :public}
+		     },{:layout_element, :viewport_layout_mixin})
+$
+c_geom_set_layout.define_shared_constant(:activate_properties_dialog_on_insert?,
+					 _false,
+					 :public)
+$
+c_geom_set_layout.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+_pragma(classify_level=restricted)
+_method c_geom_set_layout.agrega_nombre_plano(LoMarco)
+	## Agrega nombre del plano.
+	
+	_if _self.sTipoPlano = "PLANO_DE_RUTA"
+	_then
+                LoTitulo << _self.layout_page.all_elements_of(c_titulo_de_plano).an_element()
+                _if LoTitulo _is _unset
+                _then
+                        LoTitulo << c_titulo_de_plano.new_with(:bounds,bounding_box.new(0, 0, 2000, 1000),
+                                                               :font_name,        "bold",
+                                                               :font_size,        12,
+                                                               :fill_style,       _unset,
+                                                               :outline_style,    _unset,
+                                                               :text,             _self.sNombrePlano,
+                                                               :wrap,             _false,
+                                                               :align_horizontal, :centre,
+                                                               :align_vertical,   :centre,
+                                                               :orientation,      :left_right)
+                        _self.layout_page.add_element(LoTitulo)
+                _endif
+                LoTitulo.oBoundContenedor << bounding_box.new(LoMarco.bounds.xmin + 50,
+						              LoMarco.bounds.ymin + 50,
+						              LoMarco.bounds.xmax,
+						              LoMarco.bounds.ymax)
+	_elif _self.sTipoPlano = "Plano_desmontaje_CD"
+	_then
+                LoTitulo << _self.layout_page.all_elements_of(textbox_layout).an_element()
+		_if LoTitulo _is _unset
+		_then
+			LoTitulo << textbox_layout.new_with(:align_horizontal, :centre,
+                                                            :align_vertical,   :centre,
+                                                            :angle,            90,
+                                                            :bounds,           bounding_box.new(600, 400, 100, 300),
+                                                            :fill_style,       _unset,
+                                                            :font_name,        "bold",
+                                                            :font_orientation, :vertical,
+                                                            :font_size,        3,
+                                                            :orientation,      :vertical,
+                                                            :outline_style,     _unset,
+                                                            :text,             _self.sNombrePlano,
+                                                            :wrap,             _false)
+                        _self.layout_page.add_element(LoTitulo)
+                _endif
+	_else
+                LoTitulo << _self.layout_page.all_elements_of(c_titulo_de_plano).an_element()
+                _if LoTitulo _is _unset
+                _then
+                        LoTitulo << c_titulo_de_plano.new_with(:bounds,           bounding_box.new(0, 0, 3000, 1400),
+                                                               :font_name,        "bold",
+                                                               :font_size,        12,
+                                                               :fill_style,       _unset,
+                                                               :outline_style,    _unset,
+                                                               :text,             _self.sNombrePlano,
+                                                               :wrap,             _false,
+                                                               :align_horizontal, :centre,
+                                                               :align_vertical,   :centre,
+                                                               :orientation,      :left_right)
+                        _self.layout_page.add_element(LoTitulo)
+                _endif
+                LoTitulo.oBoundContenedor << bounding_box.new(LoMarco.bounds.xmin + 50,
+						              LoMarco.bounds.ymin + 50,
+						              LoMarco.bounds.xmax,
+						              LoMarco.bounds.ymax)
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_geom_set_layout.defined_attributes
+# Objetivo: Definir los atributos de la clase que seran
+#           visualizados en el cuadro de dialogo de las propiedades de
+#           la clase.
+# Parametros de Entrada: Ninguno.
+# Parametros de Salida: Ninguno
+# Regresa: La definicio de los atributos.
+#   attribs: Definicion de los atributos.
+# Fecha de ultima modificacion: 18/Ene./2005.
+# Autor de la modificacion: rbsaldan.
+# Descripcion de la modificacion: Metodo Nuevo.
+#
+# Fecha de ultima modificacion: 10/Feb./2005.
+# Autor de la modificacion: rbsaldan.
+# Descripcion de la modificacion: Documentacion.
+
+_local LcollAtributos  ## Contiene los atributos de la clase c_geom_set_layout.
+	LcollAtributos << rope.new_from(_super.defined_attributes)
+
+	LcollAtributos.add ( _self.viewport_attribute_definition )
+
+	## Propiedad que define el angulo del estilo.
+	LcollAtributos.add ( layout_attribute_definition.new(:nIdRegistro, :integer,
+							     :description, "Identificador del Objeto",
+							     :default_value, 0,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:sIdRegistro, :string,
+							     :description, "Identificadores de objetos",
+							     :default_value, 0,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:sNombreAce, :string,
+							     :description, "Nombre del Ace",
+							     :default_value, 0,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+# Autor:                          vnguzman
+# ID de requerimiento:            
+# Fecha de modificación:          Jueves 25 de Mayo de 2006
+# Descripción de la modificación: Agrego una o
+#	LcollAtributos.add ( layout_attribute_definition.new(:sNombrePlan , :string,
+	LcollAtributos.add ( layout_attribute_definition.new(:sNombrePlano , :string,
+# Fin de la modificación							     
+							     :description, "Nombre del Plano",
+							     :default_value, 0,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:nMargenVp, :integer,
+							     :description, "Margen del Viewport",
+							     :default_value, 0,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:modulos_ancho, :integer,
+							     :description, "Modulos Ancho",
+							     :default_value, 1,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:modulos_alto, :string,
+							     :description, "Modulos Alto",
+							     :default_value, 1,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:bIndicadores, :boolean,
+							     :description, "Indicadores de pozo",
+							     :default_value, _false,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:bInventaDto, :boolean,
+							     :description, "Inventario distrito",
+							     :default_value, _false,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:sIdProyecto, :string,
+							     :description, "Identificador del proyecto.",
+							     :default_value, _false,
+							     :allowed_on_properties_page?, _false,
+							     :editor, _unset))
+	LcollAtributos.add ( layout_attribute_definition.new(:sTipoPlano, :string,
+							      :description, "Tipo de Plano",
+							      :default_value, "",
+							      :allowed_on_properties_page?, _true,
+							      :editor, _unset))
+	>> LcollAtributos
+_endmethod
+$
+# (2018-01-08 AHERNAN, Hitss) : se agrega.
+c_geom_set_layout.define_attributes()
+$
+_pragma(classify_level=restricted)
+_method c_geom_set_layout.depends_on?(another)
+# Objetivo: Indica si hay dependencia entre el c_geom_set_layout y another.
+# Parametros de Entrada:
+#     another: Cualquier objeto.
+# Parametros de Salida: Ninguno
+# Regresa: _false o _true
+# Fecha de ultima modificacion: 18/Ene./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo Nuevo.
+#
+# Fecha de ultima modificacion: 10/Feb./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Documentacion.
+	
+	>> _super(viewport_layout_mixin).depends_on?(another)
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_geom_set_layout.dibuja_linea_entre_pozos()
+# Objetivo: Define la coordenadas de una linea y el texto que
+#           sebe ser colocado  entres dos pozos seleccionados en una
+#           pagina (en la aplicacion layout_designer).
+# Parametros de Entrada: Ninguno.
+# Parametros de Salida: Ninguno.
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 18/Ene./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+#
+# Fecha de ultima modificacion: 10/Feb./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Documentacion.
+	
+_local LcollSeleccion ## Seleccion actual en Layout Designer.
+_local LcollPozos     ## Arreglo de pozos.
+_local LcollCoords    ## Coordenadas de la linea que une a los pozos
+#_local LoElem        ## Referencia a un objeto de una pagina de Layout Designer
+_local LoTexto        ## Texto
+
+
+        # Verificar si hay un objeto seleccionado en la pagina.
+	LcollSeleccion << .oAppLayoutDesigner.plugin(:layout_manager).current_layout_view.current_selection
+	_if LcollSeleccion _is _unset 
+	_then
+		write("Debe haber una seleccion.")
+		_return 
+	_endif
+
+	# Extraer los objetos que representan un apuntador al pozo.
+	LcollPozos << rope.new()
+	_for LoElem _over LcollSeleccion.fast_elements()
+	_loop
+		_if LoElem.responds_to?(:LoObjRel) _andif LoElem.LoObjRel _isnt _unset
+		_then
+			LcollPozos.add(LoElem)
+		_endif
+	_endloop
+	## Verificar que el numero de objetos seleccionados en la
+	## pagina sean dos.
+	_if LcollPozos.size = 2
+	_then
+		## Ordenar las coordenadas con respecto la coordenada X
+		LcollCoords << sorted_collection.new()
+		LcollCoords.order_proc << _proc (c1, c2)
+				       _return c1.x _cf c2.x
+				     _endproc
+		_for LoElemPozo _over LcollPozos.fast_elements()
+		_loop
+			LcollCoords.add(LoElemPozo.bounds.centre)
+		_endloop
+
+		## Si las coordenadas coinciden en su valor X, entonces se toma
+		## encuenta el valor del Y.
+		_if LcollCoords[1].x.rounded = LcollCoords[2].x.rounded
+		_then
+			_if  LcollCoords[1].x > _self.layout_page.bounds.centre.x
+			_then
+				_if LcollCoords[1].y < LcollCoords[2].y
+				_then
+					LcollCoords << LcollCoords.reversed()
+				_endif
+			_else
+				_if LcollCoords[1].y > LcollCoords[2].y
+				_then
+					LcollCoords << LcollCoords.reversed()
+				_endif
+			_endif
+		_endif
+
+		# Definir el texto que debe llevar la linea (es la diferencia
+		# del km. topografico).
+		LoTexto << (LcollPozos[1].LoObjRel.user!_km_topo.default(0.0) -
+			    LcollPozos[2].LoObjRel.user!_km_topo.default(0.0)).abs.write_string
+		LcollPozos[1].agrega_linea(LcollCoords, _self.layout_page, LoTexto)
+	_else
+		write("Debe seleccionar dos indicadores del pozo.")
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_geom_set_layout.distritos_afectados()
+	
+	texto << ""
+	
+	_for i _over glorutaopb.mit_terminal_enclosures.fast_elements()
+	_loop
+		_if texto <> ""
+		_then
+			texto << texto + ", "
+		_endif
+		
+		texto << texto + i.user!_nombre_distrito
+	_endloop
+	
+	texto << "Distritos afectados: " + texto 
+	
+	LoTitulo << textbox_layout.new_with(:bounds, bounding_box.new(1280, 620, 2920, 1420),
+					    :text,   texto)
+	
+	_self.layout_page.add_element(LoTitulo)
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_geom_set_layout.draw_content_on(window)
+	# Objetivo: Cada que se refresca la pagina, dibujar el plano correspondiente.
+	# Parametros de Entrada:
+	#    window:  es un objeto canvas donde se hace el dibujo.
+	# Parametros de Salida: Ninguno.
+	
+	_super.draw_content_on(windows)		
+		
+#	_local LoViewport    # Referencia al viewport principal del plano.
+#	_local LoMarco       # Referencia al marco del plano.
+#	_local LoMapPlugin   # Referencia al map_plugin del la aplicacion.
+#	_local LoRegistro    # Referencia a un registro de central o distrito.
+#	_local LoPred        # Predicado para obtener un registro segun el campo ID.
+#	_local LoPredDtos    # Predicado para obtener todos los distritos en un plano de ruta.
+#	_local LcollNomDtos  # Lista con los nombres de los distritos en un plano de ruta.
+#	
+#        .oApp<<smallworld_product.pni_application()
+#	 LoMapPlugin<<.oApp.plugin(:map_plugin)
+#	.oAppLayoutDesigner << .oApp.plugin(:layout_plugin).layout_designer
+
+#	LoViewport<<_self.layout_page.all_elements_of(c_viewport_layout_sigc).an_element()
+#	LoMarco<<_self.layout_page.all_elements_of(c_marco).an_element()
+#	
+#	_if LoMarco _is _unset 
+#	_then
+#		## Agregar marco.
+#		LoMarco << c_marco.new_with(:bounds,bounding_box.new(0,0,1,1))
+#		LoMarco.Largo << _self.modulos_ancho
+#		LoMarco.Alto << _self.modulos_alto
+#		LoMarco.set_fill_colour(_unset)
+#		_self.layout_page.add_element(LoMarco)
+#	_endif
+#	
+#	_if .oRegistro _is _unset 
+#	_then
+#		w(:no_registro)
+#		_if _self.sTipoPlano="DISTRITOS" _or
+#		    _self.sTipoPlano="ITINERARIO" _or
+#		    _self.sTipoPlano="ESTUDIO_CONJUNTO" _or
+#		    _self.sTipoPlano="ASHURADO" _or
+#		    _self.sTipoPlano="CANALIZACION"
+#		_then
+#			LoPred<<predicate.eq(:id,_self.nIdRegistro)
+#			.oRegistro<<.oApp.database.collection(:landbase,:user!_central).select(LoPred).an_element()
+#			
+#		_elif _self.sTipoPlano="CONSTRUCCION" _or
+#		      _self.sTipoPlano="BAJANTES"
+#		_then			
+#			#LoPred<<predicate.eq(:id,_self.nIdRegistro)
+#			#.oRegistro<<.oApp.database.collection(:landbase,:user!_distrito).select(LoPred).an_element()
+#			
+#		_elif _self.sNombreAce="Physical NI User"
+#		_then
+#			LoPred<<predicate.eq(:id,_self.nIdRegistro)
+#			.oRegistro<<.oApp.database.collection(:gis,:mit_terminal_enclosure).select(LoPred).an_element()
+#			
+#		_elif _self.sTipoPlano="PLANO_DE_RUTA"			
+#		_then
+#			_if _self.sIdRegistro.size>0
+#			_then
+#				LcollNomDtos<<_self.sIdRegistro.split_with_empty_by(%,)
+#				LoPredDtos<<_unset
+#				_for LsNomDto _over LcollNomDtos.fast_elements()
+#				_loop
+#					_if LoPredDtos _is _unset 
+#					_then
+#						LoPredDtos<<predicate.eq(:user!_distrito,LsNomDto)
+#					_else
+#						LoPredDtos<<LoPredDtos _or predicate.eq(:user!_distrito,LsNomDto)
+#					_endif
+#				_endloop
+#				
+#				_if LoPredDtos _isnt _unset 
+#				_then
+#					_self.oRegistro<<.oApp.database.collection(:landbase,:user!_distrito).select(LoPredDtos)
+#				_endif
+#			_endif
+#		_endif		
+#	_endif
+#	
+#	
+#        _if _self.sTipoPlano <> "Plano_desmontaje_CD"
+#	_then
+#	        LoTitulo << _self.layout_page.all_elements_of(c_titulo_de_plano).an_element()
+#                _if LoTitulo _is _unset 
+#        	_then
+#		        ## Agrega nombre del plano.
+#                        LoTitulo << c_titulo_de_plano.new_with(:bounds,           bounding_box.new(0, 0, 2500, 400),
+#			        			       :font_name,        "bold",
+#				        		       :font_size,        12,
+#					        	       :fill_style,       _unset,
+#						               :outline_style,    _unset,
+#						               :text,             _self.sNombrePlano,
+#						               :wrap,             _false,
+#						               :align_horizontal, :centre,
+#						               :align_vertical,   :centre,
+#						               :orientation,      :left_right)
+#        		_self.layout_page.add_element(LoTitulo)
+#		_endif
+#                LoTitulo.oBoundContenedor << bounding_box.new(LoMarco.bounds.xmin,
+#						              LoMarco.bounds.ymin - 400,
+#						              LoMarco.bounds.xmax,
+#						              LoMarco.bounds.ymax)		
+#	_else
+#		LoTitulo << _self.layout_page.all_elements_of(textbox_layout).an_element()
+#		_if LoTitulo _is _unset
+#		_then
+#			## Agrega nombre de plano.
+#			LoTitulo << textbox_layout.new_with(:align_horizontal, :centre,
+#                                                            :align_vertical,   :centre,
+#                                                            :angle,            90,
+#                                                            :bounds,           bounding_box.new(600, 400, 100, 300),
+#                                                            :fill_style,       _unset,
+#                                                            :font_name,        "bold",
+#                                                            :font_orientation, :vertical,
+#                                                            :font_size,        3,
+#                                                            :orientation,      :vertical,
+#                                                            :outline_style,    _unset,
+#                                                            :text,             _self.sNombrePlano,
+#                                                            :wrap,             _false)
+#			_self.layout_page.add_element(LoTitulo)
+#	        _endif
+#	_endif
+#
+#
+#	_if _self.sTipoPlano="DISTRITOS" _or
+#	    _self.sTipoPlano="ESTUDIO_CONJUNTO" _or
+#	    _self.sTipoPlano="CANALIZACION"
+#	_then
+#		_if (LoVp << _self.layout_page.get_first_element_of(viewport_layout)) _isnt _unset 
+#		_then
+#			LoTitulo.text << _unset
+#			LoTitulo.text << _self.sNombrePlano + LoVp.view_scale.rounded.write_string
+#		_endif
+#		
+#	_elif _self.sTipoPlano="CONSTRUCCION" _or
+#	      _self.sTipoPlano="BAJANTES"
+#	_then 
+#		LoTitulo.oBoundContenedor<<bounding_box.new(LoMarco.bounds.xmin,
+#							    LoMarco.bounds.ymin-400,
+#							    LoMarco.bounds.xmax+750,
+#							    LoMarco.bounds.ymax)
+#	_endif
+#
+
+	## Si el marco cambio en su numero de modulos (ancho o largo).
+#	_if (LoMarco.bounds.xmax-LoViewport.bounds.xmax).abs>_self.nMargenVp _or
+#	    (LoMarco.bounds.ymax-LoViewport.bounds.ymax).abs>_self.nMargenVp 
+#	_then
+#		_if LoViewport.ajusta_al_marco="Si"
+#		_then
+#			# Calcular y asignar nuevo bound al viewport
+#			LoVpArea<<bounding_box.new(_self.layout_page.bounds.xmin+_self.nMargenVp,
+#						   _self.layout_page.bounds.ymin+_self.nMargenVp,
+#						   _self.layout_page.bounds.xmax-_self.nMargenVp,
+#						   _self.layout_page.bounds.ymax-_self.nMargenVp)
+#			LoViewport.bounds<<LoVpArea
+#						
+#			# Asignar nuevamente la vista al viewport.
+#			LoMapView<<LoMapPlugin.current_map_view
+#			LoViewMapperPlugin<<.oAppLayoutDesigner.plugin(:viewport_mapper)
+#			LoViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,LoMapView.current_view_bounds,_true)
+#			LoViewport.ace_name<<_self.sNombreAce.default("CENTRALES")
+#			LoViewport.sTipoPlano<<_self.sTipoPlano.default("CENTRALES")
+#		_endif 
+#	_endif
+	
+#	 _if _self.sTipoPlano="ITINERARIO"
+#	 _then
+#		 _if _self.bIndicadores _is _false
+#		 _then
+#			 ## .oRegistro debe ser un area de central.
+#			 ## :user!_limite es el campo geometrico de .oRegistro
+#			 _self.pon_indicadores(window,
+#					       .oRegistro,:user!_limite,
+#					       :gis,:uub,:location,
+#					       LoViewport)
+#			 _self.bIndicadores<<_true 
+#		 _endif
+#	 _endif
+
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_geom_set_layout.initialise_for_page(a_layout_page)
+	# Objetivo: Agregar a la pagina todo lo necesario para generar
+	#           un plano. Se agrega: marco, sello, planimetria, detalles, etc. 
+	# Parametros de Entrada:
+	#    a_layout_page:  Pagina actual donde se encuentra agregado
+	#                     una instacia de la clase c_geom_set_layout
+	# Parametros de Salida: Ninguno.
+	# Regresa: Ninguno.
+	# Fecha de ultima modificacion: 18/Ene./2005
+	# Autor de la modificacion: rbsaldan
+	# Descripcion de la modificacion: Metodo nuevo.
+
+
+	_local LoAreaMarco         # Area que ocupara el marco dentro de la pagina.
+	_local LoMarco             # Marco que debe llevar el plano.
+	_local LoMapPlugin         # Referencia a la instancia map_plugin
+	_local LoLayoutPlugin      # Referencia a la instancia layout_plugin
+	_local LoVpArea            # Area que ocupara el viewport en la pagina.
+	_local LoViewport          # Viewport donde se mostrara lo que debe contener el plano.
+	_local LoMapView           # Vista acutual de Mapa en la aplicacion pni.
+	_local LoViewMapperPlugin  # Referencia a la instanicia viewport_mapper
+	
+        .oApp << smallworld_product.pni_application()
+	_self.sIdProyecto << "RBS-123"
+	_if .oAppLayoutDesigner _is _unset 
+	_then
+		.oAppLayoutDesigner << .oApp.plugin(:layout_plugin).start_layout_designer()
+	_endif
+
+	## Agregar marco.
+	LoMarco << c_marco.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+	LoMarco.Largo << _self.modulos_ancho
+	LoMarco.Alto << _self.modulos_alto
+	LoMarco.set_fill_colour(_unset)
+	a_layout_page.add_element(LoMarco)
+
+	#--------------------------------------------------------- 
+	## Agregar viewport y mapearlo con la vista adecuada.
+	LoMapPlugin << .oApp.plugin(:map_plugin)
+	LoLayoutPlugin << .oApp.plugin(:layout_plugin)
+
+	LoVpArea << bounding_box.new(_self.layout_page.bounds.xmin + _self.nMargenVp - 100,
+				     _self.layout_page.bounds.ymin + _self.nMargenVp - 300,
+				     _self.layout_page.bounds.xmax - _self.nMargenVp + 400,
+				     _self.layout_page.bounds.ymax - _self.nMargenVp + 300)       
+	LoViewport << c_viewport_layout_sigc.new_with(:bounds, LoVpArea)
+	LoViewport.set_fill_colour(_unset)
+	LoViewport.outline_style << _unset
+	LoViewport.trail << _false
+	LoViewport.selection << _false
+	
+	LoMapView << LoMapPlugin.current_map_view
+
+	LoViewMapperPlugin << .oAppLayoutDesigner.plugin(:viewport_mapper)
+
+	#
+	# (06/04/06 jtlelo) : Mapea el viewport a los límites
+	# del distrito  más un 10%.
+	#
+	_if _self.sTipoPlano="BAJANTES" _or _self.sTipoPlano="CONSTRUCCION"
+	_then
+		distrito << swg_dsn_admin_engine.active_design.user!_distrito
+		LoViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							    distrito.bounds.new_enlarging(1.1),
+							    _true)
+		# START CHANGE
+		# (10/05/03 fmejia) : se agrega metodo para cuardar el distrito
+		# y poderlo obtener al abrir el plano como xml.
+		#
+		LoElementosAGuardar << rope.new()
+		LoElementosAGuardar.add(distrito)
+		LoViewport.guardar_elementos_bd_landbase(LoElementosAGuardar)
+		#
+		# END CHANGE
+
+        _elif _self.sTipoPlano = "Plano_desmontaje_CD"
+	_then
+	        LoViewMapperPlugin.map_viewport_on_map_view(LoViewport,
+							    LoMapView,
+                                                            smallworld_product.pni_application().plugin(:map_plugin).current_map_view.current_view_boundary.bounds,
+                                                            _true)
+#Fin de la modificación del Viernes 4 de Agosto de 2006		
+	_else
+	#
+	# Steve Hall (Ten Sails Consulting) 08/03/06
+	# Mapear viewport a los límites de la central,
+	# más un 10%.
+	#
+		central << swg_dsn_admin_engine.active_design.project.user!_central
+
+         	LoViewMapperPlugin.map_viewport_on_map_view(LoViewport, LoMapView,
+							    central.bounds.new_enlarging(1.1), _true)
+	_endif	
+
+	#
+	# Asignar ace y display_scale. 
+	#
+	LoViewport.ace_name<<_self.sNombreAce.default("CENTRALES")
+	LoViewport.sTipoPlano<<_self.sTipoPlano.default("CENTRALES")
+	LoViewport.display_style << "20 000 - 50 000"
+
+	#
+	# Normalizar la escala.
+	#
+	gen_planos_plugin.ajustar_escala_plano ( LoViewport )
+
+	_self.viewport_id << LoViewport.unique_id
+
+	a_layout_page.add_element(LoViewport)
+
+        ## Agregar norte.
+        # Autor:                          vnguzman
+        # ID de requerimiento:            Plano de desmontaje de caja
+        #                                 de distribución
+        # Fecha de modificación:          Viernes 4 de Agosto de 2006
+        # Descripción de la modificación: Agrego la condición porque el
+        #                                 plano de desmontaje de caja de distribución no requiere norte
+        _if _self.sTipoPlano <> "Plano_desmontaje_CD"
+	_then
+                
+                LoNorte << c_norte.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+                LoNorte.limites << bounding_box.new(LoMarco.bounds.xmin + 50,
+					            LoMarco.bounds.ymin + 50,
+					            LoMarco.bounds.xmax - 50,
+					            LoMarco.bounds.ymax - 50)
+                _self.layout_page.add_element(LoNorte)
+        _endif
+        #Fin de la modificación del Viernes 4 de Agosto de 2006
+
+	## Agrega segundo viewport con el detalle donde se encuentra la
+	## caja de distribucion. y tambien se agrea el sello de red secundaria.
+
+	_if _self.sTipoPlano = "DISTRITOS"
+	_then
+
+		# Tamano de marco
+		LoNorte.tamano << "A"
+		
+		# Definir Escala
+		#LoViewport.view_scale<<2000
+		
+		# Grupo de estilos
+		LoViewport.style_system_category << :|plano|
+
+		# Sello estandar
+		LoSello << c_sello_estandar_ctl_edo.new_with(:bounds,bounding_box.new(LoMarco.bounds.xmin+50,
+										    LoMarco.bounds.ymin+50,
+										    LoMarco.bounds.xmin+50+2950,
+										    LoMarco.bounds.ymin+50+2740))
+		
+
+		a_layout_page.add_element(LoSello)
+
+
+		# START CHANGE
+		# (06/04/26 rbsaldan) : Para la integracion a la administracion
+		# de proyectos.
+		#
+		a_layout_page.layout_document.user!_tipo_plano << "division_distritos"
+
+		a_layout_page.layout_document.user!_proyecto << swg_dsn_admin_engine.active_scheme.project
+		#
+		# END CHANGE
+
+	_elif _self.sTipoPlano="ASHURADO"
+	_then
+		# Tamano de marco
+		LoNorte.tamano << "A"
+		LoViewport.style_system_category << :|plano|
+
+		LoSello << c_sello_estandar_ctl_edo.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin + 50,
+										    LoMarco.bounds.ymin + 50,
+										    LoMarco.bounds.xmin + 50 + 2950,
+										    LoMarco.bounds.ymin + 50 + 2740))
+		
+
+		a_layout_page.add_element(LoSello)
+
+		# (05/12/26 jtlelo) : verifica si el plano es ashurado para
+		# insertar las leyendas
+			
+		LoSim << symbol_layout.new()
+		LoSim.name << "leyenda_ashurado"
+		LoSim.bounds << bounding_box.new(LoMarco.bounds.xmin + 300, LoMarco.bounds.ymin + 300,
+						 LoMarco.bounds.xmax - 11000, LoMarco.bounds.ymax - 7700)
+
+
+		LoSim.outline_style << _unset
+		LoSim.fill_style << _unset
+		_self.layout_page.add_element(LoSim)
+		
+		# START CHANGE
+		# (12/05/06 rbsaldan) : Para la integracion a la administracion
+		# de proyectos.
+		#
+		   a_layout_page.layout_document.user!_tipo_plano << "ashurado"
+		   a_layout_page.layout_document.user!_proyecto << swg_dsn_admin_engine.active_scheme.project
+		#
+		# END CHANGE
+			
+	_elif _self.sTipoPlano="CANALIZACION"
+	_then
+		# Tamano de marco
+		LoNorte.tamano<<"A"
+		#a_layout_page.layout_document.user!_tipo_plano << "Inventario de Canalización"
+                LoViewport.style_system_category<<:|plano|
+		LoSello << c_sello_estandar_ctl_edo.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin+50,
+										    LoMarco.bounds.ymin+50,
+										    LoMarco.bounds.xmin+50+2950,
+										    LoMarco.bounds.ymin+50+2740))
+		
+
+		a_layout_page.add_element(LoSello)
+
+		
+		
+		# creamos la entrada de la leyenda
+		LoLeyenda << c_legend_layout_sigc.new_with(:bounds,bounding_box.new(LoMarco.bounds.xmin+300,
+										    LoMarco.bounds.ymin+300,
+										    LoMarco.bounds.xmin+1300,
+										    LoMarco.bounds.ymin+1300))
+		LoLeyenda.inicializa()
+		_self.layout_page.add_element(LoLeyenda)
+
+		# creamos la entrada de equivalencias de cable
+		LoTablaEq << c_sello_capacidad_cable.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin+300,
+											   LoMarco.bounds.ymin+2800,
+											   LoMarco.bounds.xmin+1300,
+											   LoMarco.bounds.ymin+1300))
+		
+		_self.layout_page.add_element(LoTablaEq)
+
+		#
+		# Elena Sainero / Steve Hall (Ten Sails Consulting) 08/03/06
+		# Calcular view_scale para transformar los bounds
+		# de la central a los bounds del viewport.
+		#
+		view_scale << LoViewMapperPlugin.sys!perform( :scale_for|()|, 
+				central.bounds,
+				LoViewport.bounds.new_enlarging ( 0.10 ), _true )
+		_if ( app_cs << LoMapView.application.coordinate_system ) _isnt _unset
+		_then
+			# Multiply by coordinate system unit factor
+			view_scale << view_scale * app_cs.unit_factor 
+		_endif
+
+		LoViewport.view_scale << view_scale
+		#
+		# Redondeo de la escala 
+		#
+		gen_planos_plugin.ajustar_escala_plano ( LoViewport )
+		#
+		# Fijar el display_style
+		#
+		LoViewport.display_style << "20 000 - 50 000" 
+		
+		# Sello estandar
+		# START CHANGE
+		# (06/10/27 jtlelo) :  Para la integracion a la administracion
+		# de proyectos.
+		#
+		a_layout_page.layout_document.user!_tipo_plano <<"inventario_canalizacion"
+
+		a_layout_page.layout_document.user!_proyecto <<swg_dsn_admin_engine.active_scheme.project
+		#
+		# END CHANGE
+	_elif _self.sTipoPlano="ITINERARIO"
+	_then
+
+		# Tamano de marco
+		LoNorte.tamano<<"A"
+		# Definir Escala
+		#LoViewport.view_scale<<2000
+		
+		# Grupo de estilos
+		LoViewport.style_system_category<<:|plano|
+
+		# Sello estandar
+		LoSello << c_sello_estandar_ctl_edo.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin+50,
+										      LoMarco.bounds.ymin+50,
+										      LoMarco.bounds.xmin+200+2950,
+										      LoMarco.bounds.ymin+50+2740))
+		a_layout_page.add_element(LoSello)
+# Autor:                          vnguzman
+# ID de requerimiento:            Plano fosa de cables
+# Fecha de modificación:          Miércoles 24 de Mayo de 2006
+# Descripción de la modificación: modifico la opción para que
+#                                 se filtre por medio del tipo de plano
+#_elif _self.sNombreAce="Ruta_de_cable"
+	_elif _self.sNombreAce="RUTA_CABLES"
+#	_elif _self.sTipoPlano = "PLANO_DE_RUTA"
+# Fin de la modificación
+	_then
+		# Tamano de marco
+		LoNorte.tamano << "A"
+		
+		# Autor:                          vnguzman
+		# ID de requerimiento:            Plano de ruta de cables
+                # Fecha de modificación:          Lunes 11 de Septiembre de 2006
+                # Descripción de la modificación: Agrego un cuado con los
+                #                                 elementos usados
+		# Estilo de visualización
+	        LoViewport.display_style << "20 000 - 50 000"
+		#		LoViewport.display_style<<"Auto"
+                #Fin de la modificación del Lunes 11 de Septiembre de 2006
+		
+		#Grupo de estilos
+
+		LoViewport.style_system_category << :|plano|
+
+		# Sello estandar
+		LoSello << c_sello_estandar_ctl_edo.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin + 50,
+										      LoMarco.bounds.ymin + 2790,
+										      LoMarco.bounds.xmin + 200 + 1900,
+										      LoMarco.bounds.ymin + 50 + 150))
+		a_layout_page.add_element(LoSello)
+
+		# Sello C_PEP
+		LoSello << c_pep.new_with(:bounds, bounding_box.new(450, 500, 450 + 880, 500 + 910))
+		a_layout_page.add_element(LoSello)
+		# START CHANGE
+		# (12/05/06 rbsaldan) : Para la integracion a la administracion
+		# de proyectos.
+		#
+                _try
+                    a_layout_page.layout_document.user!_tipo_plano << "ruta_cables"
+                _when user_error
+                    .oAppLayoutDesigner.show_message("El tipo de diseño tiene que ser de principales, oei, o combinado")
+                _endtry
+
+		a_layout_page.layout_document.user!_proyecto << swg_dsn_admin_engine.active_scheme.project
+		#
+		# END CHANGE
+
+		LoLeyenda << c_legend_layout_sigc.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin + 0300,
+										     LoMarco.bounds.ymin + 1300,
+										     LoMarco.bounds.xmin + 1300,
+										     LoMarco.bounds.ymin + 2300))
+		LoLeyenda.inicializa()
+		_self.layout_page.add_element(LoLeyenda)
+		_self.distritos_afectados()
+# Fin de la modificación del Lunes 11 de Septiembre de 2006
+
+# Autor:                          vnguzman
+# ID de requerimiento:            Plano de desmontaje_ de caja de distribución
+# Fecha de modificación:          Lunes 31 de Julio de 2006
+# Descripción de la modificación: Agrego la condición para el plano de desmontaje de caja de distribución
+        _elif _self.sTipoPlano = "Plano_desmontaje_CD"
+        _then
+#             Asignación de tamaño de viewport
+		LoViewport.bounds << bounding_box.new(2540,
+						      270,
+						      _self.layout_page.bounds.xmax - 270,
+						      _self.layout_page.bounds.ymax - 270)
+#             Escala de visualización
+                LoViewport.view_scale << 200
+#             Estilo de visualización
+		LoViewport.display_style << "Auto"
+#             Grupo de estilos		
+		LoViewport.style_system_category << :|Plano_desmo_cd|
+		
+		# Sello de proyecto de canalización
+		LoSello << c_sello_proyecto_canalizacion.new_with(:bounds,
+								  bounding_box.new(LoMarco.bounds.xmin + 220,
+								                   LoMarco.bounds.ymin + 2720,
+								                   LoMarco.bounds.xmin + 2350,
+								                   LoMarco.bounds.ymin))
+		a_layout_page.add_element(LoSello)
+#		a_layout_page.layout_document.user!_proyecto << swg_dsn_admin_engine.active_scheme.project
+#Fín de la modificación del Lunes 31 de Julio de 2006########################
+
+	_elif _self.sNombreAce="Physical NI User"
+	_then
+		# Tamano de marco
+		LoNorte.tamano<<"B"
+		
+		LoSello << c_sello_estandar_ctl_edo.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin+200,
+										      LoMarco.bounds.ymin+50,
+										      LoMarco.bounds.xmin+200+1900,
+										      LoMarco.bounds.ymin+50+150))
+		a_layout_page.add_element(LoSello)
+				
+		LoSello << c_pep.new_with(:bounds,bounding_box.new(450,300,450+880,300+910))
+		a_layout_page.add_element(LoSello)
+
+	_elif _self.sTipoPlano="CONSTRUCCION"
+	_then
+		# Tamano de marco
+		LoNorte.tamano<<"B"
+		
+		# Grupo de estilos
+		LoViewport.style_system_category<<:|P Construccion FTTH|
+		LoViewport.display_style << "1 750 - 2 000"
+
+		LoSello << c_sello_red_secundaria.new_with(:bounds,bounding_box.new(300+150,400,2100,3000 ))
+
+		a_layout_page.add_element(LoSello)
+		
+		LoSello << c_sello_estandar_construccion.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin+50,
+									                    LoMarco.bounds.ymin+50,
+										            LoMarco.bounds.xmin+200+2950,
+										            LoMarco.bounds.ymin+50+2740))
+		a_layout_page.add_element(LoSello)
+
+		LoPred<<predicate.within(:location,{.oRegistro.user!_limite})
+		LoRes<<.oApp.database.collection(:gis,:mit_terminal_enclosure).select(LoPred)
+		LoCajaDistribucion<<LoRes.an_element()
+		
+
+		_if LoCajaDistribucion _isnt _unset _and
+		    .oAppLayoutDesigner _isnt _unset _and
+		    LoViewMapperPlugin _isnt _unset
+		_then
+			
+			## Crear un buffer de radio PnRadio 30*100 cambio a 15*85
+			LoBuffer<<LoCajaDistribucion.location.buffer(15*85)
+			LoBuffer.world << LoMapPlugin.current_map.world
+			## Dibujar el buffer en el mapa del GIS a travez de un trail y
+			## obtener dicho trail para crear la consulta.
+			LoMapPlugin.current_map.set_trail_from_geometry(LoBuffer)
+			LoTrazo<<smallworld_product.pni_application().plugin(:map_trail).current_trail
+			LoMapPlugin.goto(LoTrazo)
+
+			# Se crea un circulo para el detalle de la caja de distribución
+			coor1 << LoCajaDistribucion.location.coord
+                        coor2 << LoTrazo.a_coord()
+			x << coor2.x
+			y << coor2.y
+			x << x-1050
+			coor2 << coordinate.new(x,y)
+			mdo << smallworld_product.pni_application().plugin(:map_plugin).current_map
+			nvo_tra << map_trail.new(mdo)
+			nvo_tra.add_coordinate(coor1)
+			nvo_tra.add_coordinate(coor2)
+			nvo_tra.active? << _true
+			nvo_tra.circle()
+			
+##			LoLanbase << gis_program_manager.cached_dataset(:landbase)
+			
+##			_if LoLanbase.mode _is :readonly
+##			_then
+##				_try
+##				     LoLanbase.switch(:write)
+##				     smallworld_product.pni_application().plugin(:drafting).select_drafting_mode(:lines_mode)
+##				     smallworld_product.pni_application().plugin(:drafting).change_drafting_style(8)
+##				     LoTrazo.clear()
+##				     LoLanbase.rollback()
+##				     LoLanbase.switch(:readonly)
+##				_when error 
+##				      LoLanbase.rollback()
+##				      LoLanbase.switch(:readonly)
+##				_endtry
+##			
+##			_else
+##				smallworld_product.pni_application().plugin(:drafting).select_drafting_mode(:lines_mode)
+##				smallworld_product.pni_application().plugin(:drafting).change_drafting_style(8)
+##				#LoLanbase.rollback()
+##				LoTrazo.clear()
+##			_endif
+
+			#Termina creación de circulo
+			
+			LoVpArea<<bounding_box.new(LoMarco.bounds.xmin+200,
+						   LoMarco.bounds.ymin+200,
+						   LoMarco.bounds.xmin+_self.nMargenVp*2,
+						   LoMarco.bounds.ymin+_self.nMargenVp*2)
+			
+			LoVpArea.centre<<coordinate(LoMarco.bounds.xmax-LoVpArea.width/2,
+						    LoMarco.bounds.ymax-LoVpArea.width/2)
+			
+			LoViewport<<c_viewport_layout_sigc.new_with(:bounds,LoVpArea)
+			LoViewport.set_fill_colour(_unset)
+			
+			# Se crea un nuevo estilo de linea externa
+			#LoViewport.outline_style<<_unset
+			linea << composite_line_style.new(line_style.new_with_properties(:foreground_colour,colour.called(:black),
+											 :with,1,:dash_pattern,dash_pattern.long_dash))
+			LoViewport.outline_style<<linea			
+			LoViewport.trail<<_false
+			Loviewport.selection<<_false			
+			#LoViewport.style_system_category<<:|plano_dtos|
+			LoViewport.ace_name<< _self.sNombreAce.default("CENTRALES")
+			LoViewport.sTipoPlano<< "CONSTRUCCION"
+			# START CHANGE
+			# (10/05/03 fmejia) : se agrega metodo para cuardar el distrito
+			# y poderlo obtener al abrir el plano como xml.
+			#
+			LoElementosAGuardar << rope.new()
+			LoElementosAGuardar.add(.oRegistro)
+			LoViewport.guardar_elementos_bd_landbase(LoElementosAGuardar)
+			#
+			# END CHANGE
+			a_layout_page.add_element(LoViewport)
+			LoMapView<<LoMapPlugin.current_map_view
+			
+			LoViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,LoMapView.current_view_bounds,_true)
+			
+			
+		_endif
+		# START CHANGE
+		# (06/10/27 jtlelo) :  Para la integracion a la administracion
+		# de proyectos.
+		#
+
+		a_layout_page.layout_document.user!_tipo_plano <<"construccion"
+
+		a_layout_page.layout_document.user!_proyecto <<swg_dsn_admin_engine.active_scheme.project
+		#
+		# END CHANGE
+
+	_elif _self.sTipoPlano="BAJANTES"
+	_then
+		# Tamano de marco
+		LoNorte.tamano<<"B"
+		
+		# Grupo de estilos
+		LoViewport.style_system_category<<:|plano_dtos|
+		LoViewport.ace_name << "BAJANTE" # cambia el tipo de ace rraragon 31/10/2006
+
+		LoSello << c_sello_reconcentracion.new_with(:bounds,bounding_box.new(450,400, 2100 , 1100 ))
+
+		a_layout_page.add_element(LoSello)	
+
+		
+		LoSello << c_sello_estandar_ctl_edo.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin+50,
+										       LoMarco.bounds.ymin+50,
+										       LoMarco.bounds.xmin+200+2950,
+										       LoMarco.bounds.ymin+50+2740))
+		a_layout_page.add_element(LoSello)	
+		# START CHANGE
+		# (06/10/27 jtlelo) :  Para la integracion a la administracion
+		# de proyectos.
+		#
+		a_layout_page.layout_document.user!_tipo_plano <<"bajantes"
+
+		a_layout_page.layout_document.user!_proyecto <<swg_dsn_admin_engine.active_scheme.project
+		#
+		# END CHANGE
+		
+	_elif  _self.sNombreAce="ESTUDIO_CONJUNTO" _then
+		a_layout_page.layout_document.user!_tipo_plano << "estudio_conjunto"
+		a_layout_page.layout_document.user!_proyecto   << swg_dsn_admin_engine.active_scheme.project
+
+		# Grupo de estilos
+		LoViewport.style_system_category<<:|Estudio_Conjunto|		
+		# Tamano de marco
+		LoNorte.tamano<<"A"
+		# creamos la entrada de la leyenda
+		LoLeyenda << c_legend_layout_sigc.new_with(:bounds,bounding_box.new(LoMarco.bounds.xmin+300,
+										    LoMarco.bounds.ymin+300,
+										    LoMarco.bounds.xmin+1300,
+										    LoMarco.bounds.ymin+1300))
+		LoLeyenda.inicializa()
+		_self.layout_page.add_element(LoLeyenda)
+
+		# Definir Escala
+		# LoViewport.view_scale << LoMapPlugin.current_map_view.view_scale/10#2000
+		# LoViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,LoMapView.current_view_bounds,_true)
+
+		#
+		# Elena Sainero / Steve Hall (Ten Sails Consulting) 08/03/06
+		# Calcular view_scale para transformar los bounds
+		# de la central a los bounds del viewport.
+		#
+		view_scale << LoViewMapperPlugin.sys!perform( :scale_for|()|, 
+				central.bounds,
+				LoViewport.bounds.new_enlarging ( 0.10 ), _true )
+		_if ( app_cs << LoMapView.application.coordinate_system ) _isnt _unset
+		_then
+			# Multiply by coordinate system unit factor
+			view_scale << view_scale * app_cs.unit_factor 
+		_endif
+
+		LoViewport.view_scale << view_scale
+		#
+		# Redondeo de la escala 
+		#
+		gen_planos_plugin.ajustar_escala_plano ( LoViewport )
+		#
+		# Fijar el display_style
+		#
+		LoViewport.display_style << "20 000 - 50 000" 
+		
+		# Sello estandar
+		LoSello << c_sello_estandar_ctl_edo.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin+50,
+										       LoMarco.bounds.ymin+50,
+										       LoMarco.bounds.xmin+50+2950,
+										       LoMarco.bounds.ymin+50+2740))
+
+		a_layout_page.add_element(LoSello)
+
+	_endif
+
+	_self.agrega_nombre_plano(LoMarco)
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_geom_set_layout.pon_indicadores(PoAreaDibujo, PoRec1, PoCampoGeomRec1, PyDataSet2, PyNomTabla2, PyCampoGeom2, PoVp)
+# Objetivo: Colocar indicadores de pozos, en viewports mapeados,
+#           en una pagina. del layout designer. 
+# Parametros de Entrada:
+#    PoAreaDibujo:    Area de dibujo en una pagina de layout_designer.
+#    PoRec1:          Referencia a registro de la base de datos
+#                     (debe ser un registro con geometria de tipo area).
+#    PoCampoGeomRec1: Campo geometrico del registro PoRec1.
+#    PyDataSet2:      Dataset donde se encuentra la tabla: PyNomTabla2.
+#    PyNomTabla2:     Tabla a la que se le hara la consulta espacial.
+#    PyCampoGeom2:    Campo geometrico de PyNomTabla2.
+#    PoVp:            Referencia a un viewport mapeado.
+# Parametros de Salida: Ninguno.
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 18/Ene./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+#
+# Fecha de ultima modificacion: 10/Feb./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Documentacion.
+	
+_local LoGeometria1      # Geometria del registro PoRec1
+_local LoPred            # Consulta espacial.
+_local LcollResQry       # Resultado de la consulta.
+_local LcollResQryOrden  # Resultado de la consulta (ordenada)
+#_local LoRec            # Referencia a cada registro obtenido en la consulta (loop).
+_local LnAncho           # Determina el espacio en x, entre cada indicador de pozo.
+_local LnContador        # Contador.
+
+
+       # Obtener la geometria de PoRec1.
+       LoGeometria1 << PoRec1.perform(PoCampoGeomRec1)
+
+       # Obtener todos los registros con geometria PyCampoGeom2 que
+       # esten dentro de la geometria LoGeometria1.
+       LoPred << predicate.within(PyCampoGeom2, {LoGeometria1}) _and
+		 (
+			 predicate.eq(:construction_status,"PROYECTADO") _or
+				 predicate.eq(:construction_status,"EXISTENTE")
+		 )
+       
+       # Ejecutar la consulta espacial y ordenarla con respecto a la
+       # coordenada X.
+       LcollResQry << .oApp.database.collection(PyDataSet2, PyNomTabla2).select(LoPred)
+
+       LcollResQryOrden << sorted_collection.new()
+       LcollResQryOrden.order_proc << _proc (PoRec1, PoRec2)
+					    _return PoRec1.location.coord.x _cf PoRec2.location.coord.x
+				    _endproc
+       _for LoRec _over LcollResQry.fast_elements()
+       _loop
+	       LcollResQryOrden.add(LoRec)
+       _endloop
+
+       # Agregar indicadores de pozo.
+       _if PoVp _isnt _unset 
+       _then
+	       LnAncho << PoVp.bounds.xmax-PoVp.bounds.xmin
+	       LnAncho << LnAncho/LcollResQryOrden.size
+	       LnContador << 0
+	       _for LoRec _over LcollResQryOrden.fast_elements()
+	       _loop
+		       _if LoRec.construction_status.write_string = "PROYECTADO"
+		       _then
+			       _self.indicadores(PoAreaDibujo, LoRec, PyCampoGeom2, PoVp, _false, _true, _true, 200, 600,
+						 LnAncho*LnContador, 100, _false,
+						 {"fig_dos_b",
+						  "POZO_" + LoRec.user!_num_pozo.write_string + "_" + LnContador.write_string,
+						  LoRec.user!_num_pozo.default("NINGUNO").write_string,
+						  LoRec.user!_modelo_pozo.default("NINGUNO"),
+						  LoRec.construction_status.default("PROYECTADO").write_string.slice(1, 4)})
+		       _else
+			       _self.indicadores(PoAreaDibujo, LoRec, PyCampoGeom2, PoVp, _false, _true, _true, 200, 600,
+						 LnAncho*LnContador, 100, _false,
+						 {"fig_dos_b", "POZO_" + LoRec.user!_num_pozo.write_string + "_" + LnContador.write_string,
+						  LoRec.user!_num_pozo.default("NINGUNO").write_string,
+						  LoRec.user!_modelo_pozo.default("NINGUNO"),
+						  LoRec.construction_status.default("PROYECTADO").write_string.slice(1, 5)})
+		       _endif
+
+#				_self.indicadores(window,rec	_if lyd _isnt _unset 
+#						  k*i,100,_false,{"fig_dos_b","POZO2"+rec.user!_num_pozo.write_string,
+#								  rec.construction_status,"POZO","43","44",
+#								  rec.user!_num_pozo.write_string})
+
+#				_self.indicadores(window,rec,:location,vp,_true,_false,_false,100,200,
+#						  k*i,100,_true,{"fig_cuatro","MIPOZO"+rec.user!_num_pozo.write_string,
+#								 rec.construction_status,"POZO","43","44",
+#								 rec.user!_num_pozo.write_string})
+				
+		       LnContador << LnContador+1
+	       _endloop
+	       
+       _endif
+_endmethod
+$
+_method c_geom_set_layout.pon_InventaDto(PoAreaDibujo, PcollRecs, PoCampoGeomRecs, PyDataSet2, PyNomTabla2, PyCampoGeom2, PoVp)
+# Objetivo: Colocar el inventario del Distrito donde se
+#           encuentra la caja de distribucion.
+# Parametros de Entrada:
+#    PoAreaDibujo:    Area de dibujo en una pagina de layout_designer.
+#    PcollRecs:       Lista de distritos.
+#    PoCampoGeomRecs: Campo geometrico del objeto user!_distritos.
+#    PyDataSet2:      Dataset donde se encuentra la tabla: PyNomTabla2.
+#    PyNomTabla2:     Tabla a la que se le hara la consulta espacial.
+#    PyCampoGeom2:    Campo geometrico de PyNomTabla2.
+#    PoVp:            Referencia a un viewport mapeado.
+# Parametros de Salida: Ninguno.
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 22/Feb./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+#
+	_local LoMapPlugin         # Referencia a la instancia map_plugin	
+	_local LoGeometria1        # Geometria del registro PoRec1
+	_local LoPred              # Consulta espacial.
+	_local LcollResQry         # Resultado de la consulta.
+	_local LcollResQryOrden    # Resultado de la consulta (ordenada)
+#_local LoRec              # Referencia a cada registro obtenido en la consulta (loop).
+	_local LnAncho             # Determina el espacio en x, entre cada indicador de pozo.
+	_local LnContador          # Contador.
+	_local LoCajaDist          # Referencia a una registro de la tabla mit_terminal_enclosure
+  
+
+       # Agregar inventario distritos.
+       _if PoVp _isnt _unset 
+       _then
+	       _for LoRec _over PcollRecs.fast_elements()
+	       _loop
+		       LoPred << predicate.eq(:user!_nombre_distrito,LoRec.user!_distrito)
+		       LoCajaDist << .oApp.database.collection(:gis, :mit_terminal_enclosure).select(LoPred).an_element()
+		       _if LoCajaDist _isnt _unset 
+		       _then
+			       LnInicio_X << 450 # 30 mm del borde izquierdo de la pagina 
+			       LnInicio_Y << 300 # 15 mm del borde inferior de la pagina
+			       
+			       #altura total de la tabla. 1mm =10 pixeles
+			       LnAltura << 910 # 91 mm
+			       LnAncho  << 880 # 88 mm
+			       
+			       #Coordenada donde iniciara el sello   
+			       LnFinal_X << LnInicio_X + LnAncho
+			       LnFinal_Y << LnInicio_Y + LnAltura	
+			       
+			       vparea << bounding_box.new(LnInicio_X, LnInicio_Y, LnInicio_X + LnAncho, LnInicio_Y + LnAltura )
+			       vparea.centre << PoVP.bounds.centre
+			       
+			       #LoSello << c_inventario_dto.new_with(:bounds, vparea)
+			       #LoSello.Siglas_CtlDto<<LoRec.user!_distrito
+			       #_self.layout_page.add_element(LoSello)
+			       
+		       _endif
+	       _endloop
+	       
+       _endif
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_geom_set_layout.update_references(reference_table)
+# Objetivo: Actualizar las referecias con el viewport.
+# Parametros de Entrada:
+#     reference_table: Tabla de referencias.
+# Parametros de Salida: Ninguno
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 16/Dic./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Documentacion.
+#
+# Fecha de ultima modificacion: 16/Dic./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Documentacion.
+	
+	_super(viewport_layout_mixin).update_references(reference_table)
+_endmethod
+$

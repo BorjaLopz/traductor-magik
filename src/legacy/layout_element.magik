@@ -1,0 +1,411 @@
+_package sw
+$
+layout_element.define_shared_constant( :defined_attributes,
+	rope.new_with ( layout_attribute_definition.new ( :outline_style, :line_style,
+							  :description, "Renders the outline of the element",
+							  :default_value, composite_line_style.new(line_style)),
+			
+			layout_attribute_definition.new ( :fill_style, :fill_style,
+							  :description, "When defined renders given style as background fill style",
+							  :default_value, fill_style.new_solid(colour.called(:white))),
+			
+			layout_attribute_definition.new ( :shadow_style, :fill_style,
+							  :description, "Render a bottom right shadow",
+							  :default_value, _unset ),
+
+			layout_attribute_definition.new ( :locked, :boolean,
+							  :description, "Object locked or not",
+							  :default_value, _false,
+							  :allowed_on_properties_page?, _false ),
+			
+			layout_attribute_definition.new( :elementos_bd_gis, :unset,
+							 :description, "Elementos Gis",
+							 :default_value, _unset  ,
+							 :allowed_on_properties_page?, _false ),
+			
+			layout_attribute_definition.new( :elementos_bd_lb, :unset,
+							 :description, "Elementos Landbase",
+							 :default_value, _unset  ,
+							 :allowed_on_properties_page?, _false ),
+			
+			layout_attribute_definition.new(:elementos_modificados,
+							      :unset,
+							      :description,
+							      "Elementos Modificados Plano",
+							      :default_value,
+							      _unset,
+							      :allowed_on_properties_page?,
+							      _false ),
+			
+			layout_attribute_definition.new(:cedos,
+							_unset ,
+							:description,
+							"Cedos del plano",
+							:default_value,
+							_unset,
+							:allowed_on_properties_page?,
+							_false ),
+
+			layout_attribute_definition.new ( :agregar_cedos, :boolean,
+							  :description, "Bandera que indica agregar cedos",
+							  :default_value, _true ,
+							  :allowed_on_properties_page?, _false  )
+					
+			
+	     ), :public )
+$
+layout_element.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_element.guardar_elementos_bd_gis(PoElementos)
+## Metodo para guardar los id de los elementos de BD en la
+## lista PoElementos, estos elementos se guardan en el atributo
+## elementos_bd_gis.
+## PoElementos : rope con elementos del dataset GIS
+## Si se desea guardar algo diferente en este atributo,
+## este metodo se puede subclasear junto con el metodo
+## obtener_elementos_bd_gis. 
+	
+_local 	l_elementos_bd << rope.new()
+    _for obj _over PoElementos.elements()
+    _loop
+	    l_collection << obj.source_collection.name
+	    l_id << obj.id
+	    l_ele << property_list.new()
+	    l_ele[l_collection] << l_id
+	    l_elementos_bd.add_last(l_ele)
+    _endloop
+    
+    _self.elementos_bd_gis << l_elementos_bd
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_element.guardar_elementos_bd_landbase(PoElementos)
+## Metodo para guardar los id de los elementos de BD en la
+## lista PoElementos, estos elementos se guardan en el atributo
+## elementos_bd_gis.
+## PoElementos : rope con elementos del dataset GIS
+## Si se desea guardar algo diferente en este atributo,
+## este metodo se puede subclasear junto con el metodo
+## obtener_elementos_bd_gis. 
+	
+_local 	l_elementos_bd << rope.new()
+    _for obj _over PoElementos.elements()
+    _loop
+	    l_collection << obj.source_collection.name
+	    l_id << obj.id
+	    l_ele << property_list.new()
+	    l_ele[l_collection] << l_id
+	    l_elementos_bd.add_last(l_ele)
+    _endloop
+    
+    _self.elementos_bd_lb << l_elementos_bd
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_element.guardar_elementos_visibles(PoElementos)
+## Metodo para guardar los id de los elementos de BD en la
+## lista PoElementos, estos elementos se guardan en el atributo
+## elementos_bd_gis.
+## PoElementos : rope con elementos del dataset GIS
+## Si se desea guardar algo diferente en este atributo,
+## este metodo se puede subclasear junto con el metodo
+## obtener_elementos_bd_gis. 
+	
+_local 	l_elementos_bd << rope.new()
+    _for obj _over PoElementos.elements()
+    _loop
+	    l_collection << obj.source_collection.name
+	    l_id << obj.id
+	    l_ele << property_list.new()
+	    l_ele[l_collection] << l_id
+	    l_elementos_bd.add_last(l_ele)
+    _endloop
+    
+    _self.elementos_modificados << l_elementos_bd
+    
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_element.indicadores(PoAreaDibujo,PoRegistro,PyCampoGeom,RoViewport,
+					 PbTomaEncuentaVP?,PbConLinea?,PbConPunta?,
+					 PnAncho,PnAlto,PnDist_x_p,PnDist_y_p,
+					 PbLineaAbajo?,PaDiseno)
+
+## Objetivo: Dibujar Lineas indicadores de Pozos 
+## Parametros de Entrada:
+##   PoAreaDibujo:   Area de dibujo
+##   PoRegistro:     Referencia a un registro de cualquier tabla.
+##   PycamboGeom:    Campo geometrico del registro de PoRegistro.
+##   RoViewport:     Referencia al viewport donde se hace el dibujo.
+##   PbTomaEncuentaVP?: Toma en cuenta el viewport para hacer
+##                      pliegues en la linea que apunta un objeto.
+##   PbConLinea?:    Linea que relaciona un estilo y un objeto.
+##   PbConPunta?:    Crea una punta de media fleca en un
+##                   extremo de la linea.
+##   PnAncho:        Ancho del objeto c_style_y_viewport_layout
+##   PnAlto:         Alto del objeto c_style_y_viewport_layout
+##   PnDist_x_p:     Indica la distribucion de los estilos en el eje X.
+##   PnDist_y_p:     Indica la distribucion de los estilos en el eje Y.
+##   PbLineaAbajo?:  Indica si la distribucion se hace hacia abajo.
+##   PaDiseno:       Arreglo con datos del diseno del estilo.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 5/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo
+
+_local LoLs          ## Estilo de una linea.
+_local LoAreaEstilo  ## Area definida para un objeto c_style_y_viewport_layout
+_local LoDibujo      ## Estilo que representa un dibujo dise/ado para un objeto.
+_local LoAreaViewport## Area del viewport
+_local LoCoordPozoGis## Coordenada del pozo en el GIS.
+_local LoCoordPozoVp ## Coordenada del pozo en el viewport
+_local LoCoordCentro ## Indica la coordenada central de un area.
+_local LoCoord_p2    ## Coordenada del estilo.
+
+        ## Se obtiene la transformacion de coordenadas del GIS a
+        ## coordenadas de pagina de Layout Designer.
+	LoTransGisVp<<RoViewport.transform
+
+	## Se obiene el area del viewport
+	LoAreaViewport<<RoViewport.bounds
+
+	## Se Obtiene la coordenada (GIS) del pozo.
+	LoCoordPozoGIS<<PoRegistro.perform(PyCampoGeom).coord
+
+	## Se transforma la coordenada del pozo a coordenadas de pagina
+	## de Layout Designer.
+	LoCoordPozoVp<<_self.TransformaCoordenada(PoAreaDibujo,LoCoordPozoGis,0.1,LoTransGisVp)
+
+	## Definir si la linea se dibuja hacia arriba o hacia abajo del viewport
+	_if PbConLinea?
+	_then
+		_if PbLineaAbajo?
+		_then
+			## Si la linea es hacia abajo.
+			LoCoord_p2<<coordinate(LoAreaViewport.xmin+PnDist_x_p,LoAreaViewport.ymin-PnDist_y_p)
+		_else
+			## Si la linea es hacia arriba.
+			LoCoord_p2<<coordinate(LoAreaViewport.xmin+PnDist_x_p,LoAreaViewport.ymax+PnDist_y_p)
+		_endif
+	_else
+		## si no se dibuja  la linea se asigna la misma coordenada del pozo.
+		LoCoord_p2<<LoCoordPozoVp
+	_endif
+	
+	## Crear un area para un estilo dise/ando
+	LoAreaEstilo<<bounding_box.new(0,0,PnAncho,PnAlto)
+	## Modificar el centro del area. a la coordenada donde deber ser colocado el estilo
+	LoAreaEstilo.centre<<LoCoord_p2
+	## Crear una instacia de un estilo y agregarlo a una pagina de Layout Designer
+	LoDibujo<<c_style_y_viewport_layout.new_with(:bounds,LoAreaEstilo)
+	LoDibujo.outline_style<<_unset
+	LoDibujo.fill_style<<_unset
+	_if PbTomaEncuentaVP?
+	_then
+		LoDibujo.usa_viewport<<"Si"
+	_else
+		LoDibujo.usa_viewport<<"No"
+	_endif
+	_if PbConLinea?
+	_then
+		LoDibujo.con_linea<<"Si"
+	_else
+		LoDibujo.con_linea<<"No"
+	_endif
+	_if PbConPunta?
+	_then
+		LoDibujo.con_punta<<"Si"
+	_else
+		LoDibujo.con_punta<<"No"
+	_endif
+	_if LoCoord_p2.x>=LoCoordPozoVp.x
+	_then
+		LoDibujo.derecho<<"Si"
+	_else
+		LoDibujo.derecho<<"No"
+	_endif
+	LoDibujo.con_punta<<"No"
+	LoDibujo.usa_viewport<<"Si"
+
+	
+#	LoDibujo.crea_figura(PaDiseno[1],
+#			     PaDiseno[2].as_symbol(),
+#			     PaDiseno[3],PaDiseno[4],PaDiseno[5],PaDiseno[6], PaDiseno[7],PaDiseno[8])
+	_if PaDiseno.size=3
+	_then
+		LoDibujo.crea_figura(PaDiseno[1],
+				     PaDiseno[2].as_symbol(),
+				     PaDiseno[3])
+	_elif PaDiseno.size=4
+	_then
+		LoDibujo.crea_figura(PaDiseno[1],
+				     PaDiseno[2].as_symbol(),
+				     PaDiseno[3],PaDiseno[4])
+	_elif PaDiseno.size=5
+	_then
+		LoDibujo.crea_figura(PaDiseno[1],
+				     PaDiseno[2].as_symbol(),
+				     PaDiseno[3],PaDiseno[4],PaDiseno[5])
+	_elif PaDiseno.size=6
+	_then
+		LoDibujo.crea_figura(PaDiseno[1],
+				     PaDiseno[2].as_symbol(),
+				     PaDiseno[3],PaDiseno[4],PaDiseno[5],PaDiseno[6])
+	_elif PaDiseno.size=7
+	_then
+		LoDibujo.crea_figura(PaDiseno[1],
+				     PaDiseno[2].as_symbol(),
+				     PaDiseno[3],PaDiseno[4],PaDiseno[5],PaDiseno[6],PaDiseno[7])
+	_elif PaDiseno.size=8
+	_then
+		LoDibujo.crea_figura(PaDiseno[1],
+				     PaDiseno[2].as_symbol(),
+				     PaDiseno[3],PaDiseno[4],PaDiseno[5],PaDiseno[6],PaDiseno[7],PaDiseno[8])
+		
+	_endif
+	LoDibujo.LoObjRel<<PoRegistro
+	LoDibujo.nIdObjRel<<PoRegistro.id
+	LoDibujo.LyCampoGeoObjRel<<PyCampoGeom
+	LoDibujo.oVp<<RoViewport
+	_self.layout_document.current_page.add_element(LoDibujo)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_element.obtener_elementos_bd_gis()
+## Metodo que obtiene los elementos del dataset GIS, los id de
+## estos elementos deben estar guardados en el atributo
+## elementos_bd_gis, regresa un rope.
+## Si se desea recuperar algo diferente en este atributo,
+## este metodo se puede subclasear junto con el metodo
+## guardar_elementos_bd_gis. 
+
+_local l_dataset << mit_manager.modelit_dataset
+_local l_elementos_bd << rope.new()
+
+    _if _self.elementos_bd_gis _isnt _unset _andif _self.elementos_bd_gis.size > 0
+    _then
+	    _for an_obj _over _self.elementos_bd_gis.elements()
+	    _loop
+		    _for a_key,ele _over an_obj.keys_and_elements()
+		    _loop
+			    _if l_dataset.collection(a_key) _isnt _unset _andif
+				(l_dato <<  l_dataset.collection(a_key).at(ele)) _isnt _unset 
+			    _then
+		    		    l_elementos_bd.add_last(l_dato)
+			    _endif
+		    _endloop
+	    _endloop		
+    _endif
+    
+    _return l_elementos_bd
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_element.obtener_elementos_bd_landbase()
+## Metodo que obtiene los elementos del dataset LANDBASE, los id de
+## estos elementos deben estar guardados en el atributo
+## elementos_bd_gis, regresa un rope.
+## Si se desea recuperar algo diferente en este atributo,
+## este metodo se puede subclasear junto con el metodo
+## guardar_elementos_bd_gis. 
+
+_local l_dataset << gis_program_manager.cached_dataset(:landbase)
+_local l_elementos_bd << rope.new()
+
+    _if _self.elementos_bd_lb _isnt _unset _andif _self.elementos_bd_lb.size > 0
+    _then
+	    _for an_obj _over _self.elementos_bd_lb.elements()
+	    _loop
+		    _for a_key,ele _over an_obj.keys_and_elements()
+		    _loop
+			    _if (l_dato << l_dataset.collection(a_key).at(ele)) _isnt _unset 
+			    _then
+		    		    l_elementos_bd.add_last(l_dato)
+			    _endif
+		    _endloop
+	    _endloop		
+    _endif
+    
+    _return l_elementos_bd
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_element.obtener_elementos_visibles()
+## Metodo que obtiene los elementos del dataset GIS, los id de
+## estos elementos deben estar guardados en el atributo
+## elementos_bd_gis, regresa un rope.
+## Si se desea recuperar algo diferente en este atributo,
+## este metodo se puede subclasear junto con el metodo
+## guardar_elementos_bd_gis. 
+
+_local l_dataset << mit_manager.modelit_dataset
+_local l_elementos_bd << rope.new()
+
+    _if _self.elementos_modificados _isnt _unset _andif _self.elementos_modificados.size > 0
+    _then
+	    _for an_obj _over _self.elementos_modificados.elements()
+	    _loop
+		    _for a_key,ele _over an_obj.keys_and_elements()
+		    _loop
+			    _if (l_dato << l_dataset.collection(a_key).at(ele)) _isnt _unset 
+			    _then
+		    		    l_elementos_bd.add_last(l_dato)
+			    _endif
+		    _endloop
+	    _endloop		
+    _endif
+    
+    _return l_elementos_bd
+    
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method layout_element.TransformaCoordenada(PoAreaDibujo,PoCoordenada,PfEScala,PoSegTransformacion)
+## Objetivo: Transformar la coordenada de acuerdo el tipo de
+##           canvas y al parametro para la segunda transformacion.
+## Parametros de Entrada:
+##     PoAreadibujo:    Canvas donde se dibuja el plano.
+##     PoCoordenada:    Coordenada que se dibujara dentro del canvas.
+##     PfEscala:        Escala de la transformacion la primer
+##                      tranformacion a la coordenada.
+##     PoSegTransformacion: Tranformacion que debe ser aplicada
+##                          a la coordenada.
+## Parametros de Salida: Ninguno
+## Regresa: LoCoordenada. Ya sea con el mismo valor o transformada
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LoCoord  ##Coordenada transformada segun el tipo de canvas.
+
+         ## Esta transformacion se aplica de acuerdo al tipo de
+         ## canvas. Cuando se envia a plotter o se imprime en algun
+         ## archivo (svg,jpg,acrobat) es necesario esta tranformacion.
+	_if PoAreaDibujo.is_kind_of?(canvas)
+	_then
+		LoCoord<<PoCoordenada.transformed(transform.new().scalexy(PfEScala,PfEScala))
+	_else
+		LoCoord<<PoCoordenada
+	_endif
+
+	_if PoSegTransformacion _isnt _unset
+	_then
+		LoCoord<<LoCoord.transformed(PoSegTransformacion)
+	_endif
+	
+
+	## Indica si la coordenada LoCoord esta dentro del "extent" de
+	## la pagina.
+#	_if _self.layout_page.bounds.surrounds_coord??(LoCoord).not 
+#	_then
+#		#write("Hay puntos fuera de los limites de la pagina.")
+#	_endif
+	>>LoCoord
+_endmethod
+$

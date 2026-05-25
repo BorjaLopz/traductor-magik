@@ -1,0 +1,710 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: 
+#           
+# Autor: dsanchez
+# Fecha de creacion: 29-03-2005
+#
+#
+#
+# ---------------- Revision History -----------------
+# Ult Mod.
+#  12/04/05 DSB - Se creo un metodo que verifica los elementos
+#                 minimos de un tramo
+#               - Se modifico el metodo que identifica la
+#                 seccion inicial aptartir del nodo origen
+#  11/04/05 DSB - Se cambio la excepcion por un write en el metodo
+#                 asigna_num_tramo(PsCve_Ruta, PsCve_tramo)
+#               - Se agrego la validacion cuando no se crea el
+#                 tramo regrese el valor por defecto
+#  05/04/05 DSB - Se agregaron los metodos para poder obtener
+#                 la cve de la ruta y tramo
+#  31/03/05 DSB - 12:50 Se cambio el nombre de la clase, se agrego la e
+#                 se cambio el nombre del metodo obten_objetos_tramo por
+#                 obten_elementos_tramo
+#  31/03/05 DSB - 10:45 Se obtiene el num de emplames y long del tramo
+#  30/03/05 DSB - Se hicieron algunas validaciones
+#                 * asigna_num_tramo
+
+# Reviso. 
+# dsb
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_tramo_fo_e)
+
+$
+def_slotted_exemplar(:c_tramo_fo_e,
+    {
+	   {:collObjetos,     _unset }, # objetos que comprende el tramo
+	   {:sNum_ruta,       _unset }, # numero de la ruta a la que pertenece el tramo
+	   {:sNum_tramo,      _unset }, # numero que identifica al tramo	   
+	   {:nNum_Empalmes,   _unset }, # Numero de emplames que contiene el tramo
+	   {:nLong_tramo,     _unset }, # Longitud del tramo
+	   {:oTramo,          _unset }, # Objeto tramo
+	   {:collSecciones,   _unset }, # Secciones que componen al tramo
+	   {:collEmpalmes,    _unset }, # Empalmes que compoenen al tramo
+	   {:oNodo_origen,    _unset }, # Nodo donde inicia el tramo
+	   {:oNodo_destino,   _unset }, # Nodo donde termina el tramo
+	   {:sValor_Defecto,  "vacio"}  # valor que regresa cuando no hay proyecto
+                                           # seleccionado	   	   
+
+    }
+)
+$
+c_tramo_fo_e.define_slot_access(:collObjetos,       :writable, :private)
+c_tramo_fo_e.define_slot_access(:sNum_Ruta,         :writable, :private)
+c_tramo_fo_e.define_slot_access(:sNum_Tramo,        :writable, :private)
+c_tramo_fo_e.define_slot_access(:nNum_Empalmes,     :writable, :private)
+c_tramo_fo_e.define_slot_access(:nLong_tramo,       :writable, :private)
+c_tramo_fo_e.define_slot_access(:oTramo,            :writable, :public)
+c_tramo_fo_e.define_slot_access(:collSecciones,     :writable, :private)
+c_tramo_fo_e.define_slot_access(:collEmpalmes,      :writable, :private)
+c_tramo_fo_e.define_slot_access(:oNodo_origen,      :writable, :private)
+c_tramo_fo_e.define_slot_access(:oNodo_destino,     :writable, :private)
+c_tramo_fo_e.define_slot_access(:sValor_defecto,    :writable, :private)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.version()
+
+## Objetivo: Este metodo se debe de modifiar cada vez que se
+## sube a VSS
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa: LA version y fecha de la ultima modificacion
+## Fecha de última modificación: 11/04/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+	
+   _return  "version 1.00.00.01 11/04/05 19:30 "
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.new()
+
+## Objetivo: regresar la coleccion de los objetos que comprende
+## el tramo
+## Parámetros de entrada:
+## 	Entero - RnRen : Numero de renglones que tendra celdas 
+## 	Entero - RnCol : Numero de columna que tendra celdas
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_celdas - Un objeto celdas
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+	
+   # Crea la coleccion que almacenara los objetos que comprende el tramo 
+   _self.collObjetos <<  _unset
+
+   _self.nNum_Empalmes << _unset
+   _self.oTramo        << _unset
+   _self.oNodo_origen  << _unset
+   _self.oNodo_destino << _unset
+   _self.nLong_Tramo   << _unset 
+   
+   _return _clone 
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.asigna_num_tramo(PsCve_Ruta, PsCve_tramo)
+
+## Objetivo: Asignar la informacion necesaria para identificar
+## un tramo
+## Parámetros de entrada:
+##   Cadena - PsCve_Ruta :  Identificador de la ruta a la que
+##              pertenece el tramo
+##   Cadena - PsCve_Tramo : Identificador del tramo al cual
+##              se desea acceder
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 29/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+## 11/04/05 DSB Se deshabilito la exceptcion y se puso un write
+## que indica que la ruta y tramo no se localizo
+	
+
+ _local LoPAF
+ _local LoPred
+
+   _self.sNum_ruta  << PsCve_Ruta.write_string
+   _self.sNum_tramo << PsCve_Tramo.write_string
+
+   LoPAF << smallWorld_product.pni_application()
+
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+   # Prepara todo lo relacionado para obtener los datos de TRAMO
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+   
+   # recupera los objetos Tramos
+   LoTabBD_Tramo   << LoPAF.database.collection(:gis, :user!_tramo)        
+
+   # Prepara el predicado para obtener el Tramo correspondiente
+   LoPredi_tramo << predicate.eq(:user!_num_ruta, PsCve_Ruta.write_string)
+   LoPredi_tramo << LoPredi_tramo.and(predicate.eq(:user!_num_tramo, PsCve_Tramo.write_string))
+
+   # Aplica el predicado para obtener el objeto tramo
+   _self.oTramo   << LoTabBD_Tramo.select(LoPredi_tramo).an_element()	
+
+   _if _self.oTramo _isnt _unset 
+   _then
+
+      #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      # Prepara todo lo relacionado para obtenr los datos de SECCIONES
+      #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -        
+   
+      # recupera los objetos secciones
+      LoTabBD_Seccion << LoPAF.database.collection(:gis, :sheath)
+   
+      # prepara el predicado para tomas las secciones que son del tramo
+      LoPred << predicate.eq(:user!_num_tramo, _self.oTramo.user!_num_tramo)
+   
+      # Aplica el predicado para obtener las secciones 
+      _self.collSecciones << LoTabBD_Seccion.select(LoPred)
+      
+      _self.prvObten_BD_Datos_Nodos(LoPAF)
+
+      _self.prvGenera_Lista_objetos()
+      
+   _else
+      write ("No se encontró el tramo (Ruta : " +
+         PsCve_Ruta.write_string + " tramo: " + PsCve_Tramo.write_string + ").")	   
+#      condition.raise(:warning, :string, "No se encontró el tramo (Ruta : " +
+#         PsCve_Ruta.write_string + " tramo " + PsCve_Tramo.write_string + ").")
+   _endif
+    
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tramo_fo_e.prvObten_BD_Datos_Nodos(RoPAF)
+
+## Objetivo: Obtener los datos del tramo de la Base de datos y
+## asignarlo al oTramo
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 29/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+
+ _local LoTabBD # almacena todos los objetos de la tabla a la que se desea acceder
+ _local LoPredicado # predicado para filtrar los objetos que se desean seleccionar
+	
+   # recupera los objetos Nodos
+   LoTabBD   << RoPAF.database.collection(:gis, :building)        
+
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+   # Prepara para obtener NODO ORIGEN
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+
+   LsValor <<  _self.oTramo.user!_clli_nodo_origen
+   
+   # Prepara el predicado para obtener el Nodo Origen
+   LoPredicado << predicate.eq(:user!_clli_nodo,LsValor)
+
+   # Aplica el predicado para obtener el objeto tramo
+    _self.oNodo_Origen   << LoTabBD.select(LoPredicado).an_element()	
+	
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+   # Prepara para obtener NODO DESTINO
+   #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+
+   LsValor <<  _self.oTramo.user!_clli_nodo_destino
+    
+   # Prepara el predicado para obtener el Nodo Origen
+   LoPredicado << predicate.eq(:user!_clli_nodo, LsValor)
+
+   # Aplica el predicado para obtener el objeto tramo
+    _self.oNodo_Destino   << LoTabBD.select(LoPredicado).an_element()
+    
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.num_empalmes
+
+## Objetivo: regresar el número de empalmes del tramo
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	Entero - Numero de empalmes del tramo
+## Fecha de última modificación: 31/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+   LbTodoBien << _self.prvValida_Tramo()
+
+   _if LbTodoBien _and _self.nNum_empalmes _isnt _unset  
+   _then
+         _return _self.nNum_empalmes
+   _else          
+#	 condition.raise(:warning, :string, "No se ha generado el dato. Esto es porque no se ha " +
+#	    " asignado el número de tramo.")
+	_return _self.sValor_Defecto
+   _endif 
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.long_tramo
+
+## Objetivo: regresar la longitud del tramo
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	Entero - Longitud del tramo
+## Fecha de última modificación: 31/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+   LbTodoBien << _self.prvValida_Tramo()
+
+   _if LbTodoBien _and _self.nLong_tramo _isnt _unset  
+   _then
+#       write(!print_float_precision!.default(4))	   
+#      _local LnValPresicion << !print_float_precision!.default(4)
+#
+#       !print_float_precision! << 11
+#             write(" LnValPresicion ", LnValPresicion)
+#       write(!print_float_precision!)
+#       write("precision")
+#      LnLong << _self.nLong_tramo.write_string
+#write(LnLOng)      
+#       !print_float_precision! << LnValPresicion
+#       write(!print_float_precision!)
+#      _return LnLong
+
+       _return 	_self.nLong_tramo   
+      
+   _else          
+#	condition.raise(:warning, :string, "No se ha generado la longitud del tramo. " +
+#	   "Esto es  porque no se ha asignado el número de tramo.")
+	_return _self.sValor_Defecto
+
+   _endif
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.nombre_ruta
+
+## Objetivo: regresar el nombre de la ruta
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	String - Nombre de la ruta a la que pertence el tramo
+## Fecha de última modificación: 31/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+
+   LbTodoBien << _self.prvValida_Tramo()	
+
+   _if LbTodoBien 
+   _then
+      _return _self.oTramo.user!_nom_ruta
+   _else
+      _return _self.sValor_Defecto	   
+   _endif
+
+   
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.nombre
+
+## Objetivo: Proporcionar el nombre del tramo 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	String - Nombre del tramo
+## Fecha de última modificación: 29/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+
+   LbTodoBien << _self.prvValida_Tramo()	
+
+   _if LbTodoBien 
+   _then
+      _return _self.oTramo.user!_nom_tramo	   	   
+   _else
+      _return _self.sValor_Defecto	   
+   _endif
+  
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.nodo_origen
+
+## Objetivo: Retorna el nodo donde inicia el tramo
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	Building - Nodo Origen
+## Fecha de última modificación: 29/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+   LbTodoBien << _self.prvValida_Tramo()	
+
+   _if LbTodoBien 
+   _then
+      _return _self.oNodo_origen	   
+   _else
+      _return _self.sValor_Defecto	   
+   _endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.nodo_destino
+## Objetivo: Retorna el nodo donde inicia el tramo
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	Building - Nodo Origen
+## Fecha de última modificación: 29/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+   LbTodoBien << _self.prvValida_Tramo()	
+
+   _if LbTodoBien 
+   _then
+      _return _self.oNodo_destino
+   _else
+      _return _self.sValor_Defecto	   
+   _endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tramo_fo_e.prvObten_Seccion_Inicial()
+
+## Objetivo: Obtener la seccion inicial del tramo que se esta pidiendo
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	sheath - Seccion inicial del tramo
+## Fecha de última modificación: 30/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+##   12/04/05 DSB Se valido que el nodo origen exista
+
+ _local LoOrigen     # Nodo origen
+ _local LoSecInicial # Seccion inicial del tramo
+
+   LoSecInicial << _unset 
+   LoOrigen << _self.nodo_origen
+
+
+   _if LoOrigen _isnt _unset 
+   _then 
+      # Predicado que se aplicará a la tabla sheath para saber la
+      # seccion con la que inicia el tramo
+      LoPred << predicate.interacts(:route, LoOrigen.location)                                       
+      LoPred << LoPred.and(predicate.eq(:user!_num_ruta, _self.oTramo.user!_num_ruta))                   
+      LoPred << LoPred.and(predicate.eq(:user!_num_tramo, _self.oTramo.user!_num_tramo))                 
+                                                                                                      
+                                                                                                      
+      LoSecInicial << _self.collSecciones.select(LoPred)                                                 
+                                                                                                      
+      _if LoSecInicial.size <> 1                                                                         
+      _then                                                                                              
+	      write( "Hay problema con la sección inicial del tramo. (Tamaño <> 1)") 
+         _return _unset                                                                                
+      _else                                                                                              
+         _return LoSecInicial.an_element()	                                                             
+      _endif                                                                                             
+
+   _else
+      write("No hay nodo origen")
+      _return _unset 
+   _endif 
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tramo_fo_e.test()
+	## 
+	## 
+	nodo<<paf.plugin(:map_plugin).current_map.current_selection.rwo_set().an_element()
+	empalmes<<rope.new()
+
+	sec<<_unset 
+#	pins<<nodo.get_all_connected_bundle_pins()
+#	_for opin _over pins.fast_elements()
+#	_loop
+#		write(opin)
+#		_if opin.owner.user!_num_ruta="97"
+#		_then
+#			sec<<opin.owner
+#			_leave 
+#		_endif 
+#	_endloop
+
+	sec << _self.prvObten_Seccion_Inicial()
+	_loop
+		_if sec _isnt _unset 
+		_then
+			emp<<sec.getempalmes(2)
+			_if emp.size>0
+			_then
+				empalmes.add(emp[1])
+				secs<<emp[1].public_get_io_pins()
+				_if secs.size=2 
+				_then
+					sec<<secs[2][1].sheath
+					empalmes.add(sec)
+				_else
+					sec<<_unset
+				_endif
+			_else
+				_leave
+			_endif
+			
+		_else
+			_leave 
+		_endif
+	_endloop
+	>>empalmes
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tramo_fo_e.prvGenera_Lista_objetos()
+
+## Objetivo: Genera la lista de los objetos que comprenden al
+## tramo y la asigna a collObjetos
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 30/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+
+ _local LnPos_Empalme_Salida << 2
+ _local LnPos_Seccion_Salida << 2
+ _local LoSec  # seccion con que se trabajara
+ _local LoEmp  # empalme que se esta trabajando
+ _local LoLong_tramo # Longitud del tramo
+
+
+   _self.collObjetos <<  rope.new()
+   _self.nNum_empalmes << 0
+   LnLong_tramo << 0
+
+   LbHayLoNecesario << _self.prvVerifica_Existencia_Minima_Tramo()
+
+   _if LbHayLoNecesario 
+   _then 	
+	
+      # agrega el nodo con el cual inicia el tramo	
+      _self.collObjetos.add(_self.nodo_origen)   	
+
+      # Sección que sale del nodo inicial 
+      LoSec << _self.prvObten_Seccion_Inicial()
+
+      # agrega la sección inicial
+      _self.collObjetos.add(LoSec)
+
+      _loop
+         _if LoSec _isnt _unset 
+         _then
+             # recupera el empalme de salida de la seccion     
+             LoEmp << LoSec.getEmpalmes(LnPos_Empalme_Salida)
+         
+	          _if LoEmp.size > 0 
+	          _then
+	             _self.collObjetos.add(LoEmp[1])
+	             _self.nNum_Empalmes << _self.nNum_Empalmes + 1
+
+	             # Secciones que entran o salen del empalme
+	             LoSecciones << LoEmp[1].public_get_io_pins()
+	    
+                _if LoSecciones.size = 2 
+	             _then
+	                # Seccion que sale del empalme	    
+ 	                LoSec << LoSecciones[ LnPos_Seccion_Salida][1].sheath
+
+		             LnLong_Tramo << LnLong_Tramo + LoSec.calculated_fiber_length.as_float
+	       
+	                _self.collObjetos.add(LoSec)
+	             _else
+	                LoSec << _unset
+	             _endif
+	          _else
+	             _leave
+             _endif
+         _else
+            _leave 
+         _endif
+      _endloop
+	
+      # agrega el nodo con el cual inicia el tramo	
+      _self.collObjetos.add(_self.nodo_destino)
+      _self.nLong_Tramo << LnLong_Tramo
+      
+   _endif 
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tramo_fo_e.prvVerifica_Existencia_Minima_Tramo()
+
+## Objetivo: verificar que el tramo con el cual se esta trabajando tenga los 
+##           elementos (objetos) minimos necesarios
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+##     booleano - true : Cuenta al menos con:
+##                         Nodo Origen
+##                         Nodo Destino
+##                         Una seccion
+##              - falso: Falta algun elemento que se condsidera como escencial
+##                       ver la parte verdad 
+## Fecha de última modificación: 12/04/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+   LoSecInicial <<  _self.prvObten_Seccion_Inicial()
+
+   _if  _self.nodo_origen  _isnt _unset  _and  
+        _self.nodo_destino _isnt _unset  _and 
+        LoSecInicial _isnt _unset 
+   _then 
+      _return _true
+   _else    
+      _return _false 
+   _endif         
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.obten_elementos_tramo
+
+## Objetivo: Obtener la coleccion de objetos que comprende el tramo
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	coleccion - collObjetos
+## Fecha de última modificación: 30/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+
+   LbTodoBien << _self.prvValida_Tramo()	
+
+   _if LbTodoBien  
+   _then
+      _if _self.collObjetos _is _unset  
+      _then
+         _self.prvGenera_Lista_objetos()		   
+      _endif
+      _return _self.collObjetos
+      
+   _else
+      _return _self.sValor_Defecto
+      
+   _endif
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.sNum_Ruta
+
+## Objetivo: regresar el numero de la ruta selleccionada
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##  string - Numero del tramo
+## Fecha de última modificación: 11/04/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación	
+
+	_return .sNum_Ruta
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.sNum_Tramo
+
+## Objetivo: regresar el numero del tramo selleccionado
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##  string - Numero del tramo
+## Fecha de última modificación: 11/04/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación	
+
+	_return .sNum_Tramo.write_string
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_tramo_fo_e.prvValida_tramo()
+
+## Objetivo: validar que se tenga un registro, si no existe
+## lanza una excepcion
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   boleano : true todo se encuentra bien
+##             falso hay un error	
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+    _if _self.oTramo _is _unset 
+   _then
+      _return _false 
+   _else
+      _return _true 
+   _endif	
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_fo_e.existe?
+
+## Objetivo: regresa si se encontro el dto que se solicito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   boleano : true  SI existe el dto
+##             falsp NO existe el dto	
+## Fecha de última modificación:
+##   07/05/05 DSB Se creo
+
+	_return _self.prvValida_tramo()
+	
+_endmethod
+$

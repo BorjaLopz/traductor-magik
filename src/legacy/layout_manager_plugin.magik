@@ -1,0 +1,988 @@
+_package sw
+$
+layout_manager_plugin.define_pseudo_slot(:barra_desp, _unset, :writable)
+$
+layout_manager_plugin.define_shared_constant(:drive, "c:", _false)
+$
+layout_manager_plugin.define_shared_constant(:filtro, "*.pdf", _false)
+$
+layout_manager_plugin.define_pseudo_slot(:gtrail, _unset , :write, :public)
+$
+layout_manager_plugin.def_property( :masters?,
+				    :type, :boolean,
+				    :default_value, _true,
+				    :readable?, _true,
+				    :writable?, _true,
+				    :description, "Specifies whether the 'Masters' category appears in the Outlook Bar" )
+$
+#probar de caja.
+#
+##_pragma(classify_level=basic, topic={plotting})
+##_method layout_manager_plugin.build_gui ( container )
+##	## 
+##	## Build the GUI in CONTAINER
+##	##
+##	# (22/08/24 des_aaron) : comparada con sw526
+##	#
+##	_if .outlook_bar_initialised? _is _true 
+##	_then 
+##		_return 
+##	_endif
+##
+##	.outlook_bar.add_category ( :pages,
+##				    :move_sub_categories_allowed?, _true,
+##				    :remove_sub_categories_allowed?, _true,
+##				    :caption,  _self.message ( :pages ) )
+##
+##	#
+##	# Steve Hall (Ten Sails Consulting) 10/03/06
+##	# Incluir 'masters' o no dependiendo del valor
+##	# de la propiedad 'masters?'.
+##	#
+##	_if _self.masters?
+##	_then 
+##		.outlook_bar.add_category ( :masters,:caption, _self.message ( :masters ) )
+##	_endif 
+##	
+##	.outlook_bar.add_event_handler ( :sub_category_selected, _self, :page_selected|()| )
+##	.outlook_bar.add_event_handler ( :sub_category_moved,    _self, :page_moved|()|    )
+##	.outlook_bar.add_event_handler ( :sub_category_removed,  _self, :page_removed|()|   )
+##
+##	.outlook_bar_initialised? << _true
+##	
+##	>> .outlook_bar.build_gui ( container, :width, 150 )
+##	
+##_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.check_actions ()
+	## se agregan acciones para  /publicar centralziar planos
+	## 
+	# (22/08/24 des_aaron) : sw 526
+	have_layout?   << ( current_layout << _self.current_document ) _isnt _unset
+	have_filename? << have_layout? _andif current_layout.filename _isnt _unset
+
+	_self.action ( :save ).enabled? << have_layout?
+	_self.action ( :save_as ).enabled? << have_layout?
+	_self.action ( :close ).enabled? << have_layout?
+	_self.action ( :page_setup ).enabled? << have_layout?
+	_self.action ( :properties ).enabled? << have_layout?
+	_self.action ( :plot ).enabled? << have_layout?
+	_self.action ( :select_template ).items << _self.get_template_names
+	_self.action ( :publica_a_web ).enabled? << have_layout? _andif _self.publicar_plano_a_web?	
+	_self.action ( :centralizar_plano ).enabled? << _self.habilita_centralizar_plano?
+	
+_endmethod
+$
+#_pragma(classify_level=restricted, topic={plugins})
+#_method layout_manager_plugin.close()
+#	## (12/08/28 jtlelo) : Al dar clic en cancelar en
+#	## progress_indicator_dialog cerramos layout_manager_plugin
+#	## y layout_designer
+#	
+#	_if .barra_desp _isnt _unset 
+#	_then
+#		.barra_desp.close()
+#	_endif
+#	_self.close_layout()
+#	_self.application.close()
+#	
+#_endmethod
+#$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.init_actions()
+	## 
+	## Define this plugin's actions.
+	##
+
+	# (22/08/24 des_aaron) : sw 526
+	_super.init_actions ()
+	
+	# New/Open/Close/Delete
+	_self.add_action( sw_action.new( :new,
+					 :engine, _self,
+					 :help_id, 30100,
+					 :action_message, :new_layout|()|,
+					 :image, {:new_layout, _self.module_name}))
+
+	_self.add_action( sw_action.new( :new_existing,
+					 :engine, _self,
+					 :help_id, 30100,
+					 :action_message, :new_existing|()|,
+					 :image, {:new_layout, _self.module_name}))
+					 
+	_self.add_action( sw_action.new( :open,
+					 :engine, _self,
+					 :help_id, 30105,
+					 :action_message, :open_layout|()|,
+					 :image, {:open_layout, _self.module_name}))
+
+	_self.add_action( sw_action.new( :save,
+					 :engine, _self,
+					 :help_id, 30125,
+					 :action_message, :save_layout|()|,
+					 :image, {:save, _self.module_name}))
+
+	_self.add_action( sw_action.new( :save_as,
+					 :engine, _self,
+					 :help_id, 30125,
+					 :action_message, :save_as_layout|()|,
+					 :image, {:save, _self.module_name}))
+
+	# We do not support deleting files from disk at this release,
+	# just use the Windows Explorer or another tool to do so (same
+	# as other Windows apps)
+	#_self.add_action( sw_action.new( :delete,
+	#				 :engine, _self,
+	#				 :action_message, :delete_layout|()|,
+	#				 :image, {:delete, _self.module_name}))
+
+	_self.add_action( sw_action.new ( :close,
+					  :help_id, 30125,
+					  :engine, _self,
+					  :action_message, :close_layout|()|,
+					  :image, {:close_pane, :ui_resources }))
+
+	_self.add_action( sw_action.new( :exit,
+					 :engine, _self.framework,
+					 :action_message, :close|()|,
+					 :help_id, 14000))
+
+	# Page Setup
+	_self.add_action ( sw_action.new( :page_setup,
+					  :help_id, 30110,
+					  :engine, _self,
+					  :action_message, :page_setup|()|,
+					  :image, {:page_setup, _self.module_name}))
+
+	# Page Properties
+	_self.add_action ( sw_action.new( :properties,
+					  :help_id, 30115,
+					  :engine, _self,
+					  :action_message, :properties|()|,
+					  :image, {:properties, :ui_resources}))
+
+
+	# Layout selection action
+	_self.add_action ( sw_action.new ( :layout_selection,
+					   :engine, _self,
+					   :help_id, 30000,
+					   :value_change_message, :activate_layout|()|,
+					   :toolbar_control, :image_radio_set,
+					   :menubar_control, :radio_set ) )
+
+	# Actual Plotting 
+	_self.add_action ( sw_action.new( :plot,
+					  :engine, _self,
+					  :help_id, 30700,
+					  :action_message, :plot_layout|()|,
+					  :image, {:print, :ui_resources}))
+	
+	_self.add_action ( sw_action.new( :plot_setup,
+					  :engine, _self,
+					  :help_id, 30700,
+					  :action_message, :plot_setup_layout|()|,
+					  :image, {:print, :ui_resources }))
+
+	# Preview in Outlook bar?
+	_self.add_action ( sw_action.new ( :preview,
+					   :engine, _self,
+					   :value, _true,
+					   :help_id, 30230,
+					   :menubar_control, :toggle_item,
+					   :toolbar_control, :image_toggle_item ) )
+
+	# Add Custom Properties Action
+	_self.add_action ( sw_action.new ( :custom_properties,
+					   :engine, _self,
+					   :help_id, 30120,
+					   :action_message, :activate_custom_properties_dialog|()|,
+					   :image, { :properties, :ui_resources } ) )
+
+
+	_self.add_action ( sw_action.new ( :select_template,
+					   :engine, _self,
+					   :enabled?, _true,
+					   #:help_id, 30460,
+					   :toolbar_control, { :combo_box_item, :min_width, 80 },
+					   :items, _self.get_template_names,
+					   :value_change_message, :select_template|()| ) )
+	
+
+	# Add actions from outlook_bar_component
+	show_hide_action << .outlook_bar.action ( :show_hide ).copy(:show_hide,
+								    :help_id, 30235,
+								    :caption, _self.message(:show_hide),
+								    :tooltip, _self.message(:show_hide_tooltip),
+								    :short_help_text, _self.message(:show_hide_sh ) )
+	_self.add_action ( show_hide_action )
+
+
+	_self.add_action ( sw_action.new ( :quick_pdf,
+					   :engine, _self,
+					   :image, { :pdf, :swift_view_application },
+					   :action_message, :|pdf_plot()| ) )
+
+	## Descripcion: Esta accion debe etiquetar dos objetos layout element
+	## que esten seleccionados y que hacen referencia a pozos.
+	
+	_self.add_action ( sw_action.new ( :plano_etiqueta_2pozos_action,
+					   :engine, _self,
+					   :action_message, :plano_etiqueta_2pozos|()|))
+
+	
+	## Descripcion: Esta accion debe hace un acercamiento a un
+	## punto senalado en un viewport. El acercamiento se muestra en
+	## un viewport que se agrega a un layout_page
+	
+	_self.add_action ( sw_action.new ( :zoom_to_action,
+					   :engine, _self,
+					   :action_message, :zoom_to|()|))
+	
+	_self.add_action ( sw_action.new(:actualiza_sellos,
+					 :image, {:query, :ui_resources},
+					 :engine,   _self,
+					 :enabled?, _true,
+					## :toolbar_control, :button_item,  #volver a habilitar como boton?
+					 :action_message, :actualiza_sellos|()|))
+	
+	
+	_self.add_action ( sw_action.new(:exporta_shapefile_desde_plano,
+					  :engine,   _self,
+					  :enabled?, _true,
+					  :toolbar_control, :button_item,
+					  :action_message, :exporta_shapefile_desde_plano|()|))
+
+	_self.add_action ( sw_action.new(:exporta_shapefile_desde_vista,
+					  :engine,   _self,
+					  :enabled?, _true,
+					  :toolbar_control, :button_item,
+					  :action_message, :exporta_shapefile_desde_vista|()|))
+
+	_self.add_action( sw_action.new( :publica_a_web,
+					 :engine, _self,
+					 :action_message, :publica_a_web|()|))
+	
+	_self.add_action( sw_action.new( :centralizar_plano,
+					 :engine, _self,
+					 :action_message, :centralizar_plano|()|))
+	
+	# Add proxy actions for layout_gui, layout_view and trail
+
+	## Actions from layout_gui_framework are prefixed with "layout_gui_"
+	_self.build_proxy_actions ( layout_gui_framework, "layout_gui_" )
+
+	## Actions from layout_view are prefixed with "layout_view_"
+	_self.build_proxy_actions ( layout_view, "layout_view_" )
+
+	## Actions from map_trail are prefixed with "trail_"
+	_self.build_proxy_actions ( map_trail, "trail_" )
+	
+_endmethod
+$
+# (22/08/24 des_aaron) : dejar el de caja , solo setraduce un mensaje.
+##_pragma(classify_level=restricted, topic={plugins})
+##_method layout_manager_plugin.plot_setup_layout()
+##	## 
+##	## First call the plot_setup thing and the plot the layout
+##	## with the given parameters
+##	##
+##
+##	f << _self.application.top_frame 
+##	_if ( plot_dialog << _self.get_dialog ( :plot_dialog ) ) _is _unset 
+##	_then
+##
+##                # Autor:                          vnguzman
+##                # ID de requerimiento:            falla 882699
+##                # Fecha de modificación:          Jueves 9 de Marzo de 2006
+##                # Descripción de la modificación: Cambio el siguiente mensaje
+##
+##		#plot_dialog << dialog_frame.new_with_parent ( f, "Print" )
+##		plot_dialog << dialog_frame.new_with_parent ( f, _self.message(:plot) )
+##
+##		#fin de la modificación
+##		
+##		p << layout_plot_menu.new ()
+##		p.activate_in ( plot_dialog )
+##		p.handler  << _self 
+##		p.selector << :plot_device_selected|()|
+##		plot_dialog.modality << :primary_modal
+##		plot_dialog.resizable? << _false
+##
+##		_self.cache_dialog ( :plot_dialog, plot_dialog )
+##	_endif
+##
+##	plot_dialog.activate ()
+##	plot_dialog.position << f.screen_position + pixel_coordinate ( 40, 40 )
+##	
+##_endmethod
+$
+#probar de caja.
+##_pragma(classify_level=basic, topic={plotting})
+##_method layout_manager_plugin.rebuild_outlook_bar ()
+##	##
+##	## Empty and recreate the the outlook bar based on the pages of
+##	## the current layout.
+##	##
+##	
+##	_if .outlook_bar_initialised? _isnt _true 
+##	_then
+##		_return 
+##	_endif
+##
+##	#
+##	# Steve Hall (Ten Sails Consulting) 10/03/06
+##	# Utilizar propiedad 'masters?' para saber
+##	# si hay que rehacer esta categoría o no.
+##	#
+##	_if _self.masters?
+##	_then 
+##		.outlook_bar.empty_category ( :masters )
+##	_endif
+##	
+##	.outlook_bar.empty_category ( :pages )	
+##	.cached_number_of_pages << _unset
+##	
+##	_if ( doc << _self.current_document ) _isnt _unset 
+##	_then
+##		a_handler << handler.new ( _self, :draw_page|()| )
+##
+##		_if _self.masters?
+##		_then 
+##			_for a_page, name _over doc.master_pages ()
+##			_loop
+##				# Get the master series page here 
+##				.outlook_bar.add_sub_category (
+##						:masters, name, 
+##						:caption, _self.message ( name ),
+##						:draw_selection?, _false,
+##						:custom_renderer, a_handler )
+##			_endloop 
+##		_endif 
+##		_local i << 0
+##		_for page _over doc.pages ()
+##		_loop
+##			i +<< 1
+##
+##			.outlook_bar.add_sub_category ( :pages, i,
+##							:caption, write_string ( _self.message(:page),
+##										 " ",
+##										 i.write_string ),
+##							:draw_selection?, _false,
+##							:custom_renderer, a_handler ) 
+##			
+##		_endloop
+##
+##		_if _self.masters?
+##		_then 
+##		 	 .outlook_bar.refresh ( :masters )
+##		_endif 
+##		        .outlook_bar.refresh ( :pages )
+##		
+##		current_page_nr << doc.current_page_nr
+##
+##		.outlook_bar.set_sub_category ( :pages, current_page_nr, _unset , _true  )
+##		.cached_number_of_pages << doc.number_of_pages ()
+##	_endif
+##
+##	.outlook_bar.refresh ( :pages )
+##	
+##_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.save_layout ()
+	## 
+	## Saves the current layout to the same file it was loaded
+	## from. Happens only when the layout has a filename, else it
+	## will default to the save_as_layout().
+	##
+	
+	_if ( a_layout << _self.current_document ) _is _unset 
+	_then
+		condition.raise ( :user_error, :string, _self.message(:no_current_layout) )
+	_endif
+
+	_if ( filename << a_layout.filename ) _isnt _unset
+	_then
+		LoAns << _self.show_alert("Esta acción actualiza el archivo de configuración del plano previo. ¿Continuar con la operación? ", "SI", "NO")
+
+                _if LoAns #_andif _self.int!save(a_layout,filename)
+		_then
+			a_layout.user!_guardar_plano()
+			_return _true
+                _endif  		     
+	_else
+		mh << message_handler ( :layout_document )
+		tipo_plano << a_layout.get_attribute(mh.human_string (:user!_tipo_plano).as_symbol())
+		_if tipo_plano _isnt _unset
+		_then
+			#
+			# Steve Hall (Ten Sails Consulting) 01/03/06
+			# Guardar el layout relacionado con el diseño
+			# utilizando user!_guardar_plano.
+			#
+			a_layout.user!_guardar_plano()
+                        _return _true 
+		_endif
+	_endif
+	
+	>> _self.save_as_layout ()
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_manager_plugin.units
+	## 
+	##
+
+	>> _if (LvUnit << _self.framework.application_coordinate_system_unit) _isnt _unset 
+	   _then
+		   >> unit_system.new( LvUnit )
+	   _endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.abrir_centralizar_plano()
+	## 
+	## plano
+
+	cp << user:c_centraliza_planos.new()
+	r << cp.centralizar_planos()
+	_if r _isnt _unset 
+	_then
+		_self.show_alert(r);
+	_else
+		_self.show_alert("Existe un error con el centralizado de planos, favor de reportarlo con su administrador.")
+	_endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.actualiza_sellos()
+## 
+## Metodo para refrescar los sellos del Plano.
+## vbluna (31-julio-2006) 
+##
+	
+_for page _over _self.current_document.pages()
+_loop
+	_for elemento _over page.elements.fast_elements()
+	_loop
+		_if elemento.is_kind_of?(layout_element)
+		_then
+			# (2011-03-22 Aarón Hernández Ramírez, SIGMATAO) : SE ELIMINA
+			# TRY PUES IMPIDE ENCONTRAR FALLAS EN LOS SELLOS.
+#			_try _with LoError
+			     
+			     _if  elemento.responds_to?(:actualiza_datos|()|)
+			     _then
+			
+				     _if elemento.window _isnt _unset 
+				     _then			
+					     elemento.actualiza_datos()					     
+				     _endif
+
+			     _endif
+			     
+#			_when error, does_not_understand
+#			      _continue
+			      
+#			_endtry
+		_endif
+	_endloop
+_endloop
+
+_self.action(:layout_view_refresh).execute_action()
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.centralizar_plano()
+	## 
+	## 
+#	browse_dialog << file_dialog.new(_self,:|abrir_centralizar_plano()|,_unset, :title, "Abrir")				     
+#	browse_dialog.directory << _self.drive
+#	browse_dialog.filter << _self.filtro
+#	browse_dialog.activate()
+	_self.abrir_centralizar_plano()
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.exporta_shapefile_desde_plano()
+	## 
+	## 
+
+        exp_plugin << c_exportar_shape.new()
+	exp_plugin.prepara_desde_plano()
+        exp_plugin.activate()
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.exporta_shapefile_desde_vista()
+	## 
+	## 
+
+        exp_plugin << c_exportar_shape.new()
+	exp_plugin.prepara_desde_vista()
+        exp_plugin.open()
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.habilita_centralizar_plano?
+	## 
+	##
+
+	_local LoApp           << smallworld_product.pni_application()
+	_local LoPlugin
+	_local LoModuloActivo? << _false
+	_local LoDiseno
+	_local LoDisenoActivo?
+	_local LoSeleccion
+
+	# (17/07/11 bernardoa) : Validamos que el modulo de
+	# comparticion este activado
+	LoPlugin << LoApp.plugin(:admin_solicitud)
+
+	# Identificamos la presencia del plugin admin_solicitud
+	_if LoPlugin _isnt _unset
+	_then
+		LoModuloActivo? << LoPlugin.dialogs[:admin_solicitud_gui] _isnt _unset
+	_endif
+
+	# Identificamos si tenemos un diseno activo
+	LoDiseno        << swg_dsn_admin_engine.active_design
+	LoDisenoActivo? << LoDiseno _isnt _unset
+
+	# Validamos que el modulo este activado y que no tengamos un
+	# diseno activo
+	_if LoModuloActivo? _andif
+	    _not LoDisenoActivo? 
+	_then
+		# Si tenemos el modulo de Comparticion y un diseno activo,
+		# evitamos que se pueda usar el centralizado
+		_if LoDisenoActivo?
+		_then
+			_return _false
+		_else
+			# Validamos si se detectaron estructuras faltantes para la trayectoria
+			LoSeleccion << LoPlugin.estructuras_faltantes.
+				       select(predicate.eq(:class_name, :extdb_adhoc_record))
+			# Si existe al menos un registro MySQL en el slot significa que
+			# tenemos estructuras faltantes
+			_if LoSeleccion.size > 0
+			_then
+				_return _false
+			_else
+				_return _true 
+			_endif			
+		_endif
+	_else
+		# Se valida la presencia de un documento actual
+		_if _self.current_document _is _unset 
+		_then
+			_return _false 
+		_endif
+		
+		_if LoDisenoActivo?
+		_then
+			# Obtenemos el estado del diseno
+			LoEstado << LoDiseno.status
+
+			# Lo comparamos con los estados permitidos para centralizado
+			_if LoEstado = "Conciliado"   _orif
+			    LoEstado = "Construcción" _orif
+			# (17/08/22 bernardoa) : Tambien permitiremos los diseños
+			# Secundarios con estado Existente
+			    (LoDiseno.tipo_diseno _is :secundaria _andif
+			     LoEstado = "Existente")
+			_then
+				_return _true 
+			_endif
+		_endif
+	_endif	
+	_return _false
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.obten_info_plano()
+	## se obtienen los atributos del viewport principal.
+	##
+	_local LoElementos << _self.current_document.current_page.elements
+
+	_for el _over LoElementos.elements()
+	_loop
+		_if el.responds_to?(:ace_name)
+		_then
+			_return el.attributes
+		_endif
+	_endloop
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.obten_viewport_ep()
+	## metodo para obtener el viewport principal de cada plano de
+	## estudio de poblacion
+	##
+	_if _self.current_document _isnt _unset
+	_then
+		_local LoElementos << _self.current_document.current_page.elements
+		
+		_for el _over LoElementos.elements()
+		_loop
+			_if el.responds_to?(:ace_name)
+			_then
+				_return el
+			_endif
+		_endloop
+	_endif
+
+_endmethod
+$
+#_pragma(classify_level=restricted, topic={plugins})
+#_method layout_manager_plugin.open_layout ( _optional filename )
+#	## 
+#	## Action method for the :open_layout action.
+#	##
+#	#
+#	# Steve Hall (Ten Sails Spain) 21/06/04
+#	# Permite especificar un nombre de archivo,
+#	# en cuyo caso no se pregunta.
+#	#
+#
+#	top << _self.top_frame.actual
+#
+#	dir << _self.get_document_directory
+#
+#	_if filename _is _unset
+#	_then 
+#		filename << top.file_open ( dir, "",
+#				    {
+#					    _self.message ( :template_filename ), "*.xml",
+#					    _self.message ( :all_files ), "*.*" 
+#				    },
+#				    _false, _self.message ( :select_template ), _false )
+#	_endif 
+#	_if filename _is _unset _orif 
+#	    filename.size _is 0
+#	_then
+#		_return 
+#	_endif
+#
+#	( fname, extension ) << system.split_filename ( filename )
+#	_if extension _is _unset _orif extension.size _is 0
+#	_then
+#		filename << write_string ( fname, ".xml" )
+#	_endif
+#	
+#	( fname, path_name ) << system.pathname_components ( filename )
+#	_self.document_directory << path_name
+#	
+#	# Load the layout
+#	_try _with cond  
+#	     new_layout << layout_document.new_from_xml ( filename )
+#	_when error
+#	_endtry
+#
+#	_if new_layout _is _unset 
+#	_then
+#		condition.raise ( :user_error, :string, _self.message ( :invalid_template ) )
+#		_return
+#	_endif 
+#
+#	# And manage the layout
+#	a_view << layout_view.new ( _unset, _self )
+#	a_view.document << new_layout
+#
+#	_self.manage_layout ( a_view )
+#
+#_endmethod
+#$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.plano_etiqueta_2pozos()
+## Objetivo: Crear una linea entre dos estilos que esten
+##           agregados en una pagina de layout designer y que hagan
+##           referencia a un pozo.
+## Parametros de Entrada: Ninguno.
+## Parametros de Salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 
+## Autor de la modificacion:24/Nov./2004
+## Descripcion de la modificacion: Metodo nuevo
+_local LoLayoutDesigner   ## Referencia a la aplicacion de layout designer.
+_local LoApp              ## Referencia a la aplicacion de pni.
+_local LoEstiloDePozo     ## Referenica a un estilo que hace referencia a un pozo.
+
+        ## Obtener la aplicacion pni.
+	LoApp<<smallworld_product.pni_application()
+	
+	## Obtener la aplicacion layout designer.
+	LoLayoutDesigner<<LoApp.plugin(:layout_plugin).start_layout_designer().plugin(:layout_manager)
+	_if LoLayoutDesigner _isnt _unset 
+	_then
+		## Elegir el objero que esta agregado en el plano y que realiza
+		## el dibujo del plano. 
+		LoEstiloDePozo<<LoLayoutDesigner.current_document.current_page.all_elements_of(c_geom_set_layout).an_element()
+		write(LoEstiloDePozo.class_name)
+		_if LoEstiloDePozo _isnt _unset
+		_then
+			LoEstiloDePozo.dibuja_linea_entre_pozos()
+		_else
+			write("No hay que hacer")
+		_endif
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.progress_indicator_dialog(Lotitulo, LoLabel, Loinfo)
+	## Lotitulo: titulo de la barra de progreso
+	## LoLabel: Etiqueta de la barra
+	## Loinfo: Tarea ejecutandos
+	# (12/08/28 jtlelo) : declaracion de progress_indicator_dialog
+	.barra_desp << progress_indicator_dialog.open_dialog ( _self.top_frame, Lotitulo,
+								:interrupt_handler, handler.new (_self, :close|()|),
+								:interrupt_message, "Cancelar",
+								:info_string, Loinfo,
+								:bar_label, LoLabel,
+								:image, { :help, _unset } )
+		
+	.barra_desp.top_frame.position << pixel_coordinate.new(500, 500)
+
+		
+	_return .barra_desp
+	
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.publica_a_web ()
+
+	_self.busy? << _true
+	_local LoEngine << user:c_publica_archivo_a_web_engine.new()
+	_local LodtsEP << gis_program_manager.cached_dataset(:estudio_poblacion)
+	_local LoTabLimNCO << LodtsEP.collection(:user!_limite_nco_ftth)
+	
+	_if LoEngine.existe_repositorio_temporal? _is _false _orif
+	    LoEngine.existe_registro_de_servidor?(1) _is _false
+	_then
+		msg << "Error: No Existe Repositorio para publicar archivos a SIGC11WEB"+%newline
+		msg +<< "O no tiene permisos. Consulte a su Administrador"
+		_self.show_alert(msg)
+		_self.busy? << _false
+		_return
+	_endif
+
+	_local LoConfiguraciones << property_list.new()
+	_local LoLayout << _self.current_document
+	_local LoNomReporte << _self.obten_info_plano()[:nombre_plano].value.default("X")
+	carpetas << rope.new()
+	_if _self.obten_info_plano()[:siglasNCO].value _is _unset
+	_then
+		_for limite _over LoTabLimNCO.fast_elements()
+		_loop
+			_if LoEngine.existe_limite_publicado?(limite.user!_siglas)
+			_then
+				carpetas.add(limite.user!_siglas)
+			_endif
+		_endloop
+	_else
+		_if LoEngine.existe_limite_publicado?(_self.obten_info_plano()[:siglasNCO].value)
+		_then
+			carpetas.add(_self.obten_info_plano()[:siglasNCO].value)
+		_endif 
+	_endif
+
+	_if carpetas.size = 0
+	_then
+		msg << "Error: No existen Límites de NCO publicados"
+		_self.show_alert(msg)
+		_self.busy? << _false
+		_return
+	_endif
+	
+	_for carpeta _over carpetas.elements()
+	_loop
+		LoEngine.crea_path_archivo(carpeta,LoNomReporte,".jpg")
+		#llenamos las propiedades del plano
+		plot_system.init ()
+		LoConfiguraciones[:device] << plot_system.plotter_info[:file]
+		LoConfiguraciones[:filename] << LoEngine.path_archivo
+		LoConfiguraciones[:filetype] << :jpeg
+		LoConfiguraciones[:raster_quality] << :high
+		LoConfiguraciones[:pages] << _unset
+		LoConfiguraciones[:copies] << _unset
+		
+		pos << _self.top_frame.actual.bounds.centre
+		eng << layout_plot_engine.new ()
+		job << layout_plot_job.new ( LoLayout, LoConfiguraciones )
+		eng.add_job ( job )
+		eng.int!do_plot()
+		system.gc(_true)		
+	_endloop
+
+	_if LoEngine.actualiza_archivos_en_servidor()
+	_then
+		_self.show_alert("Publicación a SIGC11WEB Finalizada Satisfactoriamente")
+		_self.busy? << _false
+	_else
+		_self.show_alert("Error: No se pudo publicar el archivo por falta de conectividad con el servidor. Consulte a Soporte Técnico")
+		_self.busy? << _false
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.publicar_plano_a_web?
+	## se analiza el atributo boleano de publicaraweb del viewport principal
+	##
+	_local publicar? << _false
+
+	_if _self.current_document _isnt _unset _andif
+	    _self.current_document.current_page _isnt _unset
+	_then
+		_for el _over _self.current_document.current_page.elements.fast_elements()
+		_loop
+			_if el.responds_to?(:ace_name) _andif
+			    el.attributes[:publicarAweb] _isnt _unset
+			_then
+				publicar? << el.attributes[:publicarAweb].value
+				_leave
+			_endif
+		_endloop
+	_endif
+	_return publicar?
+_endmethod
+$
+
+#
+#
+#_pragma(classify_level=restricted, topic={plugins})
+#_method layout_manager_plugin.save_as_layout ()
+#	##
+#	## Action for :save_as_....
+#	##
+#	## Saves a Layout by asking the location and filename using a
+#	## standard windows Save dialog.
+#	##
+#
+#	_if ( a_layout << _self.current_document ) _is _unset 
+#	_then
+#		condition.raise ( :user_error, :string, _self.message ( :no_current_layout) )
+#	_endif
+#	
+#	top << _self.top_frame.actual
+#
+#	dir << _self.get_document_directory
+#
+#
+#	
+#	
+#
+#	# (07/11/15 rraragon) : Modified. se agrega un ciclo para
+#	# validar que el archivo no exista, y si existe lo modifique
+#	# version 11.6.1
+#
+#	
+#	
+#	_loop
+#		
+#		filename << top.save_as ( dir, "",
+#				  {
+#					  _self.message ( :template_filename ), "*.xml",
+#					  _self.message ( :all_files ), "*.*" 
+#				  },
+#				  _false, _self.message ( :save_template ), _false )
+#
+#
+#		_if filename _is _unset _orif 
+#		    filename.size _is 0
+#		_then
+#
+#			_return _false 
+#		_endif
+#
+#		( fname, extension ) << system.split_filename ( filename )
+#
+#		LoExtension << _true 
+#		_if extension _is _unset _orif extension.size _is 0 
+#		_then
+#			LoExtension << _false 
+#			filename << write_string ( fname, ".xml" )
+#		_endif
+#
+#		# se valida que el archivo no exista
+#		_if _not system.file_exists?(filename)
+#		_then
+#			# no existe
+#			_leave
+#		_elif _not LoExtension # que no haya traido extension
+#		_then
+#			# existe y no traia extension
+#			preg << _self.show_alert("El archivo "+ filename +
+#						 " ya existe, ¿Desea reemplazarlo?","Si","No")
+#			_if preg
+#			_then
+#				_leave 
+#			_endif
+#		_else
+#			# existe y traia extension
+#			_leave 
+#		_endif		
+#	_endloop
+#	
+#	( fname, path_name ) << system.pathname_components ( filename )
+#	_self.document_directory << path_name
+#
+#	_if _self.int!save ( a_layout, filename )
+#	_then 
+#		str << write_string ( _self.message(:layout_saved_to), " ", filename )
+#		condition.raise ( :information, :string, str )
+#
+#		_self.update_layout_windows_menu ()
+#
+#		_return _true 
+#	_endif
+#
+#	>> _false
+#	
+#_endmethod
+#$
+
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_manager_plugin.verifica_publicar_a_web()
+	## se apaga o enciende la opcion de publicar plano a web del
+	## menu archivo de la aplicacion dependiendo si el plano es
+	## válido para se publicado.
+	## 
+	_self.action ( :publica_a_web ).enabled? << _self.publicar_plano_a_web?
+	
+_endmethod
+$
+_method layout_manager_plugin.zoom_to()
+	## Obtener la aplicacion layout designer.
+	LoLayoutDesigner<<smallworld_product.pni_application().plugin(:layout_plugin).start_layout_designer()
+	## Obtener el layout manager
+	LoLayoutManager<<LoLayoutDesigner.plugin(:layout_manager)
+	
+	#LoViewport<<LoLayoutManager.current_document.current_page.all_elements_of(c_viewport_layout_sigc).an_element()
+	LoViewport<<LoLayoutManager.current_layout_view.current_selection.an_element()
+	
+	_if LoViewport _isnt _unset _and LoViewport.is_kind_of?(c_viewport_layout_sigc) 
+	_then
+		LoViewport.zoom_to()  #usando el viewport
+	_else
+		LoLayoutDesigner.show_message("Seleccione un Viewport y haga un trazo (punto o área) sobre el Viewport.")
+	_endif 
+	
+_endmethod
+$

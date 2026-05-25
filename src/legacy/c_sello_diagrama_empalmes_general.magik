@@ -1,0 +1,803 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Genera el diagrama de empalmes general
+# Autor: fadiaz
+# Fecha de creacion: 4-Abril-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+# Reviso.
+#  
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_sello_diagrama_empalmes_general)
+
+$
+def_slotted_exemplar(:c_sello_diagrama_empalmes_general,
+                     {
+			    {:otablas,         _unset},
+			    {:oCoordOrigen,  _unset}, #Coord donde inicia el sello
+	    		    {:oWindow,       _unset}, #Ventana o canvas en el que se desplegara el sello
+	     		    {:bTablas_Creadas, _false},  # Indica si las tabals ya fueron creadas
+			    {:oTramo_fo,       _unset}  # Trae los datos del tramo
+#			    {:sCve_Tramo,       _unset},  # Trae los datos del tramo
+#			    {:sCve_Ruta,        _unset}  # Trae los datos del tramo
+			    
+		     },
+		      :layout_element 
+)
+$
+c_sello_diagrama_empalmes_general.define_shared_constant(:allowed_on_menu?,_false,:public)
+
+$
+c_sello_diagrama_empalmes_general.define_slot_access(:oCoordOrigen,    :writable, :public)
+c_sello_diagrama_empalmes_general.define_slot_access(:oTablas,         :writable, :public)
+c_sello_diagrama_empalmes_general.define_slot_access(:bTablas_creadas, :writable, :public)
+c_sello_diagrama_empalmes_general.define_slot_access(:oWindow,         :writable, :public)
+c_sello_diagrama_empalmes_general.define_slot_access(:oTramo_fo,       :writable, :private)
+#c_sello_diagrama_empalmes_general.define_slot_access(:sCve_Tramo,      :writable, :private)
+#c_sello_diagrama_empalmes_general.define_slot_access(:sCve_Ruta,       :writable, :private)
+
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes_general.defined_attributes
+	## 
+	##
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add ( layout_attribute_definition.new (	:sCve_Ruta, :string,
+                   	      	 			:description, "Clave de la ruta",
+							:allowed_on_properties_page?, _false,
+							:default_value, _unset 
+						  )
+		)
+
+	attribs.add ( layout_attribute_definition.new (	:sCve_tramo, :string,
+                   	      	 			:description, "Clave del tramo",
+							:allowed_on_properties_page?, _false,
+							:default_value, _unset 
+						  )
+		)
+	
+
+	>> attribs
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+c_sello_diagrama_empalmes_general.define_attributes()
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes_general.draw_content_on(window)
+	## 
+	## 
+
+	_self.oWindow << window
+	
+	_if _self.bTablas_creadas = _false 
+	_then
+	   _self.inicializa(coordinate.new(0,0))	
+	_endif
+
+	
+	 _self.oTablas.Despliega(window)	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes_general.inicializa(_optional RoCoord)
+	## 
+	##
+
+	# Se quitan los colores de fondo
+	_self.set_fill_colour(_unset)
+	
+	#-----------------------------------------------------------
+	#Se Inicializa la coordenada de origen
+	#-----------------------------------------------------------
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord
+	
+	# sepasa como parametro el layout
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	#Crea y configura cada una de las tablas 
+	_self.prvCreaCfgTablas(RoCoord)
+
+	#Se conoce el area de la tabla dibujada
+        LoArea << _self.oTablas.area_total()
+
+	#Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	#Crea a los objetos que tendra c/u de las tablas
+	_self.prvLlenaCeldas()
+
+	#-----------------------------------------------------------
+	#Se inicializan los datos a mostrar
+	#-----------------------------------------------------------
+#	_self.Dist_Distrito << 49
+
+#	_self.Dist_Tipo << "SIECOR 14131"
+
+#	_self.Dir_Direccion << "CLL. J. BRIZUELA Y ROSARIO CASTELLANOS"
+	
+
+#	_self.asigna_num_tramo("97", "1")
+
+	
+	#Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_diagrama_empalmes_general.prvCreaCfgTablas(RoCoord)
+	## 
+	## 
+
+	#-----------------------------------------------------------
+	#Se crean las tablas que conforman los titulos
+	#-----------------------------------------------------------
+	_self.PrvCreaCfgTbl_diagrama(RoCoord)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_diagrama_empalmes_general.prvLlenaCeldas()
+	## 
+	##
+	
+	#-----------------------------------------------------------
+	#Se simula el llenado de datos..
+	#-----------------------------------------------------------
+	_self.prvLlenaEtiquetas()
+	_self.prvLlenaElementos()
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_diagrama_empalmes_general.AsignaCelda2(RoTabla, RnRenglon, RnColumna ,RoValor, _optional RnTamanio)
+	## 
+	##
+
+	_if RnTamanio _is unset
+	_then
+		RnTamanio << 25
+	_endif
+	
+_if _self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento _is unset
+_then
+	_local LoDato;
+	
+	##Por el momento se considera que el objeto RoValor contiene
+	## una cadena
+	LoDato  << c_texto_grafico.new(RoValor.write_string)
+	
+	LoDato.nTamanio << RnTamanio
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento << LoDato
+_else
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento.sTexto << RoValor.write_string
+_endif	  
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_diagrama_empalmes_general.PrvCreaCfgTbl_diagrama(RoCoord)
+	## 
+	## 
+	_local LoTabla
+	_local LnRenglones
+	_local LnColumnas
+	_local LnDesX
+	_local LnDesY
+
+	#-----------------------------------------------------------
+	#Tabla Diagrama de empalmes general TUTULOS
+	#-----------------------------------------------------------
+	LnRenglones << 3
+	LnColumnas << 5
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Titulos)
+
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_renglones_internos? << _false 
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud << 6
+	LoTabla.oRenglones.elemento(2).nLongitud << 6
+	LoTabla.oRenglones.elemento(3).nLongitud << 6
+	
+	# 290
+	LoTabla.oColumnas.elemento(1).nLongitud << 85
+	LoTabla.oColumnas.elemento(2).nLongitud << 35
+	LoTabla.oColumnas.elemento(3).nLongitud << 50
+	LoTabla.oColumnas.elemento(4).nLongitud << 45
+	LoTabla.oColumnas.elemento(5).nLongitud << 75
+	
+	#-----------------------------------------------------------
+	#Tabla Diagrama de empalmes general (datos superiores)   INDEPENDIENTE
+	#-----------------------------------------------------------
+	LnRenglones << 6
+	LnColumnas << 5
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Diag_Emp_Datos)
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_renglones_internos? << _false 
+
+	LnDesY << (4.3* 3) * 10
+	LnDesX << 0
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)	
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud << 4.3
+	LoTabla.oRenglones.elemento(2).nLongitud << 4.3
+	LoTabla.oRenglones.elemento(3).nLongitud << 4.3
+	LoTabla.oRenglones.elemento(4).nLongitud << 4.3
+	LoTabla.oRenglones.elemento(5).nLongitud << 4.3
+	LoTabla.oRenglones.elemento(6).nLongitud << 4.3
+	
+	LoTabla.oColumnas.elemento(1).nLongitud << 38
+	LoTabla.oColumnas.elemento(2).nLongitud << 29
+	
+	LoTabla.oColumnas.elemento(3).nLongitud << 290 - (67 * 2)
+	
+	LoTabla.oColumnas.elemento(4).nLongitud << 20
+	LoTabla.oColumnas.elemento(5).nLongitud << 47
+
+
+	#-----------------------------------------------------------
+	#Tabla Diagrama de empalmes general (datos Nota) INDEPENDIENTE
+	#-----------------------------------------------------------
+	LnRenglones << 4
+	LnColumnas << 5
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Diag_Emp_Notas)
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_renglones_internos? << _false 
+
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Diag_Emp_Datos}) +  560 + 60
+	LnDesX << 0
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)	
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud << 6.0
+	LoTabla.oRenglones.elemento(2).nLongitud << 6.0
+	LoTabla.oRenglones.elemento(3).nLongitud << 6.0
+	LoTabla.oRenglones.elemento(4).nLongitud << 6.0
+	
+	LoTabla.oColumnas.elemento(1).nLongitud << 75
+	LoTabla.oColumnas.elemento(2).nLongitud << 45
+	LoTabla.oColumnas.elemento(3).nLongitud << 50
+	LoTabla.oColumnas.elemento(4).nLongitud << 45
+	LoTabla.oColumnas.elemento(5).nLongitud << 75
+
+	
+	
+	#-----------------------------------------------------------
+	#Tabla Diagrama de empalmes general
+	#-----------------------------------------------------------
+	LnRenglones << 3
+	LnColumnas << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Diag_Emp)
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_renglones_internos? << _false 	
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud << 6
+	LoTabla.oRenglones.elemento(2).nLongitud << 6
+	LoTabla.oRenglones.elemento(3).nLongitud << 105 + 15
+
+	# 290
+	LoTabla.oColumnas.elemento(1).nLongitud << 290
+	
+	
+	#-----------------------------------------------------------
+	#Tabla Titulo1
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	LnColumnas << 3
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Titulo1)
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_renglones_internos? << _false 	
+
+	#coordenada donde iniciara la tabla 
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Diag_Emp})
+	LnDesX << 0
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)	
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud << 30
+	LoTabla.oRenglones.elemento(2).nLongitud << 15
+
+	#290
+	LoTabla.oColumnas.elemento(1).nLongitud << 40.3
+	LoTabla.oColumnas.elemento(2).nLongitud << 290 - (40.3 + 39.5)
+	LoTabla.oColumnas.elemento(3).nLongitud << 39.5
+	
+	#-----------------------------------------------------------
+	#Tabla Sistema de tierras
+	#-----------------------------------------------------------
+	LnRenglones << 1
+	LnColumnas << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Sistema_Tierras)
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_renglones_internos? << _false 	
+
+	#coordenada donde iniciara la tabla 
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Diag_Emp,:tbl_Titulo1})
+	LnDesX << 0
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)	
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud << 79 #88
+	LoTabla.oColumnas.elemento(1).nLongitud << 145
+	LoTabla.oColumnas.elemento(2).nLongitud << 145
+	
+_endmethod
+
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes_general.prvLlenaEtiquetas()
+	## 
+	##
+ 
+
+	# Elementos Texto 
+	# TITULO DIAGRAMA
+	# Tabla :tbl_Diag_Emp
+	# Primera columna
+	LoTexto << c_texto_grafico.new("DIAGRAMA DE EMPALMES")
+	LoTexto.nTamanio << 40
+	LoTexto.sAlineacion << :centre_centre
+	_self.oTablas.elemento(:tbl_Diag_Emp).oCeldas.Celda(1,1).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "GENERAL")
+	_self.oTablas.elemento(:tbl_Diag_Emp).oCeldas.Celda(2,1).oElemento << LoTexto	
+	
+	# Elementos Texto 
+	# Etiquetas Repetidor, Piso, Sala, Fila, BDFO, Posicion
+	# Tabla :tbl_Diag_Emp_Datos
+	# Primera columna
+	LoTexto << c_texto_grafico.new("REPETIDOR .-")
+	LoTexto.nTamanio << 23
+	LoTexto.sAlineacion << :centre_right
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(1,1).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "PISO .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(2,1).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "SALA .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(3,1).oElemento << LoTexto
+	
+	LoTexto << c_texto_grafico.new_from(LoTexto, "FILA .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(4,1).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "BDFO .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(5,1).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "POSICION .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(6,1).oElemento << LoTexto	
+
+	# Elementos Texto
+	# Etiquetas Repetidor, Piso, Sala, Fila, BDFO, Posicion
+	# Tabla :tbl_Diag_Emp_Datos
+ 	# Cuarta columna
+	LoTexto << c_texto_grafico.new_from(LoTexto,"REPETIDOR .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(1,4).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "PISO .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(2,4).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "SALA .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(3,4).oElemento << LoTexto
+	
+	LoTexto << c_texto_grafico.new_from(LoTexto, "FILA .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(4,4).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "BDFO .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(5,4).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "POSICION .-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(6,4).oElemento << LoTexto	
+
+	# Elementos Texto  
+	# Datos Repetidor, Piso, Sala, Fila, BDFO, Posicion
+	# Tabla :tbl_Diag_Emp_Datos
+	# Primera columna
+	LoTexto_Captura << c_captura_texto.new("PUNTA PRIETA")
+	LoTexto_Captura.nTamanio << 2
+	LoTexto_Captura.sAlineacion << :centre_left
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(1,2).oElemento << LoTexto_Captura
+
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"P.B.")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(2,2).oElemento << LoTexto_Captura
+	
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"F.O.")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(3,2).oElemento << LoTexto_Captura
+
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"F.O.")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(4,2).oElemento << LoTexto_Captura
+
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"-NO-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(5,2).oElemento << LoTexto_Captura
+
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"-NO-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(6,2).oElemento << LoTexto_Captura
+
+	# Elementos Texto
+	# Datos Repetidor, Piso, Sala, Fila, BDFO, Posicion
+	# Tabla :tbl_Diag_Emp_Datos
+ 	# Cuarta columna
+	LoTexto_Captura << c_captura_texto.new("GUERRERO NEGRO")
+	LoTexto_Captura.nTamanio << 2
+	LoTexto_Captura.sAlineacion << :centre_left
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(1,5).oElemento << LoTexto_Captura
+
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"P.B.")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(2,5).oElemento << LoTexto_Captura
+	
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"F.O.")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(3,5).oElemento << LoTexto_Captura
+
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"F.O.")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(4,5).oElemento << LoTexto_Captura
+
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"-NO-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(5,5).oElemento << LoTexto_Captura
+
+	LoTexto_Captura << c_captura_texto.new_from(LoTexto_Captura,"-NO-")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(6,5).oElemento << LoTexto_Captura
+	
+	# Etiqueta Distribuidor / Optico
+	# Elementos Captura
+	# Datos Repetidor, Piso, Sala, Fila, BDFO, Posicion
+	# Tabla : :tbl_Titulos
+	LoTexto << c_texto_grafico.new("DISTRIBUIDOR")
+	LoTexto.nTamanio << 30
+	LoTexto.sAlineacion << :centre_centre
+	_self.oTablas.elemento(:tbl_Titulos).oCeldas.Celda(2,2).oElemento << LoTexto
+	
+	LoTexto << c_texto_grafico.new_from(LoTexto, "OPTICO")
+	_self.oTablas.elemento(:tbl_Titulos).oCeldas.Celda(3,2).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "DISTRIBUIDOR")
+	_self.oTablas.elemento(:tbl_Titulos).oCeldas.Celda(2,4).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "OPTICO")
+	_self.oTablas.elemento(:tbl_Titulos).oCeldas.Celda(3,4).oElemento << LoTexto
+
+
+	# Notas
+	# Tabla :tbl_Diag_Emp_Notas
+	LoTexto << c_texto_grafico.new_from(LoTexto, "EMP. TERMINAL")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Notas).oCeldas.Celda(1,2).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "EMP. TERMINAL")
+	_self.oTablas.elemento(:tbl_Diag_Emp_Notas).oCeldas.Celda(1,4).oElemento << LoTexto
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "NOTA .-")
+	LoTexto.sAlineacion << :centre_right
+	_self.oTablas.elemento(:tbl_Diag_Emp_Notas).oCeldas.Celda(3,2).oElemento << LoTexto
+
+
+	# Notas
+	# Tabla :tbl_Diag_Emp_Notas
+	LoTexto_Captura << c_captura_texto.new("NOTAS"+character.newline)
+	LoTexto_Captura.nTamanio << 3
+	LoTexto_Captura.sAlineacion << :centre_left
+	LoTexto_Captura.nMargen_Inf << -6
+	_self.oTablas.elemento(:tbl_Diag_Emp_Notas).oCeldas.Celda(3,3).oElemento << LoTexto_Captura
+
+
+	# Titulo : SISTEMA TIERRAS
+	# Tabla :tbl_Titulo1
+	
+	LoTexto << c_texto_grafico.new_from(LoTexto, "SISTEMA DE TIERRAS")
+	LoTexto.nTamanio << 60
+	LoTexto.sAlineacion << :centre_centre	
+	_self.oTablas.elemento(:tbl_Titulo1).oCeldas.Celda(2,2).oElemento << LoTexto
+
+	LoSimbolo << c_simbolo_grafico.new("zona de riesgo")
+
+	LoSimbolo.nMargen_inf << 15
+	LoSimbolo.nMargen_izq << 15
+
+	LoSimbolo.nMargen_izq << -2
+	LoSimbolo.nMargen_der << 2
+	
+	_self.oTablas.elemento(:tbl_Sistema_Tierras).oCeldas.Celda(1,1).oElementos.Agregar_elemento(LoSimbolo,:Simbolo_1)
+
+	LoSimbolo << c_simbolo_grafico.new("Conexion a tierra")
+	LoSimbolo.nMargen_inf << 15
+	LoSimbolo.nMargen_der << 15
+
+	LoSimbolo.nMargen_izq << 2
+	LoSimbolo.nMargen_der << -2
+	
+	_self.oTablas.elemento(:tbl_Sistema_Tierras).oCeldas.Celda(1,2).oElementos.Agregar_elemento(LoSimbolo,:Simbolo_2)
+
+	
+	LoTexto << c_texto_grafico.new_from(LoTexto, "REP. PUNTA PRIETA")
+	LoTexto.sAlineacion << :centre_centre	
+	LoTexto.nTamanio <<  23
+	LoTexto.nGrados  << -0.8
+
+#	Se reduce su area de despliegue
+	LoTexto.nMargen_sup << 30
+	LoTexto.nMargen_inf << 30
+	LoTexto.nMargen_izq << 50
+	LoTexto.nMargen_der << 50
+	
+#	Se mueve el area de despliegue (Hacia la izquierda)
+	LoTexto.nMargen_izq << -43
+	LoTexto.nMargen_der << 43
+	LoTexto.nMargen_sup << -24
+	LoTexto.nMargen_inf << 24
+	
+	_self.oTablas.elemento(:tbl_Sistema_Tierras).oCeldas.Celda(1,1).oElementos.Agregar_elemento(LoTexto,:Nodo_1)
+
+
+	LoTexto << c_texto_grafico.new_from(LoTexto, "CTL- GUERRERO NEGRO (ONE)")
+	LoTexto.sAlineacion << :centre_centre		
+	LoTexto.nTamanio <<  23
+	LoTexto.nGrados  << 0.78
+
+#	Se reduce su area de despliegue
+	LoTexto.nMargen_sup << 30
+	LoTexto.nMargen_inf << 30
+	LoTexto.nMargen_izq << 50
+	LoTexto.nMargen_der << 50	
+
+#	Se mueve el area de despliegue (Hacia la derecha)
+	LoTexto.nMargen_izq << 38
+	LoTexto.nMargen_der << -38
+	
+	LoTexto.nMargen_sup << -22
+	LoTexto.nMargen_inf << 22
+	
+	_self.oTablas.elemento(:tbl_Sistema_Tierras).oCeldas.Celda(1,1).oElementos.Agregar_elemento(LoTexto,:Nodo_2)
+	
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes_general.prvLlenaElementos()
+	## 
+	##
+	_local LoSimbolo
+
+	LoSimbolo << c_simbolo_grafico.new("diagrama de empalmes")
+	LoSimbolo.nmargen_inf << -15
+	_self.oTablas.elemento(:tbl_Diag_Emp).oCeldas.Celda(3,1).oElemento << LoSimbolo
+
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_diagrama_empalmes_general.AsignaCelda2(RoTabla, RnRenglon, RnColumna ,RoValor, RnTamanio, RsColor, _optional RsAlineacion)
+	## 
+	##
+
+	_if RnTamanio _is unset
+	_then
+		RnTamanio << 25
+	_endif
+
+	_if RsColor _is unset
+	_then
+		RsColor << "Black"
+	_endif
+
+	_if RsAlineacion _is _unset 
+	_then
+	     RsAlineacion << :centre_centre
+	_endif
+
+	
+_if _self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento _is unset
+_then
+	_local LoDato;
+	
+	##Por el momento se considera que el objeto RoValor contiene
+	## una cadena
+	LoDato  << c_texto_grafico.new(RoValor.write_string)
+	
+	LoDato.nTamanio << RnTamanio
+	LoDato.sColor << RsColor
+	LoDato.sAlineacion << RsAlineacion
+	
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento << LoDato
+_else
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento.sTexto << RoValor.write_string
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento.sColor << RsColor.write_string
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento.nTamanio << RnTamanio
+_endif	  
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes_general.asigna_num_tramo(PsCve_Ruta, PsCve_tramo)
+   
+   
+	## 
+	##
+
+	_self.sCve_Tramo << PsCve_Tramo
+	_self.sCve_Ruta <<  PsCve_Ruta
+		
+_if _self.oTramo_fo = _unset 
+_then
+       _self.oTramo_fo << c_Tramo_fo_e.new()	
+       _self.oTramo_fo.asigna_num_tramo(PsCve_Ruta, PsCve_tramo)
+_endif
+
+	_if _self.oTramo_fo.obten_elementos_tramo.size > 1 _and _self.oTramo_fo _isnt _unset 
+	_then
+		write("si hay informacion")
+	
+		_self.prvAsigna_textos()
+
+		_self.prvAsigna_tramo_a_celda()
+	_else
+		write("mensajes NA")
+		LoElemento << _self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(1,2).oElemento
+	        LoElemento.sTexto << "NA"
+	 
+	        LoCelda << _self.oTablas.elemento(:tbl_Sistema_Tierras).oCeldas.Celda(1,1).oElementos.obten_elemento(:Nodo_1)
+	        LoCelda.sTexto << "NA"
+	 
+	        LoElemento << _self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(1,5).oElemento
+	        LoElemento.sTexto << "NA"
+	 
+	        LoCelda << _self.oTablas.elemento(:tbl_Sistema_Tierras).oCeldas.Celda(1,1).oElementos.obten_elemento(:Nodo_2)
+	        LoCelda.sTexto << "NA"
+	 
+	        LoElemento << _self.oTablas.elemento(:tbl_Diag_Emp_Notas).oCeldas.Celda(1,2).oElemento
+	        LoElemento.sTexto << "NA"
+	 
+	        LoElemento << _self.oTablas.elemento(:tbl_Diag_Emp_Notas).oCeldas.Celda(1,4).oElemento
+	        LoElemento.sTexto << "NA"
+
+		LoTexto  << c_texto_grafico.new("NA")
+		LoTexto.nTamanio << 10
+		_self.oTablas.elemento(:tbl_Titulo1).oCeldas.Celda(1,2).oElemento << LoTexto
+		
+	_endif
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_diagrama_empalmes_general.prvAsigna_tramo_a_celda()
+	## 
+	##
+
+	# Se agrega el tramo
+	_if _self.oTramo_fo.obten_elementos_tramo.size > 1
+	_then	
+		LoTramo  << c_tramo_fo_grafico.new(_self.sCve_Ruta, _self.sCve_Tramo,"EG")
+		_self.oTablas.elemento(:tbl_Titulo1).oCeldas.Celda(1,2).oElemento << LoTramo
+	_else
+		# So colocan textos de no hay informacion
+		
+		LoTexto  << c_texto_grafico.new("No hay informacion")
+		LoTexto.nTamanio << 10
+		_self.oTablas.elemento(:tbl_Titulo1).oCeldas.Celda(1,2).oElemento << LoTexto
+		
+	_endif	
+	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_diagrama_empalmes_general.prvAsigna_textos()
+	## 
+	## 
+	
+        _Local LsTxt # texto que debe tener la cadena
+	_local LoElemento
+	_local LoNodo
+	_local LoPrimer_Empalme
+	_local LoUltimo_Empalme
+
+	 # REPETIDOR IZQ
+	 LoNodo << _self.oTramo_fo.nodo_origen
+         LsTxt <<  LoNodo.user!_nom_nodo.write_string
+         LoElemento << _self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(1,2).oElemento
+	 LoElemento.sTexto << LsTxt
+
+	 LoCelda << _self.oTablas.elemento(:tbl_Sistema_Tierras).oCeldas.Celda(1,1).oElementos.obten_elemento(:Nodo_1)
+	 LoCelda.sTexto << "REP. " + LsTxt
+
+
+	 # REPETIDOR DER
+	 LoNodo << _self.oTramo_fo.nodo_destino
+         LsTxt <<  LoNodo.user!_nom_nodo.write_string
+         LoElemento << _self.oTablas.elemento(:tbl_Diag_Emp_Datos).oCeldas.Celda(1,5).oElemento
+	 LoElemento.sTexto << LsTxt
+
+	 LoCelda << _self.oTablas.elemento(:tbl_Sistema_Tierras).oCeldas.Celda(1,1).oElementos.obten_elemento(:Nodo_2)
+	 LoCelda.sTexto << "CTL. " + LsTxt	 
+
+	 # Se obtienen los nombres del primer y ultimo empalme
+	 _local LnCont
+	 LnCont << 0
+	 
+	 _for LoElem _over _self.oTramo_fo.obten_elementos_tramo.fast_elements()
+	 _loop
+		 LnCont << LnCont + 1
+		 
+		 _if LnCont = 3
+		 _then
+			 LoPrimer_Empalme << LoElem
+		 _endif
+
+ 		 _if LnCont = _self.oTramo_fo.obten_elementos_tramo.size - 2
+		 _then
+			 LoUltimo_Empalme << LoElem
+		 _endif
+	 _endloop
+	 
+ 	 # NOMBRE TERMINAL 1
+	 LsTxt << LoPrimer_Empalme.user!_num_empalme.write_string
+	 LsTxt << "EMP. TERMINAL " +LsTxt
+         LoElemento << _self.oTablas.elemento(:tbl_Diag_Emp_Notas).oCeldas.Celda(1,2).oElemento
+	 LoElemento.sTexto << LsTxt
+
+ 	 # NOMBRE TERMINAL 2
+	 LsTxt << LoUltimo_Empalme.user!_num_empalme.write_string
+ 	 LsTxt << "EMP. TERMINAL " +LsTxt
+         LoElemento << _self.oTablas.elemento(:tbl_Diag_Emp_Notas).oCeldas.Celda(1,4).oElemento
+	 LoElemento.sTexto << LsTxt
+
+
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes_general.Agrega_LYM(RoLym)
+
+## Objetivo: Permite agregar todos los elementos Layout a la pagina
+## Parámetros de entrada:  
+##    :layout_manager - RoLym : Referencia al LayoutManager
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+
+_endmethod
+
+
+	

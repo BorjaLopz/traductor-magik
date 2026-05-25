@@ -1,0 +1,279 @@
+_package user
+$
+def_slotted_exemplar( :c_preview_symbol_dialog,
+{
+	{ :tree_item, _unset },
+	{ :ok_button, _unset },
+	{ :preview_canvas, _unset },
+	{ :sNombreSimbolo,"",:writable,:public},
+	{ :owner_plugin, _unset }
+},
+{:model} )
+$
+c_preview_symbol_dialog.define_shared_constant( :canvas_size,
+						## Defines the size of the canvas for previews
+						210, :public)
+$
+c_preview_symbol_dialog.define_shared_constant( :canvas_bounds,
+						## Defines the size of the canvas for previews
+						bounding_box.new( 0,0,
+								  c_preview_symbol_dialog.canvas_size,
+								  c_preview_symbol_dialog.canvas_size ).new_enlarging(0.85), :private)
+$
+c_preview_symbol_dialog.define_slot_access( :owner_plugin,
+					 ## Returns the grid to be used
+					 :write, :public )
+$
+_pragma(classify_level=restricted)
+_method c_preview_symbol_dialog.activate_in( a_frame )
+	##
+	## Creates the GUI of the dialog in A_FRAME
+	##
+
+	_if a_frame.species _is dialog_frame.species
+	_then
+		a_frame.modality << :primary_modal
+	_endif
+
+	#a_frame.resizable? << _false
+	#a_frame.title<<"Seleccionar Simbolo"
+	
+	_local outer_rc << rowcol.new(a_frame, _unset , 2, :pixel,
+				      :style, :top_level,
+				      :resize_x?, _true,
+				      :resize_y?, _true )
+
+	
+
+	Lo_rc11 << rowcol.new(outer_rc, 2, 3, :pixel,
+			      :row_alignment, :fill,
+			      :style, :nested )
+
+	.preview_canvas << canvas.new(Lo_rc11, _self.canvas_size, _self.canvas_size, _unset,
+				      :row_alignment, :bottom,
+				      :retained?, _true )
+	
+	.tree_item << tree_item.new(Lo_rc11,
+				    :model, _self,
+				    :aspect, :display_trees,
+				    :data_selector, :display_trees,
+				    :select_notifier, :tree_item_select|()|,
+				    :double_click_notifier, :ok|()|,
+				    :mode, :one,
+				    :identifier, :tree_item )
+	
+	Lo_rc21 << rowcol.new(Lo_rc11, 2, _unset, :pixel,
+			      :row_alignment, :fill,
+			      :style, :nested )
+	ok << .ok_button << button_item.new(Lo_rc21, "Insertar", ##_self.message(:ok),
+					    _self, :ok|()|,
+					    :min_width, 75,
+					    :enabled?, _false,
+					    :identifier, :ok )
+	
+	cancel << button_item.new(Lo_rc21, "Salir", ##_self.message(:cancel),
+				  _self, :wm_close|()|,
+				  :min_width, 75,
+				  :identifier, :cancel )
+	
+	#.preview_canvas << canvas.new(outer_rc, _self.canvas_size, _self.canvas_size, _unset,
+	#			      :row_alignment, :bottom,
+	#			      :retained?, _true )
+	
+	_self.register_action_buttons(ok, cancel)
+	
+	>> outer_rc
+_endmethod
+$
+_pragma(classify_level=restricted)
+_private _method c_preview_symbol_dialog.available_symbol_names
+	##
+	## Returns the available symbol names as an ordered collection
+	##
+	_local LoStyleSystemEngine
+
+	_if .owner_plugin _is _unset 
+	_then
+		LoStyleSystemEngine << sw_style_system_engine.new()
+	_else
+		LoStyleSystemEngine << sw_style_system_engine.new(.owner_plugin.sigc_style_view)
+	_endif
+        
+	>> LoStyleSystemEngine.ordered_symbol_names()
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_preview_symbol_dialog.display_trees
+	##
+	## Returns the available symbol names as display trees suitable
+	## for display in a tree_item
+	##
+	_local trees << rope.new()
+
+	_for name _over _self.available_symbol_names.fast_elements()
+	_loop
+		trees.add( dt << display_tree.new( name ) )
+		dt.styled_string << { name }
+	_endloop
+
+	>> trees
+_endmethod
+$
+_pragma(classify_level=restricted)
+_private _method c_preview_symbol_dialog.draw_preview( symbol_name )
+	##
+	## Draws a preview for SYMBOL_NAME
+	##
+	.preview_canvas.clear()
+	
+	_local point_style_table
+
+	_if symbol_name _isnt _unset 
+	_then
+		_if .owner_plugin _isnt _unset 
+		_then 
+			point_style_table << .owner_plugin.sigc_style_view.collection(:sw_gis!gis_point_style)
+		_else
+			point_style_table << gis_program_manager.style_view.collection(:sw_gis!gis_point_style)
+		_endif
+		_local sym << point_style_table.new_detached_record()
+	
+		sym.symbol_name << symbol_name
+		sym.realise( _unset, _unset )
+
+		_if sym.actual_geoms _isnt _unset 
+		_then
+			sym.draw_sample ( .preview_canvas, _self.canvas_bounds,
+					  :rotate, 0.0,
+					  :flipped?, _true,
+					  :mirror?, _false )
+		_endif
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted)
+_private _method c_preview_symbol_dialog.init(properties )
+	##
+	##
+	>> _self 
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_preview_symbol_dialog.new(_gather keys_and_args )
+	##
+	## Returns a new initialises open dialog for opening symbols
+	## with. 
+	##
+	
+	>> _clone.init(property_list.new_from_gathered( keys_and_args ) )
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_preview_symbol_dialog.ok()
+# Objetivo: Agregar a la pagigina de layout designer un objeto symbol_layout
+# Parametros de Entrada: Ninguno.
+# Parametros de Salida: Ninguno.
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 25/Feb./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+#
+# Fecha de ultima modificacion: 28/Feb./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Ordenar la insercion de los simbolos.
+	
+_local LoAppPNI                   # Referencia a la aplicacion PNI.
+_local LoLayoutPlugin             # Referencia a layout_plugin.
+_local LoAppLayoutDesginer        # Referencia a la aplicacion Lauyout Designer
+_Local LoLayoutDesigner           
+_local LoLayoutMaangerPlugin      # Referencia a layout_manager_plugin
+_local LoDocumento                # Rererencia al documento actual.
+_local LoPagina                   # Referencia a la pagina actual.
+_local LoBound                    # bound del simbolo.
+_local LoSimbolo                  # Simbolo que se agrega a la pagina.
+_local LoUltimoSim                # Ultimo simbolo agreado a una pagina. 
+
+
+        # Obtener las instancias de al aplicacion PNI, layout_plugin,
+        # layout_desugber y layout_manager_plugin.
+        _if (LoAppPNI<<smallworld_product.pni_application()) _isnt _unset _andif
+	    (LoLayoutPlugin<<LoAppPNI.plugin(:layout_plugin)) _isnt _unset _andif 
+	    (LoAppLayoutDesigner<<LoLayoutPlugin.dialogs[:layout_designer]) _isnt _unset _andif
+	    (LoLayoutManagerPlugin<<LoAppLayoutDesigner.plugin(:layout_manager)) _isnt _unset
+	_then
+		_if (LoDocumento<<LoLayoutManagerPlugin.current_document) _isnt _unset _andif
+		    (LoPagina<<LoDocumento.current_page) _isnt _unset
+		_then
+			# Definer el bound del simbolo y el centro.
+			# El primero simbolo se agrega en el centro de la pagina,
+			# despues los simbolos se agregan despues del ultimo simbolo insertado.
+			LoBound<<bounding_box.new(0,0,600,600)
+			LoUltimoSim<<LoPagina.all_elements_of(symbol_layout)
+			_if LoUltimoSim.empty?.not
+			_then
+				LoUltimoSim<<LoUltimoSim.last
+				LoBound.centre<<coordinate(LoUltimoSim.bounds.centre.x+LoUltimoSim.bounds.width,
+							   LoUltimoSim.bounds.centre.y)
+			_else
+				LoBound.centre<<LoPagina.bounds.centre
+			_endif
+			
+			# Crear un symbol_layout con nombre .sNombreSimbolo y
+			# agregarloa la pagina actual.
+			_if (LoSimbolo<<symbol_layout.new_with(:bounds,Lobound)) _isnt _unset _and
+			    .sNombreSimbolo _isnt _unset
+			_then
+				_if (LoSimbolo<<symbol_layout.new_with(:bounds,LoBound,
+								       :name,.sNombreSimbolo,
+								       :fill_style,_unset,
+								       :outline_style,_unset)) _isnt _unset 
+				_then
+					LoPagina.add_element(LoSimbolo)
+					LoLayoutManagerPlugin.action(:layout_view_refresh).execute_action()
+				_endif 
+			_endif 
+		_endif
+	_else
+		LoAppLayoutDesigner.show_message("Error en la aplicacion")
+	_endif
+	#_self.close()
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_preview_symbol_dialog.on_activation()
+	##
+	## Called whenever the dialog gets activated
+	##
+	_self.changed( :display_trees, :renew )
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_preview_symbol_dialog.tree_item_select( selection, by_user? )
+	##
+	## Callback method for selection in the tree item
+	##
+	
+	_local symbol_name << _if _not selection.empty? _then >> selection.an_element().key _endif
+
+	.sNombreSimbolo<<symbol_name
+	
+	.owner_plugin.databus.make_data_available(:symbol_name,{.sNombreSimbolo.default(""),
+						  .owner_plugin.sigc_style_view.default("")})
+	# Enable/disable the OK Button
+	.ok_button.enabled? << _not selection.empty?
+
+	
+	# Draw the Preview
+	_self.draw_preview( symbol_name )
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_preview_symbol_dialog.wm_close()
+	##
+	## Callback method for the Window System's 'x' button. 
+	##
+	.sNombreSimbolo<<""
+	_self.close()
+	>> _true 
+_endmethod
+$

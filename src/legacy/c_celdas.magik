@@ -1,0 +1,189 @@
+_package user
+$
+#remex(:c_celdas)
+$
+def_slotted_exemplar(:c_celdas,
+                     {
+                      {:nNumRen,      _unset}, # Numero de renglones que tendra celdas
+		      {:nNumCol,      _unset}, # Numero de columnas que tendra celdas
+		      {:collCeldas,   _unset}  # Coleccion de celdas
+		     }
+)
+
+$
+c_celdas.define_slot_access(:collCeldas,    :writable, :private)
+$
+c_celdas.define_slot_access(:nNumCol,       :writable, :private)
+$
+c_celdas.define_slot_access(:nNumRen,       :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas.celda(RnRen, RnCol)
+## Objetivo: regresa una celda de acuerdo a una posicion (ren,
+##           col) proporcionada
+## Parámetros de entrada:
+## 	Entero - RnRen - Numero de renglon en el que se encuentra la celda
+## 	Entero - RnCol - Numero de columna en la que se encuentra la celda
+## Parámetros de salida:   
+## 	c_celda - Objeto celda solicitado 
+## Regresa: c_celda - regresa un objeto celda
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	# Se valida que la celda solicitada exista
+	_if RnRen > _self.nNumren _or RnCol > _self.nNumCol
+	_then
+	   _local str
+	   str << RnRen.write_string + " " + RnCol.write_string
+	   condition.raise(:warning, :string, "La celda que se solicita no existe " + str)	
+	_endif 
+	
+	>> _self.collCeldas[_self.nNumCol * (RnRen-1) + RnCol ]		
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.collCeldas << valor
+
+	.collCeldas << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas.new(RnRen, RnCol)
+## Objetivo: Crear una instacia de celdas
+## Parámetros de entrada:
+## 	Entero - RnRen : Numero de renglones que tendra celdas 
+## 	Entero - RnCol : Numero de columna que tendra celdas
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_celdas - Un objeto celdas
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+_local LnPos # Almacena temporalmente el numero de celda a utilizar
+
+	# Asigna el numero de renglones y columnas que tendra celdas
+	_self.nNumRen << RnRen
+	_self.nNumCol << RnCol
+
+	# Crea las celdas que forman parte de celdas
+	_self.collCeldas <<  hash_table.new()
+	_for LnRen  _over range(1, _self.nNumRen ) 
+        _loop
+	   _for LnCol  _over range(1, _self.nNumCol) 
+	   _loop
+		   LnPos << _self.nNumCol * (LnRen - 1) + LnCol
+		   _self.collCeldas[LnPos] << c_celda.new(LnRen, LnCol)
+	   _endloop
+	_endloop
+	
+	_return _clone
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_celdas.nNum_Col << RnValor
+## Objetivo: Asignar un valor permitido al slot nNumCol
+## Parámetros de entrada:
+## 	Entero - RnValor : Numero de columnas
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	# Se valida que el Numero de columnas sea mayor que cero
+	_if RnValor > 0
+	_then
+ 	   .nNumCol << RnValor
+	_else
+	   condition.raise(:warning, :string, "Error al asignar el número de columnas")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas.nNum_Ren
+## Objetivo: retornar en valor del slot nNumRen
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Entero - nNumRen : Numero de renglones
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_return .nNumRen
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_celdas.nNum_Ren << RnValor
+## Objetivo: Asignar un valor permitido al slot nNumRen
+## Parámetros de entrada:
+## 	Entero - RnValor : Numero de renglones
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	# Se valida que el numero de renglones no sea negativo
+	_if RnValor > 0
+	_then
+ 	   .nNumRen << RnValor
+	_else
+	   condition.raise(:warning, :string, "Error al asignar el número de renglón")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.serial_slots()
+
+	keys << rope.new_with(:nNumRen,:nNumCol,:collCeldas)
+	values << rope.new_with(.nNumRen,.nNumCol,.collCeldas)
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$

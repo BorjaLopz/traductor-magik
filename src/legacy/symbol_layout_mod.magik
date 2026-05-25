@@ -1,0 +1,135 @@
+_package sw
+$
+_pragma(classify_level=restricted)
+_method symbol_layout.symbol_names
+	## 
+	## 
+
+	# (18/01/2006 llruiz Sigma Tao).
+	#
+	# Si la aplicación contiene el plugin preview_symbol_plugin,
+	# entonces los simbols serán tomados de la partición de los
+	# dibujos realizados por los proyectistas.
+	#
+
+	# (02/03/2006 llruiz Sigma Tao).
+	#
+	# Modificación:
+	# Se utiliza el procedimiento para abrir la base de datos de
+	# estilos de sigc, que son creados a partir de la herramienta
+	# de Dibujo.
+	# Entonces los simbols serán tomados de la partición de los
+	# dibujos realizados por los proyectistas.
+
+	
+	sym_ds << user:abre_style_sigc()
+	
+#	pni_app << smallworld_product.pni_application()
+#
+#	_if pni_app _isnt _unset 
+#	_then
+#		lyd << pni_app.plugin(:layout_plugin).start_layout_designer()
+#		_if (ly_ps << lyd.plugin(:preview_symbol_plugin)) _isnt _unset 
+#		_then
+#			sym_table << symbol_bundle_table.open ( ly_ps.sigc_style_view ).symbol_names
+#		_else 
+#			sym_table << symbol_bundle_table.open ( gis_program_manager.style_view ).symbol_names
+#		_endif
+#	_endif
+	
+
+	sym_table << symbol_bundle_table.open ( sym_ds ).symbol_names
+	
+	names << sorted_collection.new ()
+	
+	_for sym_name _over sym_table.fast_elements ()
+	_loop
+		names.add ( sym_name.write_string )
+	_endloop
+
+	>> names.as_simple_vector ()
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, topic={plotting}, usage={subclassable})
+_method symbol_layout.draw_content_on ( window )
+	## 
+	## Render contents of SELF on WINDOW
+	##
+
+	_if _self.name _is _unset _orif
+	    _self.name.size _is 0
+	_then
+		_self.draw_incomplete ( window, _self.message(:select_a_symbol) )
+		_return 
+	_endif
+	
+	# We fake a gis_point_style, by getting a detached_record and
+	# realising that with an appropriate symbol_name and colour.
+
+	# (18/01/2006 llruiz Sigma Tao).
+	#
+	# Si la aplicación contiene el plugin preview_symbol_plugin,
+	# entonces los simbols serán tomados de la partición de los
+	# dibujos realizados por los proyectistas.
+
+	# (02/03/2006 llruiz Sigma Tao).
+	#
+	# Modificación:
+	# Se utiliza el procedimiento para abrir la base de datos de
+	# estilos de sigc, que son creados a partir de la herramienta
+	# de Dibujo.
+	# Entonces los simbols serán tomados de la partición de los
+	# dibujos realizados por los proyectistas.
+
+	
+	sym_ds << user:abre_style_sigc()
+	
+#	pni_app << smallworld_product.pni_application()
+#
+#	_if pni_app _isnt _unset 
+#	_then
+#		lyd << pni_app.plugin(:layout_plugin).start_layout_designer()
+#		_if (ly_ps << lyd.plugin(:preview_symbol_plugin)) _isnt _unset 
+#		_then
+#			sym << ly_ps.sigc_style_view.collections [ :sw_gis!gis_point_style ].new_detached_record ()
+#		_else 
+#			sym << gis_program_manager.style_view.collections [ :sw_gis!gis_point_style ].new_detached_record ()
+#		_endif
+#	_endif
+#
+	sym << sym_ds.collections [ :sw_gis!gis_point_style ].new_detached_record ()
+	
+	
+
+	# .color is a real RGB thing, we must supply a float_vec[3] to
+	# override the default colour, which is stupid cause we already
+	# have a colour object. But anyway, we'll just have to do it here
+	# (and the float_vec must contain value ranging 0-100)
+	
+	col_vec << _unset 
+	_if _self.colour _isnt _unset
+	_then
+		col_vec << _self.colour.scaled_rgb_vector ( 100.0 )
+	_endif
+	
+	sym.symbol_name << _self.name
+	sym.realise ( _unset, col_vec )
+
+	_if sym.actual_geoms _is _unset 
+	_then
+		str << _self.message(:unknown_symbol, _self.name)
+		_self.draw_incomplete ( window, str )
+		_return 
+	_endif
+	
+	angle << - _self.angle.default ( 0.0 ).degrees_to_radians
+
+	sym.draw_sample ( window, _self.bounds,
+			  :rotate, angle,
+			  :flipped?, _self.flip.default ( _false ),
+			  :mirror?, _self.mirror.default ( _false ) )
+	
+_endmethod
+$

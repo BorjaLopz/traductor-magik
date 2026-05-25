@@ -1,0 +1,488 @@
+_package user
+$
+def_slotted_exemplar ( :c_pagrefs_viewport_layout,
+ ## Muestra en el borde del viewport las paginas adyacentes.
+ ## en el propio documento que contiene SELF.
+ ## fhramire
+ ## Se agrega el slot .oWindows, para que permita ser integrar
+ ## la funcionalidad de escalar y mover simbolos en los planos esquematicos.
+ {
+   {:oWindows,                   _unset, :writable, :public},
+   {:elementos_modificados ,     _unset, :writable, :public}    
+ }, :viewport_layout )
+$
+c_pagrefs_viewport_layout.define_shared_constant(:allowed_on_menu?,_false   , :public)
+$
+_pragma(classify_level=restricted, topic={plotting}, usage={subclassable})
+_method c_pagrefs_viewport_layout.defined_attributes
+	## 
+	## Definimos dos nuevos atributos para SELF, los estilos para
+	## el relleno de las flechas (marcas de ref.) y para el texto
+	## dentro de la flecha. 
+	##
+
+	attribs << rope.new_from ( _super.defined_attributes )
+	
+	attribs.add ( layout_attribute_definition.new (
+		       :fill_style_flecha, :fill_style,
+		       :description, "Estilo para las flechas",
+		       :default_value, fill_style.new_solid( colour.called(:dimgray))))
+
+	attribs.add ( layout_attribute_definition.new (
+			:tipo_letra_flecha, :string,
+			:description, "Tipo letra de la flechas",
+			:default_value, "plain",
+			:enum_method, :enum_font_names ) )
+
+	nvm << numeric_value_manager.new (
+			:valid_interval, interval.new ( 1.0, 72.0 ) )	
+	attribs.add ( layout_attribute_definition.new (
+			:tam_letra_flecha, :float,
+			:description, "Tamaño del texto de la flecha",
+			:value_mgr, nvm,
+			:default_value, 6.0 ) )
+
+	attribs.add ( layout_attribute_definition.new (
+			:color_texto_flecha, :colour,
+			:description, "Color texto de la flecha",
+			:default_value, colour.called(:white) ) )
+	
+	>> attribs
+_endmethod
+$
+c_pagrefs_viewport_layout.define_attributes()
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.geometry_set_for_render
+	##
+
+	_dynamic !current_coordinate_system!
+	!current_coordinate_system! << _self.coordinate_system
+	
+	LcollGeometrias << _super.geometry_set_for_render
+	
+	_if LcollGeometrias _isnt _unset 
+	_then							
+		_if _self.elementos_modificados _is _unset 
+		_then		
+			LoGuarda << c_guarda_objetos_vp.new()
+			LoGuarda.oResulSet << LcollGeometrias
+			elementos << LoGuarda.genera_lista_gsfr()
+
+			_for ky,ele _over elementos.keys_and_elements()
+			_loop
+				_self.guardar_visualizacion(ele,  ky)		
+			_endloop		
+		_endif	    
+	_endif
+	
+	_return LcollGeometrias
+	
+_endmethod
+$
+_method c_pagrefs_viewport_layout.calcular_punto_insercion ( numero )
+	## 
+	## Calcula la coordenada de insercion para la referencia NUMERO
+	##
+
+	# Definicion de constantes para el claculo del punto de
+	# insercion.
+	
+	# Distancia desde la esquina del viewport 
+	_constant offset << 200 
+
+	# Parametros para el calculo de todos los puntos de
+	# insercion. Los parametros indican donde el punto base
+	# respecto al viewport y el offset a sumar a la 'x' y a la
+	# 'y' para obtner el punto de insercion.
+	
+	_constant  param_ins << {{:top_right,    -offset,       0},
+				 {:top_right,          0, -offset},
+				 {:centre_right,       0,       0},
+				 {:bottom_right,       0,  offset},
+				 {:bottom_right, -offset,       0},
+				 {:bottom_centre,      0,       0},
+				 {:bottom_left,   offset,       0},
+				 {:bottom_left,        0,  offset},
+				 {:centre_left,        0,       0},
+				 {:top_left,           0, -offset},
+				 {:top_left,      offset,       0},
+				 {:top_centre,         0,       0}}
+	
+	# Calcula del punto de insercion para una referencia
+	# determinada.
+	
+	bounds << _self.boundary.bounds.new_enlarging(1.02)
+
+	params      << param_ins[numero]
+	coord_base  << params[1].send_to(bounds)
+	offset_x    << params[2]
+	offset_y    << params[3]
+	
+	_return coord_base + coordinate.new(offset_x, offset_y)
+_endmethod
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.calcular_referencias_pagina
+	## 
+	## Calcula las paginas adyacentes a la pagina donde se ubica
+	## SELF. Puede haber hasta doce paginas adyacentes, una por
+	## cada hora del reloj. 
+	##
+	## Devuelve una rope de 12 posiciones con unset o la pagina
+	## adyacente para dicha posicion.
+	##
+
+	adyacentes  <<  simple_vector.new(12)
+			 
+	 esta_pag    << _self.layout
+	 doc         <<  esta_pag.layout_document
+	 vp_esta_pag << _self
+
+	 bounds      << vp_esta_pag.world_bounds.bounds
+
+	 # Calulamos la adyacencia de SELF con todos las pag del
+	 # documento. Este metodo no es muy eficiente pero puede ser
+	 # valido hasta cien hojas. Para planos principales de mas de
+	 # cien hojas este algoritmo deberia revisarse.
+
+	 _for otra_pag  _over doc.pages()
+	 _loop
+		 # Evitamos comprobar si un frame es adyacente a si mismo
+		 _if esta_pag = otra_pag
+		 _then _continue 
+		 _endif
+
+		 # Suponemos un solo pagrefs element por pagina
+		 vp_otra_pag << otra_pag.get_first_element_of(
+					c_pagrefs_viewport_layout)
+
+		  # Saltamos la pagina si no hay un elemento
+		  # c_pagrefs_viewport_layout en la otra pagina. 
+
+		 _if vp_otra_pag _is _unset _orif
+		     vp_otra_pag.mapped? _is _false
+		 _then
+			 _continue
+		 _endif
+		 
+		 otro_bounds  << vp_otra_pag.world_bounds.bounds		 
+		 (adyacentes?, posiciones)  << _self.paginas_adyacentes?( bounds ,
+									  otro_bounds)
+	 
+		 _if adyacentes? _is _true
+		 _then
+			 num_pag <<  otra_pag.page_number().write_string
+			 _for pos _over posiciones.fast_elements()
+			 _loop
+				 adyacentes[pos] << num_pag
+			 _endloop
+		 _endif
+	 _endloop
+
+	# DEBUG: print adyacentes. 
+	#_self.print_debug_adyacentes( adyacentes )
+
+	 _return adyacentes
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_pagrefs_viewport_layout.crea_circulo_ubicacion(Punto, windows)
+	## 
+	## fhramire, metodo nuevo
+	_dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset
+
+	est_line1 << line_style.new_with_properties(:foreground_colour, colour.called(:blue), :width, 1)
+
+	LCoord << Punto.transformed(_self.transform)
+
+	LCo1 << coordinate.new(LCoord.x, LCoord.y)
+	LoCirculo << circle.new(LCo1, 300)
+	LoCirculo.draw_on(windows,est_line1)	
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.crea_sellos(PoCedos)
+	#---------------------------------------------------
+	##  Objetivo  : agregar sellos de cajas de distribucion con
+	## fibras asignadas.
+	##
+
+		_for reg _over PoCedos.elements()
+		_loop						
+			LCoord << reg.location.a_coord().transformed( _self.transform )
+
+                       # START CHANGE
+		       # (12/08/22 ahernanram) :se calculan la posicion en el viewport 
+		       #
+                        BB   <<  LCoord.buffer(500).bounds
+		       #
+		       # END CHANGE
+			
+			LoSelloFODto << user:c_fibras_por_distrito_falc.new_with(:bounds,BB )
+
+			LoSelloFODto.idcedo << reg.owner.id
+			
+			# START CHANGE
+			# (12/08/22 adcuesta) : se llenan los datos que se pueden tomar
+			# del distrito.
+			#
+			
+			LoSelloFODto.obten_registros_caja(reg)
+
+			#
+			# END CHANGE
+						
+			_self.layout_page.add_element(LoSelloFODto)
+		
+		_endloop	  	
+			
+_endmethod
+$
+
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.dibujar_flecha( window, coord, rot ) 
+	## 
+	## Dibuja la felcha de una referencia.
+	##
+
+	coords_flecha << sector.new_with_xy_vector( {-20, -20,
+						      20, -20,
+						      20,  10,
+						      30,  10,
+						       0,  30,
+						     -30,  10,
+						     -20,  10,
+						     -20, -20} )
+
+	txfrm << transform.new()
+	txfrm << txfrm.rotate( rot )
+	txfrm << txfrm.translate( coord.x , coord.y ) 
+	coords_flecha << coords_flecha.transformed( txfrm )
+	coords_flecha.fill_on( window, _self.fill_style_flecha )
+	coords_flecha.draw_on( window )
+_endmethod
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.dibujar_ref( window, numero , valor )
+	## 
+	##  Dibuja la referencia NUMERO (1..12) 
+	## 
+
+	_if valor _is _unset
+	_then
+		_return
+	_endif
+
+	_if numero = 11  _orif
+	    numero = 12 _orif
+	    numero = 1
+	_then
+		angulo << 0
+
+	_elif 2 <= numero _andif
+	      4 >= numero
+	_then
+		angulo << - 1.0.pi / 2.0
+
+	_elif 5 <= numero _andif
+	      7 >= numero
+	_then
+		angulo << - 1.0.pi
+		
+	_elif 8 <= numero _andif
+	      10 >= numero
+	_then
+		angulo << 1.0.pi / 2.0
+	_endif
+	
+	coord << _self.calcular_punto_insercion( numero ) 
+	_self.dibujar_flecha( window, coord , angulo)
+	_self.dibujar_texto ( window, coord , valor)
+_endmethod
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.dibujar_referencias( window, referencias )
+	## 
+	##
+
+	# Dibuja las doce marcas de referencia a otras paginas del
+	# documento
+
+	_for pos, val   _over referencias.fast_keys_and_elements() 
+	_loop
+		_self.dibujar_ref( window, pos, val)		
+	_endloop
+_endmethod
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.dibujar_texto( window, coord, valor )
+	## 
+	## Dibuja el texto de una referencia
+	##
+
+	window.draw_vtext_transform( _self.estilo_texto_flecha,
+				     coord.x,		     
+				     coord.y,
+				     valor,
+				     _unset,
+				     _unset,
+				     _unset,
+				     _unset,
+				     :centre_centre)
+_endmethod
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.draw_content_on ( window, _optional Punto  )
+	##
+	## Dibuja doce referencias alrededor de SELF viewport. 
+	##
+
+	## modificacion fhramire
+	.oWindows << window
+
+	_if Punto _isnt _unset 
+	_then
+	    _self.crea_circulo_ubicacion(Punto, .oWindows )	    
+	_endif
+	## fin de modificacion
+
+	_super.draw_content_on( window )
+		
+	_if _self.mapped? _is _true 
+	_then
+		# Ya podemos obtener las referencias reales
+		referencias << _self.calcular_referencias_pagina
+
+	_else
+		# El viewport aun no se ha asignado o no esta
+			# mapeado
+		referencias << simple_vector.new(12).fill_with("0")		
+	_endif
+	
+	_self.dibujar_referencias(window, referencias)
+
+
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_pagrefs_viewport_layout.enum_font_names
+	## 
+	## Devuelve la lista de fuentes posibles para plotting
+	##
+
+	fonts << font.known_scalable_fonts(:plotting)
+	>> fonts
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_pagrefs_viewport_layout.estilo_texto_flecha
+	## 
+	## Return the style to be used for drawing the text in window WINDOW.
+	##
+
+	font_name        << _self.tipo_letra_flecha
+	font_size        << _self.tam_letra_flecha
+	font_colour      << _self.color_texto_flecha
+	
+	a_font << font.new_logical ( font_name, font_size )
+
+	nvts << vtext_style.new_with_properties(:colour, font_colour,
+						:font  , a_font, 
+						:fixed_size?, _false, 
+						:multiline?, _true)	
+	>> nvts
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.obtener_transform
+	
+	_return _self.transform
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plotting})
+_method c_pagrefs_viewport_layout.paginas_adyacentes?(bounds, otro_bounds)
+	## 
+	## Determina si OTRO_BOUNDS es adyacente a BOUNDS. Devuelve un
+	## bool indicando si son adyacentes, y si lo son ademas
+	## devuelve un numero entre 1 y 12 que indica el tipo de adyacencia
+	## (hasta doce posiciones en el sentido de las agujas del reloj
+	## coincicidiendo con las horas, ej. adyacente a las doce
+	## equivale a que OTRO_BOUNDS esta justo encima del top_center
+	## de BOUNDS y asi sucesivamente).
+	##
+	## Supone que BOUNDS y OTRO_BOUNDS son del mismo tamaño 
+	##
+
+	# Definimos vector con todos los posibles puntos de adyacencia
+	# entre bounds y otro_bounds
+
+	mitad_alto  << bounds.height / 2.0
+	mitad_ancho << bounds.width  / 2.0
+	puntos_adyacencia <<
+		{ {:top_right    ,:bottom_centre ,mitad_ancho},
+		  {:top_right    ,:centre_left   ,mitad_alto},
+		  {:centre_right ,:centre_left   ,mitad_alto},
+		  {:bottom_right ,:centre_left   ,mitad_alto},
+		  {:bottom_right ,:top_centre    ,mitad_ancho},
+		  {:bottom_centre,:top_centre    ,mitad_ancho},
+		  {:bottom_left  ,:top_centre    ,mitad_ancho},
+		  {:bottom_left  ,:centre_right  ,mitad_alto},
+		  {:centre_left  ,:centre_right  ,mitad_alto},
+		  {:top_left     ,:centre_right  ,mitad_alto},
+		  {:top_left     ,:bottom_centre ,mitad_ancho},
+		  {:top_centre   ,:bottom_centre ,mitad_ancho}}
+
+	# Calculamos si son adyacentes en alguna de las doce posiciones
+	posiciones      << rope.new()
+	alguna_pos?    << _false
+	
+	_for  pos,k _over puntos_adyacencia.fast_keys_and_elements()
+	_loop
+		c1  << k[1].send_to(bounds)
+		c2  << k[2].send_to(otro_bounds)
+		tol << k[3]
+		
+		_if c1.distance_to (c2) < tol
+		_then
+			alguna_pos? << _true
+			posiciones.add_last ( pos) 
+		_endif			
+	_endloop
+
+	_return alguna_pos?, posiciones
+_endmethod
+$
+_pragma(classify_level=basic)
+_method c_pagrefs_viewport_layout.post_initialisation()
+	## 
+	## 
+
+	_super.post_initialisation()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plotting})
+_method c_pagrefs_viewport_layout.print_debug_adyacentes( adyacentes )
+	## 
+	## Debug print de los tiles adayacentes
+	##
+
+	_for k,f _over adyacentes.fast_keys_and_elements()
+	_loop
+		write("Pos ",k," pag. siguiente ", f)
+	_endloop
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_pagrefs_viewport_layout.ubica_elemento(Punto)
+	## fhramire
+	##
+	window << .oWindows	
+	_self.draw_content_on(window, Punto)
+	
+_endmethod
+$

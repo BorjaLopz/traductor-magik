@@ -1,0 +1,64 @@
+#----------------------------------------------------------------
+# Nombre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Proporciona la clase que almacena la relación entre las tablas
+#           y el tipo de geometría que contienen en sus registros.           
+# Autor: jesalaza
+# Fecha de creacion: 19/11/04
+# 
+# tipo_geometrias.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: jesalaza
+#
+# Date: 04/11/19
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+#remex(:c_Tipo_Geom)
+$
+
+def_slotted_exemplar(:c_Tipo_Geom,
+                     {	
+			{:oDataset, "", :writable},  # Slot que contendrá como dato el dataset al cual se accesará
+		        {:oTabla, "", :writable},    # Slot que representa la tabla de la cual se realizará la consulta
+		        			     # para saber qué elementos pintará el corte geográfico.
+		        {:oTipo_geom, "", :writable} # Tipo de geometría que se pintará en el corte.
+                     }
+)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Tipo_Geom.new(PoDataset,PoTabla,PoTipo_geom)
+## Objetivo: Definir el método de creación de la clase c_Tipo_Geom
+## Parámetros de entrada:  
+##	Dataset - PoDataset - Valor que contendrá como dato el dataset al cual se accesará
+##	Table - PoTabla - Valor que representa la tabla de la cual se realizará la consulta
+## 			  para saber qué elementos pintará el corte geográfico.
+##	Objeto - PoTipo_geom - Tipo de geometría que se pintará en el corte.
+## Regresa: La instancia del objeto.
+## Fecha de última modificación: 23/12/2004
+## Autor de la modificación : jesalaza
+## Descripción de la modificación: Se documentó
+
+    >> _clone.init(PoDataset, PoTabla, PoTipo_geom)
+_endmethod
+$
+
+_private _method c_Tipo_Geom.init(PoDataset, PoTabla, PoTipo_geom)
+## Objetivo: Definir el método de inicialización de la clase c_Tipo_Geom
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: La instancia del objeto.
+## Fecha de última modificación: 23/12/2004
+## Autor de la modificación : jesalaza
+## Descripción de la modificación: Se documentó
+    .oDataset<<PoDataset; .oTabla << PoTabla; .oTipo_geom << PoTipo_geom
+    >> _self
+_endmethod
+$

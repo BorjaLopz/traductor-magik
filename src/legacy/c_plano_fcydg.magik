@@ -1,0 +1,969 @@
+_package user
+$
+def_slotted_exemplar (:c_plano_fcydg
+                     ,{
+                       {:app,       smallworld_product.pni_application(), :writable, :public}
+		       ,{:origen,    coordinate.new(200,200),              :writable, :public}
+		       ,{:vp_nombre, _unset,                               :writable, :public}
+		       ,{:marco,     _unset,                               :writable, :public}
+		       ,{:rutas,     _unset,                               :writable, :private}
+		       ,{:LoOE,     _unset,                               :writable, :private}
+		      }
+		     ,{:layout_element, :viewport_layout_mixin}
+                     )
+$
+c_plano_fcydg.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.abreviaturas(LoPagina)
+        ##  Objetivo:              Este método genera el cuadro de abreviaturas del plano Fosa de
+	##                         cables y distribuidor general.
+        ##  Parámetros de entrada: a sw_layout_page - LoPagina - Página actual del Layout Designer.
+        ##  Parámetros de salida:  .
+        ##  Regresa:               N/A
+	
+        _local LoPolilinea       << polyline_layout.new()
+        _local LoSector          << _unset
+        _local LoSectorRope      << sector_rope.new()
+        _local LnDistanciaCorte  << 50
+        _local LoTexto           << _unset
+	_local LnY0              << 1300
+	_local LnPulgada         << 254
+
+	LoPolilinea.line_style   << line_style.new(colour.new_rgb(0, 0, 0), 2)
+	
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0))
+        LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+1000))
+        LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+1000))
+        LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0))
+        LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+900))
+        LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+900))
+        LoSectorRope.add(LoSector)
+        _for LiLinea _over 1.upto(17)
+        _loop
+                LoSector         << sector.new()
+        		LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+900-LiLinea*50))
+        		LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+900-LiLinea*50))
+        		LoSectorRope.add(LoSector)
+       	_endloop
+       	LoSector                 << sector.new()
+       	LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+900))
+       	LoSector.add(coordinate(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0))
+       	LoSectorRope.add(LoSector)
+       	LoTexto                  << textbox_layout.new()
+       	LoTexto.text             << "ABREVIATURAS PARA CAPACIDAD DE CABLE"
+       	LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+900,
+       						     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+1000)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "ABREVIATURAS PARA CAPACIDAD DE CABLE"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+900,
+        					     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+1000)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "A"	
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+900,
+        					     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+850)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "10 ps."
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+900,
+        					     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+850)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "B"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+850,
+        				             LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+800)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "20 ps."
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+850,
+                                                     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+800)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "C"
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+200,  LnPulgada+LnDistanciaCorte+LnY0+800,
+        				              LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+750)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "30 ps."
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+800,
+        				              LnPulgada+LnDistanciaCorte+570,  LnPulgada+LnDistanciaCorte+LnY0+750)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "D"
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+200,  LnPulgada+LnDistanciaCorte+LnY0+750,
+        				              LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+700)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "50 ps."
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+750,
+        				              LnPulgada+LnDistanciaCorte+570,  LnPulgada+LnDistanciaCorte+LnY0+700)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "E"
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+200,  LnPulgada+LnDistanciaCorte+LnY0+700,
+        					      LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+650)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "70 ps."
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+700,
+        				              LnPulgada+LnDistanciaCorte+570,  LnPulgada+LnDistanciaCorte+LnY0+650)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "F"
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+200,  LnPulgada+LnDistanciaCorte+LnY0+650,
+        				              LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+600)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "100 ps."
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+650,
+        				              LnPulgada+LnDistanciaCorte+570,  LnPulgada+LnDistanciaCorte+LnY0+600)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "G"
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+200,  LnPulgada+LnDistanciaCorte+LnY0+600,
+        				              LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+550)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "150 ps."
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+600,
+        					      LnPulgada+LnDistanciaCorte+570,  LnPulgada+LnDistanciaCorte+LnY0+550)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "H"
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+200,  LnPulgada+LnDistanciaCorte+LnY0+550,
+        				              LnPulgada+LnDistanciaCorte+300,  LnPulgada+LnDistanciaCorte+LnY0+500)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "200 ps."
+        LoTexto.bounds           << bounding_box.new( LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+550,
+        				              LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+500)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "I"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+500,
+        					     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+450)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "300 ps."
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+500,
+        					     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+450)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "J"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+450,
+        					     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+400)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "600 ps."
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+450,
+        					     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+400)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "K"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+400,
+        					     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+350)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "900 ps."
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+400,
+        					     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+350)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "L"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+350,
+        					     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+300)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "1200 ps."
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+350,
+        					     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+300)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        #	LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)		
+        	
+        LoPolilinea.sectors      << LoSectorRope
+        LoPagina.add_element(LoPolilinea)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "M"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+300,
+        					     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+250)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "1800 ps."
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+300,
+                                                     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+250)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)	
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "N"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+250,
+                                                     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+200)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "2400 ps."
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+250,
+                                                     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+200)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)	
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "T"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+200,
+                                                     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+150)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "TRONCAL"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+200,
+                                                     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+150)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "V"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+150,
+                                                     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+100)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "VIDEO"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+150,
+                                                     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+100)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "X"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+100,
+                                                     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+50)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "COAXIAL"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+100,
+                                                     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0+50)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "Z"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+200, LnPulgada+LnDistanciaCorte+LnY0+50,
+                                                     LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "FIBRA OPTICA"
+        LoTexto.bounds           << bounding_box.new(LnPulgada+LnDistanciaCorte+300, LnPulgada+LnDistanciaCorte+LnY0+50,
+                                                     LnPulgada+LnDistanciaCorte+570, LnPulgada+LnDistanciaCorte+LnY0)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoPolilinea.sectors      << LoSectorRope
+        LoPagina.add_element(LoPolilinea)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.AddTitulo(PoMarco)
+	## Objetivo: Agregar el titulo al plano
+	## Autor: lgranados
+	
+	LoPage << .app.plugin(:layout_plugin).start_layout_designer().plugin(:layout_manager).current_document.current_page
+	LoTitulo << _self.crea_titulo
+	
+	LoBB << bounding_box.new(PoMarco.bounds.xmax-2200,
+				 PoMarco.bounds.ymin+200,
+				 PoMarco.bounds.xmax-200,
+				 PoMarco.bounds.ymin+600)
+	
+	LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBB,
+					       :font_name,        "bold",
+					       :font_size,        8,
+					       :fill_style,       _unset,
+					       :outline_style,    _unset,
+					       :text,             LoTitulo,
+					       :wrap,             _false,
+					       :align_horizontal, :centre,
+					       :align_vertical,   :centre,
+					       :orientation,      :left_right)
+	
+	LoPage.add_element(LoTitulo)	
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.crea_titulo
+	## Objetivo: Crea el texto del titulo
+	## Autor: lgranados
+	
+	LoProyecto << swg_dsn_admin_engine.active_scheme.project
+	LoTitulo << "FOSA DE CABLES" + %newline +
+		    "CENTRAL: " + LoProyecto.user!_central.user!_nombre + %newline +
+		    LoProyecto.user!_central.user!_central + %newline +
+		    LoProyecto.user!_programa_tipo + %newline +
+		    LoProyecto.user!_fecha_entrega.write_string
+
+	_return LoTitulo
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.defined_attributes
+        ##  Objetivo:              Este método define atirbutos de este plano.
+        ##  Parámetros de entrada: N/A.
+        ##  Parámetros de salida:  sw:rope:[1-4] - _super.defined_attributes -
+	##                         atributos de viewport_layout_mixin.
+        ##                         sw:layout_attribute_definition -
+	##                         _self.viewport_attribute_definition - .
+        ##  Regresa:               sw:rope:[1-5] - attribs - Regresa Los atributos de este plano.
+	
+        attribs                    << rope.new_from(_super.defined_attributes)
+        attribs.add (_self.viewport_attribute_definition)
+        >> attribs
+_endmethod
+$
+c_plano_fcydg.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.genera_plano(tipo_plano)
+        ##  Objetivo:              Este método genera el plano Fosa de cables y distribuidor
+	##                         general.
+        ##  Parámetros de entrada: N/A.
+        ##  Parámetros de salida:  a sw:layout_page - LoPagina - Página actual del Layout Designer.
+        ##  Regresa:               N/A
+
+        _local LoDocumento        << .app.plugin(:layout_plugin).start_layout_designer().plugin(:layout_manager).current_document
+        LoDocumento.name          << "Plano fosa de cables y distribuidor general"
+	LoDocumento.user!_tipo_plano << tipo_plano
+        _local LoPagina           << LoDocumento.current_page
+        _local LnDistanciaCorte   << 50
+        _local LnPulgada          << 254
+        _local LnCartaHorizontal  << 8.5*LnPulgada
+        _local LnCartaVertical    << 11*LnPulgada
+        _local LnMarcoHorizontal  << 2*3*LnCartaHorizontal
+        _local LnMarcoVertical    << 3*LnCartaVertical
+        _local LnPaginaHorizontal << 2*LnDistanciaCorte+2*LnPulgada+LnMarcoHorizontal
+        _local LnPaginaVertical   << 2*LnDistanciaCorte+2*LnPulgada+LnMarcoVertical
+        LoPagina.set_paper_size(LnPaginaHorizontal, LnPaginaVertical)
+
+       .marco << _self.marco(LoPagina)
+       _self.AddTitulo(.marco)
+  
+        _local LoSello << c_sello_estandar_ctl_edo.new_with(:bounds,
+							    bounding_box.new(LnPulgada+50,
+									     LnPulgada+50,
+									     LnPulgada+50+2950,
+									     LnPulgada+50+2740))
+	LoPagina.add_element(LoSello)
+        _local LoPep << c_pep.new_with(:bounds,
+				       bounding_box.new(LnPulgada+250,
+							LnPulgada+1300,
+							LnPulgada+2950,
+							LnPulgada))
+	LoPep.oe << .LoOE
+
+	LoPagina.add_element(LoPep)
+        _self.abreviaturas(LoPagina)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.init()
+	## Objetivo:              Este método inicializa una nueva instancia
+	##                        del plano de fosa de cables y
+	##                        distribuidor general
+	## Parámetros de entrada: N/A
+	## Parámetros de salida:  N/A
+	## Regresa:               Esta instancia
+	
+	.app                      << smallworld_product.pni_application()
+	>> _self
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.marco(LoPagina)
+        ##  Objetivo:              Este método genera el marco del plano Fosa de cables y
+	##                         distribuidor general.
+        ##  Parámetros de entrada: a sw_layout_page - LoPagina - Página actual del Layout Designer.
+        ##  Parámetros de salida:  .
+        ##  Regresa:               N/A
+	
+	LoMarco << c_marco.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+	LoMarco.Largo << 6
+	LoMarco.Alto << 3
+	LoMarco.set_fill_colour(_unset)
+	LoPagina.add_element(LoMarco)
+	
+	_return LoMarco
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.new(_optional oe, tipo_plano)
+	## Objetivo:              Este método genera una nueva instancia
+	##                        del plano de fosa de cables y
+	##                        distribuidor general
+	## Parámetros de entrada: N/A.
+	## Parámetros de salida:  
+	## Regresa:               Una nueva instancia del plano fosa de
+	##                        cables y distribuidor general
+
+	
+	.LoOE << oe
+#write("@ estoy en c_plano_fcydg.new ", tipo_plano)
+#        .Stipo_plano << tipo_plano
+#	write("------------------------> ", .Stipo_plano)
+        >> _clone.init()
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.pie_de_plano(LoPagina)
+        ##  Objetivo:              Este método genera el pié de plano del plano Fosa de cables y
+	##                         distribuidor general.
+        ##  Parámetros de entrada: a sw_layout_page - LoPagina - Página actual del Layout Designer.
+        ##  Parámetros de salida:  .
+        ##  Regresa:               N/A
+	
+        _local LnDistanciaCorte  << 50
+        _local LoSectorRope      << sector_rope.new()
+        _local LoPolilinea       << polyline_layout.new()
+        _local LoTexto
+
+	LoPolilinea.line_style   << line_style.new(colour.new_rgb(0, 0, 0), 2)	
+	
+        #Pié de plano
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte,      2*LnDistanciaCorte+2790))
+        LoSector.add(coordinate(2*LnDistanciaCorte+150,  2*LnDistanciaCorte+2790))
+        LoSector.add(coordinate(2*LnDistanciaCorte+150,  2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+2050, 2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+2050, 2*LnDistanciaCorte))	
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+150, 2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+150, 2*LnDistanciaCorte))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+400, 2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+400, 2*LnDistanciaCorte))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+400, 2*LnDistanciaCorte+100))
+        LoSector.add(coordinate(2*LnDistanciaCorte+900, 2*LnDistanciaCorte+100))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+400, 2*LnDistanciaCorte+50))
+        LoSector.add(coordinate(2*LnDistanciaCorte+750, 2*LnDistanciaCorte+50))
+        LoSectorRope.add(LoSector)	
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+550, 2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+550, 2*LnDistanciaCorte))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+750, 2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+750, 2*LnDistanciaCorte))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+900, 2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+900, 2*LnDistanciaCorte))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+1600, 2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+1600, 2*LnDistanciaCorte))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+2050, 2*LnDistanciaCorte+150))
+        LoSector.add(coordinate(2*LnDistanciaCorte+2050, 2*LnDistanciaCorte))
+        LoSectorRope.add(LoSector)
+        LoPolilinea.sectors      << LoSectorRope
+        LoPagina.add_element(LoPolilinea)		
+
+        #Texto	
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "FOSA DE CABLES Y DISTRIBUIDOR GENERAL"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+1020,
+                                    2*LnDistanciaCorte+170,
+                                    2*LnDistanciaCorte+2400,
+                                    2*LnDistanciaCorte+300)
+        LoTexto.outline_style    << _unset
+        LoPagina.add_element(LoTexto)	
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "Delegación o municipio:"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+2090,
+                                    2*LnDistanciaCorte+20,
+                                    2*LnDistanciaCorte+2794,
+                                    2*LnDistanciaCorte+110)
+        LoTexto.outline_style    << _unset	
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "TELEFONOS DE MEXICO S.A. de C.V."
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+155,
+						            2*LnDistanciaCorte+5,
+						            2*LnDistanciaCorte+395,
+						            2*LnDistanciaCorte+145)
+        LoTexto.outline_style    << _unset
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "FECHA"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+405,
+                                    2*LnDistanciaCorte+105,
+                                    2*LnDistanciaCorte+545,
+                                    2*LnDistanciaCorte+145)
+        LoTexto.align_vertical   << :centre
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "DIBUJÓ"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+405,
+                                    2*LnDistanciaCorte+55,
+                                    2*LnDistanciaCorte+545,
+                                    2*LnDistanciaCorte+95)
+        LoTexto.align_vertical   << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "REVISÓ"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+405,
+                                                     2*LnDistanciaCorte+5,
+                                                     2*LnDistanciaCorte+545,
+                                                     2*LnDistanciaCorte+45)
+        LoTexto.align_vertical   << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto << textbox_layout.new()
+       	LoTexto.text             << "ESCALA"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+755,
+                                                     2*LnDistanciaCorte+105,
+                                                     2*LnDistanciaCorte+895,
+                                                     2*LnDistanciaCorte+145)
+        LoTexto.align_vertical   << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)	
+_endmethod
+$
+_method c_plano_fcydg.rutas
+        ## Este método regresa las rutas de el plano
+	##
+	>> .rutas
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.rutas << nuevas_rutas
+	## Este método asigna nuevas rutas a el plano
+	## 
+	.rutas << nuevas_rutas
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_fcydg.sello_pep(LoPagina)
+        ##  Objetivo:              Este método genera el cuadro de sello pep del plano Fosa de
+	##                         cables y distribuidor general.
+        ##  Parámetros de entrada: a sw_layout_page - LoPagina - Página actual del Layout Designer.
+        ##  Parámetros de salida:  .
+        ##  Regresa:               N/A
+	
+        _local LoSector
+        _local LoSectorRope      << sector_rope.new()
+        _local LoPolilinea       << polyline_layout.new()
+        _local LnDistanciaCorte  << _unset
+
+	LoPolilinea.line_style   << line_style.new(colour.new_rgb(0, 0, 0), 2)
+        LnDistanciaCorte         << 50
+
+        #Sello PEP
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+200))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+270))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+270))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+200))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+200))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+320))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+470))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+470))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+320))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+320))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+420))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+420))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+460, 2*LnDistanciaCorte+320))
+        LoSector.add(coordinate(2*LnDistanciaCorte+460, 2*LnDistanciaCorte+470))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+720, 2*LnDistanciaCorte+320))
+        LoSector.add(coordinate(2*LnDistanciaCorte+720, 2*LnDistanciaCorte+470))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+520))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+770))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+770))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+520))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+520))	
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+570))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+570))
+        LoSectorRope.add(LoSector)	
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+620))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+620))
+        LoSectorRope.add(LoSector)	
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+670))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+670))
+        LoSectorRope.add(LoSector)	
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+720))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+720))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+590, 2*LnDistanciaCorte+520))
+        LoSector.add(coordinate(2*LnDistanciaCorte+590, 2*LnDistanciaCorte+720))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+800))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+950))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+950))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+800))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+800))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+880))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+880))
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+460, 2*LnDistanciaCorte+800))
+        LoSector.add(coordinate(2*LnDistanciaCorte+460, 2*LnDistanciaCorte+950))	
+        LoSectorRope.add(LoSector)
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+720, 2*LnDistanciaCorte+800))
+        LoSector.add(coordinate(2*LnDistanciaCorte+720, 2*LnDistanciaCorte+950))	
+        LoSectorRope.add(LoSector)	
+        LoSector                 << sector.new()
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+980))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+1070))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+1070))
+        LoSector.add(coordinate(2*LnDistanciaCorte+980, 2*LnDistanciaCorte+980))
+        LoSector.add(coordinate(2*LnDistanciaCorte+200, 2*LnDistanciaCorte+980))
+        LoSectorRope.add(LoSector)
+
+        LoPolilinea.sectors      << LoSectorRope
+        LoPagina.add_element(LoPolilinea)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "Ruta:"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+350,
+                                    2*LnDistanciaCorte+265)
+        LoTexto.align_vertical   << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "Hoja:"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+465,
+                                                     2*LnDistanciaCorte+205,
+                                                     2*LnDistanciaCorte+610,
+                                                     2*LnDistanciaCorte+265)
+        LoTexto.align_vertical   << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "De:"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+725,
+                                    2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+800,
+                                    2*LnDistanciaCorte+265)
+        LoTexto.align_vertical   << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "PROYECTÓ"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+425,
+                                    2*LnDistanciaCorte+455,
+                                    2*LnDistanciaCorte+465)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "SUPERVISÓ"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+465,
+                                    2*LnDistanciaCorte+425,
+                                    2*LnDistanciaCorte+715,
+                                    2*LnDistanciaCorte+465)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+	LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "TELMEX"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+725,
+                                    2*LnDistanciaCorte+425,
+                                    2*LnDistanciaCorte+975,
+                                    2*LnDistanciaCorte+465)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+	LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "PRINCIPALES"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+525,
+                                    2*LnDistanciaCorte+585,
+                                    2*LnDistanciaCorte+565)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+	LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "CANALIZACIÓN"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+575,
+                                    2*LnDistanciaCorte+585,
+                                    2*LnDistanciaCorte+615)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "RECONCENTRACIÓN"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+625,
+                                    2*LnDistanciaCorte+585,
+                                    2*LnDistanciaCorte+665)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "DESMONTAJE"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+675,
+                                    2*LnDistanciaCorte+585,
+                                    2*LnDistanciaCorte+715)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "REFERENCIAS"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+725,
+                                    2*LnDistanciaCorte+975,
+                                    2*LnDistanciaCorte+765)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 4
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "OPB"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+885,
+                                    2*LnDistanciaCorte+455,
+                                    2*LnDistanciaCorte+945)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "OEI"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+465,
+                                    2*LnDistanciaCorte+885,
+                                    2*LnDistanciaCorte+715,
+                                    2*LnDistanciaCorte+945)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "OE"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+725,
+                                    2*LnDistanciaCorte+885,
+                                    2*LnDistanciaCorte+975,
+                                    2*LnDistanciaCorte+945)
+        LoTexto.align_vertical   << :centre
+        LoTexto.align_horizontal << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 3
+        LoPagina.add_element(LoTexto)
+        LoTexto                  << textbox_layout.new()
+        LoTexto.text             << "PEP"
+        LoTexto.bounds           << bounding_box.new(2*LnDistanciaCorte+205,
+                                    2*LnDistanciaCorte+985,
+                                    2*LnDistanciaCorte+975,
+                                    2*LnDistanciaCorte+1065)
+        LoTexto.align_vertical   << :centre	
+        LoTexto.outline_style    << _unset
+        LoTexto.font_size        << 4
+        LoPagina.add_element(LoTexto)	
+	
+_endmethod
+$

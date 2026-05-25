@@ -1,0 +1,28 @@
+
+_package user
+$
+#remex(:c_simbologia_ocupacion_de_ductos)
+$
+def_slotted_exemplar(:c_simbologia_ocupacion_de_ductos,
+{
+}, :c_base_sello_fibra)
+$
+c_simbologia_ocupacion_de_ductos.define_shared_constant(:allowed_on_menu?, _false  , :public)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_simbologia_ocupacion_de_ductos.configura_tabla()
+
+	LoTblContenido << property_list.new_with_properties(:ren,{37}, :col,{74})
+	LoTbl <<.o_tablas.crea_tabla(1,1, :tbl_contenido)
+	LoTbl.ocoordenada_origen << .o_coord_inicio
+	_self.asigna_medidas_tabla(LoTbl, LoTblContenido)
+	_self.oculta_bordes_celdas(LoTbl, LoTblContenido)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_simbologia_ocupacion_de_ductos.etiqueta_celdas()
+	_self.asigna_simbolo_celda(:tbl_contenido,1,1,"ocupacion_de_ductos", 3)
+_endmethod
+$
+

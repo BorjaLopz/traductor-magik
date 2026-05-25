@@ -1,0 +1,531 @@
+_package user
+$
+def_slotted_exemplar(:c_tbl_linea_Horizontal,
+    {
+       {:collEtiquetas, _unset}, # Etiquetas que van en la primera coluna
+       {:collValores,   _unset}, # Valores que van en la segunda columna	           
+       {:bConTitulo,    _unset}, # Indica si la tabla lleva o no titulo	    
+       {:nNumRen,       _unset}, # Numero de renglones del detalle
+       {:nAlto,         _unset}, # Alto de la tabla
+       {:nLargo,        _unset}, # Ancho o largo de la tabla
+       {:nAltoTitulo,   _unset}, # Altura del titulo      
+       {:oTablas,       _unset}, # Tablas que componen a la tabla linea horizontal
+       {:oLayout,       _unset}, # Layout al que pertenece la tabla 
+       {:oCoordOrigen,  _unset}  # Coordenada donde iniciara a dibjarse la tabla
+    }
+)
+$
+c_tbl_linea_Horizontal.define_slot_access(:bConTitulo,      :writable, :private)
+$
+c_tbl_linea_Horizontal.define_slot_access(:collEtiquetas,   :writable, :private)
+$
+c_tbl_linea_Horizontal.define_slot_access(:collValores,     :writable, :private)
+$
+c_tbl_linea_Horizontal.define_slot_access(:nAlto,           :writable, :private)
+$
+c_tbl_linea_Horizontal.define_slot_access(:nAltoTitulo,     :writable, :private)
+$
+c_tbl_linea_Horizontal.define_slot_access(:nLargo,          :writable, :private)
+$
+c_tbl_linea_Horizontal.define_slot_access(:nNumRen,         :writable, :private)
+$
+c_tbl_linea_Horizontal.define_slot_access(:oCoordOrigen,    :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Asigna_Celda_A_Titulo(RoCelda)
+## Objetivo: Asignar la celda que corresponde al titulo
+## Parámetros de entrada:
+##    RoCelda. Celda. Celda que contiene lo que se presenta en
+##                    la tabla de titulo
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 16/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	_if  _self.bConTitulo = _true 
+	_then
+  	   _self.oTablas.elemento(:tbl_tit).oCeldas.celda(1, 1).oElemento << RoCelda		
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Asigna_Etiquetas(RcollLista)
+##  Objetivo: Asigna la coleccion de elementos que se
+##            representaran en la etiqueta  
+##  Parámetros de entrada:
+##   RcollLista - Lista de valores que se representan en las etiquetas
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 16/11/2004
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+
+	_if RcollLista.size <= _self.nNumRen
+	_then
+	   _self.collEtiquetas << RcollLista
+	_else
+	   condition.raise(:warning, :string,
+                           "El número de etiquetas es mayor al número de renglones")
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Asigna_Valores(RcollLista)
+##  Objetivo: Asigna la coleccion de elementos que se
+##            representaran en la columna de valores
+##  Parámetros de entrada:
+##   RcollLista - Lista de valores que se representan en valores
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 16/11/2004
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+	
+	_if RcollLista.size <= _self.nNumRen
+	_then
+	   _self.collValores << RcollLista
+	_else
+	   condition.raise(:warning, :string,
+                           "El número de valores es mayor al número de renglones")	
+	_endif	
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_horizontal.b_dibuja_bordes? << b_valor
+	
+	_self.oTablas.elemento(:tbl_detalle).bdibuja_bordes? << b_valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.bConTitulo << valor
+
+	.bConTitulo << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Celda(RnRen, RnCol)
+##  Objetivo: retorna un elemento que se encuentra en una
+##            determinada celda
+##  Parámetros de entrada:
+##     RnRen, RnCol. Numero del renglon y columna en la que se
+##             encuentra la celda a la que se desea acceder 
+##  Parámetros de salida:   NA
+##  Regresa:
+##    El elemento que se encuentra almacenado en la celda, el
+##    tipo de objeto que regrese puede variar de acuerdo al objeto
+##     que se le haya asignado
+##  Fecha de última modificación: 16/11/2004
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+
+	_return _self.oTablas.elemento(:tbl_detalle).oCeldas.celda(RnRen, RnCol).oElemento
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Columna(RnCol)
+## Objetivo: retorna un elemento que representa a una columna
+## Parámetros de entrada:
+##    RnCol. Numero de columna a la que se desea acceder 
+## Parámetros de salida:   NA
+## Regresa:
+##  c_fila: regresa la columna solicitada 	
+## Fecha de última modificación: 16/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+        _return _self.oTablas.elemento(:tbl_detalle).oColumnas.elemento(RnCol)
+        
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Despliega(RoVentana)
+## Objetivo: Despliega las tablas que compoenen a tbl linea horizontal
+## Parámetros de entrada:
+##     RoVentana. Canvas donde se dibujaran las tablas 
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 16/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	_local LnLong   # Longitud del titulo, esta depende de las dos columans de detalle
+	_local LnAltura # Altura de la tabla titulo
+	_local LnY      # Posicion en Y de la tabla titulo
+	_local LnX      # Posicion en X de la tabla titulo
+	_local LoCoord  # Coordenada de la tabla titulo
+
+	# investiga si la tabla que se despliega lleva titulo
+	_if _self.bConTitulo = _true 
+	_then
+
+	  # obtener la coordenada de inicio de titulo para que se pueda dibujar	
+     	  LnLong << _self.Columna(1).nLongitud /10 + _self.Columna(2).nLongitud/10
+  	  _self.oTablas.elemento(:tbl_tit).oColumnas.elemento(1).nLongitud << LnLong
+
+          LnAltura << _self.oTablas.elemento(:tbl_tit).oRenglones.elemento(1).nLongitud
+	   
+          LnX << _self.oTablas.Elemento(:tbl_tit).oCoordenada_Origen.x
+	  LnY << _self.oTablas.Elemento(:tbl_tit).oCoordenada_Origen.y - LnAltura
+
+	  LoCoord << coordinate.new(LnX, LnY - LnAltura)
+	  _self.oTablas.Elemento(:tbl_detalle).oCoordenada_Origen << coordinate.new(LnX,LnY)
+	_endif
+
+
+	_self.prvAsigna_Etiquetas_Tabla()
+	_self.prvAsigna_Valores_Tabla()
+	
+	_self.oTablas.Despliega(RoVentana)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Dibuja_Columnas_Internas? << RbValor
+##  Objetivo: indica si en la tabla detalle se le dibujara la
+##             columna interna 
+##  Parámetros de entrada:  NA
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 16/11/2004
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+	
+	#lineas internas de la tabla no se dibujaran
+	_self.oTablas.elemento(:tbl_detalle).bDibuja_Columnas_Internas?  << RbValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Dibuja_Renglones_Internos? << RbValor
+##  Objetivo: indica si en la tabla detalle se dibujara los
+##            renglones (líneas) internos 
+##  Parámetros de entrada:  NA
+##  Parámetros de salida:   NA
+##  Regresa: NA
+##  Fecha de última modificación: 16/11/2004
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+	
+	#líneas internas de la tabla no se dibujaran
+	_self.oTablas.elemento(:tbl_detalle).bDibuja_renglones_Internos?  << RbValor
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.new(RoLayout, RoCoord, RnNumRen, RnAlto, RnLargo,
+				   _optional RbConTitulo)
+## Objetivo: Crear una instancia de tbl_Linea_Horizontal
+## Parámetros de entrada:
+##    RoLayout - objeto layout al cual es agregado
+##    RoCoord  - Coordenada donde iniciara a dibujarse
+##    RnNumRen - Numero de renglones que contrendra la tabla
+##    RnAlto   - Altura de la tabla
+##    RnLargo  - Ancho de la tabla
+##    RbConTitulo - Indica si debe de desplegar ul titulo -
+##               renglon 
+## Parámetros de salida:   NA 
+## Regresa: c_celda - regresa un objeto celda
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento				   
+
+	_self.oLayout      << RoLayout
+	_self.oCoordOrigen << RoCoord
+	_self.nNumRen      << RnNumRen
+	_self.nAlto        << RnAlto
+	_self.nLargo       << RnLargo
+
+	#por defecto va con titulo, por lo que bConTitulo es true
+	_if (RbConTitulo <> _unset) 
+	_then
+	   _self.bConTitulo  << RbConTitulo
+	_endif
+
+	_self.oTablas << c_tablas.new(_self.oLayout)
+
+	_self.prvCrea_Tablas()
+
+	_self.prvAsigna_Obj_Tbl_Detalle()
+	
+	_return _clone 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.nNumRen << value
+
+	.nNumRen << value
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.oLayout
+
+	>> .oLayout
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.oLayout << valor
+
+	.oLayout << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.oTablas
+
+	>> .oTablas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.oTablas << p_tablas
+
+	.oTablas << p_tablas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.prvAsigna_Etiquetas_Tabla()
+##  Objetivo: Asigna los valores de la coleccion de etiquetas a
+##            su correspoendeinte celda
+##  Parámetros de entrada: NA
+##  Parámetros de salida:  NA
+##  Regresa: NA
+##  Fecha de última modificación: 16/11/2004
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+	
+_if .collEtiquetas _isnt _unset
+_then
+	_local LnRen << 1 # Número del renglon 
+	_for LoCad  _over _self.collEtiquetas.fast_elements()
+	_loop
+	   _self.celda(LnRen,1).sTexto << LoCad
+	   LnRen << LnRen + 1
+	_endloop
+_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.prvAsigna_Obj_Tbl_Detalle()
+## Objetivo: Asigna el objeto que contendra cada celda de la tabla
+##           detalle
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 16/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	_local LoTexto # Objeto que servira como base para crear lso demas objetos 
+	_local LoTabla # Almacena la tabla detalle
+
+	LoTexto << c_texto_linea_grafico.new("")
+	LoTexto.sAlineacion << :centre_left
+	
+	LoTabla << _self.oTablas.elemento(:tbl_Detalle)
+	
+	_for LnCont  _over  range(1, _self.nNumRen)
+	_loop
+	   LoTabla.oCeldas.celda(LnCont, 1).oElemento << c_texto_grafico.new_from(LoTexto,"Vacio")
+	   LoTabla.oCeldas.celda(LnCont, 2).oElemento << c_texto_Linea_grafico.new_from(LoTexto,
+											" ")
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.prvAsigna_Valores_Tabla()
+##  Objetivo: Asigna los valores de la coleccion de valores a
+##            su correspoendeinte celda
+##  Parámetros de entrada: NA
+##  Parámetros de salida:  NA
+##  Regresa: NA
+##  Fecha de última modificación: 16/11/2004
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+
+_if .collValores _isnt _unset
+_then
+	_local LnRen << 1 # Número de renglon
+	_for LoCad  _over _self.collValores.fast_elements()
+	_loop
+	   _self.celda(LnRen,2).sTexto << LoCad
+	   LnRen << LnRen + 1
+	_endloop
+_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.prvCrea_Tablas()
+## Objetivo: manda llamar los metodos que crean las tablas que
+##           componen esta tabla
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_local LnAltura # altura de la tabla de titulo
+	_local LoCoord  # Coordenada donde se dibujara la tabla detalle
+
+	LnAltura << 0
+	_if _self.bConTitulo = _true 
+	_then
+  	   LnAltura << _self.prvCrea_Tbl_Titulo(_self.oCoordOrigen)
+	_endif
+	
+	LoCoord << coordinate.new(_self.oCoordOrigen.x, _self.oCoordOrigen.y - LnAltura )
+	_self.prvCrea_Tbl_Detalle(LoCoord)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.prvCrea_Tbl_Detalle(RoCoord)
+## Objetivo: Crea la tabla que define las caracteristicas del detalle
+## Parámetros de entrada:
+##   RoCoord - donde iniciara la tabal a dibujarse
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+
+	_local LoTblDetalle # Objeto que representa a la tabla detalle
+	_local LnLongRen    # Longitud de los renglones de la tabla detelle
+
+	LoTblDetalle << _self.oTablas.crea_tabla(_self.nNumRen,2,:tbl_Detalle)
+
+	# Coordenada donde iniciara la tabla
+	LoTblDetalle.oCoordenada_Origen << RoCoord
+
+	# longitudes de los renglones de la tabla, esta dada en mm
+	LnLongRen << _self.nAlto / _self.nNumRen
+	
+	_for LnCont  _over  range(1, _self.nNumRen)
+	_loop
+	   LoTblDetalle.oRenglones.elemento(LnCont).nLongitud << LnLongRen
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.prvCrea_Tbl_Titulo(RoCoord)
+## Objetivo: Crea la tabla que almacena el titulo de la tabla
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde iniciara la tabla
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_local LoTblTit # Objeto de la tabla titulo
+	_local LnAltura # Altura de la tabla titulo
+
+	LoTblTit << _self.oTablas.crea_tabla(1,1,:tbl_tit)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTit.oCoordenada_Origen << RoCoord
+
+	# longitudes de los renglones de la tabla, esta dada en mm
+        LoTblTit.oRenglones.elemento(1).nLongitud << 10
+
+	LnAltura << _self.oTablas.Longitud_total_renglones({:tbl_tit})
+        _return LnAltura
+        
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.Renglon(RnRen)
+##  Objetivo: retorna un elemento que representa a un renglon
+##  Parámetros de entrada:
+##     RnCol. Número de renglon  al que se desea acceder 
+##  Parámetros de salida:   NA
+##  Regresa:
+##   c_fila: renglon que se desea acceder de la tabla detalle	
+##  Fecha de última modificación: 16/11/2004
+##  Autor de la modificación : dsanchez
+##  Descripción de la modificación: Se creo
+
+
+        _return _self.oTablas.elemento(:tbl_detalle).oRenglones.elemento(RnRen)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.serial_slots()
+
+	keys << rope.new_with( :oTablas , :bConTitulo, :nNumRen)
+	values << rope.new_with( .oTablas, .bConTitulo, .nNumRen )
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tbl_linea_Horizontal.titulo_Renglon(RnRen)
+## Objetivo: retorna el elemento que se encuentra en la tabla
+##           que almacena el titulo de la tabla
+## Parámetros de entrada:
+##    RnRen. Numero del renglon al que se desea acceder
+## Parámetros de salida:
+##    c_fila:	Regresa el renglon de la tabla
+## titulo 
+## Regresa: NA
+## Fecha de última modificación: 16/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo	
+
+        _return _self.oTablas.elemento(:tbl_tit).oRenglones.elemento(RnRen)
+        
+_endmethod
+$

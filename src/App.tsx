@@ -227,6 +227,22 @@ import { CElementosUI } from './migration/CElementos';
 import { CFilasUI } from './migration/CFilas';
 import { CCentralEUI } from './migration/CCentralE';
 import { CCfgBloqueTitdetEditableMixinUI } from './migration/CCfgBloqueTitdetEditableMixin';
+// [91] c_vp_plano_proy_can
+import CVpPlanoProyCanViewer from './migration/CVpPlanoProyCan';
+// [92] c_style_y_viewport_layout
+import CStyleYViewportLayoutViewer from './migration/CStyleYViewportLayout';
+// [93] layout_series_plugin
+import LayoutSeriesPluginViewer from './migration/LayoutSeriesPlugin';
+// [94] c_geom_set_layout
+import CGeomSetLayoutViewer from './migration/CGeomSetLayout';
+// [95] c_fibras_por_distrito_falc
+import CFibrasPorDistritoFalcViewer from './migration/CFibrasPorDistritoFalc';
+// [96] c_pep
+import CPepViewer from './migration/CPep';
+// [97] layout_plugin
+import LayoutPluginViewer from './migration/LayoutPlugin';
+// [98] c_lista_materiales_cables
+import CListaMaterialesCablesViewer from './migration/CListaMaterialesCables';
 // NOTA: al añadir una nueva migración, agregar su import aquí y una entrada en DEMO_ITEMS.
 
 // =============================================================================
@@ -2047,6 +2063,62 @@ const DEMO_ITEMS: DemoItem[] = [
     label: '[90] layout_element',
     description: 'Clase base de todos los elementos GIS de plano. define_shared_constant 9 atributos (outline/fill/shadow/locked/elementosBdGis/lb/modificados/cedos/agregarCedos). guardar_elementos_bd_*() serializa GisRecord[] a ElementRef[] ({col→id}). obtener_elementos_bd_*() resuelve refs desde dataset. TransformaCoordenada() aplica escala solo en canvas (print). indicadores() construye c_style_y_viewport_layout: transforma coord GIS→página, calcula endpoint arriba/abajo del viewport, crea style box. BUG documentado: con_punta y usa_viewport se sobreescriben incondicionalmente al final.',
     render: () => <DemoLayoutElement />,
+  },
+  // ── [91] c_vp_plano_proy_can ─────────────────────────────────────────────────
+  {
+    id: '91-c-vp-plano-proy-can',
+    label: '[91] c_vp_plano_proy_can',
+    description: 'Viewport de plano de proyección de canalización. Secciona el tramo con c_seccionamiento, renderiza la sección iIndicePlano con marcas de continuación C-bracket (letras A–K) y dibuja línea S entre pozo inicial y final entre viewports hermanos.',
+    render: () => <CVpPlanoProyCanViewer />,
+  },
+  // ── [92] c_style_y_viewport_layout ──────────────────────────────────────────
+  {
+    id: '92-c-style-y-viewport-layout',
+    label: '[92] c_style_y_viewport_layout',
+    description: 'Elemento de layout que combina estilo gráfico (fig_uno–fig_seis) con viewport. Dibuja figuras predefinidas (pozo, canal, etiqueta) con línea de señalamiento opcional. 9 atributos: figure_name, symbol_colour, angulo, usa_viewport, con_linea, con_punta, derecho, nIdObjRel, LyCampoGeoObjRel.',
+    render: () => <CStyleYViewportLayoutViewer />,
+  },
+  // ── [93] layout_series_plugin ────────────────────────────────────────────────
+  {
+    id: '93-layout-series-plugin',
+    label: '[93] layout_series_plugin',
+    description: 'Plugin de series de planos FO/Cobre. Detecta tipo de plano (ruta/compa/esquematico/trayectoria/lar/ftth), lee config desde planos_config.xml (ace_name/display_style/style_group), propaga sectors_buffer a viewports, coordina layout_series_engine.update_document en hilo async.',
+    render: () => <LayoutSeriesPluginViewer />,
+  },
+  // ── [94] c_geom_set_layout ───────────────────────────────────────────────────
+  {
+    id: '94-c-geom-set-layout',
+    label: '[94] c_geom_set_layout',
+    description: 'Elemento de layout que inicializa páginas de plano GIS según sTipoPlano (10 tipos: DISTRITOS/ASHURADO/CANALIZACION/ITINERARIO/RUTA_CABLES/Plano_desmontaje_CD/Physical NI User/CONSTRUCCION/BAJANTES/ESTUDIO_CONJUNTO). Crea marco, viewport, norte y sello correspondiente.',
+    render: () => <CGeomSetLayoutViewer />,
+  },
+  // ── [95] c_fibras_por_distrito_falc ─────────────────────────────────────────
+  {
+    id: '95-c-fibras-por-distrito-falc',
+    label: '[95] c_fibras_por_distrito_falc',
+    description: 'Sello FALC de fibras ópticas por distrito. Muestra CEDO, viviendas del DOG, fibras (viv/64 min 2), NCO, NIPP, distancias a NCO y OC. Sello editable: guarda valores en defined_attributes. 5 tablas: título rojo, encabezados DTOS/VIV/FIBRAS azules, distancias con colores hex.',
+    render: () => <CFibrasPorDistritoFalcViewer />,
+  },
+  // ── [96] c_pep ───────────────────────────────────────────────────────────────
+  {
+    id: '96-c-pep',
+    label: '[96] c_pep',
+    description: 'Sello de PEP (Plan de Ejecución del Proyecto) para planos cobre/FO. 6 tablas: OPB/OEI/OEs/PROG/OT, PEP, Referencias (desmontaje/canalización/principal/reconcentración), Proyecto (proyectista/supervisor/supervisorTelmex), Ruta. 11 atributos editables. Soporte para override de propiedades (valor_propiedad).',
+    render: () => <CPepViewer />,
+  },
+  // ── [97] layout_plugin ───────────────────────────────────────────────────────
+  {
+    id: '97-layout-plugin',
+    label: '[97] layout_plugin',
+    description: 'Plugin principal SW de layout GIS. Registra 5 acciones UI (quick_preview, layout_designer, quick_print, quick_pdf, plano_de_captura). fecha_med() formatea "dd/Mes/yyyy". plano_de_captura() ramifica: fibra existente → c_plano_de_captura_fo; else → marco 4×2 + construcción. quick_preview lee SW_TEMPLATES_DB_DIR + p_libre_plot.xml.',
+    render: () => <LayoutPluginViewer />,
+  },
+  // ── [98] c_lista_materiales_cables ───────────────────────────────────────────
+  {
+    id: '98-c-lista-materiales-cables',
+    label: '[98] c_lista_materiales_cables',
+    description: 'Sello FO de lista de materiales de cables proyectados. Agrupa sheaths PROYECTADO por (collection|spec_id), excluye principales (upstream CEDO). Tabla dinámica 2+N filas × 4 cols (No/CAPACIDAD/TIPO/LONGITUD). Ordena con strings_with_numbers. Celdas de datos en rojo.',
+    render: () => <CListaMaterialesCablesViewer />,
   },
   // ── PROXIMA MIGRACION: agregar entrada aqui ─────────────────────────────────
 ];

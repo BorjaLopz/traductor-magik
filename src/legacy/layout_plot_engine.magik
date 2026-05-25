@@ -1,0 +1,49 @@
+_package sw
+$	 
+_pragma(classify_level=restricted, topic={plotting}, usage={internal})
+_method layout_plot_engine.centraliza_launch(_optional enable_interrupt?, pos)
+	## 
+	## 
+		## 
+	## Returns TRUE on succesfull launch, FALSE otherwise
+	##
+	## POS is an optional PIXEL_COORDINATE to position the
+	## Interrupt/Progress frame on screen
+	##
+
+	_if .thread _isnt _unset 
+	_then
+		_return _false
+	_endif
+	
+	_if enable_interrupt?.default ( _false )
+	_then
+		str << write_string ( "Inicializando..." )
+		f << frame.new ( "Centralizando el plano" )
+		p << panel.new ( f )
+		.label << label_item.new ( p, str )
+		p.start_row ()
+		b << button_item.new ( p, "Interrumpir Centralización", _self, :kill|()|, :min_width, 100 )
+		_if pos _isnt _unset 
+		_then
+			f.position << pos 
+		_endif
+		f.activate ()
+		.frame << f
+	_endif
+
+	plot_proc <<
+		_proc ( owner )
+
+			owner.int!do_plot ()
+
+		_endproc
+
+	.thread << plot_proc.fork_at ( _thisthread.background_priority, _self )
+	# (18/02/24 bernardoa) : Se agrega un nombre al thread para
+	# poder monitorear la finalizacion de este
+	.thread.set_name("centralizado_planos")
+
+	>> _true
+_endmethod
+$

@@ -1,0 +1,207 @@
+#----------------------------------------------------------------
+# c_croquis.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: aegijon
+#
+# Date: 04/12/22
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+#remex(:c_croquis)
+$
+def_slotted_exemplar (:c_croquis,
+                      {
+		         {:app, smallworld_product.pni_application()},
+			 {:vp_nombre, _unset}
+		      }, {:layout_element,
+		          :viewport_layout_mixin})
+$
+c_croquis.define_shared_constant(:activate_properties_dialog_on_insert?,
+	                            _false,:public)
+$
+c_croquis.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_croquis.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from(_super.defined_attributes)
+	attribs.add (_self.viewport_attribute_definition)
+	>> attribs	
+_endmethod
+$
+
+c_croquis.define_attributes()
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_croquis.ordenamiento(RoSecRope,RoSector_a)
+	## 
+	## 
+	## Objetivo: El presente código es para que apartir de los
+	## sectores de un sector_rope, se genere un nuevo sector
+	## ordenado, es decir, un sector donde sus coordenadas tiene
+	## una conexión fisica en el mapa. El Sector del sector_rope
+	## que sus coordenadas se agreguen al nuevo sector, sera
+	## borrado del sector_rope
+	## Parámetros de entrada:
+	## RoSecRope:       sector_rope de referencia
+	## RoSector_a:      Sector ordenado
+	## Regresa:         Modifica los parámetros por Referencia
+        ## Fecha  de última modificación: 21-Dic-2004
+        ## Autor de la modificación: aegijon
+        ## Descripción de la modificación: Método nuevo.
+
+_local LoSecRopeIt      # Iterador del sector_rope
+_local LoSecIt          # Iterador del Sector
+
+# se recorren los sectores del sector_rope, si el sector
+# RoSector_a es unset, se la agregan las coordenadas del iterador 
+_for LoSecRopeIt _over RoSecRope.elements()
+	 _loop
+	_if RoSector_a.first_coord _is _unset 
+	_then
+		_for LoSecIt _over LoSecRopeIt.sectors()
+		_loop
+			_for pnt _over LoSecIt.elements()
+			_loop
+				RoSector_a.add_last(pnt)
+			_endloop
+		_endloop
+	RoSecRope.remove(LoSecRopeIt)
+	_continue 
+	_else 
+		_for LoSecIt  _over LosecRopeIt.sectors() #sec  sector del tramo1
+		 _loop
+			 # 1a coord del Tramo = 1a coord del sector nuevo
+			_if LoSecIt.first_coord = RoSector_a.first_coord  
+			_then
+				_continue
+			# Ultima coord del Tramo = 1a coord del sector nuevo
+			_elif LoSecIt.last_coord = RoSector_a.first_coord 
+			_then 
+				RoSector_a.add_all_first(LoSecIt)
+				RoSecRope.remove(LosecRopeIt)
+				_continue
+			# 1a coord del Tramo = Ultima coord del sector nuevo
+			_elif LoSecIt.first_coord = RoSector_a.last_coord 
+			_then 
+				RoSector_a.add_all_last(LoSecIt)
+				RoSecRope.remove(LoSecRopeIt)
+				_continue
+			# Ultima coord del Tramo = Ultima coord del sector nuevo
+			_elif LoSecIt.last_coord = RoSector_a.last_coord 
+			_then 
+				_continue 
+			_else 
+				_continue 
+			_endif
+		 _endloop
+	_endif
+ _endloop
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_croquis.croquis_proyec_canaliz()
+	## 
+	## 
+##Agregar el Croquis de Localización a las paginas # AEG
+paf << smallworld_product.pni_application()
+LoCMV << paf.plugin(:map_plugin).current_map_view
+#LoLy_plu << _self.framework.plugin(:layout_plugin)
+LoLy_plu << paf.plugin(:layout_plugin) 
+LoLy_des << LoLy_plu.start_layout_designer()
+Lovi_map << LoLy_des.plugin(:viewport_mapper)
+LoLy_page << LoLy_des.plugin(:layout_manager).current_document.current_page
+#croquis << c_croquis.new()
+_self.dibuja_trazo()
+LoTrazo << paf.plugin(:map_plugin).current_map.trail
+# START CHANGE
+# (05/01/20 ahernan) : 
+#
+_if _self.bounds _isnt _unset 
+_then
+	LoBound << _self.bounds 
+_else
+	LoBound << bounding_box.new(4400,1200,5900,2700)	
+_endif
+#
+# END CHANGE
+LoBound1 << bounding_box.new(LoBound.xmin+100,LoBound.ymin+200,LoBound.xmax-100,LoBound.ymax-200)
+vp << viewport_layout.new_with(:bounds, LoBound1.bounds)	
+vp.name << "Vp_Croquis_Can"
+vp.ace_name << "CROQUIS_CAN"
+LoCMV.map.ace_name << "CROQUIS_CAN"
+LoLy_page.add_element(vp)
+Lovi_map.map_viewport_on_map_view(vp,LoCMV,LoTrazo.bounds,_true)
+LoCMV.map.ace_name << "CENTRALES"
+LoBound1 << bounding_box.new(LoBound.xmin,LoBound.ymax-600,LoBound.xmin+350,LoBound.ymax)
+LoNorte << northarrow_layout.new_with(:bounds, LoBound1.bounds)
+LoNorte.style_name <<  "norte_1"
+LoNorte.fill_style <<  _unset
+LoNorte.outline_style << _unset
+vp.fill_style << _unset
+vp.outline_style << _unset 
+LoLy_page.add_element(LoNorte)
+LoBound1 << bounding_box.new(LoBound.xmin+500,LoBound.ymax-150,LoBound.xmax-300,LoBound.ymax-50)
+LoTitulo << textbox_layout.new_with(:bounds, LoBound1)
+LoTitulo.fill_style << _unset
+LoTitulo.outline_style << _unset
+LoTitulo.text << "Croquis de Localización"
+LoTitulo.align_horizontal << "centre"
+LoTitulo.clip << _false 
+LoLy_page.add_element(LoTitulo)
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_croquis.dibuja_trazo()
+	## 
+	##
+_local LoSector_aux
+_local LoBuffer
+_local LoMapa
+        LoMapa << LoMapa << smallworld_product.pni_application().plugin(:map_plugin).current_map
+	LoSector_aux << _self.arma_sector()
+	LoBuffer << LoSector_aux.buffer(5000)
+#	LoBuffer << LoBuffer.transformed(transform.new().scalexy(10,10))
+	LoBuffer.world << LoMapa.world
+	LoMapa.set_trail_from_geometry(LoBuffer)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_croquis.arma_sector()
+	## 
+	##
+_local LoTramo           # Tramo de Canalización
+_local LoSector_a        # Sector donde se ordenan y unifican los sectores de la Canalización
+	
+        LoMapa << smallworld_product.pni_application().plugin(:map_plugin)
+        LoElementos << LoMapa.current_map.current_selection
+        LoTCanaliz << sector_rope.new()
+	LoSector_a << sector.new()	
+	_for LoTramo _over LoElementos.fast_elements()
+	_loop
+		_if LoTramo.rwo.rwo_type _is :underground_route
+		_then
+			LoTCanaliz.add(LoTramo)
+		_endif
+	_endloop
+	_loop
+		_if LoTCanaliz.size = 0
+		_then 
+			_leave
+		_else
+			_self.ordenamiento(LoTCanaliz,LoSector_a)
+		_endif
+	_endloop	
+	_return LoSector_a
+_endmethod
+$

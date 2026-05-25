@@ -1,0 +1,53 @@
+#----------------------------------------------------------------
+# metodos_varios.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: vbluna
+#
+# Date: 06/03/29
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_pragma(classify_level=restricted, usage={redefinable})
+_method user!_ruta_co.total_metros_lineales
+
+	_local o_tramo
+	_local ln_mts_lin_ruta << 0.0
+	_local ln_mts_lin_tramo
+	
+	_for tramo _over _self.get_tramos().elements()
+	_loop
+		o_tramo << c_tramo_can.new(tramo)
+		ln_mts_lin_tramo << o_tramo.calcular_longitud_obra()[:|Total|].default(0.0)
+		ln_mts_lin_ruta << ln_mts_lin_ruta + ln_mts_lin_tramo
+	_endloop
+
+	_return ln_mts_lin_ruta
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method user!_ruta_co.total_metros_via
+
+	_local o_tramo
+	_local ln_mts_via_ruta << 0.0
+	_local ln_mts_via_tramo
+	
+	_for tramo _over _self.get_tramos().elements()
+	_loop
+		o_tramo << c_tramo_can.new(tramo)
+		o_tramo.calcular_longitud_obra()
+		o_tramo.calcular_longitud_obra_cepa_hecha()
+		o_tramo.calcular_longitud_obra_tubos_adic()
+		ln_mts_via_tramo << o_tramo.calcular_longitud_obra_mts_via()[:|Total|].default(0.0)
+		ln_mts_via_ruta << ln_mts_via_ruta + ln_mts_via_tramo
+	_endloop
+
+	_return ln_mts_via_ruta
+	
+_endmethod
+$

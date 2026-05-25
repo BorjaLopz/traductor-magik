@@ -1,0 +1,354 @@
+#----------------------------------------------------------------
+# c_arbol_distritos_para_ruta.magik - Smallworld Physical Network Inventory
+#                       Customization for Project : SIGC11
+#
+# GE Network Solutions
+#
+# Created By: fmejia
+#
+# Date: 21/04/2009
+# Description: Clase necesaria para permitir al usuario
+# seleccionar los distritos necesarios y agregarlos a la ruta a
+# insertar los cuales se identifican por conectividad de estructuras
+# desde la central..
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+
+_package user
+$
+
+def_slotted_exemplar(:c_arbol_distritos_para_ruta,
+                     {
+	                {:list,      _unset, :writable}, 
+	                {:tree_item, _unset, :writable},
+	                {:ruta,      _unset, :writable}
+                     },
+		     :model)
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.activate_in(p_frame)
+	##Se activa la interface del arbol con los distritos que
+	## detecta conectados por canalización y/o ruta aérea hasta la central
+	
+	p_frame.maximizable? << _false
+	p_frame.default_resize? << _false
+	p_frame.title << "Asignar Distritos a la Ruta"
+
+	
+	_local l_button_width << 80 
+	_local l_rc << rowcol.new(p_frame, _unset, 1, _unset,
+				  :row_resize_values, {100, 0},
+				  :resize_x?, _true, :resize_y?, _true)
+
+	_local l_style_holder << string_styles_holder.new_with()
+	l_style_holder.add_text_style(:green_bold, :green, _false, font.new_logical("bold", 12))
+
+	.tree_item << tree_item.new(l_rc,
+				    :model,         _self,
+				    :message_on_no_data?,   _true,
+				    :data_selector, {:|llena_arbol()|},
+				    :col_alignment, :fill,
+				    :row_alignment, :fill,
+				    :width,         200,
+				    :select_notifier,                 :|selected()|,
+				    :style_holder, l_style_holder,
+				    :mode,           :one)
+			  
+	_local l_brc << rowcol.new(l_rc, 1, _unset, :pixel, :style, :button_box, :col_alignment, :right, :top_spacing, 2)
+	button_item.new_safe(l_brc, "Agregar Distritos Seleccionados",  _self, :|agregar()|,  :min_width, l_button_width)
+	button_item.new_safe(l_brc, "Desagregar Distritos Seleccionados",  _self, :|desagregar()|,  :min_width, l_button_width)
+	button_item.new_safe(l_brc, "Agregar Distrito del mapa",  _self, :|agregar_manual()|,  :min_width, l_button_width)
+	button_item.new_safe(l_brc, "Salir",   _self, :|cancelar()|,    :min_width, l_button_width)
+	
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.llena_arbol()
+	##metodo que regresa una lista para llenar el arbol con los distritos que sean
+	## detectados en el metodo obtener_datos().
+	
+	_local central << rope.new()
+	_local cajas << rope.new()
+
+	(central,cajas) << _self.obtener_datos()
+	
+	_local l_list << rope.new()
+
+	_local l_styled_string << styled_string.new(:toggle, :check,
+						    :value, :valor,
+						    :green_bold,:value,:estatus	)
+
+
+	_for caja _over cajas.fast_elements()
+	_loop
+		l_valor << _self.verifica_caja(caja)
+		_local l_display_tree << display_tree.new(caja, l_valor)
+		l_display_tree.styled_string << l_styled_string
+		l_list.add(l_display_tree)
+	_endloop
+	.list << l_list
+
+	>> .list
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.verifica_caja(elemento)
+	## verifica cada uno de los distritos para saber si ya esta
+	## asociado a una ruta o si esta sin asociar.
+	##
+	_local l_valor
+	_local etiqueta << "Distrito " + elemento.construction_status + " "
+	_local estatus  << " Sin Asignar"  
+	_local comentario << etiqueta + elemento.user!_nombre_distrito 
+
+	_if elemento.user!_ruta_co _isnt _unset
+	_then
+		comentario << ""
+		estatus << " Asignado a la Ruta: " + elemento.user!_ruta_co.user!_numero.write_string
+	_endif
+
+	comentario << etiqueta + elemento.user!_nombre_distrito
+
+	
+	l_valor << property_list.new_with(:elemento,elemento,:valor, comentario, :check, _false,:estatus,estatus)
+
+	_return l_valor
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.obtener_datos()
+	## Se obtienen los distritos que se encuentran conectados por
+	## canalización y/o ruta aérea hasta la central tomando como
+	## referencia el primer pozo que se encuentra en la estructura
+	## sobre la que se definio el trazo.
+	## 
+	l_app   << smallworld_product.pni_application()
+	l_ed    << l_app.plugin(:editor_manager).current_embedded_editor
+	l_mapa  << l_app.plugin(:map_plugin)
+	l_ruta  << l_ed.current_object
+
+	.ruta << l_ruta
+	
+	_local oCoord << l_mapa.current_trail.first_coord
+	_local oSeleccion 
+	_local central << rope.new()
+	_local cajas << rope.new()
+
+
+	_if oCoord _isnt _unset 
+	_then
+		(geom,rwo) << _self.nearest_structure_route(oCoord)
+		oSeleccion << rwo
+	_endif
+	
+	 _if  l_ruta _isnt _unset _andif l_ruta.is_kind_of?(user!_ruta_co) _andif oSeleccion _isnt _unset 
+	 _then
+		 (cajas,central) << user!_ruta_co_editor_plugin.get_cajas_y_central(oSeleccion)
+	 _endif
+
+	 _for ca _over l_ruta.mit_terminal_enclosures.fast_elements()
+	 _loop
+		 _if cajas.includes?(ca).not
+		 _then
+			 cajas.add(ca)
+		 _endif
+	 _endloop
+
+	  _return central,cajas
+	 
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.agregar()
+	##Agrega los distritos seleccionados por el usuario, ala ruta
+	## activa en el editor.
+	_self.valida_editor()
+	_local l_app   << smallworld_product.pni_application()
+	_local l_ed    << l_app.plugin(:editor_manager).current_embedded_editor
+
+
+	_local cajas << _self.activados()
+	_for caja  _over cajas.fast_elements()
+	_loop
+		.ruta.mit_terminal_enclosures.add(caja)
+	_endloop
+
+	_dynamic !desactivar_alerta! << _true
+	l_ed.action(:update).execute_action()
+	
+	.tree_item.refresh()
+	
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.desagregar()
+	##Desagrega los distritos seleccionados por el actor a la ruta
+	## activa en el editor
+	_self.valida_editor()
+	_local l_app   << smallworld_product.pni_application()
+	_local l_ed    << l_app.plugin(:editor_manager).current_embedded_editor
+
+	_local cajas << _self.activados()
+	_for caja  _over cajas.fast_elements()
+	_loop
+		
+		.ruta.mit_terminal_enclosures.remove(caja)
+	_endloop
+	_dynamic !desactivar_alerta! << _true
+	l_ed.action(:update).execute_action()
+	.tree_item.refresh()
+	
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.agregar_manual()
+	## 
+	##
+	_self.valida_editor()
+	_local l_app   << smallworld_product.pni_application()
+	_local l_ed    << l_app.plugin(:editor_manager).current_embedded_editor
+	_local l_mapa  << l_app.plugin(:map_plugin).current_map
+	_local l_dto << _unset
+	
+	_if l_mapa.current_selection.size = 0
+	_then
+		l_app.show_alert("No se ha seleccionado el Registro o Caja de distribución")
+		!abort!()
+	_else
+		_if l_mapa.current_selection.an_element().rwo.source_collection.name _is :mit_terminal_enclosure _orif
+		    l_mapa.current_selection.an_element().rwo.source_collection.name _is :user!_registro_tablero
+		_then
+			l_dto << l_mapa.current_selection.an_element().rwo
+			.ruta.mit_terminal_enclosures.add(l_dto)
+			.tree_item.refresh()
+			_dynamic !desactivar_alerta! << _true
+			l_ed.action(:update).execute_action()
+		_else
+			l_app.show_alert("Debe de seleccionar un Registro o Caja de distribución")
+		_endif
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.cancelar()
+	## Termina la interface.
+	##
+	_local l_app   << smallworld_product.pni_application()
+	_local l_ed    << l_app.plugin(:editor_manager).current_embedded_editor
+	_if l_ed.plugin(:editor_ruta_co_asociacion) _isnt _unset 
+	_then
+		l_ed.plugin(:editor_ruta_co_asociacion).refresca_editor()
+
+	_endif
+		_self.quit()	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.activados()
+	
+	## Regresa una lista de los objetos activados por el usuario
+
+	_local RoHT << rope.new()
+	_for dt _over .list.fast_elements()
+	_loop
+
+		_if dt.value[:check] _isnt _unset _andif dt.value[:check] 
+		_then
+			 RoHT.add(dt.value[:elemento] )
+		_endif
+	_endloop
+	>> RoHT
+
+_endmethod
+$
+
+
+_method c_arbol_distritos_para_ruta.nearest_structure_route(coord, _optional tolerance)
+	##obtiene la estructura mas cercana al trazo dado por el usuario
+        geoms_found << rope.new()
+        objs      << {:underground_route,:aerial_route}
+
+        tolerance << tolerance.default( 10 ) 
+
+        _for obj _over objs.elements()
+        _loop
+		rec_ex << mit_manager.modelit_dataset.collections[obj].descriptor.record_exemplar
+                geom_name << rec_ex.primary_geometry
+
+                scan_type << :chain
+                (geom, dist) << mit_manager.modelit_dataset.geometry_nearest(
+                                        coord,
+                                        tolerance,
+                                        scan_type,
+                                        {{obj, geom_name}}
+                                      )
+
+
+                _if geom _isnt _unset _andif
+                    dist _isnt _unset
+                _then
+			geoms_found.add_last({geom, dist})
+                _endif
+        _endloop
+
+	_if geoms_found.size > 0 
+        _then
+                the_geom << geoms_found.an_element()
+	_endif
+
+        >> _if the_geom _isnt _unset
+           _then
+                   >> the_geom[1],the_geom[2]
+	   _else
+		   >> _unset,_unset 
+           _endif
+
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.selected(p_selection)
+	## metodo que controla la seleccion de la lista y resalta en el
+	## mapa la ruta por donde pasa el distrito selecciopnado.
+	##
+	_local LoPaf <<  smallworld_product.pni_application()
+	_local LoMapa << LoPaf.plugin(:map_plugin)
+	_local LoVista << LoMapa.current_map_view
+
+	_if p_selection.size <> 0
+	_then
+		_local bb << bounding_box.new_centred(p_selection.an_element().key.location.x,
+						      p_selection.an_element().key.location.y,
+						      5000)
+		LoPaf.manager.highlight_rwo(p_selection.an_element().key)
+		LoVista.goto(bb)		
+	_endif
+
+	
+_endmethod
+$
+
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_distritos_para_ruta.valida_editor()
+	## 
+	## 
+	_local l_app   << smallworld_product.pni_application()
+	_local l_ed    << l_app.plugin(:editor_manager).current_embedded_editor
+	_if l_ed.current_object.source_collection.name <> :user!_ruta_co
+	_then
+		l_ed.show_alert("Error: El objeto actual del editor no pertenece a la Ruta de Cobre")
+		!abort!()
+	_endif
+_endmethod
+$

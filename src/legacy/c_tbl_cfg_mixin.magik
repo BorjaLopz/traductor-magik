@@ -1,0 +1,205 @@
+#% text_encoding = iso8859_1
+
+def_mixin(:c_tbl_cfg_mixin)
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tbl_cfg_mixin.cfg_tbl_titulo(pTbl)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/26 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	_local tbl
+	tbl << pTbl
+	totCols << pTbl.oColumnas.total_elementos
+	cols << {1, 2, totCols - 1, totCols}
+#	cols << {1,2,4,5}
+	_self.apaga_bordes_inf_sup_de_todos_rens_en_cols(tbl, cols)
+	_self.apaga_bordes_a_modo_en_contorno_sup(tbl);
+	_self.apaga_bordes_a_modo_en_contorno_inf(tbl);
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tbl_cfg_mixin.cfg_tbl_detalle(pTbl)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/27 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	totCols << pTbl.oColumnas.total_elementos
+	cols << {1, 2, totCols - 1, totCols}
+#	cols << {1,2,7,8}
+#	cols << {1,2,7,8}
+	_self.apaga_bordes_inf_sup_de_todos_rens_en_cols(pTbl, cols)
+	cols << {3, 4, 5, 6}
+	_self.apaga_todos_los_bordes_de_todos_rens_en_cols(pTbl, cols)
+#	cols << {3, 4, 5, 6}
+	_self.prende_bordes_de_detalle(pTbl, cols)
+	cols << {5}
+	_self.prende_lineas_de_celdas_editables(pTbl, cols)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tbl_cfg_mixin.apaga_bordes_inf_sup_de_todos_rens_en_cols(pTbl, pCols)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	## .apaga_todos_borde_inf_sup_resp
+	## 
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/27 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	totRens << pTbl.orenglones.total_elementos
+
+	_for ren _over range(1, totRens)
+	_loop
+		_for col _over pCols.fast_elements()
+		_loop
+			pTbl.activa_borde_celda(ren, col, :superior) << _false 
+			pTbl.activa_borde_celda(ren, col, :inferior) << _false 
+		_endloop				
+	_endloop	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tbl_cfg_mixin.apaga_bordes_a_modo_en_contorno_sup(pTbl)
+	#---------------------------------------------------
+	## <Req. #> : activa_borde_ext_sup_resp(pTbl)
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/27 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	ren << 1; col << 1;
+	pTbl.activa_borde_celda(ren, col, :superior) << _false  
+	ren << 1; col << 2;
+	pTbl.activa_borde_celda(ren, col, :superior) << _false
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false
+	ren << 1; col << 3;
+	pTbl.activa_borde_celda(ren, col, :superior) << _false 	
+	ren << 1; col << 4;
+	pTbl.activa_borde_celda(ren, col, :superior) << _false
+	pTbl.activa_borde_celda(ren, col, :izquierda) << _false
+	ren << 1; col << 5;
+	pTbl.activa_borde_celda(ren, col, :superior) << _false 
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tbl_cfg_mixin.apaga_bordes_a_modo_en_contorno_inf(pTbl)
+	#---------------------------------------------------
+	## <Req. #> : activa_borde_ext_inf(pTbl)
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/27 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	ren << 3; col << 3;
+	pTbl.activa_borde_celda(ren, col, :inferior) << _false
+	pTbl.activa_borde_celda(ren, col, :izquierda) << _false
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false 
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tbl_cfg_mixin.apaga_todos_los_bordes_de_todos_rens_en_cols(pTbl, pCols)
+	#---------------------------------------------------
+	## <Req. #> : apaga_todos_bordes
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/27 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	totRens << pTbl.orenglones.total_elementos
+
+	_for ren _over range(1, totRens)
+	_loop
+		_for col _over pCols.fast_elements()
+		_loop
+			pTbl.activa_borde_celda(ren, col, :superior) << _false 
+			pTbl.activa_borde_celda(ren, col, :inferior) << _false
+			pTbl.activa_borde_celda(ren, col, :derecha) << _false 
+			pTbl.activa_borde_celda(ren, col, :izquierda) << _false 
+		_endloop				
+	_endloop
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tbl_cfg_mixin.prende_bordes_de_detalle(pTbl, pCols)
+	#---------------------------------------------------
+	## <Req. #> : activa_bordes_ext
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/27 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	totRens << pTbl.orenglones.total_elementos
+
+	ren << 1
+	renUlt << totRens
+	_for col  _over pCols.fast_elements()
+	_loop
+		pTbl.activa_borde_celda(ren, col, :superior) << _true
+		pTbl.activa_borde_celda(renUlt, col, :inferior) << _true
+	_endloop
+
+
+	colIzq << pCols[1]
+	colDer << pCols[pCols.size]
+	
+	_for ren _over range(1, totRens)
+	_loop
+		pTbl.activa_borde_celda(ren, colIzq, :izquierda) << _true
+		pTbl.activa_borde_celda(ren, colDer, :derecha) << _true
+	_endloop	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tbl_cfg_mixin.prende_lineas_de_celdas_editables(pTbl, pCols)
+	#---------------------------------------------------
+	## <Req. #> : activa_lineas_celdas_editables
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/27 des_david) : Created
+	#-------------- End Revision History ---------------
+	totRens << pTbl.orenglones.total_elementos
+	_for ren _over range (2, totRens - 1)
+	_loop
+		_for col _over pCols.fast_elements()
+		_loop
+			pTbl.activa_borde_celda(ren, col, :inferior) << _true
+		_endloop
+	_endloop	
+	
+_endmethod
+$

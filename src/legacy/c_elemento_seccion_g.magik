@@ -1,0 +1,152 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos - estudio de transmisison
+# Objetivo: 
+#           
+# Autor: dsanchez 
+# Fecha de creacion: 31-03-2005
+#
+# ---------------- Revision History -----------------
+# Ult Mod.
+#  05/04/05 DSB - Se inicializaron los slot sNOmbre_simbolo y
+#                 sDescripcion en el new
+#  04/04/05 DSB - 19:43 Se modifico el metodo configurar_elementos
+#  04/04/05 DSB - 15:00 Se subieron al padre algunos metodos
+#                    despliega
+#                    reposicionarArea
+#  01/04/05 DSB - 20:00 Se quitaron los slot
+#  01/04/05 DSB - 14:02 se implemento el metodo dfn_ubicacion_elementos_internos()
+
+# Reviso.
+# dsb
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_elemento_seccion_g)
+
+$
+def_slotted_exemplar(:c_elemento_seccion_g,
+    {
+    }
+    ,:c_elemento_entidad_g
+)
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_seccion_g.new(RoObjeto)
+
+## Objetivo: Crear una instancia de la clase c_elemento_entidad_g
+## Parámetros de entrada:
+##     Entidad - RoObjeto:  Objeto entidad que va a representar
+##                   graficamente
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo 
+
+# _local LnValPresicion << !print_float_precision! 
+	
+   _super.new(RoObjeto)	
+
+   _self.sNombre_Simbolo  << "seccion"
+   !print_float_precision! << 11
+   _self.sDescripcion     << _self.oEntidad.calculated_fiber_length.as_float.write_string	   
+   _self.nLong_Grafica    << 100
+
+#   !print_float_precision! <<  LnValPresicion
+   
+   _return  _clone
+   
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_seccion_g.configurar_elementos()
+
+## Objetivo: Configura los elementos graficos creados, con los
+## datos recibidos de oEntidad 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   04/04/05 DSB se queito el parametro RoObjeto 	
+##   12/02/05 DSB Se creo
+	
+   _self.prvCrea_elementos_internos()
+
+  
+   LoLbl << _self.oElementos.obten_elemento(:Etiqueta_1)
+   LoLbl.sTexto << _self.sDescripcion
+
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_elemento_seccion_g.prvCrea_elementos_internos()
+
+## Objetivo: Crea los elementos que conforman a la
+## seccion graficamente
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+## Notas:
+##  :Etiqueta_1 - Arriba - Longitud calculada de la fibra. calculated_fiber_length
+##  :Simbolo_1  - En medio - Linea
+
+	
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   # Creacion de los elementos internos Etiquetas
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -	
+   LoLbl  << c_texto_grafico.new("seccion")
+   LoLbl.nTamanio << 15
+   # Se agrega a la coleccion de etiquetas, esto se debe de hacer
+   # con las etiqutas 
+   _self.collEtiquetas[:Etiqueta_1] << 5
+   
+   _self.oElementos.Agregar_elemento(LoLbl,:Etiqueta_1)
+
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   # Creacion de los elementos internos Simbolos
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -	   
+   LoSim  << c_simbolo_grafico.new(_self.sNombre_simbolo)
+   _self.oElementos.Agregar_elemento(LoSim,:Simbolo_1)
+   
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_seccion_g.dfn_ubicacion_elementos_internos()
+
+## Objetivo: define la ubicacion dentro del area (bounding_box)
+## de los elementos graficos que lo componen
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se creo
+
+   # Obtiene la pos de la etiqueta_1 para saber donde debe desplegarse
+   # calcula los numero de renglones que se debe de mover, la etiqueta
+   LnNumRenSup << _self.pos_etiqueta(:Etiqueta_1).as_integer()
+   LnNumrenInf << 20 - 2 -  _self.pos_etiqueta(:Etiqueta_1).as_integer()
+
+   # obtienen la latura en mm de la altura del area y la divide en
+   # 20 renglones
+   LnAltEnMM << (_self.oArea.YMax - _self.oArea.yMin) 
+   LnAltRen <<  LnAltEnMM / 20
+
+   # asigna el margen sup e inf de acuerdo a los num de ren que se
+   # debe desplazar la etiqueta
+   LoLbl << _self.oElementos.obten_elemento(:Etiqueta_1)
+   LoLbl.nMargen_Sup << LnAltRen * (LnNumRenSup / 10)
+   LoLbl.nMargen_Inf << LnAltRen * (LnNumRenInf / 10)
+	
+_endmethod
+$
+
+

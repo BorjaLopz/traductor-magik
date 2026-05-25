@@ -1,0 +1,956 @@
+_package user
+$
+def_slotted_exemplar(:c_tramo_can,
+{
+	{:objeto,               _unset, :writable},
+	{:oCanalizacion,        _unset, :writable},
+	{:oPozos,               _unset, :writable},
+	{:oOE,                  _unset, :writable},
+	{:oOEI,                 _unset, :writable},
+	{:oOPB,                 _unset, :writable},
+	{:oRuta,                _unset, :writable},
+	{:ocol_long_obra_sup,   _unset, :writable},
+	{:ocol_long_obra,       _unset, :writable},
+	{:ocol_long_obra_cepa,  _unset, :writable},
+	{:ocol_long_obra_tubos, _unset, :writable},
+	{:ocol_long_obra_m_via, _unset, :writable}
+})
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.asigna_tramo << p_tramo
+
+	## Objetivo:
+	##     - Asigna a .objeto << p_tramo
+	##     - Asigna a .oCanalizacion << canalizaciones en el tramo
+	##     - Asigna a .oPozos << pozos y puntos de conexión en el tramo
+   	## Parámetros de entrada:
+	##     p_tramo - objeto user!_tramo_co
+   	## Parámetros de salida:
+	## vbluna
+
+	_try
+		.objeto << p_tramo
+		( .oCanalizacion, .oPozos) << .objeto.obtener_canalizacion()
+	_when does_not_understand
+		write("Error al asignar el tramo")
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.cajas_dist
+
+   	## Parámetros de salida:
+	##     lcol_cajas_dist - equality_set con las cajas de
+	##        distribucion conectadas a la canalizacion asociada al tramo
+	## vbluna
+
+	_local lcol_cajas_dist << equality_set.new()
+	
+	_for oCan _over _self.canalizacion.elements()
+	_loop
+		_for oStruc _over oCan.connected_structures().elements()
+		_loop
+			_if oStruc.source_collection.name = :mit_terminal_enclosure
+			_then
+				lcol_cajas_dist.add(oStruc)
+			_endif
+		_endloop
+	_endloop
+
+	_return lcol_cajas_dist
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.calcular_longitud_obra()
+
+	## Objetivo:
+	##     - Suma la longitud medida de las canalizaciones asociadas
+	##       al tramo con tipos de obra proyectadas agrupada por tipo
+	##       de obra siempre y cuando  el tipo de obra sea la obra principal del tramo
+	##     - Esta longitud será igual a la suma de las longitudes
+	##       de cada una de las superficies del tipo de obra
+   	## Parámetros de salida:
+	##     .ocol_long_obra - hash_table
+	##       [:|Tipo de Obra|] << longitud mts
+	## vbluna
+
+	_local col_obras << hash_table.new()
+	_local ls_tipo_obra
+	_local ln_long_can
+	_local ln_long_total
+	_local ln_gran_total
+
+	_for oCan _over _self.canalizacion.elements()
+	_loop
+		ln_long_can << oCan.measured_length.default(length_value(0.0, :m)).value
+		
+		_for cond_bund _over oCan.calcular_obras_normalizadas_asociadas[:proyectado].elements()
+		_loop
+			_if oCan.obra_principal = cond_bund
+			_then
+				ls_tipo_obra  << cond_bund.name.as_symbol()
+				ln_long_total << col_obras[ls_tipo_obra].default(0.0)
+				col_obras[ls_tipo_obra] << ln_long_total + ln_long_can
+				ln_gran_total << col_obras[:|Total|].default(0.0)
+				col_obras[:|Total|] << ln_gran_total + ln_long_can
+			_endif
+		_endloop
+	_endloop
+
+   _return .ocol_long_obra << col_obras
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.calcular_longitud_obra_cepa_hecha()
+
+	## Objetivo:
+	##     - Suma la longitud medida de las canalizaciones asociadas
+	##       al tramo con tipos de obra proyectadas agrupada
+	##       por tipo de obra siempre y cuando
+	##       el tipo de obra NO sea la obra principal del tramo
+   	## Parámetros de salida:
+	##     .ocol_long_obra_cepa - hash_table
+	##       [:|Tipo de Obra|] << longitud mts
+	## vbluna
+
+	_local col_obras << hash_table.new()
+	_local ln_long_can
+	_local ln_long_total
+
+	_for oCan _over _self.canalizacion.elements()
+	_loop
+		ln_long_can << oCan.measured_length.default(length_value(0.0, :m)).value
+		
+		_for cond_bund _over oCan.calcular_obras_normalizadas_asociadas[:proyectado].elements()
+		_loop
+			_if oCan.obra_principal <> cond_bund
+			_then
+				ln_long_total << col_obras[cond_bund.name.as_symbol()].default(0.0)
+				col_obras[cond_bund.name.as_symbol()] << ln_long_total + ln_long_can
+			_endif
+		_endloop
+	_endloop
+
+   _return .ocol_long_obra_cepa << col_obras
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.calcular_longitud_obra_mts_via()
+
+	## Objetivo:
+	##     - Suma la longitud de obra principal proyectada +
+	##       longitud de obra proyectada en cepa ya hecha +
+	##       longitud de tubos adicionales proyectados
+	##       agrupada por tipo de obra asociadas al tramo
+	##     - Para obtener la longitud de obra principal proyectada
+	##       se deben considerar los tubos de la obra por separado
+   	## Parámetros de salida:
+	##     .ocol_long_obra_m_via - hash_table
+	##       [:|Tipo de Obra|] << longitud mts
+	## vbluna
+
+	_local col_obra       << .ocol_long_obra
+	_local col_obra_cepa  << .ocol_long_obra_cepa
+	_local col_obra_tubos << .ocol_long_obra_tubos
+	_local col_mts_via << hash_table.new()
+
+	_local long_total
+	_local long_gran_total	
+
+	_for key_tipo_obra, num_tubos _over _self.tipos_obra_proyectadas.keys_and_elements()
+	_loop
+		_for key_obra,long_obra _over col_obra.keys_and_elements()
+		_loop
+			_if key_tipo_obra = key_obra
+			_then
+				long_total << col_mts_via[key_tipo_obra].default(0.0)
+				col_mts_via[key_tipo_obra] << long_total + (long_obra * num_tubos)
+				
+				_leave
+			_endif
+		_endloop
+
+		_for key_obra_cepa,long_obra_cepa _over col_obra_cepa.keys_and_elements()
+		_loop
+			_if key_tipo_obra = key_obra_cepa
+			_then
+				long_total << col_mts_via[key_tipo_obra].default(0.0)
+				col_mts_via[key_tipo_obra] << long_total + (long_obra_cepa * num_tubos)
+				
+				_leave
+			_endif
+		_endloop
+
+		_for key_obra_tubos,long_obra_tubos _over col_obra_tubos.keys_and_elements()
+		_loop
+			_if key_tipo_obra = key_obra_tubos
+			_then
+				long_total << col_mts_via[key_tipo_obra].default(0.0)
+				col_mts_via[key_tipo_obra] << long_total + long_obra_tubos
+				
+				_leave
+			_endif
+		_endloop
+
+		ln_gran_total << col_mts_via[:|Total|].default(0.0)
+		col_mts_via[:|Total|] << ln_gran_total + col_mts_via[key_tipo_obra]
+	_endloop
+
+	_return .ocol_long_obra_m_via << col_mts_via
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.calcular_longitud_obra_superficie()
+
+	## Objetivo:
+	##     - Suma la longitud medida de las canalizaciones asoiciadas
+	##       al tramo con tipos de obra proyectadas agrupadas
+	##       por tipo de obra y tipo de superficie siempre y cuando
+	##       el tipo de obra sea la obra principal del tramo
+   	## Parámetros de salida:
+	##     .ocol_long_obra_sup - dual_key_a_table
+	##       [:|Tipo de Obra|, :|Ubicacion_Superficie|] << longitud mts
+	## vbluna
+
+	_local Lcol_Long_Obra_Ubi_Sup << dual_key_a_table.new()
+	_local LsTipo_Obra
+	_local LsUbi_Sup
+	_local LnLong_Can
+	_local LnLong_Ubi_Sup
+
+	_for oCan _over _self.canalizacion.elements()
+	_loop
+		#Asigna la Ubicacion y el Tipo de Superficie de la Canalizacion
+		LsUbi_Sup << oCan.user!_ubicacion.write_string
+		LsUbi_Sup << LsUbi_Sup + "_" +oCan.user!_tipo_superficie.write_string
+		LsUbi_Sup << LsUbi_Sup.as_symbol()
+
+		#Asigna la longitud medida de la Canalizacion
+		LnLong_Can << oCan.measured_length.default(length_value(0.0, :m)).value
+
+		#Recorre los tipos de obra "Proyectados" de la Canalizacion
+		_for oCon_Bund _over oCan.calcular_obras_normalizadas_asociadas[:proyectado].elements()
+		_loop
+			_if oCan.obra_principal = oCon_Bund
+			_then
+				#Asigna el nombre del tipo de obra
+				LsTipo_Obra << oCon_Bund.name.write_string.as_symbol()
+
+				#-----------------------------------------------------
+         			# LONGITUD POR TIPO DE OBRA, UBICACIÓN Y SUPERFICIE
+				#-----------------------------------------------------
+
+        			#Agrega a la colección el tipo de obra y Ubicacion + Superficie
+	        		Lcol_Long_Obra_Ubi_Sup[LsTipo_Obra,LsUbi_Sup]
+
+                                #Asigna la longitud actual que corresponde al tipo de obra y Ubi_Sup
+        			LnLong_Ubi_Sup << Lcol_Long_Obra_Ubi_Sup[LsTipo_Obra,LsUbi_Sup]
+	        		LnLong_Ubi_Sup << LnLong_Ubi_Sup.default(0.0)
+
+        			#Suma la longitud medida de la Canalización + LnLong_Obra_Ubi_Sup
+	        		Lcol_Long_Obra_Ubi_Sup[LsTipo_Obra,LsUbi_Sup] << LnLong_Ubi_Sup + LnLong_Can
+			_endif
+		_endloop
+	_endloop
+
+	_return .ocol_long_obra_sup << Lcol_Long_Obra_Ubi_Sup
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.calcular_longitud_obra_tubos_adic()
+
+	## Objetivo:
+	##     - Suma la longitud medida de las canalizaciones
+	##       asociadas al tramo con tubos adicionales proyectados
+	##       siempre y cuando el tipo de obra al que se asocian los
+	##       tubos (obra_principal) sea proyectada
+	##     - La longitud de la canalizacion considera cada tubo por separado
+   	## Parámetros de salida:
+	##     .ocol_long_obra_tubos - hash_table
+	##       [:|Tipo de Obra|] << longitud mts de todos los tubos
+	## vbluna
+
+	_local col_obras << hash_table.new()
+	_local ln_long_can
+	_local ln_long_total
+	_local lo_obra_princ
+
+	_for oCan _over _self.canalizacion.elements()
+	_loop
+		ln_long_can << oCan.measured_length.default(length_value(0.0, :m)).value
+		lo_obra_princ << oCan.obra_principal
+		
+		_for oTubos _over oCan.obtener_flexos_contenidos()[:proyectado].elements()
+		_loop
+			_if _self.es_obra_proyectada?(lo_obra_princ) = _true
+			_then
+				ln_long_total << col_obras[lo_obra_princ.name.as_symbol()].default(0.0)
+				col_obras[lo_obra_princ.name.as_symbol()] << ln_long_total + ln_long_can
+			_endif
+		_endloop
+	_endloop
+
+   _return .ocol_long_obra_tubos << col_obras
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.calles
+
+   	## Parámetros de salida:
+	##     - string con los nombres de las calles asignadas a
+	##       user!_tramo_cobre a través de user!_det_t_can
+	## vbluna
+
+	_try
+		_return .objeto.user!_det_t_can.calles.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.canalizacion
+
+   	## Parámetros de salida:
+	##     - .oCanalizacion = rope con la canalizacion asociada al tramo
+	## vbluna
+
+	_return .oCanalizacion
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.canalizacion_con_obra_proyectada
+
+	## Objetivo:
+	##     - Obtener la canalizacion que contenga tipos de obras proyectadas
+	##       asociadas al tramo
+   	## Parámetros de salida:
+	##     col_can_obra_proy - equality_set con las canalizaciones
+	## vbluna
+
+	_local col_can_obra_proy << equality_set.new()
+
+	_for oCan _over _self.canalizacion.elements()
+	_loop
+		#Recorre los tipos de obra "Proyectados" de la Canalizacion
+		_for oCon_Bund _over oCan.calcular_obras_normalizadas_asociadas[:proyectado].elements()
+		_loop
+			col_can_obra_proy.add(oCan)
+		_endloop
+	_endloop
+
+	_return col_can_obra_proy
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.codigo_postal
+
+	#Se obtendrá del elemento colonia
+	_return "PENDIENTE"
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.colonia
+
+   	## Parámetros de salida:
+	##     - string con el nombre de la colonia asignada a
+	##       user!_tramo_cobre a través de user!_det_t_can
+	## vbluna
+
+	_try
+		_return .objeto.user!_det_t_can.colonia_cp.write_string
+	_when does_not_understand
+                _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.delegacion_mpo
+
+   	## Parámetros de salida:
+	##     - string con el nombre del municipio asignado a
+	##       user!_tramo_cobre a través de user!_det_t_can
+	## vbluna
+
+	_try
+		_return .objeto.user!_det_t_can.municipio.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.distritos_afectados
+
+   	## Parámetros de salida:
+	##     - string con los distritos afectados asignados a
+	##       user!_tramo_cobre a través de user!_det_t_can
+	## vbluna
+
+	_try
+		_return .objeto.user!_det_t_can.distritos.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.es_obra_proyectada?(p_obra)
+
+	## Objetivo:
+	##     - Obtener si p_obra tiene estado de construccion proyectado
+   	## Parámetros de entrada:
+	##     .p_obra - objeto :mit_conduit_bundle (tipo de obra) a evaluar
+   	## Parámetros de salida:
+	##     _true - si p_obra es proyectada
+	##     _false - si p_obra NO es proyectada
+	## vbluna
+
+	_for obra _over _self.obras_proyectadas.elements()
+	_loop
+		_if obra = p_obra
+		_then
+			_return _true 
+		_endif
+	_endloop
+
+	_return _false
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.genera_resumen_total_tipo_obra()
+
+	## Objetivo:
+	##     - Genera un resumen por tipo de obra con:
+	##          - Longitud de obra agrupada por ubicación y superficie
+	##          - Longitud de obra agrupada por obra en mts lineales
+	##          - Longitud de obra en cepa ya hecha agrupada por obra
+	##          - Longitud de obra por tubos adicionales
+	##          - Longitud de obra total en metros ducto vía
+   	## Parámetros de salida:
+	##     col_resumen_obra - dual_key_a_table
+	##        [:|Tipo obra|, :|Categoría|] << longitud
+	## vbluna
+
+	_self.calcular_longitud_obra_superficie()
+	_self.calcular_longitud_obra()
+	_self.calcular_longitud_obra_cepa_hecha()
+	_self.calcular_longitud_obra_tubos_adic()
+	_self.calcular_longitud_obra_mts_via()
+	
+	_local col_resumen_obra << dual_key_a_table.new()
+
+	#Calcula la longitud por tipo de obra y superficie
+	col_resumen_obra << .ocol_long_obra_sup
+
+	#Agrega la longitud por tipo de obra
+	_for key, long _over .ocol_long_obra.keys_and_elements()
+	_loop
+		col_resumen_obra[key,:|OTROS_Total|] << long
+	_endloop
+
+	#Agrega la longitud por tipo de obra con cepa ya hecha
+	_for key, long _over .ocol_long_obra_cepa.keys_and_elements()
+	_loop
+		col_resumen_obra[key,:|OTROS_Cepa_Hecha|] << long
+	_endloop
+
+	#Agrega la longitud de tubos adicionales por tipo de obra
+	_for key, long _over .ocol_long_obra_tubos.keys_and_elements()
+	_loop
+		col_resumen_obra[key,:|OTROS_Tubos_Adic|] << long
+	_endloop
+
+	#Agrega la longitud de metros via por tipo de obra
+	_for key, long _over .ocol_long_obra_m_via.keys_and_elements()
+	_loop
+		col_resumen_obra[key,:|OTROS_Mts_Via|] << long
+	_endloop
+	
+	_return col_resumen_obra
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.init()
+
+	.oCanalizacion        << rope.new()
+	.oPozos               << rope.new()
+	.ocol_long_obra_sup   << dual_key_a_table.new()
+	.ocol_long_obra       << hash_table.new()
+	.ocol_long_obra_cepa  << hash_table.new()
+	.ocol_long_obra_tubos << hash_table.new()
+	.ocol_long_obra_m_via << hash_table.new()
+	
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.new()
+
+	_return _clone.init()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.num_cajas_dist_proy_por_tipo()
+
+	## Objetivo:
+	##     - Obtener la cantidad de cajas de distribucion proyectados 
+	##       asociados al tramo agrupados por modelo de caja
+   	## Parámetros de salida:
+	##     Lcol_cajas_dist - hash_table
+	##        [:|Modelo de caja|] << cantidad de cajas proyectadas
+	## vbluna
+
+	_local Lcol_cajas_dist << hash_table.new()
+	_local LsModelo
+	_local ln_num_cajas
+	
+	_for o_caja _over _self.cajas_dist.elements()
+	_loop
+		_if  o_caja.construction_status = "PROYECTADO"
+		_then
+			#Asigna el modelo de las cajas
+			LsModelo << o_caja.spec_id.write_string.as_symbol()
+			ln_num_cajas << Lcol_cajas_dist[LsModelo]
+			Lcol_cajas_dist[LsModelo] << ln_num_cajas.default(0) + 1
+		_endif
+	_endloop
+
+	_return Lcol_cajas_dist
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.num_pozos_proy_por_tipo()
+
+	## Objetivo:
+	##     - Obtener la cantidad de pozos proyectados asociados
+	##       al tramo agrupados por tipo de pozo
+   	## Parámetros de salida:
+	##     Lcol_Pozos - dual_key_a_table
+	##        [:|Tipo de pozo|] << cantidad de pozos
+	## vbluna
+
+	_local Lcol_Pozos << dual_key_a_table.new()
+	_local LsUbicacion
+	_local LsTipo_pozo
+	_local ln_num_pozos
+
+	_for oPozo _over _self.pozos_proyectados.elements()
+	_loop
+		#Asigna la Ubicacion y el Tipo de Superficie de la Canalizacion
+		LsUbicacion  << oPozo.user!_ubicacion.write_string.as_symbol()
+		Ls_tipo_pozo << oPozo.spec_id.write_string.as_symbol()
+			
+		ln_num_pozos << Lcol_Pozos[LsUbicacion, Ls_tipo_pozo]
+		Lcol_Pozos[LsUbicacion, Ls_tipo_pozo] << ln_num_pozos.default(0) + 1
+	_endloop
+
+	_return Lcol_Pozos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.numero_ruta
+
+   	## Parámetros de salida:
+	##     - string con el numero de ruta asociado a .oRuta
+	## vbluna
+
+	_try
+		_return .oRuta.user!_numero.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.numero_tramo
+
+   	## Parámetros de salida:
+	##     - string con el numero de tramo asignado a
+	##       user!_tramo_cobre a través de user!_det_t_can
+	## vbluna
+
+	_try
+		_return .objeto.user!_det_t_can.user!_num_tramo.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.obras_proyectadas
+
+	## Objetivo:
+	##     - Obtener los tipos de obra proyectadas (:mit_conduit_bundle)
+	##       asociadas al tramo
+   	## Parámetros de salida:
+	##     Lcol_Obra - equality_set con los tipos de obra
+	## vbluna
+
+	_local Lcol_Obra << equality_set.new()
+
+	_for oCan _over _self.canalizacion.elements()
+	_loop
+		#Recorre los tipos de obra "Proyectados" de la Canalizacion
+		_for oCon_Bund _over oCan.calcular_obras_normalizadas_asociadas[:proyectado].elements()
+		_loop
+			#Agrega a la colección el tipo de obra
+			Lcol_Obra.add(oCon_Bund)
+		_endloop
+	_endloop
+
+	_return Lcol_Obra
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.oe
+
+   	## Parámetros de salida:
+	##     - string con el valor de la oe asociada al tramo
+	## vbluna
+
+	_try
+		_return .oOE.user!_valor_oe.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.oe << RoOE
+
+	## Objetivo:
+	##     - Asigna a .oOE << RoOE
+	##     - Asigna a .oOEI << user!_oei asociada a la oe
+	##     - Asigna a .oOPB << user!_opb asociada a la oei
+	##     - Asigna a .oRuta << user!_ruta_co asociada a la opb
+   	## Parámetros de entrada:
+	##     RoOE - objeto user!_oe asociada al tramo
+   	## Parámetros de salida:
+	## vbluna
+
+	_try
+		.oOE    << RoOE
+		.oOEI   << .oOE.user!_oei
+		.oOPB   << .oOEI.user!_opb
+		.oRuta  << .oOPB.user!_rutas
+	_when does_not_understand
+		write("Error al asignar oe")
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.oe_lo
+
+   	## Parámetros de salida:
+	##     - string con el valor de la oe asociada al tramo
+	_try
+		_return .oOE.user!_num_oe
+	_when does_not_understand
+		_return ""
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.oe_lo << RoOE
+
+	## Objetivo:
+	##     - Asigna a .oOE << RoOE
+	##     - Asigna a .oOEI << user!_oei asociada a la oe
+	##     - Asigna a .oOPB << user!_opb asociada a la oei
+	##     - Asigna a .oRuta << user!_ruta_co asociada a la opb
+
+	_try 		
+		.oOE    << RoOE
+		.oOEI   << .oOE.user!_oei_local
+		.oOPB   << .oOEI.user!_op_local
+#		.oRuta  << .oOPB.user!_rutas
+	_when does_not_understand
+		write("Error al asignar oe")
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.oei
+
+   	## Parámetros de salida:
+	##     - string con el valor de la oei asociada al tramo
+	## vbluna
+
+	_try
+		_return .oOEI.user!_valor_oei.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.oei_lo
+
+   	## Parámetros de salida:
+	##     - string con el valor de la oei asociada al tramo
+
+	_try
+		_return .oOEI.user!_num_oei
+	_when does_not_understand
+		_return ""
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.opb
+
+   	## Parámetros de salida:
+	##     - string con el valor de la opb asociada al tramo
+	## vbluna
+
+	_try
+		_return .oOPB.user!_valor_opb.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.opb_lo
+
+   	## Parámetros de salida:
+	##     - string con el valor de la opb asociada al tramo
+
+	_try
+		_return .oOPB.user!_num_op
+	_when does_not_understand
+		_return ""
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.poblacion
+
+   	## Parámetros de salida:
+	##     - string con el nombre de la poblacion asignada a
+	##       user!_tramo_cobre a través de user!_det_t_can
+	## vbluna
+
+	_try
+		_return .objeto.user!_det_t_can.poblacion.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.pozos
+
+   	## Parámetros de salida:
+	##     .oPozos - rope con los pozos asociados al tramo
+	## vbluna
+
+	_local lcol_pozos << rope.new()
+
+	_for key, oPoint _over .oPozos.keys_and_elements()
+	_loop
+		_if oPoint.source_collection.name = :uub
+		_then
+			lcol_pozos.add(oPoint)
+		_endif
+	_endloop
+
+	.oPozos << lcol_pozos
+	
+	_return .oPozos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.pozos_proyectados
+
+   	## Parámetros de salida:
+	##     .oPozos - rope con los pozos proyectados asociados al tramo
+	## vbluna
+
+	_local lcol_pozos_proy << rope.new()
+	
+	_for oPozo _over _self.pozos.elements()
+	_loop
+		_if oPozo.construction_status = "PROYECTADO"
+		_then
+			lcol_pozos_proy.add(oPozo)
+		_endif
+	_endloop
+
+	_return lcol_pozos_proy
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.proyectista
+
+   	## Parámetros de salida:
+	##     - string con el nombre del proyectista asociado a
+	##       user!_tramo_cobre a través de user!_det_t_can
+	## vbluna
+
+	_try
+		_return .objeto.user!_det_t_can.user!_proyectista.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.ruta
+
+   	## Parámetros de salida:
+	##     - .oRuta = elemento user!_ruta asociada al tramo
+	## vbluna
+
+	_return .oRuta
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.supervisor
+
+   	## Parámetros de salida:
+	##     - string con el nombre del supervisor asociado a
+	##       user!_tramo_cobre a través de user!_det_t_can
+	## vbluna
+
+	_try
+		_return .objeto.user!_det_t_can.user!_supervisor.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.tipos_obra_proyectadas
+
+	## Objetivo:
+	##     - Obtener los nombres de los tipos de obra proyectadas y
+	##       el número de conductos que contiene cada obra asociada al tramo
+   	## Parámetros de salida:
+	##     Lcol_Tipo_Obra - hash_table
+	##        [:|Nombre Tipo Obra|] << cantidad de conductos
+	## vbluna
+
+	_local Lcol_Tipo_Obra << hash_table.new()
+	_local ln_num_tubos << 0
+
+	_for oCan _over _self.canalizacion.elements()
+	_loop
+		#Recorre los tipos de obra "Proyectados" de la Canalizacion
+		_for oCon_Bund _over oCan.calcular_obras_normalizadas_asociadas[:proyectado].elements()
+		_loop
+			ln_num_tubos << oCon_Bund.mit_conduits.size
+
+			#Agrega a la colección el tipo de obra
+			Lcol_Tipo_Obra[oCon_Bund.name.write_string.as_symbol()] << ln_num_tubos
+		_endloop
+	_endloop
+
+	_return Lcol_Tipo_Obra
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.tipos_superficie_can_obra_proy
+
+	## Objetivo:
+	##     - Obtener la ubicacion y tipo de superficie asociados a la
+	##       canalizacion del tramo que contiene tipos de obra proyectadas
+   	## Parámetros de salida:
+	##     Lcol_Tipos_Sup - dual_key_a_table
+	##        [:|Ubicacion|, :|Tipo Superficie|] << ""
+	## vbluna
+
+	_local Lcol_Tipos_Sup << dual_key_a_table.new()
+	_local LsUbicacion
+	_local LsTipo_Sup
+	
+	_for oCan _over _self.canalizacion_con_obra_proyectada.elements()
+	_loop
+		#Asigna la Ubicacion y el Tipo de Superficie de la Canalizacion
+		LsUbicacion << oCan.user!_ubicacion.write_string.as_symbol()
+		LsTipo_Sup  << oCan.user!_tipo_superficie.write_string.as_symbol()
+
+		Lcol_Tipos_Sup[LsUbicacion,LsTipo_Sup] << ""
+	_endloop
+
+	LsUbicacion << "OTROS".as_symbol()
+	Lcol_Tipos_Sup[LsUbicacion,"Total".as_symbol()] << ""
+	Lcol_Tipos_Sup[LsUbicacion,"Cepa_Hecha".as_symbol()] << ""
+	Lcol_Tipos_Sup[LsUbicacion,"Tubos_Adic".as_symbol()] << ""
+	Lcol_Tipos_Sup[LsUbicacion,"Mts_Via".as_symbol()] << ""	
+	
+	_return Lcol_Tipos_Sup
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.total_metros_lineales
+
+   	## Parámetros de salida:
+	##     .ocol_long_obra[:|Total|] - longitud total de los metros lineales
+	##               asociadas al tramo
+	## vbluna
+
+	_try
+		_return .ocol_long_obra[:|Total|].write_string		
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tramo_can.total_metros_via
+
+   	## Parámetros de salida:
+	##     .ocol_long_obra_m_via[:|Total|] - longitud total de los
+	##                         metros ducto vía asociadas al tramo
+	## vbluna
+
+	_try
+		_return .ocol_long_obra_m_via[:|Total|].write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+
+_endmethod
+$

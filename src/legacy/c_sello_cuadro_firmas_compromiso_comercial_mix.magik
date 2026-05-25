@@ -1,0 +1,246 @@
+#% text_encoding = iso8859_1
+$
+_package user
+$
+# remex(:c_sello_cuadro_firmas_compromiso_comercial_mix)
+$
+
+
+#
+## gSelloM.asigna_atribs_a_celdas_editables()
+#
+
+
+def_slotted_exemplar(:c_sello_cuadro_firmas_compromiso_comercial_mix,
+{
+},  {:c_base_sello_fibra, :c_tbl_cfg_mixin})
+$
+c_sello_cuadro_firmas_compromiso_comercial_mix.define_shared_constant(:allowed_on_menu?, _false  , :public)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.defined_attributes
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/21 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	attribs << rope.new_from (_super.defined_attributes)
+	_self.defined_attributes_tbl_resumen(attribs)
+	_self.defined_attributes_tbl_responsable(attribs)
+	
+	>> attribs
+_endmethod
+$
+# c_sello_cuadro_firmas_compromiso_comercial_mix.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.configura_tabla()
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/21 des_david) : Created
+	#-------------- End Revision History ---------------
+	_local longEnY
+	longEnYSup << _self.crea_y_cfg_tbl_borde_sup( .o_coord_inicio)
+	
+	coord << coordinate.new( .o_coord_inicio.x, .o_coord_inicio.y - longEnYSup)
+	longEnYRes << _self.crea_y_cfg_tbl_resumen(coord)
+
+	coord << coordinate.new( coord.x, coord.y - (longEnYRes ))
+	longEnYResp << _self.crea_y_cfg_tbl_responsable(coord)
+
+	coord << coordinate.new( coord.x, coord.y - (longEnYResp ))	
+	longEnY << _self.crea_y_cfg_tbl_borde_inf(coord)
+
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.crea_y_cfg_tbl_borde_sup(pCoordInicio)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	#----------------------------------------------------------
+	# Tabla borde sup
+	#-----------------------------------------------------------
+	ren << 1
+	col << 5
+	plLongRensCols << property_list.new()
+	plLongRensCols[:ren] << {1}
+	plLongRensCols[:col] << {2, 2, 64, 2, 2}
+        lo_tbl << .o_tablas.crea_tabla(ren, col, :tbl_borde_sup)
+	lo_tbl.oCoordenada_Origen << pCoordInicio
+	_self.asigna_medidas_tabla(lo_tbl, plLongRensCols)
+	_self.cfg_tbl_borde_sup(lo_tbl)
+
+	_local longEnY
+	longEnY << .o_tablas.longitud_total_renglones({:tbl_borde_sup})
+	_return longEnY
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.cfg_tbl_borde_sup(pTbl)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	_local tbl
+	tbl << pTbl
+	ren <<1; col << 1
+	pTbl.activa_borde_celda(ren, col, :inferior) << _false
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false
+	ren <<1; col << 2
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false
+	ren <<1; col << 4
+	pTbl.activa_borde_celda(ren, col, :izquierda) << _false
+	ren <<1; col << 5
+	pTbl.activa_borde_celda(ren, col, :izquierda) << _false
+	pTbl.activa_borde_celda(ren, col, :inferior) << _false
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.crea_y_cfg_tbl_borde_inf(pCoordInicio)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	#----------------------------------------------------------
+	# Tabla borde inf
+	#-----------------------------------------------------------
+	ren << 2
+	col << 5
+	plLongRensCols << property_list.new()
+	plLongRensCols[:ren] << {1, 1}
+	plLongRensCols[:col] << {2, 2, 64, 2, 2}
+        tbl << .o_tablas.crea_tabla(ren, col, :tbl_borde_inf)
+	tbl.oCoordenada_Origen << pCoordInicio
+	_self.asigna_medidas_tabla(tbl, plLongRensCols)
+	_self.cfg_tbl_borde_inf(tbl)
+
+	_local longEnY
+	longEnY << .o_tablas.longitud_total_renglones({:tbl_borde_inf})
+	_return longEnY
+_endmethod
+$
+
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.cfg_tbl_borde_inf(pTbl)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	_local tbl
+	tbl << pTbl
+	ren <<1; col << 1
+	pTbl.activa_borde_celda(ren, col, :superior) << _false
+	pTbl.activa_borde_celda(ren, col, :inferior) << _false
+	ren <<1; col << 2
+	pTbl.activa_borde_celda(ren, col, :superior) << _false	
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false
+	ren <<1; col << 3
+	pTbl.activa_borde_celda(ren, col, :superior) << _false	
+	ren <<1; col << 4
+	pTbl.activa_borde_celda(ren, col, :izquierda) << _false
+	pTbl.activa_borde_celda(ren, col, :superior) << _false		
+	ren <<1; col << 5
+	pTbl.activa_borde_celda(ren, col, :superior) << _false
+	pTbl.activa_borde_celda(ren, col, :inferior) << _false
+
+	ren << 2; col << 1
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false
+	col << 2
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false
+	col << 3
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false
+	col << 4
+	pTbl.activa_borde_celda(ren, col, :derecha) << _false
+	ren <<1; col << 5
+	pTbl.activa_borde_celda(ren, col, :superior) << _false
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.etiqueta_celdas()
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/21 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	_self.asigna_etiquetas_a_celdas_tbl_responsable()
+	_self.asigna_etiquetas_a_celdas_tbl_resumen()
+#	_self.etiqueta_celda_tbl_resumen()
+#	_self.etiqueta_celda_tbl_responsable()
+	
+	_global gSelloM
+	gSelloM << _self 
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.asigna_atribs_a_celdas_editables()
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/21 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	_self.asigna_atribs_a_celdas_editables_tbl_responsable()
+	_self.asigna_atribs_a_celdas_editables_tbl_resumen()
+	
+#	_self.asigna_val_a_celda_resumen()
+#	_self.asigna_val_a_celda_responsable()
+_endmethod
+$
+
+
+
+
+
+
+

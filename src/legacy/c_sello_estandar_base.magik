@@ -1,0 +1,150 @@
+_package user
+$
+def_slotted_exemplar(:c_sello_estandar_base,
+{
+	{:pl_datos,  _unset,  :writable}
+}, :c_base_sello_cobre)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base.configura_tabla()
+
+	_local ln_desp_x
+	_local ln_desp_y
+
+	_local pl_ubicacion << property_list.new()
+	_local pl_compania << property_list.new()
+	_local pl_fec_div_rev << property_list.new()
+	_local pl_escala << property_list.new()
+
+	pl_ubicacion[:ren] << {274}
+	pl_ubicacion[:col] << {15}
+	pl_compania[:ren] << {5,5,5}
+	pl_compania[:col] << {25}
+	pl_fec_div_rev[:ren] << {5,5,5}
+	pl_fec_div_rev[:col] << {15,20}
+	pl_escala[:ren] << {5,10}
+	pl_escala[:col] << {15}
+
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_ubicacion)
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+	_self.asigna_medidas_tabla(lo_tabla, pl_ubicacion)
+	_if swg_dsn_admin_engine.active_scheme.project.name.matches?("*FALC*")
+	_then
+		lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Der? << _false
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Sup? << _false
+		lo_celda.bBorde_Inf? << _false 	
+	_endif
+
+
+	lo_tabla << .o_tablas.crea_tabla(3,1,:tbl_compania)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion})
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_ubicacion})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	_self.asigna_medidas_tabla(lo_tabla, pl_compania)
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+
+	lo_tabla << .o_tablas.crea_tabla(3,2,:tbl_FecDibRev)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion,:tbl_compania})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	_self.asigna_medidas_tabla(lo_tabla, pl_fec_div_rev)
+
+	lo_tabla << .o_tablas.crea_tabla(2,1,:tbl_escala)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion,:tbl_compania,:tbl_FecDibRev})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	_self.asigna_medidas_tabla(lo_tabla, pl_escala)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base.etiqueta_celdas()
+
+	_self.asigna_texto_celda(:tbl_compania,1,1,"RED NACIONAL",35)  #RED NACIONAL|ÚLTIMA MILLA|S.A.P.I. DE C.V"
+	_self.asigna_texto_celda(:tbl_compania,2,1,"ÚLTIMA MILLA",35)
+	_self.asigna_texto_celda(:tbl_compania,3,1,"S.A.P.I. DE C.V.",35)
+	_self.asigna_texto_celda(:tbl_FecDibRev,1,1,"FECHA",35)
+	_self.asigna_texto_celda(:tbl_FecDibRev,2,1,"DIBUJO",35)
+	_self.asigna_texto_celda(:tbl_FecDibRev,3,1,"REVISO",35)
+	_self.asigna_texto_celda(:tbl_escala,1,1,"ESCALA",35)
+
+
+     
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base.llena_datos_celdas()
+
+	_local ls_nombre_plano
+
+	_self.obten_registros()
+
+	LoEtapa << swg_dsn_admin_engine.active_design.project.user!_etapa
+	LoFase  << swg_dsn_admin_engine.active_design.status	
+
+	ls_nombre_plano << .pl_datos[:ubicacion] + " / "  + %newline + .pl_datos[:nombre_plano]   ## + " / " + LoEtapa + " /  " + LoFase
+	
+	ubicacion2 << ""
+	segmentos << ls_nombre_plano.split_by(" / ")
+	saltolinea? << _false
+	_for segmento _over segmentos.elements()
+	_loop
+		_if (ubicacion2.size + segmento.size + 1) > 170 _andif
+		    saltolinea? _is _false
+		_then
+			ubicacion2 +<< %newline
+			saltolinea? << _true
+		_endif
+		_if ubicacion2.size > 2
+		_then
+			ubicacion2 +<< " / "+segmento
+		_else
+			ubicacion2 +<< segmento
+		_endif
+	_endloop
+	
+	ls_nombre_plano << ubicacion2
+	_self.asigna_texto_celda(:tbl_FecDibRev,1,2,.pl_datos[:fecha],35)
+	_self.asigna_texto_celda(:tbl_FecDibRev,2,2,.pl_datos[:proyecta_empresa],35)
+	_self.asigna_texto_celda(:tbl_FecDibRev,3,2,.pl_datos[:revisa_empresa],35)
+	_self.asigna_texto_celda(:tbl_ubicacion,1,1,ls_nombre_plano.uppercase,35,_unset,-8)
+	.o_tablas.elemento(:tbl_ubicacion).oCeldas.Celda(1,1).oElemento.nGrados << 90
+	
+_endmethod
+$
+_method c_sello_estandar_base.llena_datos_dinamicos()
+
+	_local ls_escala
+	
+	_if .s_tipo_plano = :principales _orif .s_tipo_plano = :diagrama_empalmes
+	_then
+		ls_escala << "F/E"
+	_else
+		ls_escala <<  _self.escala()
+	_endif
+
+	_self.asigna_texto_celda(:tbl_Escala,2,1,ls_escala,35)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base.obten_registros()
+
+	.s_tipo_plano << _self.tipo_plano()
+	.pl_datos << property_list.new()
+       	
+	.pl_datos[:fecha]                << .o_proyecto.mes_anio
+	.pl_datos[:proyecta_empresa]     << .o_proyecto.proyecta_empresa
+	.pl_datos[:revisa_empresa]       << .o_proyecto.revisa_empresa
+	.pl_datos[:ubicacion]            << .o_proyecto.ubicacion
+	.pl_datos[:Delegacion_Municipio] << .o_proyecto.Delegacion_Municipio
+	.pl_datos[:colonia]              << .o_proyecto.colonia
+	.pl_datos[:nombre_plano]     <<  _self.nombre_plano()
+	
+_endmethod
+$

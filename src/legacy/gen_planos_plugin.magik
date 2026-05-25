@@ -1,0 +1,3910 @@
+_package user
+$
+# (22/11/01 des_aaron) : remex(:gen_planos_plugin)
+$
+def_slotted_exemplar(:gen_planos_plugin,
+                     {
+                      {:o_ruta,              _unset, :writable, :private},
+		      {:o_ruta_sigp,         _unset, :writable, :public},
+                      {:o_opb,               _unset, :writable, :private},
+		      {:s_plano_solicitado,  _unset, :writable, :private},
+		      {:o_enlace,        _unset, :writable},
+                      {:oAdminProyFrmwrk, _unset, :writable, :private},
+		      {:cables_activados_fo, _unset, :writable, :public},
+		      {:tbas_activados, _unset, :writable, :public},
+		      {:gui_cables_fo, _unset, :writable, :public},
+		      {:gui_tba, _unset, :writable, :public},
+		      {:o_oe, _unset, :writable, :public},
+		      {:o_oei, _unset, :writable, :public},
+		      {:trace_results, _unset, :writable, :public}
+                     },
+		     :editor_plugin)
+$
+gen_planos_plugin.define_shared_constant(:databus_consumer_data_types,
+					      {
+						      :map_selection,
+						      :trace_results,
+						      :record_selection,
+						      :active_map_view,
+						      :diseno_activo,
+						      :info_enlace},
+					      :public)
+$
+gen_planos_plugin.define_shared_constant(:databus_producer_data_types,
+			                          {:info_enlace,
+						  :info_acometida,
+						  :data_viewport_obra_publica}, :public)
+$
+gen_planos_plugin.define_shared_constant(:databus_producer_data_types,
+			                          {:info_enlace,
+						  :info_acometida,
+						  :data_viewport_obra_publica}, :public)
+$
+gen_planos_plugin.define_shared_constant(:limites_escala,
+					 rope.new_with(1000,2000,2500,5000,10000,15000,20000,30000,50000,75000,100000),
+					 :public)
+$
+gen_planos_plugin.define_shared_constant(:planos_por_tipo,
+		      hash_table.new_with(:cobre, equality_set.new_with(:plano_ashurado,			
+									:plano_obra_civil,
+								        :plano_de_construccion,
+									:plano_de_bajantes,
+									:plano_de_ruta,
+									:plano_desmontaje_cd,
+									:plano_distritos,
+								        :plano_estudio_conjunto,
+								        :plano_fcydg,
+								        :plano_inventario_canalizacion,
+								        :plano_itinerario,
+								        :plano_permisos,
+								        :proyecto_canalizacion,
+									:plano_de_construccion_interno),
+					  
+					  
+				       :cobre_secundaria,equality_set.new_with(
+									   :plano_de_construccion,
+									   :plano_de_bajantes,
+									   :plano_de_construccion_interno,
+									   :plano_obra_civil),
+				       	  
+				       :existente_principales,equality_set.new_with(:plano_distritos,
+									:plano_fcydg,
+									:plano_estudio_conjunto,
+									:plano_inventario_canalizacion),
+
+				       :existente_secundaria,equality_set.new_with(:plano_de_construccion,
+									:plano_de_bajantes,	   
+									:plano_fcydg),
+		
+				       :fibra_local_principales,equality_set.new_with(
+									:plano_ruta_de_cables_fo,
+									:plano_esquematico_de_principales,
+									:plano_detalles_cable_fo),
+				       
+				       :fibra_local_secundaria,equality_set.new_with(:plano_de_construccion, 
+										     :plano_de_diagrama_de_empalmes),
+				       				       
+				       #fibra suburbanos
+				       :fibra_principales_sub,equality_set.new_with(
+									 :plano_detalles_cable_fo,
+									 :plano_ruta_de_cables_fo_lar,
+									 :plano_detalles_cable_fo_lar, 
+									 :plano_obra_civil									   
+									      ),
+				       :maest_canalizacion,equality_set.new_with(:proyecto_canalizacion,
+										 :plano_microcanalizacion) )
+		      ,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.init_actions()
+	#PLANOS DE COBRE 
+	_self.add_action(sw_action.new(:plano_ashurado,
+				       :engine, _self,
+				       :action_message, :plano_ashurado|()|))
+	
+	_self.add_action(sw_action.new(:plano_distritos,
+				       :engine, _self,
+				       :action_message, :plano_distritos|()| ))
+	
+	_self.add_action(sw_action.new(:plano_estudio_conjunto,
+				       :engine, _self,
+				       :action_message, :plano_estudio_conjunto|()| ))	
+	
+        _self.add_action(sw_action.new(:plano_fcydg,
+				       :engine, _self,
+				       :action_message, :plano_fcydg|()|))
+	
+	_self.add_action(sw_action.new(:plano_inventario_canalizacion,
+				       :engine, _self,
+				       :action_message, :plano_inventario_canalizacion|()| ))	
+	
+	_self.add_action(sw_action.new(:plano_itinerario,
+				       :engine, _self,
+				       :action_message, :plano_itinerario|()| ))
+	
+        _self.add_action(sw_action.new(:plano_permisos,
+				       :engine, _self,
+				       :action_message, :plano_permisos|()|))
+	
+        _self.add_action(sw_action.new(:plano_de_ruta,
+				       :engine, _self,
+				       :action_message, :plano_de_ruta|()|))
+	
+	_self.add_action(sw_action.new(:proyecto_canalizacion,
+				       :engine, _self,
+				       :action_message, :proyecto_canalizacion|()| ))
+	
+	_self.add_action(sw_action.new(:plano_microcanalizacion,
+				       :engine, _self,
+				       :action_message, :plano_microcanalizacion|()| ))
+
+	#secundarios
+
+	_self.add_action(sw_action.new(:plano_de_construccion,
+				       :engine, _self,
+				       :action_message, :plano_de_construccion|()| ))
+	
+	
+	_self.add_action(sw_action.new(:plano_de_diagrama_de_empalmes,
+				       :engine, _self,
+				       :action_message, :genera_plano_de_diagrama_de_empalmes|()| ))
+	
+	
+	_self.add_action(sw_action.new(:plano_de_bajantes,
+				       :engine, _self,
+				       :action_message, :plano_de_bajantes|()|))
+	
+        _self.add_action(sw_action.new(:plano_desmontaje_cd,
+				       :engine, _self,
+				       :action_message, :plano_desmontaje_cd|()|))
+	
+	_self.add_action(sw_action.new(:plano_obra_civil,
+				       :engine, _self,
+				       :action_message, :plano_obra_civil|()|))
+	
+	_self.add_action(sw_action.new(:plano_montaje_tba,
+				       :engine, _self,
+				       :action_message, :genera_plano_montaje_tba|()| ))
+	
+	
+	_self.add_action(sw_action.new(:plano_reubicacion_terminales,
+				       :engine, _self,
+				       :enabled?, _true ,
+				       :action_message, :genera_plano_reubicacion_terminales|()| ))
+	
+	
+	_self.add_action(sw_action.new(:plano_de_construccion_interno,
+				       :engine, _self,
+				       :enabled?, _false,
+				       :action_message, :genera_plano_de_construccion_interno|()| ))
+	
+	
+	#planos de fibra local
+	_self.add_action(sw_action.new(:plano_esquematico_de_principales,
+				       :engine, _self,
+				       :action_message,:genera_plano_de_esquematico_de_principales|()|))
+	
+	
+	_self.add_action(sw_action.new(:plano_ruta_de_cables_fo,
+				       :engine, _self,
+				       :action_message, :genera_plano_ruta_cables_fo|()|))
+
+	
+	_self.add_action(sw_action.new(:plano_detalles_cable_fo,
+				       :engine, _self,
+				       :action_message, :genera_plano_detalles_cables_fo|()| ))
+	
+	
+	#  planos de troncal de red suburbana.	
+	_self.add_action(sw_action.new(:plano_ruta_de_cables_fo_lar,
+				       :engine, _self,
+				       :enabled?, _true ,
+				       :action_message, :genera_plano_ruta_de_cables_fo_lar|()| ))
+	
+	_self.add_action(sw_action.new(:plano_detalles_cable_fo_lar,
+				       :engine, _self,
+				       :enabled?, _true ,
+				       :action_message, :genera_plano_detalles_cable_fo_lar|()| ))
+	
+	_self.add_action(sw_action.new(:plano_detalles_central_fo_lar,
+				       :engine, _self,
+				       :enabled?, _true ,
+				       :action_message, :genera_plano_detalles_central_fo_lar|()| ))
+	
+	###  ACCCION NO_PLANO ###	
+	_self.add_action(sw_action.new(:no_plano,:caption, "Ninguno",:enabled?, _false ))
+	
+	
+	_self.databus << _self.application.databus
+	
+	_self.framework.databus.add_producer(_self)
+	_self.framework.databus.add_consumer(_self)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.manage_actions()
+	## Caso de Uso:       Administracion de Proyectos
+	## Objetivo:          Establece las acciones que deben aparecer
+	## en el desplegable de planos en funcion del tipo de proyecto activo  
+
+	LoPaf <<  _self.application
+	a_gui_item << _self.framework.get_gui_element_with_role( :planos_especificos )
+	sch << swg_dsn_admin_engine.active_design
+
+	_if sch _is _unset 
+	_then
+		a_gui_item.associate.label << _self.message(:planos_proyecto)		
+		a_gui_item.empty()		   
+		_return
+	_else
+		LoProyecto << sch.project
+		(tipo, subtipo) << Loproyecto.tipo_y_subtipo()
+		
+		a_gui_item.associate.label << _self.message(:planos_proyecto)
+		a_gui_item.empty()
+				
+		_if LoProyecto  _isnt _unset _andif
+		      (LoProyecto.job_type = _self.message(:proyecto_existente))
+		_then
+			a_gui_item.associate.label << _self.message(:planos_existente)
+			tipos_plano << _self.planos_por_tipo[:existente]
+
+			_if sch.tipo_diseno.write_string = "captura_red_existente"
+			_then
+				tipos_plano << _self.planos_por_tipo[:existente_principales]
+				
+			_elif sch.tipo_diseno.write_string = "secundaria" 
+			_then
+				tipos_plano << _self.planos_por_tipo[:existente_secundaria]
+			_endif
+
+			
+		_elif LoProyecto  _isnt _unset _andif (LoProyecto.job_type.lowercase = _self.message(:proyecto_fibra).lowercase) 
+		_then
+			a_gui_item.associate.label << _self.message(:planos_proyecto)
+
+			_if sch.tipo_diseno.write_string = "principales"
+			_then				
+				tipos_plano << _self.planos_por_tipo[:fibra_local_principales]
+			
+			_elif sch.tipo_diseno.write_string = "secundaria" 
+			_then
+				tipos_plano << _self.planos_por_tipo[:fibra_local_secundaria]
+			_elif  sch.tipo_diseno.write_string = "canalizacion"
+			_then
+				tipos_plano << _self.planos_por_tipo[:maest_canalizacion]
+			_endif
+		_elif LoProyecto  _isnt _unset _andif (LoProyecto.job_type.lowercase = _self.message(:proyecto_cobre).lowercase)  
+		_then
+			a_gui_item.associate.label << _self.message(:planos_proyecto)
+			
+			_if sch.tipo_diseno.write_string = "principales"
+			_then				
+				tipos_plano << _self.planos_por_tipo[:cobre]
+				
+			_elif sch.tipo_diseno.write_string = "secundaria" 
+			_then
+				tipos_plano << _self.planos_por_tipo[:cobre_secundaria]
+			_elif  sch.tipo_diseno.write_string = "canalizacion"
+			_then
+				tipos_plano << _self.planos_por_tipo[:maest_canalizacion]
+			_endif
+						
+		_endif
+		
+		_if tipos_plano _isnt _unset _andif  tipos_plano.size = 0
+		_then
+			tipos_plano.add(:no_plano)
+			_return 
+		_endif
+
+		
+		_if tipos_plano _isnt _unset 
+		_then
+			_for pl _over tipos_plano.fast_elements()
+			_loop				                		
+				an_action << _self.action(pl)
+				an_action.place_control_on( a_gui_item, :menu )
+			_endloop
+			
+		_endif
+		
+	_endif
+	
+		
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.plano_de_construccion()
+
+	paf << smallworld_product.pni_application()
+	mpg << paf.plugin(:map_plugin)
+	sch<< swg_dsn_admin_engine.active_scheme
+	LoProyecto<< sch.project
+	
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		paf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+        
+
+       fibra? << (   LoProyecto  _isnt _unset _andif sch.tipo_diseno = :secundaria _andif 
+		 swg_dsn_admin_engine.active_design.id_dto_optico   _isnt _unset) 
+       
+       _if fibra?
+       _then
+		_self.plano_de_construccion_fo()
+		_return _true
+	_endif
+
+       # START CHANGE
+       # (22/07/06 des_aaron) : sw526
+       #
+       lyp <<  paf.plugin(:layout_plugin)
+       lyp.start_layout_designer()
+       lyd << lyp.dialogs[:layout_designer]
+       
+       #
+       # END CHANGE
+
+	lym                    << lyd.plugin(:layout_manager)
+	LoDoc                  << lym.current_document
+	LoDoc.user!_tipo_plano << :construccion
+	LoPage                 << LoDoc.current_page	
+	
+	LoSelloSimbolos    << c_simbologia_plano_construccion.new_with(:bounds,bounding_box.new(2100,600,2932,1753 ))
+	LoSelloCapacidades << c_tabla_capacidades.new_with(:bounds,
+							    bounding_box.new(2100,1870,2610,3000 ))
+	LoPage.add_element(LoSelloCapacidades)
+	LoPage.add_element(LoSelloSimbolos)
+
+	LoTituloPlano << "PLANO DE CONSTRUCCIÓN" +%newline
+	
+        LoStrDit << sch.user!_distrito.user!_distrito.default("")
+	LoStrProg<< sch.project.user!_programa_tipo.default("" )
+	LoStrAnyo<< sch.project.user!_programa_anyo.default("" )
+	LoTituloPlano +<< LoStrDit + % +%/ + % + LoStrProg + %- + LoStrAnyo
+	
+	LoDibujaPlano << c_geom_set_layout.new_with(:bounds,bounding_box.new(10,10,100,100))	
+	LoDibujaPlano.outline_style      << _unset
+	LoDibujaPlano.oAppLayoutDesigner << lyd
+	LoDibujaPlano.oRegistro          << sch.user!_distrito
+	LoDibujaPlano.nIdRegistro        << sch.user!_distrito.id
+	LoDibujaPlano.nMargenVp          << 800
+	LoDibujaPlano.sNombreAce         << "001 - P Construccion FTTH"
+	LoDibujaPlano.sTipoPlano         << "CONSTRUCCION"
+	LoDibujaPlano.sNombrePlano       << LoTituloPlano
+	LoDibujaPlano.modulos_ancho      << 4
+	LoDibujaPlano.modulos_alto       << 2		
+	LoPage.add_element(LoDibujaPlano)
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.genera_plano_de_diagrama_de_empalmes()
+
+
+	## ( 12/08/2008 fhramire ) : metodo para activar la interface de
+	## arbol_cables_fo_central y permitir seleccionar al usuario el cable
+	## para generar plano de ruta.
+	## Permite Obtener los cables en proyectos RDA, ROF, TRONCAL 
+	#LoDtoOptico << swg_dsn_admin_engine.active_scheme.distrito_optico
+	#LoPlano     << c_plano_diagrama_de_empalmes.new()
+	#LoPlano.genera_plano(LoDtoOptico)
+	
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view 
+	sch            << swg_dsn_admin_engine.active_design
+	LoProyecto     << sch.project	  
+	LoCentral      << Loproyecto.user!_central 
+	
+	_if mv.ace_name _is :gs!schematic 
+	_then
+		LoEng   << c_engine_ruta_cables.new()
+		LoPlano << c_plano_diagrama_de_empalmes.new(LoEng)	
+		LoPlano.genera_plano(swg_dsn_admin_engine.active_design.user!_distrito_optico)
+	_else
+
+		_self.show_message("Debe seleccionar el mapa esquemático y tenerlo activo")
+	
+	_endif
+	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.AddNorte(PoPage)
+	## 
+	##
+_local LoBounds
+_local LoNorte
+_local LoPage
+
+        LoPage<<PoPage
+	
+	_if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	_then
+		Lobounds<<bounding_box.new(LoPage.bounds.xmin,LoPage.bounds.ymax-1500,
+					   LoPage.bounds.xmin+1000,LoPage.bounds.ymax)
+		LoNorte << c_norte.new_with(:bounds,Lobounds)
+		LoNorte.limites<<_unset
+		LoPage.add_element(LoNorte)
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.AddViewport(PoPage,PyTipoDeVp,PoViewMapperPlugin,_optional LoDatos_viewport )
+	## 
+	##
+	_local LoPage
+	_local LoViewport
+	
+	LoPage<<PoPage
+	
+        _if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	_then
+		_if PyTipoDeVp _is :c_vp_ruta_de_cables_fo
+		_then
+			LoViewport<<c_vp_ruta_de_cables_fo.new_with(:bounds, LoPage.bounds)
+			LoViewport.oEstructuras << LoDatos_viewport[2]
+			LoViewport.oElementos << LoDatos_viewport[3][1]
+			LoViewport.oLimite << LoDatos_viewport[1].sectors.as_sector()			
+			LoMapView<<_self.GetMapView(LoViewport.oLimite) 
+			PoViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+								    LoMapView.current_view_bounds.new_enlarging(1.5), _true)			
+			LoPage.add_element(LoViewport)
+			LoPage.layout_document.user!_tipo_plano << :ruta_cables_fo
+			
+			# agregamos el sig. viewport para el croquis de ubicación
+                        LoDetalleViewport <<  c_vp_plano_croquis.new_with(:bounds,bounding_box.new(LoPage.bounds.xmax-1950,
+												   LoPage.bounds.ymax-1500,
+												   LoPage.bounds.xmax-300,
+												   LoPage.bounds.ymax-300))
+			
+			#linea << composite_line_style.new(line_style.new_with_properties(:foreground_colour,
+			#								 colour.called(:black),:with,1))
+			#LoDetalleViewport.outline_style << linea
+			
+			PoViewMapperPlugin.map_viewport_on_map_view(LoDetalleViewport,LoMapView,
+								    LoMapView.current_view_bounds, _true)
+			LoPage.add_element(LoDetalleViewport)
+			
+			# agregamos el titulo del croquis
+			#LoText << textbox_layout.new_with(:bounds,bounding_box.new(550,6850,1250,6950 ))
+			#LoText.text << "Croquis de Localización"
+			#LoText.outline_style << _unset
+			#LoPage.add_element(LoText)
+			LoMapView<<_self.GetMapView(LoViewport.oLimite) 
+		_endif
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.ajustar_escala_plano(mapa)
+	## 
+	## Objetivo: Ajusta la escala de la vista a una de las
+	## contenidas en la constante limites_escala 
+	## Parametros de Entrada: Ninguno
+	## Parametros de Salida: Ninguno   
+	## Autor: Elena Sainero (Ten Sails Consulting)
+	## Fecha de Creacion: Diciembre 2005
+	##
+	
+	escala << mapa.view_scale
+	
+	_for val _over _self.limites_escala.fast_elements()
+	_loop
+		_if escala < val _or escala = val _then
+			_if val/escala < 1.1 _then
+				# dado que el viewport es menor que el layout, si la escala de
+				# la vista es muy proxima a la de la central puede que esta no
+				# se represente completa en el plano. Por ello analizamos que
+				# la escala actual de la vista (que ajusta a la central) y la
+				# escala a la que vamos a representar tenga un margen del 10%
+				mapa.view_scale << val*1.1
+			_else
+				mapa.view_scale << val
+			_endif
+			_leave 
+		_endif
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.busca_elemento(PoPagina,PsElemento)
+	
+	_local LbBandera << _false
+	_local LoElemento << _unset 
+	
+	_for i  _over PoPagina.elements()
+	_loop
+		
+		_if i.class_name = "marco_layout" _and i.class_name = PsElemento
+		_then
+			LbBandera  << _true
+			LoElemento << i
+			_leave 
+		_elif  i.class_name = "viewport_layout"
+		_then 
+			
+			_if i.name.slice(1,9).eq?("Larguillo") 
+			_then
+				LbBandera  << _true
+				LoElemento << i
+			_endif
+		_endif
+		
+	_endloop
+	
+	_return LbBandera,LoElemento 
+	
+_endmethod
+$
+_method gen_planos_plugin.cable?()
+	#----------------------------------------------------------
+	#----------------Verifica que existe cable o
+	# canalización seleccionado....
+	
+	_local Lopaf          << smallworld_product.pni_application()	
+	_local LoMapa        << LoPaf.plugin(:map_plugin)
+	_local LoMv          << LoMapa.current_map
+	_local LoCan         << rope.new()                     
+	_local LoSeleccion   <<  LoMv.current_selection 
+	
+	_local LoNNumTramo <<  _unset 
+	_local LoNNumRuta  <<  _unset 
+	
+	
+	_for LnI  _over LoSeleccion.elements()
+	_loop
+		_if LnI.rwo.rwo_type = "sheath"  _or LnI.rwo.rwo_type = "underground_route"
+		_then
+			LoCan.add(LnI)			
+		_endif
+	_endloop
+
+	_if 	LoCan.size = 0 
+	_then
+		_self.show_message( _self.message(:cable))
+		_return _unset,_unset 
+	_endif
+
+
+	_if LoCan.an_element().rwo.rwo_type = "sheath"
+	_then
+		LoNNumTramo << LoCan.an_element().rwo.user!_num_tramo
+		LoNNumRuta  << LoCan.an_element().rwo.user!_num_ruta	
+	_else
+	
+		LvCables << LoCan.an_element().rwo.cables()
+
+		_for i  _over LvCables.elements() 
+		_loop
+
+			_if  i.source_table_name = "sheath"
+			_then
+				LoNNumTramo << i.user!_num_tramo
+				LoNNumRuta  << i.user!_num_ruta
+				_leave 
+			_endif
+	       
+		_endloop
+	
+	
+	_endif
+
+	_return  LoNNumTramo, LoNNumRuta	
+	
+_endmethod
+$
+_method gen_planos_plugin.Elementos_comunes(PoNNumTramo,PoNNumRuta)
+	## Elementos comunes para planos  de detalle
+	##	
+	_local LoPaf                   << smallworld_product.pni_application()
+	_local lolyp                   <<  paf.plugin(:layout_plugin)
+        lolyp.start_layout_designer()
+	
+	_local LnAnchoSello            << 1800 
+	_local LnAnchoCroquis          << 50 # (05/03/03 ahernan) : No lleva croquis
+	_local LnEspacio               << 300
+	_local LnEspacioArrAbaIzqder   << 100
+	_local LnEspacioIzquierdaSello << 50
+	_local Lolyd                   << lolyp.dialogs[:layout_designer]	
+	_local Lolym                   << Lolyd.plugin(:layout_manager)
+	_local LoPagina                << LoLym.current_document.current_page		
+	#-------------------------------------------------------
+	#Agrega marco.	
+	#--------------------------------------------------------
+	LoMarco         << marco_layout.new()	
+	LoMarco.num_mod <<   7
+	LoMarco.sello   <<  LnAnchoSello  +  LnAnchoCroquis + 200
+	LoMarco.set_fill_colour(_unset )
+	LoMarco.set_colour(_unset)
+	LoPagina.add_element(LoMarco)	
+	#---------------------------------------------------------------------
+	#Sello de Observaciones
+	#---------------------------------------------------------------------	
+	LnInicio_X << 300 # 25 mm del borde izquierdo de la pagina 
+	LnInicio_Y << 100  # 7.5 mm del borde inferior de la pagina
+	
+	#altura total de la tabla. 1mm =10 pixeles
+	LnAltura << 2600 # 91 mm
+	LnAncho  << 1800 # 88 mm
+	vparea   << bounding_box.new(LnInicio_X, LnInicio_Y, LnInicio_X + LnAncho, LnInicio_Y + LnAltura )
+	LoSello  <<c_sello_observaciones.new_with(:bounds, 	vparea)
+	
+	#---------------------------------------------
+	# (05/04/08 ahernan) : Pendiente confirmar.
+	#---------------------------------------------
+	LoSello.asigna_num_tramo(PoNNumRuta.write_string ,  PoNNumTramo.write_string )
+	LoSello.Inicializa()
+	LoPagina.add_element(LoSello)
+	LoSello.Agrega_LYM(Lolym)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.genera_plano_de_construccion_interno()
+	## 
+	##
+_local LoApp
+       LoApp<<_self.framework
+	_if _self.action(:plano_de_construccion_interno).enabled? 
+	_then
+		LoApp.plugin(:cobre_planos_plugin).action(:genera_plano_de_construccion_interno).execute_action()
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.genera_plano_detalles_cable_fo_lar()
+	_self.gui_cables_fo << _unset 	
+	paf << smallworld_product.pni_application()
+	paf.busy? << _true 
+	LoDisenoActual<<  c_cuentas_fo_plugin.ObtenerDiseno()
+	LoProyecto << LoDisenoActual.project
+	LoCentral << c_cuentas_fo_plugin.ObtenerCentral()
+	# INICIO DEL CAMBIO
+	# (2012-07-23 AHERNAN, HILDEBRANDO) : 
+	#
+	paf.manager.goto_primary_context(LoCentral)    
+	#
+	# FIN DEL CAMBIO	
+	
+        LoTitulo << "CENTRAL: " + LoCentral.user!_nom_nodo.default("") +
+		    " " + LoCentral.user!_siglas.default("") +
+		    " PROYECTO: " + LoProyecto.name
+	
+	_self.gui_cables_fo << c_arbol_cables_fo_detalles_lar.new(LoTitulo , paf.top_frame)
+	_self.gui_cables_fo.activate_relative_to(LoTitulo, paf.top_frame)	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.genera_plano_detalles_central_fo_lar()
+	## 
+	## 
+	_self.show_message("plano_detalles_central_fo_lar")
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.genera_plano_fosa_cables(_optional oe, tipo_plano)
+
+	# (2012-07-02 AHERNAN, HILDEBRANDO) :  se envia tipo de plano
+	_local LoPlano << c_plano_fcydg.new(oe ,tipo_plano )
+	LoPlano.genera_plano(tipo_plano)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.genera_plano_montaje_tba()
+	## 
+	## ( 12/08/2008 fhramire ) : metodo para activar la interface de
+	## c_arbol_tba y permitir seleccionar al usuario el tba
+	## para generar plano de montaje.
+	_self.gui_tba << _unset 	
+	paf << smallworld_product.pni_application()
+	LoDisenoActual<<  c_cuentas_fo_plugin.ObtenerDiseno()
+	LoProyecto << LoDisenoActual.project	  
+	LoCentral << c_cuentas_fo_plugin.ObtenerCentral()
+	# INICIO DEL CAMBIO
+	# (2012-07-23 AHERNAN, HILDEBRANDO) : 
+	#
+	paf.manager.goto_primary_context(LoCentral)    
+	#
+	# FIN DEL CAMBIO	
+	
+	_self.gui_tba << c_arbol_tba.new("CENTRAL: " + LoCentral.user!_nom_nodo.default("") +
+					 " " + LoCentral.user!_siglas.default("") +
+					 " PROYECTO: " + LoProyecto.name, paf.top_frame)
+	
+	_self.gui_tba.activate_relative_to("CENTRAL: " + LoCentral.user!_nom_nodo.default("") +
+					   " " + LoCentral.user!_siglas.default("") + " PROYECTO: " +
+					   LoProyecto.name, paf.top_frame)			
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.genera_plano_por_opb(_optional oe, tipo_plano)
+
+	_local LoExistente
+	_if (shc << swg_dsn_admin_engine.active_scheme) _is _unset
+	_then
+		condition.raise(:diseo_activo)
+        _else
+		LoExistente << shc.project.job_type = _self.message(:proyecto_existente)
+	_endif
+	
+	_if .o_opb _is _unset _andif _not LoExistente
+	_then
+		condition.raise(:user_error,
+				 :string, _self.message(:opb_no_seleccionada))
+	_endif
+	_if .s_plano_solicitado = :fosa_cables
+	_then
+		_self.genera_plano_fosa_cables(oe, tipo_plano)
+	_elif .s_plano_solicitado = :ruta_cables
+	_then
+		_self.genera_plano_ruta_cables()
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.genera_plano_reubicacion_terminales()
+	#---------------------------------------------------
+	##  Objetivo  : lanzala generacion  del plano de reubicacion de terminales
+	##
+
+        falc?<< (swg_dsn_admin_engine.active_design.name.matches?("Secundario*") _andif
+		 swg_dsn_admin_engine.active_design.id_dto_optico   _isnt _unset  _andif 
+		 swg_dsn_admin_engine.active_design.inf_project.matches?("FALC*"))
+	
+	_if falc? 
+	_then
+		_self.plano_de_construccion_reubicacion_terminales()
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.genera_plano_ruta_cables()
+#  Objetivo:                      Generar el plano ruta de cables.
+#  Parámetros de entrada:         Ninguno.
+#  Parámetros de salida:          Ninguno.
+#  Regresa:                       Ninguno.
+# Fecha de última modificación:   24 feb 2005
+# Autor de la modificación:       bfpalaci
+# Descripción de la modificación: Nuevo
+
+	paf << smallworld_product.pni_application()
+
+	_global Glorutaopb
+	_if _self.dialogs[:c_opbs] _is _unset 
+	_then
+		condition.raise(:user_error, :string, "No existe una ruta seleccionada.")
+	_endif
+	Glorutaopb << _self.dialogs[:c_opbs].current_ruta
+
+	LoObjetoEnEditor << _self.validar_generar_plano_distritos()
+	LoProyecto       << swg_dsn_admin_engine.active_scheme.project
+        lyd              << paf.plugin(:layout_plugin).start_layout_designer()
+	_if lyd _isnt _unset 
+        _then
+	        lym                    << lyd.plugin(:layout_manager)
+              	LoDoc                  << lym.current_document
+		LoDoc.user!_tipo_plano << :ruta_cables
+		LoPage                 << LoDoc.current_page
+		_if LoPage.elements.size > 0
+		_then
+			LoPage.elements.empty()
+		_endif
+	_else
+		_return
+	_endif
+ 
+	LoDibujaPlano                    << c_geom_set_layout.new_with(:bounds, bounding_box.new(10, 10, 100, 100))
+	LoDibujaPlano.outline_style      << _unset
+	LoDibujaPlano.oAppLayoutDesigner << lyd
+	LoDibujaPlano.oRegistro          << LoObjetoEnEditor
+	LoDibujaPlano.nIdRegistro        << LoObjetoEnEditor.id
+	LoDibujaPlano.nMargenVp          << 800
+	LoDibujaPlano.sNombreAce         << "RUTA_CABLES"
+	LoDibujaPlano.sTipoPlano         << "PLANO_DE_RUTA"
+
+       	# (06/07/07 jtlelo) : creamos el pie de plano
+
+	LoMunicipio     << LoObjetoEnEditor.municipio.default("")
+	LoEstado        << LoObjetoEnEditor.estado.default("")
+	LoCentral       << LoObjetoEnEditor.user!_central.default("")
+	LoNombre        << LoObjetoEnEditor.user!_nombre.default("")
+	LoPrograma_tipo << LoProyecto.user!_programa_tipo.default("")
+	LoPrograma_anyo << LoProyecto.user!_programa_anyo.default("")
+
+#       _if (LoMunicipio << LoObjetoEnEditor.municipio) _is _unset 
+#       _then
+#	       LoMunicipio << ""
+#       _endif
+#       _if (LoEstado << LoObjetoEnEditor.estado) _is _unset 
+#       _then
+#	       LoEstado << ""
+#       _endif
+#       _if (LoCentral << LoObjetoEnEditor.user!_central) _is _unset 
+#       _then
+#	       LoCentral << ""
+#       _endif
+#       _if (LoNombre << LoObjetoEnEditor.user!_nombre) _is _unset 
+#       _then
+#	       LoNombre << ""
+#       _endif
+#       _if (LoPrograma_tipo << LoProyecto.user!_programa_tipo) _is _unset 
+#       _then
+#	       LoPrograma_tipo << ""
+#       _endif
+#       _if (LoPrograma_anyo << LoProyecto.user!_programa_anyo) _is _unset 
+#       _then
+#	       LoPrograma_anyo << ""
+#       _endif
+	_if LoMunicipio = "" _andif LoEstado = ""
+	_then
+		LoMunEstado << ""
+	_else
+		LoMunEstado << LoMunicipio + ", " + LoEstado + newline_char
+	_endif
+
+	LoNumeroRuta << Glorutaopb.user!_numero.write_string
+	LoDibujaPlano.sNombrePlano << "RUTA DE CABLES" + newline_char +
+				      "CTL - " + LoCentral + " (" + LoNombre + ")" + newline_char +
+				      "RUTA: " + " " + LoNumeroRuta + newline_char +
+				      "PROGRAMA " + LoPrograma_tipo + " " + LoPrograma_anyo
+
+	LoDibujaPlano.modulos_ancho << 6
+	LoDibujaPlano.modulos_alto  << 3
+	
+	lym.current_document.current_page.add_element(LoDibujaPlano)	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.genera_plano_ruta_de_cables_fo_lar()
+	_self.gui_cables_fo << _unset 	
+	paf << smallworld_product.pni_application()
+	paf.busy? << _true 
+	LoDisenoActual<<  c_cuentas_fo_plugin.ObtenerDiseno()
+	LoProyecto << LoDisenoActual.project
+	LoCentral << c_cuentas_fo_plugin.ObtenerCentral()
+	# INICIO DEL CAMBIO
+	# (2012-07-23 AHERNAN, HILDEBRANDO) : 
+	#
+	paf.manager.goto_primary_context(LoCentral)    
+	#
+	# FIN DEL CAMBIO	
+	
+        LoTitulo << "CENTRAL: " + LoCentral.user!_nom_nodo.default("") +
+		    " " + LoCentral.user!_siglas.default("") +
+		    " PROYECTO: " + LoProyecto.name 
+	
+	_self.gui_cables_fo <<c_arbol_cables_fo_general_lar.new(Lotitulo, paf.top_frame)
+	_self.gui_cables_fo.activate_relative_to(LoTitulo, paf.top_frame)
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.GeneraTitulo(PnProyecto, PnObjetoEnEditor,  PsDibujaPlano)
+	## 
+	##
+
+_local LoAnio           << date_now().year.write_string
+_local LoMes            << date_now().month_number.write_string
+_local LoEmp            << PnProyecto.user!_empresa_proyecto.write_string
+_local LoProg           << PnProyecto.user!_programa.write_string
+_local LoAlter          << PnProyecto.inf_schemes.write_string
+_local LoTipoPlano      << PsDibujaPlano.sTipoPlano
+_local LoObjetoEnEditor << PnObjetoEnEditor
+_local LoNumHoja        << "01" #PsDibujaPlano.layout_page.page_number().write_string
+_local LoCantHojas      << "01" #PsDibujaPlano.layout_page.number_of_pages().write_string
+
+
+        _if LoMes.size = 1
+	_then
+		LoMes << %0+LoMes
+	_endif
+
+	LoAnio << LoAnio[3]+LoAnio[4]
+
+	_if LoEmp.size > 0
+	_then
+		LoEmp << LoEmp[1]
+	_endif
+
+	_if LoProg.size > 0
+	_then
+		LoProg << LoProg[1]
+	_endif
+
+	_if LoNumHoja.size = 1 
+	_then
+		LoNumHoja << %0+LoNumHoja
+	_endif
+
+	_if LoCantHojas.size = 1
+	_then
+		LoCantHojas << %0+LoCantHojas
+	_endif
+
+	_if LoTipoPlano = "ASHURADO"
+	_then
+		_return %1 + LoObjetoEnEditor.user!_central +%_ + "ASHU" + %R +
+			LoAnio + LoMes + LoAlter + LoNumHoja + LoCantHojas + LoProg + LoEmp
+	_elif LoTipoPlano = "DISTRITOS"
+	_then 
+		_return %1 + LoObjetoEnEditor.user!_central + %_ + "DIVI" + %S +
+			LoAnio + LoMes + LoAlter + LoNumHoja + LoCantHojas + LoProg + LoEmp
+	_elif LoTipoPlano = "ITINERARIO"
+	_then
+		_return %1 + LoObjetoEnEditor.user!_central + %_ + "ITIN" + %E +
+			LoAnio + LoMes + LoAlter + LoNumHoja + LoCantHojas + LoProg + LoEmp
+	_elif LoTipoPlano = "CANALIZACION"
+	_then 
+		_return %1 + LoObjetoEnEditor.user!_central + %_ + "RC" + "99" + %V +
+			LoAnio + LoMes + LoAlter + LoNumHoja + LoCantHojas + LoProg + LoEmp
+	_elif LoTipoPlano = "CONSTRUCCION" 
+	_then
+		_return %1 + LoObjetoEnEditor.user!_central + %_ + LoObjetoEnEditor.user!_num_dto +
+			%C + LoAnio + LoMes + LoAlter + LoNumHoja + LoCantHojas + LoProg + LoEmp
+	_elif LoTipoPlano = "BAJANTES"
+	_then
+		_return %1 + LoObjetoEnEditor.user!_central + %_ + LoObjetoEnEditor.user!_num_dto +
+			%B + LoAnio + LoMes + LoAlter + LoNumHoja + LoCantHojas + LoProg + LoEmp
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.GetMapView(PoGeom)
+	## 
+	## 
+_local LoMapView
+_local LoMapPlugin
+
+        LoMapPlugin<<smallworld_product.pni_application().plugin(:map_plugin)
+	_if PoGeom _isnt _unset 
+	_then
+		LoMapView<<LoMapPlugin.current_map_view
+		LoMapView.goto(PoGeom)
+		LoMapView<<LoMapPlugin.current_map_view
+	_else
+		LoMapView<<LoMapPlugin.current_map_view
+	_endif
+	>>LoMapView
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.info_enlace
+	#---------------------------------------------------
+	##  Objetivo  : Consultar la informacion del cable que se envio
+	## al databus.
+	##
+	_return _self.application.databus.request_data(:info_enlace)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.IniciaLayoutDesigner()
+	## 
+	##
+_local LoLayoutPlugin
+_local LoLayoutDesigner
+_local LoLayoutManager
+_local LoViewMapperPlugin
+_local LoDoc
+_local LoPage
+
+        LoLayoutPlugin    << smallworld_product.pni_application().plugin(:layout_plugin)
+	LoLayoutDesigner  << LoLayoutPlugin.start_layout_designer()
+	LoLayoutManager   << LoLayoutDesigner.plugin(:layout_manager)
+	LoViewMapperPlugin<<LoLayoutDesigner.plugin(:viewport_mapper)
+
+
+	LoDoc  << LoLayoutManager.current_document
+	LoPage << LoLayoutManager.current_page
+
+
+	#Configurar Pagina 84 cm (Ancho) X 124 cm (Largo)
+	#LoPage.set_paper_size(8400,12400)
+	LoPage.set_paper_size(12400,8400)
+
+	>>(LoPage,LoViewMapperPlugin)
+_endmethod
+$
+
+_pragma(classify_level=basic)
+_method gen_planos_plugin.muestra_ventana_seleccion( ps_titulo_plano )
+
+	## Este método genera el plano fosa de cables y distribuidor general
+	_local LoDlgo
+	_local LsName << :c_opbs
+
+	_if ( LoDlg   << _self.get_dialog(LsName) ) _isnt _unset
+	_then
+		LoDlg.close()
+		_self.dialogs.empty()
+	_endif
+
+	# Create and cache the dialog
+	LoDlg << c_opbs.new_dialog( _self.top_frame )
+	_self.cache_dialog( LsName, LoDlg )
+	
+	LoDlg.activate_relative_to(ps_titulo_plano, _self.top_frame, 350, 250)
+	
+_endmethod
+$
+_method gen_planos_plugin.note_change(who,what,diseno)
+	## 
+	## Autor: Elena Sainero (Ten Sails Consulting)
+	## Fecha de Creación: Mayo 2006
+	## Caso de Uso: Administracion de Proyectos
+	## Objetivo: Si cambia el proyecto activo deben calcularse las
+	## acciones a mostrar 
+	## Parametros de entrada: N/A
+	## Parametros de Salida: N/A
+	## 
+
+	_if what _is :active_scheme _then 
+		_self.manage_actions()
+	_endif 
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.obtener_elemento_cabecera_estudio_conjunto()
+	## 
+	## Objetivo: Obtiene la central a partir de la cual generar el
+	## plano 
+	## Parametros de Entrada: Ninguno
+	## Parametros de Salida: Registro de Central   
+	## Autor: Elena Sainero (Ten Sails Consulting)
+	## Fecha de Creacion: Diciembre 2005
+	##
+	_return swg_dsn_admin_engine.active_scheme.project.user!_central
+
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.obtener_registros_de(PoElementos)
+	##  Objetivo  : Obtener información del enlace que componen el
+	## enlace del plano que se genera.
+	## donde PoElementos puede ser : :oestructuras, :obasinicio,
+	## :ocanalizacion, :oelementos, :ocables ,:obasfinal
+	
+	LoRegistros << rope.new()
+	
+	_if  .o_ruta _isnt _unset  _andif
+	     .o_ruta[PoElementos] _isnt _unset 
+	_then
+                  _if .o_ruta[PoElementos].is_kind_of?(mit_bay)
+		  _then
+			  
+			  LoRegistros.add(.o_ruta[PoElementos])
+		  _else
+			 
+			  LoRegistros  << .o_ruta[PoElementos]		  
+		  _endif
+		
+               
+	_endif
+
+	_return LoRegistros
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.oe_seleccionada
+	## 
+	## 
+	_return .o_oe
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.oe_seleccionada << po_oe
+	## 
+	## 
+	.o_oe << po_oe
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.oei_seleccionada
+	## 
+	## 
+	_return .o_oei
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.oei_seleccionada << po_oei
+	## 
+	## 
+	.o_oei << po_oei
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.oei_sin_construir? ( tree )
+# Proyecto de canalizacion
+# Determinar si un display_tree corresponde o no
+# a un oei sin construir.
+#
+	_if (oe << tree.key).source_collection.name _isnt :user!_oe
+	_then
+		_return _false
+	_else
+		_return _true 
+	_endif
+#
+# Buscar si ya hay un diseño correspondiente
+# a este opb.
+#
+#oei<<oe.user!_oei
+#opb << oei.user!_opb
+#
+#
+#nombre << opb.user!_valor_opb + "-" + oei.user!_valor_oei
+#proyecto << opb.swg_dsn_project
+#pred << predicate.new ( :name, :eq, nombre )
+#diseno << proyecto.dsm_base_schemes().select(pred).an_element()
+#_return diseno _is _unset
+_endmethod
+$
+_method gen_planos_plugin.on_deactivation()
+	##
+	## Autor: Elena Sainero (Ten Sails Consulting)
+	## Fecha de Creación: Mayo 2006
+	## Caso de Uso: Administracion de Proyectos
+	## Objetivo: Elimina la dependencia del proyecto activo 
+	## Parametros de entrada: N/A
+	## Parametros de Salida: N/A
+	##
+
+	# Remover dependiencia sobre el active_scheme para eliminar
+	# problemas con la configuración de visibilidad cuando la
+	# aplicación PNI se cierre.
+	swg_dsn_admin_engine.remove_dependent(_self, :active_scheme)
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.opb_seleccionada
+
+	_return .o_opb
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.opb_seleccionada << po_opb
+
+	.o_opb << po_opb
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.perfil_crea_planos?
+	##  
+	##
+	_local LoAv << gis_program_manager.authorisation_view
+	_local LoUser << LoAv.current_user
+
+	_if LoUser.has_group?("system_admin")
+	_then
+		_return _true 
+	_endif
+	
+	_for LoGrupo _over LoUser.groups.fast_elements()
+	_loop
+		_if LoGrupo.name = "JEFE AREA ING. TMX." _or
+		    LoGrupo.name = "PROYECTISTA TELMEX" _or
+		    LoGrupo.name = "JEFE DE OFICINA FILIAL" _or
+		    LoGrupo.name = "JEFE DE GRUPO FILIAL" _orif
+		    LoGrupo.name = "PROYECTISTA FILIAL" _or
+		    LoGrupo.name = "CONSTRUCTOR" _orif
+		    LoGrupo.name = "DIRECCION TECNICA" _orif
+		    LoGrupo.name = "SOPORTE" _orif
+		    LoGrupo.name = "GERENTE TELMEX" _orif
+		    LoGrupo.name = "GERENTE FILIALES" _orif
+		    LoGrupo.name = "CARTOGRAFICO" _orif
+		    LoGrupo.name = "PERMISOS" _orif 
+		    LoGrupo.name = "CONSTRUCCION" _orif
+		    LoGrupo.name = "PROTECCION DE INVENTARIO" _orif 
+		    LoGrupo.name = "IPR TELMEX" _orif
+		    LoGrupo.name = "SUPERVISOR ICRA"
+
+		_then
+			_return  _true	
+		_endif
+	_endloop 
+
+       >> _false 
+       
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_ashurado()
+#  Objetivo: genera el plano de Division de ashurado.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+#  Fecha de última modificación: 04 Enero 2006
+#  Creado por: jtlelo
+#  
+
+	paf              << smallworld_product.pni_application()
+        
+	LoObjetoEnEditor << _self.validar_generar_plano_distritos()
+	LoProyecto       << swg_dsn_admin_engine.active_scheme.project
+
+        lyd              << paf.plugin(:layout_plugin).start_layout_designer()
+       _if lyd _isnt _unset 
+       _then
+	       lym                    << lyd.plugin(:layout_manager)
+	       LoDoc                  << lym.current_document
+	       LoDoc.user!_tipo_plano << :ashurado
+	       LoPage                 << LoDoc.current_page
+	       _if LoPage.elements.size>0
+	       _then
+		       LoPage.elements.empty()
+	       _endif
+       _else
+	       _return
+       _endif
+ 
+       LoDibujaPlano                    << c_geom_set_layout.new_with(:bounds,bounding_box.new(10,10,100,100))
+       LoDibujaPlano.outline_style      << _unset
+       LoDibujaPlano.oAppLayoutDesigner << lyd
+       LoDibujaPlano.oRegistro          << LoObjetoEnEditor
+       LoDibujaPlano.nIdRegistro        << LoObjetoEnEditor.id
+       LoDibujaPlano.nMargenVp          << 800
+    
+       LoDibujaPlano.sNombreAce         << "CENT_PLANOS"
+       LoDibujaPlano.sTipoPlano         << "ASHURADO"
+       # (06/05/05 jtlelo) : se creo un metodo para generar el nombre
+       # del plano, conforme al caso de uso GENERAR PLANO
+              #LoDibujaPlano.sNombrePlano<<"CTL - "+LoObjetoEnEditor.user!_central+
+       #			   newline_char+"PLANO ASHURADO"
+
+       LoMunicipio     << LoObjetoEnEditor.municipio.default("")
+       LoEstado        << LoObjetoEnEditor.estado.default("") 
+       LoCentral       << LoObjetoEnEditor.user!_central.default("")
+       LoNombre        << LoObjetoEnEditor.user!_nombre.default("")
+       LoPrograma_tipo << LoProyecto.user!_programa_tipo.default("")
+       LoPrograma_anyo << LoProyecto.user!_programa_anyo.default("")
+
+       
+#       _if (LoMunicipio<<LoObjetoEnEditor.municipio) _is _unset 
+#       _then
+#	       LoMunicipio << ""
+#       _endif
+#       _if (LoEstado<<LoObjetoEnEditor.estado) _is _unset 
+#       _then
+#	       LoEstado << ""
+#       _endif
+#       _if (LoCentral<<LoObjetoEnEditor.user!_central) _is _unset 
+#       _then
+#	       LoCentral << ""
+#       _endif
+#       _if (LoNombre << LoObjetoEnEditor.user!_nombre) _is _unset 
+#       _then
+#	       LoNombre << ""
+#       _endif
+#       _if (LoPrograma_tipo<<LoProyecto.user!_programa_tipo) _is _unset 
+#       _then
+#	       LoPrograma_tipo << ""
+#       _endif
+#       _if (LoPrograma_anyo<<LoProyecto.user!_programa_anyo) _is _unset 
+#       _then
+#	       LoPrograma_anyo << ""
+#       _endif
+       _if LoMunicipio = "" _andif LoEstado = ""
+       _then
+	       LoMunEstado << ""
+       _else
+	       LoMunEstado << LoMunicipio + ", " + LoEstado + newline_char
+       _endif
+       
+       LoDibujaPlano.sNombrePlano  << "PLANO ASHURADO" + newline_char +
+				      "CTL - "         + LoCentral    + " (" + LoNombre + ")" + newline_char +
+				      LoMunEstado      + "PROGRAMA "  +
+				      LoPrograma_tipo  + " "          + LoPrograma_anyo
+
+       LoDibujaPlano.modulos_ancho << 6
+       LoDibujaPlano.modulos_alto  << 3
+       
+       lym.current_document.current_page.add_element(LoDibujaPlano)	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_cambio_trayectoria()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+	(LoNNumTramo,LoNNumRuta ) <<   _self.cable?()
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return  # no se tiene cable seleccionado.
+	_endif
+
+	_local Lolyp << Lopaf.plugin(:layout_plugin)
+
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------
+	
+	_local LbContinuar << Lolyp.verifica_status()
+	_if LbContinuar 
+	_then		
+		_local Lolyd                 << Lolyp.start_layout_designer()
+		_local Lolym                 << Lolyd.plugin(:layout_manager)	
+		_local LnAnchoSello          << 1800
+		_local LnAnchoCroquis        << 0   # (05/03/03 ahernan) : No lleva croquis.
+		_local LnEspacio             << 300
+		_local LnEspacioArrAbaIzqder << 100
+		_local LnEspacioDespuesSello << 50
+		_local LoPagina              << LoLym.current_document.current_page		
+		#-------------------------------------------------------
+		#Agrega marco.	
+		#--------------------------------------------------------
+		LoMarco         << marco_layout.new()	
+		LoMarco.num_mod <<   9
+		LoMarco.sello   <<  LnAnchoSello + Lnespacio +  LnAnchoCroquis + LnEspacio
+		LoMarco.set_fill_colour(_unset )
+		LoMarco.set_colour(_unset)
+		LoPagina.add_element(LoMarco)
+
+		#---------------------------------------------------------------------
+		# Agrega el sello
+		#---------------------------------------------------------------------	
+		LnInicio_X << 300 # 25 mm del borde izquierdo de la pagina 
+		LnInicio_Y << 100  # 7.5 mm del borde inferior de la pagina
+		
+		#altura total de la tabla. 1mm =10 pixeles
+		LnAltura << 2600 # 91 mm
+		LnAncho  << 1800 # 88 mm	
+		vparea   << bounding_box.new(LnInicio_X, LnInicio_Y, LnInicio_X + LnAncho, LnInicio_Y + LnAltura )		
+		#---------------------------------------------------------------------
+		# Agrega el sello
+		#---------------------------------------------------------------------
+		##----------------------------------------------------
+		##Sello de Observaciones
+		##---------------------------------------------------- 
+		LoSello  << c_sello_observaciones.new_with(:bounds, vparea)
+		LoSello.asigna_num_tramo(LoNNumRuta.write_string , LoNNumTramo.write_string )
+		LoSello.Inicializa()
+		LoPagina.add_element(LoSello)
+		LoSello.Agrega_LYM(Lolym)
+				
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_de_construccion_fo()
+
+	LoDtoOptico << swg_dsn_admin_engine.active_scheme.distrito_optico
+	LoPlanoConstr << c_plano_construccion_fo.new()
+	LoPlanoConstr.genera_plano(LoDtoOptico)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_de_construccion_reubicacion_terminales()
+	## Genera el plano de reubicacion sw terminales
+	## 
+	##
+	LoDtoOptico << swg_dsn_admin_engine.active_scheme.distrito_optico
+	LoPlanoConstr << c_plano_reubicacion_terminales.new()	
+	LoPlanoConstr.genera_plano(LoDtoOptico)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_de_bajantes()
+
+	paf         << smallworld_product.pni_application()
+	mpg         << paf.plugin(:map_plugin)
+	LoProyecto  << swg_dsn_admin_engine.active_scheme.project
+		
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		paf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+
+
+	LoObjetoEnEditor << _self.validar_distrito()
+
+	_if LoObjetoEnEditor _is _unset 
+	_then
+		paf.show_message( _self.message(:distrito))
+		#paf.show_message("Seleccionar un Distrito.")
+		_return 
+	_endif
+
+	_if LoObjetoEnEditor.source_collection.name=:user!_distrito
+	_then
+		mpg.goto(LoObjetoEnEditor)
+	_else
+		paf.show_message( _self.message(:construccion))
+		#	paf.show_message("Para un plano de construcción debe seleccionar un distrito.")
+		_return
+	_endif
+
+	lyd << paf.plugin(:layout_plugin).start_layout_designer()
+	_if lyd _isnt _unset 
+	_then
+		lym                    << lyd.plugin(:layout_manager)
+		LoDoc                  << lym.current_document
+		LoDoc.user!_tipo_plano << :bajantes
+		LoPage << LoDoc.current_page
+		_if LoPage.elements.size>0
+		_then
+			LoPage.elements.empty()
+		_endif
+	_else
+		_return
+	_endif
+
+	LoDibujaPlano                    << c_geom_set_layout.new_with(:bounds,bounding_box.new(10,10,100,100))
+	LoDibujaPlano.outline_style      << _unset
+	LoDibujaPlano.oAppLayoutDesigner << lyd
+	LoDibujaPlano.oRegistro          << LoObjetoEnEditor
+	LoDibujaPlano.nIdRegistro        << LoObjetoEnEditor.id
+	LoDibujaPlano.nMargenVp          << 800
+	LoDibujaPlano.sNombreAce         << "CENT_PLANOS"
+	LoDibujaPlano.sTipoPlano         << "BAJANTES"
+	LoDibujaPlano.sNombrePlano       << LoObjetoEnEditor.user!_distrito
+	LoDibujaPlano.modulos_ancho      << 4
+	LoDibujaPlano.modulos_alto       << 2
+
+	lym.current_document.current_page.add_element(LoDibujaPlano)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_de_d_central()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+	
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+		_return
+	_endif
+
+#-----------------------------------------------------------------------	
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+#----------------------------------------------------------------------	
+	(LoNNumTramo,LoNNumRuta ) << _self.cable?()
+
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return   # no se tiene cable seleccionado.
+	_endif
+
+	_local Lolyp    << Lopaf.plugin(:layout_plugin)
+	_local Lolyd    << Lolyp.start_layout_designer()
+	_local Lolym    << Lolyd.plugin(:layout_manager)
+	_local LoPagina << LoLym.current_document.current_page
+
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------
+	
+	_local LbContinuar << Lolyp.verifica_status()
+	
+	_if LbContinuar 
+	_then		
+		_self.Elementos_comunes( LoNNumTramo,LoNNumRuta)
+		L << c_detalles_layout.new_with(:bounds,  bounding_box.new(1,1,1,1))
+		L.set_colour(_unset)
+		L.set_fill_colour(_unset )
+		LoPagina.add_element(L)	
+				
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_de_d_central_e()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+
+#-----------------------------------------------------------------------	
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+#----------------------------------------------------------------------	
+	(LoNNumTramo,LoNNumRuta ) << _self.cable?()
+
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return   # no se tiene cable seleccionado.
+	_endif
+
+	_local Lolyp    << Lopaf.plugin(:layout_plugin)
+	_local Lolyd    << Lolyp.start_layout_designer()
+	_local Lolym    << Lolyd.plugin(:layout_manager)
+	_local LoPagina << LoLym.current_document.current_page	
+
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------
+	
+	_local LbContinuar << Lolyp.verifica_status()
+	
+	_if LbContinuar 
+	_then
+		
+		_self.Elementos_comunes( LoNNumTramo,LoNNumRuta)
+		L << c_detalles_layout.new_with(:bounds,  bounding_box.new(1,1,1,1))
+		L.set_colour(_unset)
+		L.set_fill_colour(_unset )
+		LoPagina.add_element(L)	
+
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_de_hoja_secuencia()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+	 
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+
+#-----------------------------------------------------------------------	
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+#----------------------------------------------------------------------	
+	(LoNNumTramo,LoNNumRuta )            << _self.cable?()
+
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return   # no se tiene cable seleccionado.
+	_endif
+
+	_local Lolyp                             << Lopaf.plugin(:layout_plugin)
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------
+	_local LbContinuar                      << Lolyp.verifica_status()
+	
+	_if LbContinuar 
+	_then
+
+		_local Lolyd                 << Lolyp.start_layout_designer()
+		_local Lolym                 << Lolyd.plugin(:layout_manager)	
+		_local LnAnchoSello          << 1800 
+		_local LnAnchoCroquis        << 50  # (05/03/03 ahernan) : No lleva croqui
+		_local LnEspacio             << 300
+		_local LnEspacioArrAbaIzqder << 100		
+		_local LoPagina              << LoLym.current_document.current_page		
+		#-------------------------------------------------------
+		#Agrega marco.	
+		#--------------------------------------------------------
+		LoMarco                      << marco_layout.new()	
+		LoMarco.num_mod              << 7
+		LoMarco.sello                << LnAnchoSello  +  LnAnchoCroquis + 200
+		LoMarco.set_fill_colour(_unset )
+		LoMarco.set_colour(_unset)
+		LoPagina.add_element(LoMarco)		
+		#----------------------------------------------------
+		#Sello de Observaciones
+		#---------------------------------------------------- 
+		LnInicio_X                   << 300 # 25 mm del borde izquierdo de la pagina 
+		LnInicio_Y                   << 100  # 7.5 mm del borde inferior de la pagina
+		
+		#altura total de la tabla. 1mm =10 pixeles
+		LnAltura                     << 2600 # 91 mm
+		LnAncho                      << 1800 # 88 mm		
+		vparea                       << bounding_box.new(LnInicio_X, LnInicio_Y, LnInicio_X + LnAncho, LnInicio_Y + LnAltura )
+		
+		
+		LoSello                      << c_sello_observaciones.new_with(:bounds, 	vparea)
+
+		LoSello.asigna_num_tramo(LoNNumRuta.write_string ,  LoNNumTramo.write_string )
+		LoSello.Inicializa()
+		LoPagina.add_element(LoSello)
+		LoSello.Agrega_LYM(Lolym)
+		
+		#----------------------------------------------------
+		# (05/03/01 ahernan) : detalles Resumen de materiales.
+		#----------------------------------------------------		
+		LoDespx                         << LoPagina.bounds.xmin +  LnAnchoSello  +  LnEspacio +   LnEspacioArrAbaIzqder 
+		LoDespy                         << LoPagina.bounds.ymin 
+		LoP1                            << coordinate.new( LoDespx ,LoDespy)
+		LoP2                            << coordinate.new( LoP1.x + 5000,        LoP1.y + 2700 )	
+		LoVpTemp                        << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )	
+		LoSello                         << c_resumen_proyecto.new_with(:bounds, LoVpTemp)
+		LoSello.Inicializa()
+		LoPagina.add_element(LoSello)
+
+		#----------------------------------------------------
+		# (05/03/01 ahernan) : Hoja de secuencia
+		#----------------------------------------------------
+	
+		LoP1                            << coordinate.new( LoDespx + 2200 ,LoDespy + 500)
+		LoP2                            << coordinate.new( LoP1.x + 1500, LoP1.y + 2000 )	
+		LoVpTemp                        << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )	
+		LoHsecuencia                    << textbox_layout.new_with(:bounds,LoVpTemp)
+		LoHsecuencia.set_fill_colour(_unset )
+		LoHsecuencia.font_size          << 2
+		LoHsecuencia.text << "                         SECUENCIA DE TRABAJO       " +
+				     NEWLINE_CHAR +  NEWLINE_CHAR +
+				     "1.- VERIFICAR QUE LOS PERMISOS MUNICIPALES, FEDERALES, AUTOPISTAS," +
+				     NEWLINE_CHAR +
+				     " ESTATALES,ETC. .. Y SUS CRUZAMIENTOS CORRESPONDIENTES SE ENCUENTREN AUTORIZADOS," +
+				     NEWLINE_CHAR +
+				     "QUE LA CONSTRUCCIÓN DE LAS CANALIZACIONES SE ENCUENTREN TERMINADAS Y QUE LA COLOCACION" +
+				     NEWLINE_CHAR +
+                                     "EN LOS POSTES DE LOS SOPORTES PARA  CABLE DE FO SE ENCUENTREN INSTALADOS." +
+				     NEWLINE_CHAR +  NEWLINE_CHAR + 
+                                     "2.- INSTALAR   METROS DE 3 DUCTOS DE POLIENTILENO DE BAJA DENSIDAD DE 35 MM  " +
+				     NEWLINE_CHAR +
+                                     "PARA SUBDIVISION DE VIAS ENTRE LOS POZOS NUMERO:_________________________________   " +
+				     NEWLINE_CHAR +  NEWLINE_CHAR +
+                                     "3.- INSTALAR      MTS. DE  ESCALERILLA DE ______ CON TAPA PARA CABLE DE FO " +
+				     NEWLINE_CHAR +
+                                    "DESDE LA VENTANA DE LA FOSA DE CABLES CTL-       HASTA EL BDFO COMO INDICA EL PROYECTO." +
+				     NEWLINE_CHAR + "4.-" + NEWLINE_CHAR + NEWLINE_CHAR + "5.- " +
+				     NEWLINE_CHAR +  NEWLINE_CHAR
+     
+		LoPagina.add_element(LoHsecuencia)
+						
+		#-----------------------------------------
+		# (05/03/01 ahernan) : Derechos reservados.
+		#-----------------------------------------		
+		L << c_detalles_layout.new_with(:bounds,  bounding_box.new(1,1,1,1))
+		L.set_colour(_unset)
+		L.set_fill_colour(_unset )
+		LoPagina.add_element(L)	
+		
+	_endif
+		
+_endmethod
+$
+_method gen_planos_plugin.plano_de_ruta()
+	
+	.s_plano_solicitado << :ruta_cables
+
+	_self.muestra_ventana_seleccion("Ruta de Cables")
+	#write("************************")
+	#_self.genera_plano_ruta_cables()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_desmontaje_cd()
+## Objetivo:              Construir el plano de
+##                        desmontaje de caja de distribución.
+## Parámetros de entrada: Ninguno.
+## Parámetros de salida:  Ninguno.
+## Regresa:               Ninguno.
+## Autor:                 vnguzman
+## Fecha de creación:     Lunes 20 de Marzo de 2006
+#	paf << smallworld_product.pni_application()
+#	paf.show_message(_self.message(:desarrollo))
+#
+#	_if swg_dsn_admin_engine.active_scheme _is unset
+#	_then
+#		paf.show_message( _self.message(:diseño_activo))
+#		_return
+#	_endif
+#
+#        _local LoPlano << c_plano_desmontaje_cd.new()
+#	LoPlano.genera_plano()
+# Autor:                          vnguzman
+# ID de requerimiento:            Plano de desmontaje de caja
+#                                 de distribución
+# Fecha de modificación:          Lunes 31 de Julio de 2006
+# Descripción de la modificación: Modifico la manera de crear
+#                                 el plano
+##       	_self.show_message(_self.message(:desarrollo))
+	_local lo_diseño << swg_dsn_admin_engine.active_design
+	_if lo_diseño _is _unset
+	_then
+		_self.show_message( _self.message(:diseño_activo))
+		_return
+	_endif
+        _local lo_plugin_mapa << smallworld_product.pni_application().plugin(:map_plugin)
+        _local lo_mapa        << lo_plugin_mapa.current_map
+	_if lo_mapa.ace_name <> "CENTRALES"
+	_then
+		_self.show_message(_self.message(:ace))
+		_return
+	_endif
+        _local lo_vista_mapa << lo_plugin_mapa.current_map_view
+        _if lo_vista_mapa.view_scale <> 200
+        _then
+                lo_vista_mapa.view_scale << 200
+        _endif
+        _local lo_area << pseudo_area.new_with(lo_vista_mapa.current_view_boundary)
+        lo_area.world  << lo_mapa.world
+        _local lo_plugin_layout   << smallworld_product.pni_application().plugin(:layout_plugin)
+        _local lo_layout_designer << lo_plugin_layout.layout_designer
+	_if lo_layout_designer _is _unset
+	_then
+		lo_layout_designer << lo_plugin_layout.start_layout_designer()
+	_endif
+	_local lo_layout_manager << _unset
+	_local lo_pagina         << _unset
+        _if lo_layout_designer _isnt _unset
+	_then
+		lo_layout_manager             << lo_layout_designer.plugin(:layout_manager)
+		_local lo_documento           << lo_layout_manager.current_document
+		lo_documento.name             << "Plano de desmontaje de caja de distribución"
+		lo_documento.user!_tipo_plano << :desmontaje_cd
+		lo_pagina                     << lo_documento.current_page
+		_local lo_elementos_pagina    << lo_pagina.elements
+
+		_if lo_elementos_pagina.size > 0
+		_then
+			lo_elementos_pagina.empty()
+		_endif
+	_else
+		_return
+	_endif
+	_local lo_geom_set_layout             << c_geom_set_layout.new_with(:bounds, bounding_box.new(10, 10, 100, 100))
+	lo_geom_set_layout.outline_style      << _unset
+	lo_geom_set_layout.oAppLayoutDesigner << lo_layout_designer
+	lo_geom_set_layout.oRegistro          << lo_area
+	lo_geom_set_layout.nIdRegistro        << _unset
+	lo_geom_set_layout.sIdRegistro        << _unset
+	lo_geom_set_layout.nMargenVp          << 800
+	_local lo_proyecto << lo_diseño.project
+	_local lo_central  << lo_proyecto.user!_central
+        _local ls_ruta     << lo_proyecto.job_type + "|" +
+			      lo_central.user!_division + "|" +
+			      lo_central.user!_area + "|" +
+			      lo_central.user!_nombre + "|Proyecto : " +
+			      lo_proyecto.user!_programa_anyo + "-" +
+			      lo_proyecto.user!_programa_sec.write_string
+	_local lo_diseño_padre << lo_diseño.inf_parent
+        _if lo_diseño_padre <> " "
+        _then
+                ls_ruta << ls_ruta + "|" + lo_diseño_padre
+        _endif
+        ls_ruta << ls_ruta + "|" + lo_diseño.name
+        lo_geom_set_layout.sNombrePlano  << ls_ruta
+        lo_geom_set_layout.sNombreAce    << "Plano_desmontaje_CD"
+        lo_geom_set_layout.sTipoPlano    << "Plano_desmontaje_CD"
+        lo_geom_set_layout.modulos_ancho << 12
+        lo_geom_set_layout.modulos_alto  << 1
+        lo_pagina.add_element(lo_geom_set_layout)
+# Fin de la modificación
+_endmethod
+$
+_method gen_planos_plugin.plano_diagrama_de()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+ 
+	paf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		paf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+	mpg << paf.plugin(:map_plugin)
+	LoObjetoEnEditor << paf.plugin(:editor_manager).current_embedded_editor.current_object
+	_if LoObjetoEnEditor _is _unset 
+	_then
+		paf.show_message( _self.message(:distribucion))
+	#paf.show_message("Debe seleccionar una Caja de Distribución.")
+		_return 
+	_endif
+
+	_if LoObjetoEnEditor.source_collection.name=:mit_terminal_enclosure
+	_then
+	#mpg.goto(LoObjetoEnEditor)
+	_else
+		paf.show_message( _self.message(:diagramae))
+	#paf.show_message("Para un plano de diagrama de empalme, debe seleccionar una caja de distribución.")
+		_return
+	_endif
+
+	lyd << paf.plugin(:layout_plugin).start_layout_designer()
+	_if lyd _isnt _unset 
+	_then
+		lym     << lyd.plugin(:layout_manager)
+		LoDoc  << lym.current_document
+		LoPage << LoDoc.current_page
+		_if LoPage.elements.size>0
+		_then
+			LoPage.elements.empty()
+		_endif
+	_else
+		_return
+	_endif
+
+	LoDibujaPlano                    << c_geom_set_layout.new_with(:bounds,bounding_box.new(0,0,100,100))
+	LoDibujaPlano.outline_style      << _unset
+	LoDibujaPlano.oAppLayoutDesigner << lyd
+	LoDibujaPlano.oRegistro          << LoObjetoEnEditor
+	LoDibujaPlano.nIdRegistro        << LoObjetoEnEditor.id
+	LoDibujaPlano.nMargenVp          << 500
+	LoDibujaPlano.sNombrePlano       << "DiagramaEmpalmes"
+	LoDibujaPlano.sNombreAce         << "Physical NI User"
+	LoDibujaPlano.modulos_ancho      << 3
+	LoDibujaPlano.modulos_alto       << 2
+
+	lym.current_document.current_page.add_element(LoDibujaPlano)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_distritos()
+#  Objetivo: genera el plano de Division de distritos.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 05 Enero 2006
+# Autor de la modificación: jtlelo
+# Descripción de la modificación: adecuacion al estandar de magik
+
+	
+	paf              << smallworld_product.pni_application()
+	LoObjetoEnEditor << _self.validar_generar_plano_distritos()
+	LoProyecto       << swg_dsn_admin_engine.active_scheme.project
+
+	lyd<<paf.plugin(:layout_plugin).start_layout_designer()
+	_if lyd _isnt _unset 
+	_then
+		lym                    << lyd.plugin(:layout_manager)
+		LoDoc                  << lym.current_document
+		LoDoc.user!_tipo_plano << :division_distritos
+		LoPage                 << LoDoc.current_page
+		_if LoPage.elements.size>0
+		_then
+			LoPage.elements.empty()
+		_endif
+	_else
+		_return
+	_endif
+	
+	LoMunicipio << LoObjetoEnEditor.municipio.default("")
+	LoEstado << LoObjetoEnEditor.estado.default("")
+	LoCentral << LoObjetoEnEditor.user!_central.default("")
+	LoNombre << LoObjetoEnEditor.user!_nombre.default("")
+
+	_if LoMunicipio = "" _andif LoEstado = ""
+	_then
+		LoMunEstado << ""
+	_else
+		LoMunEstado << LoMunicipio + ", " + LoEstado+newline_char
+	_endif
+	
+	LoDibujaPlano                    << c_geom_set_layout.new_with(:bounds,bounding_box.new(10,10,100,100))
+	LoDibujaPlano.outline_style      << _unset
+	LoDibujaPlano.oAppLayoutDesigner << lyd
+	LoDibujaPlano.oRegistro          << LoObjetoEnEditor
+	LoDibujaPlano.nIdRegistro        << LoObjetoEnEditor.id
+	LoDibujaPlano.nMargenVp          << 800
+	LoDibujaPlano.sNombrePlano       << ""
+	LoDibujaPlano.sNombreAce         << "CENT_PLANOS"
+	LoDibujaPlano.sTipoPlano         << "DISTRITOS"
+	LoDibujaPlano.sNombrePlano       << "PLANO GENERAL DIVISION DE DISTRITOS" + newline_char +
+					     "CTL - " + LoCentral + " (" + LoNombre + ")" +
+					     newline_char + LoMunEstado + "ESC. 1:"
+	LoDibujaPlano.modulos_ancho      << 6
+	LoDibujaPlano.modulos_alto       << 3
+	
+	lym.current_document.current_page.add_element(LoDibujaPlano)	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_estudio_conjunto()
+	## 
+	## Objetivo:              Genera el plano de Estudio de Conjunto
+	## Parametros de Entrada: NingunooApp.plugin(:c_planos_principales_plugin).current_opb
+	## Parametros de Salida:  Ninguno
+	## Autor:                 Elena Sainero (Ten Sails Consulting)
+	## Fecha de Creacion:     Diciembre 2005
+	##
+
+	 _if swg_dsn_admin_engine.active_scheme _is _unset 
+         _then 
+            _self.framework.show_message("No hay un diseño activo.")
+            _return   
+         _endif 
+
+	paf              << smallworld_product.pni_application()
+	#_self.validar_generar_plano_estudio_conjunto()
+	
+	LoObjetoEnEditor << _self.obtener_elemento_cabecera_estudio_conjunto()
+	LoProyecto       << swg_dsn_admin_engine.active_scheme.project
+
+	lyd << paf.plugin(:layout_plugin).start_layout_designer()
+	_if lyd _isnt _unset 
+	_then
+		lym                    << lyd.plugin(:layout_manager)
+		LoDoc                  << lym.current_document
+		LoDoc.user!_tipo_plano << :estudio_conjunto
+		LoPage                 << LoDoc.current_page
+		_if LoPage.elements.size > 0
+		_then
+			LoPage.elements.empty()
+		_endif
+	_else
+		_return
+	_endif
+	
+	LoDibujaPlano                    << c_geom_set_layout.new_with(:bounds,bounding_box.new(10,10,100,100))
+	LoDibujaPlano.outline_style      << _unset
+	LoDibujaPlano.oAppLayoutDesigner << lyd
+	LoDibujaPlano.oRegistro          << LoObjetoEnEditor
+	LoDibujaPlano.nIdRegistro        << LoObjetoEnEditor.id
+	LoDibujaPlano.nMargenVp          << 500
+	LoDibujaPlano.sNombreAce         << "ESTUDIO_CONJUNTO"
+	#
+	# Steve Hall (Ten Sails Consulting) 12/05/06
+	# Establecer tipo de plano
+	#
+	LoDibujaPlano.sTipoPlano         << "ESTUDIO_CONJUNTO"
+	LoDibujaPlano.modulos_ancho      << 6
+	LoDibujaPlano.modulos_alto       << 3
+
+
+	# (06/07/07 jtlelo) : creamos el pie de plano
+	LoMunicipio     << LoObjetoEnEditor.municipio.default("")
+	LoEstado        << LoObjetoEnEditor.estado.default("")
+	LoCentral       << LoObjetoEnEditor.user!_central.default("")
+	LoNombre        << LoObjetoEnEditor.user!_nombre.default("")
+	LoPrograma_tipo << LoProyecto.user!_programa_tipo.default("")
+	LoPrograma_anyo << LoProyecto.user!_programa_anyo.default("")
+
+
+#	_if (LoMunicipio << LoObjetoEnEditor.municipio) _is _unset 
+#	_then
+#		LoMunicipio << ""
+#	_endif
+#	_if (LoEstado << LoObjetoEnEditor.estado) _is _unset 
+#	_then
+#		LoEstado << ""
+#	_endif
+#	_if (LoCentral << LoObjetoEnEditor.user!_central) _is _unset 
+#	_then
+#		LoCentral << ""
+#	_endif
+#	_if (LoNombre << LoObjetoEnEditor.user!_nombre) _is _unset 
+#	_then
+#		LoNombre << ""
+#	_endif
+#	_if (LoPrograma_tipo << LoProyecto.user!_programa_tipo) _is _unset 
+#	_then
+#		LoPrograma_tipo << ""
+#	_endif
+#	_if (LoPrograma_anyo << LoProyecto.user!_programa_anyo) _is _unset 
+#	_then
+#		LoPrograma_anyo << ""
+#	_endif
+	_if LoMunicipio = "" _andif LoEstado = ""
+	_then
+		LoMunEstado << ""
+	_else
+		LoMunEstado << LoMunicipio+", "+LoEstado+newline_char
+	_endif
+
+       LoDibujaPlano.sNombrePlano       << "ESTUDIO DE CONJUNTO"+ newline_char+
+					   "CTL - "+LoCentral+" ("+LoNombre+")"+
+					   newline_char+LoMunEstado+
+					   "PROGRAMA "+LoPrograma_tipo+" "+LoPrograma_anyo+newline_char+
+					   "ESC. 1:"
+
+	lym.current_document.current_page.add_element(LoDibujaPlano)	
+	 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_estudio_de_trans()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+	
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+
+#-----------------------------------------------------------------------	
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+#----------------------------------------------------------------------	
+	(LoNNumTramo,LoNNumRuta ) << _self.cable?()
+
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return   # no se tiene cable seleccionado.
+	_endif
+
+	_local Lolyp        << Lopaf.plugin(:layout_plugin)
+	_local Lolyd        << Lolyp.start_layout_designer()
+	_local Lolym        << Lolyd.plugin(:layout_manager)
+	_local LoPagina    << LoLym.current_document.current_page	
+
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------
+	
+	_local LbContinuar << Lolyp.verifica_status()
+	
+	_if LbContinuar 
+	_then		
+		_self.Elementos_comunes(LoNNumTramo, LoNNumRuta)
+		
+		#--------------------------------------------------------------------
+		L          << c_detalles_layout.new_with(:bounds,  bounding_box.new(1,1,1,1))
+		#--------------------------------------------------------------------
+		L.set_colour(_unset)
+		L.set_fill_colour(_unset )
+		LoPagina.add_element(L)	
+				
+	_endif
+	
+	# (05/04/06 ahernan) : Se agregan elementos que dependen del enlace.
+	
+	# ESTUDIO DE TRANSMISION
+
+        _Local LnInicio_X
+        _local LnInicio_Y
+	_Local LnAltura
+	_local LnAncho
+	
+	#altura total de la tabla. 1mm =10 pixeles
+	
+	LnAltura           << 1850  # 185 mm
+	LnAncho            << 3700  # 370 mm
+
+	#------------------------------------
+	#Coordenada donde iniciara el sello 1
+        #------------------------------------
+ 
+#	LnInicio_X << 300 # 30 mm del borde izquierdo de la pagina 
+#	LnInicio_Y << 150 # 15 mm del borde inferior de la pagina
+
+	LnInicio_X         <<  LoPagina.bounds.xmax -  7000 # 30 mm del borde izquierdo de la pagina 
+	LnInicio_Y         <<  400   # 15 mm del borde inferior de la pagina
+
+	LnFinal_X          << LnInicio_X + LnAncho
+	LnFinal_Y          << LnInicio_Y + LnAltura	
+	
+	#La primera coordenada es la esquina inferior izquierda
+	#La segunda coordenada superior derecha del sello 
+
+	vpareaSello        << bounding_box.new(LnInicio_X, LnInicio_Y , LnFinal_X , LnFinal_Y )
+	LoSello            << c_estudio_transmision.new_with(:bounds, vpareaSello)
+	LoSello.asigna_num_tramo(LoNNumRuta.write_string ,  LoNNumTramo.write_string )
+	LoPagina.add_element(LoSello)
+	
+	# DIAGRAMA EMPALMES GENERAL
+	
+	#altura total de la tabla. 1mm =10 pixeles
+	LnAltura           << 2000  # 200 mm
+	LnAncho            << 2900  # 290  mm
+
+	#------------------------------------
+	#Coordenada donde iniciara el sello 2
+	#------------------------------------
+
+#	LnInicio_X << 4000 # 400 mm del borde izquierdo de la pagina 
+#	LnInicio_Y << 500  # 50  mm del borde inferior de la pagina
+
+	LnInicio_X         << LoPagina.bounds.xmax -  3000 # 30 mm del borde izquierdo de la pagina 
+	LnInicio_Y         << 500  # 50  mm del borde inferior de la pagina
+
+	LnFinal_X          << LnInicio_X + LnAncho
+	LnFinal_Y          << LnInicio_Y + LnAltura	
+	
+	#La primera coordenada es la esquina inferior izquierda
+	#La segunda coordenada superior derecha del sello 	
+	
+	vpareaSello        << bounding_box.new(LnInicio_X, LnInicio_Y , LnFinal_X , LnFinal_Y )	
+        LoSello            << c_sello_diagrama_empalmes_general.new_with(:bounds, vpareaSello)
+	LoSello.Inicializa()	
+	#----------------------------------------------------------------------
+	LoSello.asigna_num_tramo(LoNNumRuta.write_string ,  LoNNumTramo.write_string )
+	#----------------------------------------------------------------------	
+	LoPagina.add_element(LoSello)
+	LoSello.Agrega_LYM(Lolym)		
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_fcydg()
+	.s_plano_solicitado << :fosa_cables
+	_if (shc << swg_dsn_admin_engine.active_scheme) _isnt  _unset _andif
+	    (shc.project.job_type = _self.message(:proyecto_existente))
+	_then		
+		# (2012-07-02 AHERNAN, HILDEBRANDO) : se envian parametros.
+		_self.genera_plano_por_opb(_unset  , :fosa_cables )
+	_else
+		_self.muestra_ventana_seleccion("Fosa de Cables")		
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_generico()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+	_local Lolyp << Lopaf.plugin(:layout_plugin)
+
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+	(LoNNumTramo, LoNNumRuta ) << _self.cable?()
+
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return  # no se tiene cable seleccionado.
+	_endif
+
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------
+
+	_local LbContinuar << Lolyp.verifica_status()
+	
+	_if LbContinuar
+	_then
+		_local Lolyd                 << Lolyp.start_layout_designer()
+		_local Lolym                 << Lolyd.plugin(:layout_manager)
+		_local LnAnchoSello          << 2100
+		_local LnAnchoCroquis        << 1750
+		_local LnEspacio             << 30
+		_local LnEspacioArrAbaIzqder << 100
+		_local LoPagina              << LoLym.current_document.current_page
+		#-------------------------------------------------------
+		#Agrega marco.	
+		#--------------------------------------------------------		
+		LoMarco         << marco_layout.new()	
+		LoMarco.num_mod << 9
+		LoMarco.sello   << LnAnchoSello + Lnespacio +  LnAnchoCroquis + LnEspacio
+		LoMarco.set_fill_colour(_unset )
+		LoMarco.set_colour(_unset)
+		LoPagina.add_element(LoMarco)		
+		#---------------------------------------------------------------------
+		# Agrega el sello
+	        #---------------------------------------------------------------------
+		LnInicio_X << 300 # 25 mm del borde izquierdo de la pagina 
+		LnInicio_Y << 100  # 7.5 mm del borde inferior de la pagina
+		
+		#altura total de la tabla. 1mm =10 pixeles
+		LnAltura   << 2600 # 91 mm
+		LnAncho    << 1800 # 88 mm
+				
+		vparea     << bounding_box.new(LnInicio_X, LnInicio_Y, LnInicio_X + LnAncho, LnInicio_Y + LnAltura )
+		
+		#Sello de Observaciones
+		#---------------------------------------------------- 
+		LoSello    << c_sello_observaciones.new_with(:bounds, 	vparea)
+		LoSello.Inicializa()
+
+               #write("parametros,....",  LoNNumRuta ,  LoNNumTramo   )
+		
+		LoSello.asigna_num_tramo(LoNNumRuta.write_string ,  LoNNumTramo.write_string )
+		LoPagina.add_element(LoSello)
+                LoSello.Agrega_LYM(Lolym)
+				
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_instalacion_t()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+
+		_return 
+	_endif
+
+#-----------------------------------------------------------------------	
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+#----------------------------------------------------------------------	
+	(LoNNumTramo, LoNNumRuta ) << _self.cable?()
+
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return   # no se tiene cable seleccionado.
+	_endif
+
+
+	_local Lolyp    << Lopaf.plugin(:layout_plugin)
+	_local Lolyd    << Lolyp.start_layout_designer()
+	_local Lolym    << Lolyd.plugin(:layout_manager)
+	_local LoPagina << LoLym.current_document.current_page	
+
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------	
+	_local LbContinuar << Lolyp.verifica_status()
+	
+	_if LbContinuar 
+	_then		
+	     	_self.Elementos_comunes( LoNNumTramo,LoNNumRuta)
+
+		L          << c_detalles_layout.new_with(:bounds,  bounding_box.new(1,1,1,1))
+		L.set_colour(_unset)
+		L.set_fill_colour(_unset )
+		LoPagina.add_element(L)		
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_instalacion_td()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+	
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+
+		_return 
+	_endif
+
+#-----------------------------------------------------------------------	
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+#----------------------------------------------------------------------	
+	(LoNNumTramo,LoNNumRuta ) << _self.cable?()
+
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return   # no se tiene cable seleccionado.
+	_endif
+
+	_local Lolyp    << Lopaf.plugin(:layout_plugin)
+	_local Lolyd    << Lolyp.start_layout_designer()
+	_local Lolym    << Lolyd.plugin(:layout_manager)
+	_local LoPagina << LoLym.current_document.current_page	
+
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------
+	
+	_local LbContinuar << Lolyp.verifica_status()
+	
+	_if LbContinuar 
+	_then		
+	
+		_self.Elementos_comunes( LoNNumTramo,LoNNumRuta)
+		L << c_detalles_layout.new_with(:bounds,  bounding_box.new(1,1,1,1))
+		L.set_colour(_unset)
+		L.set_fill_colour(_unset )
+		LoPagina.add_element(L)			
+	_endif
+	 	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_inventario_canalizacion()
+	## 
+	## 
+	#  Objetivo: genera el plano de Division de ashurado.
+	#  Parámetros de entrada:  Ninguno.
+	#                                  
+	#  Parámetros de salida:     Ninguno.
+	#                                   
+	#  Regresa:  Ninguno.
+	#  Fecha de última modificación: 17 Enero 2006
+	#  Creado por: jtlelo
+	#  
+	paf << smallworld_product.pni_application()
+        
+	LoObjetoEnEditor << _self.validar_generar_plano_distritos()
+	LoProyecto       << swg_dsn_admin_engine.active_scheme.project
+        lyd              << paf.plugin(:layout_plugin).start_layout_designer()
+	_if lyd _isnt _unset 
+        _then
+	        lym      << lyd.plugin(:layout_manager)
+              	LoDoc    << lym.current_document
+		LoDoc.user!_tipo_plano << :inventario_canalizacion
+		LoPage   << LoDoc.current_page
+		_if LoPage.elements.size>0
+		_then
+			LoPage.elements.empty()
+		_endif
+       _else
+	       _return
+       _endif
+ 
+       LoDibujaPlano                    << c_geom_set_layout.new_with(:bounds,bounding_box.new(10,10,100,100))
+       LoDibujaPlano.outline_style      << _unset
+       LoDibujaPlano.oAppLayoutDesigner << lyd
+       LoDibujaPlano.oRegistro          << LoObjetoEnEditor
+       LoDibujaPlano.nIdRegistro        << LoObjetoEnEditor.id
+       LoDibujaPlano.nMargenVp          << 800
+       LoDibujaPlano.sNombreAce         << "CENT_PLANOS"
+       LoDibujaPlano.sTipoPlano         << "CANALIZACION"
+       # (06/05/05 jtlelo) : se creo un metodo para generar el nombre
+       # del plano, conforme al caso de uso GENERAR PLANO
+
+       LoMunicipio << LoObjetoEnEditor.municipio.default("")
+       LoEstado    << LoObjetoEnEditor.estado.default("")
+       LoCentral   << LoObjetoEnEditor.user!_central.default("")
+       LoNombre    << LoObjetoEnEditor.user!_nombre.default("")
+
+       
+#	_if (LoMunicipio<<LoObjetoEnEditor.municipio) _is _unset 
+#	_then
+#		LoMunicipio << ""
+#	_endif
+#	_if (LoEstado<<LoObjetoEnEditor.estado) _is _unset 
+#	_then
+#		LoEstado << ""
+#	_endif
+#	_if (LoCentral<<LoObjetoEnEditor.user!_central) _is _unset 
+#	_then
+#		LoCentral << ""
+#	_endif
+#	_if (LoNombre << LoObjetoEnEditor.user!_nombre) _is _unset 
+#	_then
+#		LoNombre << ""
+#	_endif
+	_if LoMunicipio = "" _andif LoEstado = ""
+	_then
+		LoMunEstado << ""
+	_else
+		LoMunEstado << LoMunicipio+", "+LoEstado+newline_char
+	_endif
+	
+       LoDibujaPlano.sNombrePlano       << "PLANO INVENTARIO DE CANALIZACION"+ newline_char+
+					   "CTL - "+LoCentral+" "+LoNombre+newline_char+
+					   LoMunEstado+
+					   "ESC. 1:"
+
+       LoDibujaPlano.modulos_ancho      << 6
+       LoDibujaPlano.modulos_alto       << 3
+       
+       lym.current_document.current_page.add_element(LoDibujaPlano)
+       
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_itinerario()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo.	
+	
+	paf << smallworld_product.pni_application()
+
+        LoObjetoEnEditor << _self.validar_generar_plano_distritos()
+
+	lyd << paf.plugin(:layout_plugin).start_layout_designer()
+	_if lyd _isnt _unset 
+	_then
+		lym    << lyd.plugin(:layout_manager)
+		LoDoc  << lym.current_document
+		LoDoc.user!_tipo_plano << :itinerario
+		LoPage << LoDoc.current_page
+		_if LoPage.elements.size > 0
+		_then
+			LoPage.elements.empty()
+		_endif
+	_else
+		_return
+	_endif
+
+	LoDibujaPlano                    << c_geom_set_layout.new_with(:bounds,bounding_box.new(10,10,100,100))
+	LoDibujaPlano.outline_style      << _unset
+	LoDibujaPlano.oAppLayoutDesigner << lyd
+	LoDibujaPlano.oRegistro          << LoObjetoEnEditor
+	LoDibujaPlano.nIdRegistro        << LoObjetoEnEditor.id
+	LoDibujaPlano.nMargenVp          << 800
+	LoDibujaPlano.sNombreAce         << "CENT_PLANOS"
+	LoDibujaPlano.sTipoPlano         << "ITINERARIO"
+	# (06/05/05 jtlelo) : se creo un metodo para generar el nombre
+        # del plano, conforme al caso de uso GENERAR PLANO
+
+	_if (LoCentral<<LoObjetoEnEditor.user!_central) _is _unset 
+	_then
+		LoCentral << ""
+	_endif
+
+        LoDibujaPlano.sNombrePlano       << LoCentral + newline_char + "ITINERARIO DE CANALIZACION"
+	LoDibujaPlano.modulos_ancho      << 6
+	LoDibujaPlano.modulos_alto       << 3
+	
+	lym.current_document.current_page.add_element(LoDibujaPlano)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_obra_civil()
+#  Objetivo: genera el plano de Division de ashurado.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+#  Fecha de última modificación: 2 Junio 2015
+#  Creado por: rmrosale
+	_dynamic !print_float_precision!	
+	!print_float_precision! << 10 	
+	_local distancia_total << 0.0
+        _local lo_map
+	_local trazo
+
+	_if swg_dsn_admin_engine.active_scheme _isnt _unset #_andif
+	_then
+		lo_map << smallworld_product.pni_application().plugin(:map_plugin).trail_owner
+		
+		_if lo_map.trail.current_sector _isnt _unset _andif lo_map.trail.current_sector.closed? _andif 
+		    lo_map.current_selection.size > 0
+		_then
+			trazo << pseudo_area.new(lo_map.trail.sectors)
+			trazo.world << lo_map.world.source_world.worlds.an_element()
+			_for reg _over lo_map.current_selection.elements()
+			_loop
+				_if reg.rwo.is_kind_of?(underground_route) _andif
+				    reg.rwo.construction_status = "PROYECTADO"
+				_then
+					_if reg.rwo.measured_length.value = 0
+					_then
+						distancia_total +<< reg.rwo.calculated_length.value
+					_else
+						distancia_total +<< reg.rwo.measured_length.value
+					_endif										
+				_endif
+				
+
+			_endloop
+			
+			_if distancia_total > 500
+			_then
+				planoobracivil << c_plano_obra_civil.new(trazo,distancia_total)
+				planoobracivil.genera_plano()
+			_else
+				smallworld_product.pni_application().show_message(_self.message(:trayectoria_quinientos))
+			_endif
+		_else
+			smallworld_product.pni_application().show_message(_self.message(:falta_trazo))
+		_endif
+	_else
+		smallworld_product.pni_application().show_message(_self.message(:proyecto_cobre_msg))
+	_endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_permisos()
+	## Este método genera el plano de permisos
+	##
+	_local LoPlano << c_plano_permisos.new()
+	LoPlano.genera_plano()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_principales()
+	#  Objetivo: Genera  el plano de principales.
+	#  Parámetros de entrada:  Ninguno.
+	#                                  
+	#  Parámetros de salida:     Ninguno.
+	#                                   
+	#  Regresa:  Ninguno.
+	# Fecha de última modificación: 24 feb 2005
+	# Autor de la modificación bfpalaci
+	# Descripción de la modificación: adecuacion al estandar de magik
+	#
+	paf           << smallworld_product.pni_application()
+	#_if swg_dsn_admin_engine.active_scheme _is _unset
+	#_then
+	#	paf.show_message("No hay un diseño activo.")
+	#        _return 
+	#_endif
+	lyp           << paf.plugin(:layout_plugin)	
+	lyd           << lyp.start_layout_designer()
+	lym           << lyd.plugin(:layout_manager)
+	vparea        << bounding_box.new(500, 500, 1000, 1000)
+	marco         << marco_layout.new_with(:bounds,vparea)
+	marco.num_mod << 5
+	marco.altura  << 3
+	# START CHANGE
+	#*********************** Alejandro Enriquez Gijon *****************
+	# (05/04/29) : 
+	#
+	LoArea        << bounding_box.new(100, 100, 10000, 8000)
+	LoPPrin       << c_plano_Principales.new_with(:bounds, LoArea)		
+	LoPPrin.genera_plano()
+
+	#lym.current_document.current_page.add_element(marco)
+	#lyp.start_layout_designer()
+	#
+	# END CHANGE
+		
+_endmethod
+$
+_method gen_planos_plugin.plano_ruta_cables_fo(Lobuffer,Loestructuras,LoElementos)
+	## 
+	## 
+	(LoPage,LoViewMapperPlugin)<<_self.IniciaLayoutDesigner()
+	# Agregar viewport
+	Lo_buffer_estructuras << rope.new_with(Lobuffer,Loestructuras,LoElementos)
+	_self.AddViewport(LoPage,:c_vp_ruta_de_cables_fo, LoViewMapperPlugin,Lo_buffer_estructuras)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_sembrado_ductos()
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: Nuevo
+	
+	_local LoPaf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		LoPaf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+
+# (05/04/08 ahernan) : Verifica que  exista enlace y cable seleccionado.
+	(LoNNumTramo,LoNNumRuta ) << _self.cable?()
+
+	_if LoNNumRuta _is _unset _and  LoNNumTramo _is _unset 
+	_then
+		_return  # no se tiene cable seleccionado.
+	_endif
+
+	_local Lolyp << Lopaf.plugin(:layout_plugin)
+
+#------------------------------------------------------------------
+# (05/02/25 ahernan) :  Verifica que no exista proyecto en edicion.
+#------------------------------------------------------------------
+	
+	_local LbContinuar << Lolyp.verifica_status()
+	
+	_if LbContinuar 
+	_then			
+		_local Lolyd                  << Lolyp.start_layout_designer()
+		_local LoLydmp                << Lolyd.plugin(:viewport_mapper)
+		_local Lolym                  << Lolyd.plugin(:layout_manager)
+		_local LoCMV                  << Lopaf.plugin(:map_plugin).current_map_view
+		_local LnAnchoSello           << 1800
+		_local LnAnchoCroquis         << 0 # (05/03/03 ahernan) : No lleva croquis 
+		_local LnEspacio              << 300
+		_local LnEspacioArrAbaIzqder  << 100
+		_local LnewspaciodespuesSello << 50
+		_local LoPagina               << LoLym.current_document.current_page		
+		#-------------------------------------------------------
+		#Agrega marco.	
+		#--------------------------------------------------------
+		LoMarco         << marco_layout.new()	
+		LoMarco.num_mod << 6
+		LoMarco.sello   << LnAnchoSello + Lnespacio
+		LoMarco.set_fill_colour(_unset )
+		LoMarco.set_colour(_unset)
+		LoPagina.add_element(LoMarco)					
+		##----------------------------------------------------
+		##Sello de Observaciones
+		##----------------------------------------------------
+		LnInicio_X << 300 # 25 mm del borde izquierdo de la pagina 
+		LnInicio_Y << 100  # 7.5 mm del borde inferior de la pagina
+		
+		#altura total de la tabla. 1mm =10 pixeles
+		LnAltura   << 2600 # 91 mm
+		LnAncho    << 1800 # 88 mm
+		
+		vparea      << bounding_box.new(LnInicio_X, LnInicio_Y, LnInicio_X + LnAncho, LnInicio_Y + LnAltura )
+			
+		LoSello    << c_sello_observaciones.new_with(:bounds, vparea)
+		LoSello.asigna_num_tramo(LoNNumRuta.write_string, LoNNumTramo.write_string )
+		LoSello.Inicializa()
+		LoPagina.add_element(LoSello)
+		LoSello.Agrega_LYM(Lolym)
+		
+		# (05/03/11 ahernan) : -----------------------------------------------
+		# (05/03/11 ahernan) : Formatea la division del plano
+		# (05/03/11 ahernan) : -----------------------------------------------
+		L << c_sembrado_layout.new_with(:bounds, bounding_box.new(1, 1, 1, 1))
+		L.set_colour(_unset)
+		L.set_fill_colour(_unset )
+		LoPagina.add_element(L)
+		
+		#----------------------------------------------------
+		# (05/03/01 ahernan) : detalles Resumen de materiales.oApp.plugin(:c_planos_principales_plugin).current_opb
+		#----------------------------------------------------
+		LoDespx    << LoMarco.bounds.xmin + 150
+		LoDespy    << LoMarco.bounds.ymin + 1610
+
+		LoP1       << coordinate.new( LoDespx,      LoDespy)
+		LoP2       << coordinate.new( LoP1.x,       LoP1.y - 1200)
+		LoP3       << coordinate.new( LoP1.x + 500, LoP1.y - 1100)
+		LoP4       << coordinate.new( LoP1.x + 500, LoP1.y)
+		
+		LoVpTemp  << bounding_box.new(LoP1.x, LoP1.y, LoP3.x, LoP3.y )
+
+		LsTipo     << "SEMBRADO"
+		LnInicio_X << 115
+		LnInicio_Y << 115
+		LnAncho    << 800
+		_if LsTipo = "SEMBRADO"
+		_then
+			LnAltura << 1140
+		_else 
+			LnAltura << 1720
+		_endif
+
+		vpareaSello    << bounding_box.new(LoP1.x, LoP1.y, LoP3.x, LoP3.y )
+		LoSello        << c_resumen_materiales.new_with(:bounds, vpareaSello)
+		LoSello.sTipo << LsTipo
+		LoSello.Inicializa()
+		LoPagina.add_element(LoSello)
+		LoSello.Agrega_LYM(Lolym)
+
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.plano_topologico()
+#  Objetivo: genera el plano topologico.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: adecuacion al estandar de magik
+#
+	paf << smallworld_product.pni_application()
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		paf.show_message( _self.message(:diseño_activo))
+		_return 
+	_endif
+	lyp         << paf.plugin(:layout_plugin)	
+	lyd         << lyp.start_layout_designer()
+	lym         << lyd.plugin(:layout_manager)
+	vparea      << bounding_box.new(500,500,1000,1000)
+	marco       << c_marco.new_with(:bounds,vparea)
+	marco.largo << 5
+	marco.alto  << 3
+	lym.current_document.current_page.add_element(marco)
+#$$$**************************** Alejandro Enriquez G. ******************
+	LoArea      << bounding_box.new(100, 100, 10000, 8000)
+	LoPTopo    << c_plano_topologico.new_with(:bounds,LoArea)		
+	LoPtopo.genera_plano()
+#************************************** 
+#lyp.start_layout_designer()	
+
+_endmethod
+$
+_method gen_planos_plugin.post_activation()
+	##
+	## Autor: Elena Sainero (Ten Sails Consulting)
+	## Fecha de Creación: Mayo 2006
+	## Caso de Uso: Administracion de Proyectos
+	## Objetivo: Creamos una dependencia con el proyecto activo
+	## para calcular que planos deben poderse lanzar 
+	## Parametros de entrada: N/A
+	## Parametros de Salida: N/A
+	##
+	swg_dsn_admin_engine.add_dependent ( _self, :active_scheme )
+
+	# manejamos las acciones correspondientes
+	_self.manage_actions()
+
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.proyecto_can_ok()
+	##  Proyecto de Canalizacion.
+	##
+	_local LoApp
+	_local LoLayoutDesigner
+	_local LoLayoutManager
+	_local LoCurrentDocument
+	_local LoSeccionamiento
+	_local LoSecciones
+	_local LoSector
+	_local LiANCHO_MOD<<2100
+	_local LiLARGO_MOD<<1800   #2700
+	_local LiMAX_MODS<<10
+
+	LoApp                      << smallworld_product.pni_application()
+	LoMapPlugin                << LoApp.plugin(:map_plugin)
+	LoLayoutDesigner           << LoApp.plugin(:layout_plugin).start_layout_designer()
+	LoLayoutManager            << LoLayoutDesigner.plugin(:layout_manager)
+	LoViewMapperPlugin         << LoLayoutDesigner.plugin(:viewport_mapper)
+	LoCurrentDocument          << LoLayoutManager.current_document
+	LoCurrentPage              << LoCurrentDocument.current_page
+	LoCurrentDocument.user!_tipo_plano << :proyecto_canalizacion
+
+	# START CHANGE
+	# (09/08/13 ahernan) : 
+	#
+	LoDisenoActivo  <<  swg_dsn_admin_engine.active_scheme
+	LoProyecto      << LoDisenoActivo.project
+	LoProyectoFTTB? << LoProyecto.name.matches?("*FTTB*")
+	
+	Tipo_diseno <<  LoDisenoActivo.tipo_diseno
+	Tipo_red    <<  LoDisenoActivo.name.subseq(1,5).lowercase
+	
+	#
+	# END CHANGE
+	
+	
+	_if swg_dsn_admin_engine.active_scheme.project.job_type = "Cobre" _orif
+	    # (09/08/13 ahernan) : add. se agrego condicion.
+	    (LoProyectoFTTB? _andif Tipo_red = "cobre")
+	_then
+		LoCurrentDocument.user!_oe << .oAdminProyFrmwrk.seleccion
+		LoTramoCobre<<LoCurrentDocument.user!_oe.user!_tramo_cobre
+		
+	
+	_elif swg_dsn_admin_engine.active_scheme.project.job_type = "Fibra_local"
+	_then
+		LoCurrentDocument.user!_oe_local << .oAdminProyFrmwrk.seleccion
+		oe << .oAdminProyFrmwrk.seleccion
+		LoTramoCobre<<oe.user!_tramo_cobre
+	_endif
+
+	# Obtener la canalizacion
+	
+#	LoTramoCobre<<LoCurrentDocument.user!_oe.user!_tramo_cobre
+
+# START CHANGE
+# (09/08/26 ahernan) : se alidan las geometrias del tramo de
+# canalizacion pues puede ser que el user no salve cambios y
+# la asignacion perdure pero los registros asignados no.
+#
+  _if LoTramoCobre.user!_det_t_can  _isnt  _unset _andif  
+      LoTramoCobre.user!_det_t_can.user!_ruta_geo _isnt  _unset _andif
+      LoTramoCobre.user!_det_t_can.user!_area_geo _isnt _unset 
+  _then
+	  LoSector<<LoTramoCobre.user!_det_t_can.user!_ruta_geo.sectors.as_sector()
+  _else
+	_self.show_message("problemas con el tramo de canalización. Verifique el tramo asignado")
+	_return 
+       _endif
+
+#
+# END CHANGE
+
+
+	_if LoSector _isnt _unset _andif
+	    LoSector.size>0
+	_then
+		
+		LoMapView << LoMapPlugin.current_map_view
+		LoMapView.goto_bounds(LoSector.bounds)
+		
+		# Generar seccionamiento.
+		_if LoSector.size > 0
+		_then
+			LoSeccionamiento << c_seccionamiento.new(200,1,LiMAX_MODS,21,18)
+			LoSeccionamiento.do_seccionamiento(LoSector)
+			LoSecciones << LoSeccionamiento.get_vistas()
+		_endif
+	_else
+		#Hacer nada
+		_return 
+	_endif
+
+	#Crear Marco
+	LoMarco       << c_marco.new_with(:bounds,bounding_box.new(0,0,1,1))
+	LoMarco.Largo << LiMAX_MODS
+	LoMarco.Alto  << 1
+	LoMarco.set_fill_colour(_unset)
+
+	#Crear Croquis
+	LoCroquis << c_vp_croquis_proy_can.new_with(:bounds,bounding_box.new_with_size(LiANCHO_MOD+500,
+										       LiLARGO_MOD/2.0+700,
+										       8*100,
+										       8*100))
+	LoCroquis.oGeomCanalizacion << LoSector
+
+	LoViewMapperPlugin.map_viewport_on_map_view(LoCroquis, LoMapView,
+						    LoMapView.current_view_bounds.bounds.new_enlarging(1.6),
+						    _true)
+
+	#Crear Norte
+	LoNorte << c_norte.new_with(:bounds,bounding_box.new_with_size(LiANCHO_MOD+500,LiLARGO_MOD/2.0,
+								       400, 400))
+	LoNorte.tamano << "B"
+	LoNorte.limites << _unset
+
+	# Seleccionar el detalle de tramo
+	LoMapPlugin.current_map.clear_selection()
+	LoMapPlugin.current_map.add_to_selection({LoTramoCobre.user!_det_t_can.user!_area_geo})
+	# Entrar al mundo interno del detalle de tramo.
+	LoApp.manager.enter_world()
+	# Obtener la mapview del mundo interno
+	LoMapView << LoMapPlugin.current_map_view
+
+	# (2010-07-22 Aarón Hernández Ramírez, SIGMATAO) : obtiene  las
+	# areas generadas por el seccionamiento generadas en
+	# fire_post_insert action del detalle de tramo (user!_det_t_can)
+	LcollAreas << rope.new()
+	_for LoRec _over LoTramoCobre.user!_det_t_can.user!_det_t_can_areas.fast_elements()
+	_loop
+		#LcollAreas.add(LoRec.user!_area)
+		LoBoundArea << bounding_box.new(LoRec.user!_area.bounds.xmin,
+						LoRec.user!_area.bounds.ymin,
+						LoRec.user!_area.bounds.xmax,
+						LoRec.user!_area.bounds.ymax+LoRec.user!_area.bounds.height/2.0)
+		LcollAreas.add(LoBoundArea)
+	_endloop
+
+	LiIdx << 1
+	_loop
+		# Agregar Marco
+		LoCurrentPage.add_element(LoMarco)		
+		# Agregar Sello
+		# (09/11/17 lgranados) : Se desplaza el sello principal para que la ubicacion del plano sea visible.
+		LoSello << c_sello_proyecto_canalizacion.new_with(:bounds,
+								  bounding_box.new_with_size(LoMarco.bounds.xmin+0.5*400,
+										             LoMarco.bounds.ymax-0.7*100,
+											      26.5, 21))
+		LoCurrentPage.add_element(LoSello)
+
+		# (09/11/17 lgranados) : Se agrega la ubicacion del plano desplazando el sello principal.
+		LoUbicacion << c_sello_ubicacion_fo.new_with(:bounds, bounding_box.new_with_size(LoMarco.bounds.xmin+0.5*100,
+												 LoMarco.bounds.ymax-0.7*100,
+												 26.5,
+												 21))
+		LoCurrentPage.add_element(LoUbicacion)
+		# (09/11/17 lgranados) : fin de la modificacion.
+		# Agregar Croquis
+		LoCurrentPage.add_element(LoCroquis)
+		# Agregar Norte
+		LoCurrentPage.add_element(LoNorte)
+		LoNorte.viewport_id<<LoCroquis.unique_id
+
+		LiNumModules<<LoSecciones[LiIdx][4]
+		LiXIni<<LoMarco.bounds.xmin+LiANCHO_MOD*2
+		_loop
+			
+		     _if LiNumModules<=LiMAX_MODS
+		     _then
+		 	  LoMapView.goto_bounds(LcollAreas[LiIdx])
+			  
+			  LoPlanoN << c_vp_plano_proy_can.new_with(:bounds,
+						  bounding_box.new_with_size(LiXIni,
+					          LoMarco.bounds.ymin+50, LiANCHO_MOD*LoSecciones[LiIdx][4],
+						  LiLARGO_MOD-100))
+				
+				LoPlanoN.xMin << LcollAreas[LiIdx].xmin
+				LoPlanoN.yMin << LcollAreas[LiIdx].ymin
+				LoPlanoN.xMax << LcollAreas[LiIdx].xmax
+				LoPlanoN.yMax << LcollAreas[LiIdx].ymax
+				
+				LoBounding << LoMapView.current_view_bounds.bounds.new_enlarging(1.6)
+				
+				LoViewMapperPlugin.map_viewport_on_map_view(LoPlanoN,LoMapView,LoBounding,_true)
+				
+				LoPlanoN.view_scale << 2000
+				LoPlanoN.ace_name<<"CANALIZACION"
+				LoPlanoN.style_system_category<<"proyecto_canaliza"	
+				LoCurrentPage.add_element(LoPlanoN)
+				LiXIni << LiXIni+LiANCHO_MOD*LoSecciones[LiIdx][4]				
+				LiIdx << LiIdx+1
+			_else
+				_leave
+			_endif
+			
+			# (2010-07-22 Aarón Hernández Ramírez, SIGMATAO) : si existen
+			# mas vistas se incrementa el numero de modulos para ver
+			# cuantas van por hoja.
+			_if LiIdx <= LoSecciones.size _andif
+			    (LiMAX_MODS >=( LiNumModules + LoSecciones[LiIdx][4]))
+			_then				
+				LiNumModules << LiNumModules + LoSecciones[LiIdx][4]
+			_else 
+				_leave
+			_endif
+			
+		_endloop 
+		
+		_if  LiNumModules >  LiMAX_MODS _andif
+		LiIdx <= LoSecciones.size	 
+		_then 
+			LoCurrentDocument.add_page(layout_page.new(LoCurrentPage.paper_size))
+			LoCurrentPage << LoCurrentDocument.page(LoCurrentDocument.number_of_pages())			
+		_else 
+			_leave
+		_endif
+		
+	_endloop
+	
+_endmethod
+$
+
+_pragma(classify_level=basic)
+_method gen_planos_plugin.plano_microcanalizacion()
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/09/07 des_leo) : Created
+	#-------------- End Revision History ---------------
+	w("aqui hay que implementar el plano de microcanalizacion")
+
+	_dynamic !current_application!
+
+	_if !current_application! _is _unset 
+	_then
+		!current_application! << _self.application
+	_endif
+
+	#w(!current_application!)
+
+	mapa << !current_application!.plugin(:map_plugin).current_map
+	#w(map)
+	a_geom << mapa.current_selection.an_element()
+
+	#w(a_geom)
+	_if a_geom _is _unset _andif
+	    mapa.trail.as_pseudo_geometry _is _unset 
+	_then
+		condition.raise(:user_error, :string, "Debe seleccionar una geometria en el mapa")
+	_elif (a_psa << mapa.trail.as_pseudo_geometry) _isnt _unset
+	_then
+		_if  a_psa.geom_type _isnt :area _andif
+		     a_psa.geom_type _isnt :simple_area
+		_then
+			condition.raise(:user_error, :string, "El trazo en el mapa debe ser de tipo area")
+		_endif
+	_endif
+
+	_if a_psa _isnt _unset 
+	_then
+		a_geom << a_psa
+	_endif
+	
+	_if a_geom.geom_type _isnt :area _andif
+	    a_geom.geom_type _isnt :simple_area
+	_then 
+		condition.raise(:user_error, :string, "La geometria seleccionada debe ser de tipo area")	
+	_endif
+
+	LoPlanoMicrocan << c_plano_microcanalizacion.new()
+	LoPlanoMicrocan.genera_plano(a_geom)
+	
+	_return 
+	
+_endmethod
+$
+
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.proyecto_canalizacion()
+#  Objetivo: Genera el plano de Proyecto de canaizacion.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificació: adecuacion al estandar de magik
+
+# (09/08/13 ahernan) : se valida para que el proyecto de
+# canalizacion utilice las pbs de cobre o fibra segun
+# corrsponda al tipo de diseno activo.
+	
+# (09/07/22 colivera) : si proyecto es  cobre
+# (09/08/13 ahernan) :  o diseño de cobre de FTTB.
+       # (14/03/31 rhernan) : par atencion de bug:5641. 
+      _if swg_dsn_admin_engine.active_scheme _is _unset 
+      _then
+        _self.framework.show_message("No hay un diseño activo.")
+       _return   
+      _endif
+
+      LoDisenoActivo  <<  swg_dsn_admin_engine.active_scheme
+      LoProyecto      << LoDisenoActivo.project
+      LoProyectoFTTB? << LoProyecto.name.matches?("*FTTB*")
+      
+      Tipo_diseno <<  LoDisenoActivo.tipo_diseno
+      Tipo_red    <<  LoDisenoActivo.name.subseq(1,5).lowercase
+      
+      _if LoDisenoActivo.project.job_type = "Cobre" _orif
+	  (LoProyectoFTTB? _andif Tipo_red = "cobre")
+      _then
+	      .oAdminProyFrmwrk << sw:info_contabilidad_framework.new (:info_contabilidad,
+								       _self,
+								       :config_definition_module_name,
+								       "admin_proyectos",
+								       :config_definition_file_name,
+								       "info_contabilidad_config.xml",
+								       :gui_definition_module_name,
+								       "admin_proyectos",
+								       :gui_definition_file_name,
+								       "info_contabilidad_gui.xml",
+								       :proyecto,
+								       swg_dsn_admin_engine.active_scheme.project,
+								       :engine,
+								       _self,
+								       :accion_ok,
+								       :proyecto_can_ok|()|,
+								       :validador_seleccion,
+								       :oei_sin_construir?|()| )
+	      
+	      
+	      # (09/07/22 colivera) : si es fibra
+      _elif swg_dsn_admin_engine.active_scheme.project.job_type = "Fibra_local"
+      _then 
+	      .oAdminProyFrmwrk << sw:info_contabilidad_framework_proy_canalizacion.new (:info_contabilidad_local,
+											 _self,
+											 :config_definition_module_name,
+											 "admin_proyectos",
+											 :config_definition_file_name,
+											 "info_contabilidad_config.xml",
+											 :gui_definition_module_name,
+											 "admin_proyectos",
+											 :gui_definition_file_name,
+											 "info_contabilidad_gui.xml",
+											 :proyecto,
+											 swg_dsn_admin_engine.active_scheme.project,
+											 :engine,
+											 _self,
+											 :accion_ok,
+											 :proyecto_can_ok|()|,
+											 :validador_seleccion,
+											 :oei_sin_construir?|()| )
+	      
+      _endif
+      
+      
+      top_frame << _self.top_frame
+      #
+      # No nos hacemos padre del combinar_disenos_framework
+      # ya que esto crearía problemas en cuanto al cursor
+      # 'busy'.
+      #  
+      .oAdminProyFrmwrk.activate_relative_to(_unset, "Proyecto de Canalización", top_frame, 50, 50 )
+      
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.publicaDatosObraCivil(datos)
+	#---------------------------------------------------
+	##  Objetivo  : Publicar al databus la información de manzanas
+	## del viewport principal del plano de obra civil
+	## para obtener info de colonia,municipio etc., necesario para
+	## el sello.
+	##
+	_self.databus_make_data_available(:data_viewport_obra_publica, datos)
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.publicalo(PoInfoEnlace)
+	#---------------------------------------------------
+	##  Objetivo  : Publicar al databus la información del cable
+	## del cual se genera un plano, desde la salida del bastidor de
+	## inicio hasta el bastidor(res) de llegada.
+	##
+
+#	#genera la info del enlace y la conserva en el slot .oruta
+#	ejemplo:
+#	:ocanalizacion 	sw:rope:[1-38] 
+#	:obasinicio 	mit_bay2662:(1075650385) 
+#	:ocables 	sw:rope:[1-4] 
+#	:obasfinal 	sw:rope:[1-1] 
+#	:oestructuras 	sw:rope:[1-155] 
+#	:engine 	a c_engine_ruta_cables 
+#	:oelementos 	sw:rope:[1-3] 
+#	:obasfinalycable 	sw:hash_table(1) 
+
+	#se obtiene consultando a ldatabus de la forma:
+	#info_enlace<<paf.databus.request_data(:info_enlace)
+	
+	_self.databus_make_data_available(:info_enlace, PoInfoEnlace)
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.publicar_acometida(PinfoAcometida)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/10/14 des_aaron) : Created
+	#-------------- End Revision History ---------------
+		_self.databus_make_data_available(:info_acometida, PInfoAcometida)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.reinicia_o_ruta
+	## 
+		_self.o_ruta  <<   hash_table.new()  
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.ruta_opb()
+	## 
+	##
+	frmwrk << c_opbs.new (
+		:c_opbs,
+		_self,
+		:config_definition_module_name,
+		_self.module_name,
+		:config_definition_file_name,
+		"info_contabilidad_config.xml",
+		:gui_definition_module_name,
+		_self.module_name,
+		:gui_definition_file_name,
+		"info_contabilidad_gui.xml",
+		:engine,
+		:c_opbs)
+	top_frame << _self.top_frame
+#
+# No nos hacemos padre del combinar_disenos_framework
+# ya que esto crearía problemas en cuanto al cursor
+# 'busy'.
+#
+
+	frmwrk.activate_relative_to ( _unset, "ejemplo", top_frame, 50, 50)	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.ruta_seleccionada
+
+	_return .o_ruta
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.ruta_seleccionada << po_ruta
+
+	.o_ruta << po_ruta
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.sw_databus_data_available(data_type_name,data)
+	## 
+	##
+
+# (22/11/01 des_aaron) : 	w("gen_planos_plugin.sw_databus_data_available",data_type_name,data)
+	
+	_if data_type_name _is  :trace_results
+	_then
+		.trace_results << data
+	_endif
+	
+	
+	_if data_type_name _is :map_selection #_or data_type_name _is :record_selection)
+	_then
+		_if data[2].an_element() _isnt _unset 
+		_then
+			LoDato<<data[2].an_element().rwo
+		_endif
+		
+		_self.action(:plano_de_construccion_interno).enabled?<<LoDato.is_kind_of?(user!_building) 
+	_elif data_type_name _is :record_selection
+	_then
+		LoDato<<data[2].an_element()
+		_self.action(:plano_de_construccion_interno).enabled?<<LoDato.is_kind_of?(user!_building) 
+	_endif
+	
+	_if data_type_name _is :active_map_view
+	_then
+		_self.action(:plano_de_construccion_interno).enabled?<<
+			_self.action(:plano_de_construccion_interno).enabled? _andif 
+			data.world.universe_id=0
+	_endif
+
+	_if data_type_name _is :info_enlace _andif data _isnt _unset 
+	_then
+		_self.o_ruta  <<   hash_table.new()  
+		_self.o_ruta[:engine] << data
+		_self.o_ruta[:oenlace] <<  _self.get_enlace()
+		
+		_self.o_ruta[:oestructuras]  << data.sys!slot(:osheathtrace).sys!slot(:oestructuras)
+		_self.o_ruta[:ocanalizacion] << data.sys!slot(:osheathtrace).sys!slot(:ocanalizacion)
+		_self.o_ruta[:ocables]       << data.sys!slot(:osheathtrace).sys!slot(:ocables)
+		_self.o_ruta[:oelementos]    << data.sys!slot(:osheathtrace).sys!slot(:oelementos)
+		_self.o_ruta[:obasinicio]    << data.sys!slot(:osheathtrace).sys!slot(:obasinicio)
+		_self.o_ruta[:obasfinal]    <<  data.sys!slot(:osheathtrace).sys!slot(:obasfinal)
+		_self.o_ruta[:oBasFinalycable] <<  data.sys!slot(:osheathtrace).sys!slot(:oBasFinalycable)
+
+	_elif data_type_name _is :info_acometida _andif data _isnt _unset  
+	_then
+		_self.o_ruta  <<   hash_table.new()  
+		_self.o_ruta[:engine]        << _unset
+		_self.o_ruta[:ocables]       <<  data[:ocables]
+		_self.o_ruta[:oestructuras]  <<  data[:oestructuras]
+		_self.o_ruta[:oelementos]    <<  data[:oelementos]
+		_self.o_ruta[:obasfinal]    <<   data[:obasfinal]
+			
+	_endif
+
+	_if  data_type_name _is :data_viewport_obra_publica
+	_then
+		_local datos << rope.new()
+		_for d _over data.elements()
+		_loop
+			datos.add(d.rwo)
+		_endloop
+		_self.o_ruta << datos
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.sw_databus_data_requested(PyDatatype)
+	## 
+	_if PyDatatype _is :info_enlace
+	_then
+   	       _return  .o_ruta
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.validar_distrito()
+	## 
+	## 
+	## Objetivo: Valida si se cumplen los requisitos minimos de
+	## proyecto para la generacion del plano de construccion y de
+	## bajantes, que se genera a partir de un distrito.
+	## Parametros de Entrada: Ninguno
+	## Parametros de Salida: Ninguno   
+	## Autor: jtlelo
+	## Fecha de Creacion: 06 Abril 2006
+	##
+
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		condition.raise(:diseño_activo)
+	_endif
+	_if swg_dsn_admin_engine.active_scheme.project _is _unset
+	_then
+		condition.raise(:proyecto_activo)
+	_else
+		proyecto << swg_dsn_admin_engine.active_scheme.project
+	_endif
+
+	reg_distrito << swg_dsn_admin_engine.active_scheme.user!_distrito
+	
+	_if reg_distrito _is _unset 
+	_then
+		_self.message(:distrito)
+
+	_endif
+	
+	>> reg_distrito
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.validar_generar_plano_distritos()
+	## 
+	## 
+	## Objetivo: Valida si se cumplen los requisitos minimos de
+	## proyecto para la generacion del plano
+	## Parametros de Entrada: Ninguno
+	## Parametros de Salida: Ninguno   
+	## Autor: jtlelo
+	## Fecha de Creacion: 05 Enero 2006
+	##
+
+	_if swg_dsn_admin_engine.active_scheme _is _unset
+	_then
+		condition.raise(:diseño_activo)
+	_endif
+	_if swg_dsn_admin_engine.active_scheme.project _is _unset
+	_then
+		condition.raise(:proyecto_activo)
+	_else
+		proyecto << swg_dsn_admin_engine.active_scheme.project
+	_endif
+
+	reg_central << proyecto.user!_central
+	
+	_if reg_central _is _unset 
+	_then
+		condition.raise(:central)
+
+		#_else 
+		#paf<<smallworld_product.pni_application()
+		#mpg<<paf.plugin(:map_plugin)
+		#mpg.goto(reg_central)
+		#(06/01/05 jtlelo) : Seleccina el limite de central para no
+		#centrarlo en la hoja
+		#Geom << geometry_set.new()
+		#Geom.add(reg_central.user!_limite)
+		#mpg.add_geometry_to_selection(Geom)
+		#mpg.remove_geometry_from_selection(Geom)
+	_endif
+	
+	>> reg_central 
+	
+_endmethod
+$
+
+_pragma(classify_level=basic)
+_method gen_planos_plugin.get_enlace()
+	#---------------------------------------------------
+        _return .o_enlace	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.datos_ruta()
+	#---------------------------------------------------
+        _return .o_ruta	
+_endmethod
+$
+_pragma(classify_level=basic)
+_method gen_planos_plugin.genera_plano_de_esquematico_de_principales()
+	## ( 12/08/2008 fhramire ) : metodo para activar la interface de
+	## arbol_cables_fo_central y permitir seleccionar al usuario el cable
+	## para generar plano de ruta.
+	## Permite Obtener los cables en proyectos RDA, ROF, TRONCAL 
+	
+	_self.gui_cables_fo << _unset 	
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view 
+	ed << paf.plugin(:editor_manager).current_embedded_editor
+	LoDisenoActual <<  swg_dsn_admin_engine.active_design
+
+	loproject << swg_dsn_admin_engine.active_design.project
+	LoCentral << loproject.user!_central
+
+	tipo  << loproject.name.numbers_and_strings[3].replace_substring("_", "")
+	tipo  << tipo.replace_substring("_", "")		
+	
+	_if   mv.ace_name _is :gs!schematic 
+	_then
+			tipo  << "c_plano_esquematico_de_principales_" + tipo
+			
+			Loplano<< _self.perform(tipo.lowercase.as_symbol())
+			LoPlano.genera_plano()
+
+	_else
+		_self.show_message("Debe seleccionar el mapa esquemático y tenerlo activo")
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.genera_plano_detalles_cables_fo()
+	#lanza el plano de detalles dado un pin del cable proyectado
+	# desde la entana de trazo.
+	
+	paf << smallworld_product.pni_application()
+	mapa << paf.plugin(:map_plugin)
+	plug << paf.plugin(:trace_plugin)
+	
+	pines << plug.trace_dialog.start_nodes()
+
+	_if pines.size = 1
+	_then
+
+	(LCollEstructuras,LCollEstructurasCanal,LCollElementos,LcollCables) << _self.obtener_estructuras(pines.an_element())
+
+	_if LCollEstructuras.size > 0  
+	_then
+		_self.o_ruta_sigp  <<   hash_table.new()  
+		_self.o_ruta_sigp[:oestructuras]  << LCollEstructuras
+		_self.o_ruta_sigp[:oestructurascanal]  << LCollEstructurascanal
+		_self.o_ruta_sigp[:ocables]       << LcollCables
+		_self.o_ruta_sigp[:oelementos]    << LCollElementos		
+		loproject << swg_dsn_admin_engine.active_design.project
+		LoCentral << loproject.user!_central		
+		# (2012-07-23 AHERNAN, HILDEBRANDO) : se agrega spatial context
+		# por si el plano se genera desde un mundo interno.
+		paf.manager.goto_primary_context(LoCentral)    		
+		tipo  << loproject.name.numbers_and_strings[3].replace_substring("_", "")
+		tipo  << tipo.replace_substring("_", "")
+		tipo  << "c_plano_detalles_" + tipo		
+		Loplano<< _self.perform(tipo.lowercase.as_symbol())
+		mapa.current_map.trail.clear()
+		LoPlano.genera_plano(LcollCables.an_element())
+	_else
+		_self.show_message("Debe ejecutar el trazo de la conectividad desde la ventana de trazo") 
+	_endif
+	
+	
+	_else
+		_self.show_message("Debe seleccionar un punto de inicio (Pin-Puerto) del cable para generar el plano,desde la ventana de trazo") 
+		
+	_endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.genera_plano_ruta_cables_fo()
+	## ( 12/08/2008 fhramire ) : metodo para activar la interface de
+	## arbol_cables_fo_central y permitir seleccionar al usuario el cable
+	## para generar plano de ruta.
+	## Permite Obtener los cables en proyectos RDA, ROF, TRONCAL 
+	
+	LoProyecto << swg_dsn_admin_engine.active_design.project
+	locentral  << LoProyecto.user!_central.building	
+	_self.gui_cables_fo << _unset
+	
+	paf << smallworld_product.pni_application()	
+	mapa << paf.plugin(:map_plugin)
+	plug << paf.plugin(:trace_plugin)	
+	pines << plug.trace_dialog.start_nodes()
+	mcables << rope.new()
+	mcable <<  _unset 
+	oestructuras << rope.new()
+	oelementos   << rope.new()
+	
+	_if pines.size > 1
+	_then	
+		(LCollEstructuras,
+		 LCollEstructurasCanal,
+		 LCollElementos,LcollCables) << _self.obtener_estructuras(pines.an_element())
+
+		
+		_if LCollEstructuras.size > 0
+		_then
+			_self.o_ruta_sigp  <<   hash_table.new()  
+			_self.o_ruta_sigp[:oestructuras]  << LCollEstructuras
+			_self.o_ruta_sigp[:oestructurascanal]  << LCollEstructurascanal
+			_self.o_ruta_sigp[:ocables]       << LcollCables
+			_self.o_ruta_sigp[:oelementos]    << LCollElementos
+			
+			paf.manager.goto_primary_context(LoCentral)    		
+			tipo  << loproyecto.name.numbers_and_strings[3].replace_substring("_", "")
+			tipo  << tipo.replace_substring("_", "")
+			tipo  << "c_plano_ruta_" + tipo
+			
+			Loplano<< _self.perform(tipo.lowercase.as_symbol())
+			
+			mapa.current_map.trail.clear()
+			LoPlano.genera_plano(LcollCables.an_element())
+		_else
+			_self.show_message("Debe ejecutar el trazo de la conectividad desde la ventana de trazo") 
+		_endif
+	_else
+		_self.show_message("Debe seleccionar al menos un punto de inicio para generar el plano,desde la ventana de trazo") 
+		
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.c_plano_detalles_acometida
+	
+	paf << smallworld_product.pni_application()
+       	
+	mbay <<  _self.o_ruta_sigp[:obasfinal].an_element()
+
+	LoEng << c_engine_ruta_cables.new()
+	
+	_if mbay.radio_base _isnt _unset 
+	_then
+		loplano << c_plano_detalles_acometida_rb.new(LoEng)
+	_else
+		loplano << c_plano_detalles_acometida.new(LoEng)
+	_endif
+	
+	_return loplano
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.c_plano_esquematico_de_principales_acometida
+	LoEng << c_engine_ruta_cables.new()
+	Loplano << c_plano_esquematico_de_principales_acometida.new(LoEng)
+	_return Loplano
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method gen_planos_plugin.c_plano_esquematico_de_principales_ftth
+	LoEng << c_engine_ruta_cables.new()
+	Loplano << c_plano_esquematico_de_principales_ftth.new(LoEng)
+	_return Loplano
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_detalles_rof	
+	## 
+	##
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_detalles_rof.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_detalles_tba
+	## 
+	##
+		LoEng << c_engine_ruta_cables.new()
+	>> c_plano_detalles_tba.new(LoEng)
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_detalles_tkl
+	## 
+	##
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_detalles_tkl.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_detalles_tro
+	## 
+	##
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_detalles_tkl.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_detalles_rda
+	## 
+	##
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_detalles_rda.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_detalles_ftth
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>>  c_plano_detalles_falc.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_detalles_tba
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>>  c_plano_detalles_tba.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_detalles_ba
+	## 
+	##
+	LoEng << c_engine_ruta_cables.new()
+	>>  c_plano_detalles_tba.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_ba_
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>>  c_plano_ruta_tba.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_tba
+	## 
+	## 
+		LoEng << c_engine_ruta_cables.new()
+	>> c_plano_ruta_tba.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_tkl
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_ruta_tkl.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_tro
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_ruta_tkl.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_rda
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_ruta_rda.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_rof	
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_ruta_rof.new(LoEng)
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_ftth
+	## 
+	## 
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>> c_plano_ruta_ftth.new(LoEng)
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_tba
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>>  c_plano_ruta_tba.new(LoEng)
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.c_plano_ruta_acometida
+	## 
+	## 
+	LoEng << c_engine_ruta_cables.new()
+	>>  c_plano_ruta_acometida.new(LoEng)
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.obtener_estructuras(PoNodo)
+
+	_local LCollResultados << _unset 
+	_local LCollEstructuras << _unset
+	_local LCollCanalizacion << _unset 
+	_local LCollElementos << _unset
+	
+	paf << smallworld_product.pni_application()	
+	plug << paf.plugin(:trace_plugin)
+	tracedialog  << plug.sys!slot(:trace_dialog)
+	rwoset<< tracedialog.current_manager.result_rwo_set()
+	resultstrace<<  tracedialog.sys!slot(:managers)[:signal].results
+
+	oCables << rope.new()	
+	##oBasInicio << _self.bastidor_inicial(PoNodo)
+	##oBasFinal << rope.new()	
+	##oCanalizacion << rope.new()
+	
+	(LCollEstructuras, LoCollCanalizacion, LCollElementos, LcollCables) << _self.estructuras_por_link(resultstrace)
+
+	_return LCollEstructuras,LoCollCanalizacion,LCollElementos, LcollCables
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.estructuras_por_link(PoCollLinks)
+## 
+##
+_local LCollSt      << rope.new()
+_local LCollStCanal << rope.new()
+_local LcollEl      << rope.new()
+_local LcollCables  << rope.new()
+
+_local oBasFinal   << rope.new()
+_local oBasInicio   << _unset
+
+	_for LoLink _over PoCollLinks.elements()
+	_loop
+		_self.estructuras_en_nodo(LoLink.in_node, LCollSt, LCollStCanal,LcollEl,LcollCables)
+		_self.estructuras_en_nodo(LoLink.out_node,LCollSt, LCollStCanal,LcollEl,LcollCables)
+		_self.device_en_link(LoLink,LCollSt,LcollEl, oBasInicio ,  oBasFinal )		
+	_endloop
+	
+	_return LCollSt,LCollStCanal, LcollEl, LcollCables
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.bastidor_inicial(PoPin)
+## 
+##
+	LoSheathPin << PoPin.sheath_pin
+	_if (LoConnec << LoSheathPin.strw_connect_point) _isnt _unset 
+	_then
+		_return LoConnec.owner
+	_endif
+
+	_return _unset 		 
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.device_en_link(PoLink,PoCollSt,PoCollEl,oBasInicio, oBasFinal)
+## Metodo que obtiene las estructuras de alto nivel (:building,
+## :user!_building) y los elementos relacionados (gasas,empalmes)
+##
+_local LoTopStr << PoLink.get_top_level_device()
+_local LoLowDev << PoLink.get_low_level_device_for_low_level()
+
+    # validar el device_top_level que sea estructura, sino
+    # agregarlo como elemento
+
+    _if LoTopStr _isnt _unset _andif LoTopStr.is_structure? _andif
+	_not PoCollSt.includes_by_equality?(LoTopStr)		       
+    _then
+	    PoCollSt.add(LoTopStr)
+    _else
+	    PoCollEl.add(LoTopStr)
+    _endif
+
+    # validar el device_low_level que sea mit_rme_port, y obtener
+    # su estructura(building, user!_building)
+    _if LoLowDev _isnt _unset _andif LoLowDev.is_kind_of?(mit_rme_port)
+    _then
+	    LoOwner << LoLowDev.gis_owner
+	    _if LoOwner.responds_to?(:is_structure?) _andif
+		LoOwner.is_structure? _andif
+		_not PoCollSt.includes_by_equality?(LoOwner)		       
+	    _then	   
+		    PoCollSt.add(LoOwner)
+	    _endif
+
+	    Lobas << LoLowDev.rme_bay_owner()
+	    
+	    _if oBasInicio <> Lobas
+	    _then
+		    oBasFinal.add(Lobas)
+	    _endif
+    _endif
+
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method gen_planos_plugin.estructuras_en_nodo(PoNodo,PoCollSt, PoCollStcanal,PoCollEl, PoCables)
+## 
+##
+	_if PoNodo.is_kind_of?(mit_pseudo_fiber_pin ) _orif
+	    PoNodo.is_kind_of?(mit_fiber_pin )
+	_then
+		# agregar estructuras del cable
+		_for st _over PoNodo.owner.structures.elements()
+		_loop
+			_if _not PoCollSt.includes_by_equality?(st) _andif
+			     ( st.is_kind_of?(underground_route) _orif st.is_kind_of?(aerial_route))
+			_then
+				PoCollStCanal.add(st)				
+			_endif 
+			
+			_if _not PoCollSt.includes_by_equality?(st) _andif
+			    _not st.is_kind_of?(underground_route)
+			_then
+				PoCollSt.add(st)				
+			_endif 
+		_endloop
+
+		# agregar las llaves asociadas al cable
+		_for st_anotacion _over PoNodo.owner.structure_annotations.elements()
+		_loop
+			_if _not PoCollEl.includes_by_equality?(st_anotacion)
+			_then
+				PoCollEl.add(st_anotacion)
+			_endif
+			
+		_endloop
+
+		# agregar el cable
+		_if _not PoCables.includes_by_equality?(PoNodo.owner)
+		_then
+			PoCables.add(PoNodo.owner)
+		_endif
+	_endif	
+	
+_endmethod
+$
+
+

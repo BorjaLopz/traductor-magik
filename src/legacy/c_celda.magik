@@ -1,0 +1,372 @@
+_package user
+$
+#remex(:c_celda)
+$
+def_slotted_exemplar(:c_celda,
+		     {
+  		     	{:nRen,        _unset},  # Renglon al que pertenece la celda
+    		     	{:nCol,        _unset},  # Columna a la que pertenece la celda
+		     	{:oElemento,   _unset},  # Elemento que contiene la celda
+		     	{:oElementos,  _unset},   # Elemento que contiene la celda
+		     	{:oElementos_captura,  _unset}   # Elemento que contiene la celda
+		     }
+)
+
+$
+c_celda.define_slot_access(:nCol,         :writable, :private)
+$
+c_celda.define_slot_access(:nRen,         :writable, :private)
+$
+c_celda.define_slot_access(:oElemento,    :writable, :private)
+$
+c_celda.define_slot_access(:oElementos,   :writable, :private)
+$
+c_celda.define_slot_access(:oElementos_captura,   :writable, :private)
+$
+_pragma(classify_level=restricted)
+_method c_celda.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.nCol
+## Objetivo: retornar en valor del slot nCol
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Entero - nCol : Numero de columna
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .nCol
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.nCol << valor
+
+	.nCol << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.new(RnRen, RnCol)
+## Objetivo: Crear una instancia de celda
+## Parámetros de entrada:
+## 	Entero - RnRen - Numero de renglon en el que se encuentra la celda
+## 	Entero - RnCOl - Numero de columna en la que se
+##                       encuentra la celda
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_celda - regresa un objeto celda
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+_local LoCelda # Nuevo objeto c_celdas_grafico ya configurado
+
+	# Se crea el objeto Elementos
+	_self.oElementos << c_elementos.new()
+	_self.oElementos_captura << c_elementos.new()
+
+	# Se crea el objeto encargado de dibujar la celda
+	LoCelda  << c_celdas_grafico.new()
+	
+	_self.oElementos.Agregar_Elemento(LoCelda,:bordes_celda)
+	
+	_self.nRen   << RnRen
+	_self.nCol   << RnCol
+
+	_return _clone
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celda.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.nRen
+## Objetivo: Retornar en valor del slot nRen
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Entero - nRen : Número de renglón
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .nRen
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.nRen << valor
+
+	.nRen << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.oElemento
+## Objetivo: retornar en valor del slot oSimbolo
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_elemento_grafico - oElemento : Elemento a dibujar
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .oElemento
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.oElemento << valor
+
+	# Se valida que el elemento no sea _unset
+	_if valor <> _unset 
+	_then
+ 	   .oElemento << valor
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.oElementos
+## Objetivo: retornar el valor del slot oElementos
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_elemento_grafico - oElementos : Elemento grafico a desplegar
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .oElementos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.oElementos << RoValor
+## Objetivo: Asignar un valor permitido al slot oElementos
+## Parámetros de entrada:
+## 	c_elemento_grafico - RoValor : Elemento grafico a dibujar
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	# Se valida si RoValor no es _unset
+	_if RoValor <> _unset 
+	_then
+ 	   .oElementos << RoValor
+	_else
+	   condition.raise(:warning, :string, "El objeto símbolo esta vacío.")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.oElementos_captura
+## Objetivo: retornar el valor del slot oElementos
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_elemento_grafico - oElementos : Elemento grafico a desplegar
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .oElementos_captura
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celda.oElementos_captura << RoValor
+## Objetivo: Asignar un valor permitido al slot oElementos
+## Parámetros de entrada:
+## 	c_elemento_grafico - RoValor : Elemento grafico a dibujar
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	# Se valida si RoValor no es _unset
+	_if RoValor <> _unset 
+	_then
+ 	   .oElementos_captura << RoValor
+	_else
+	   condition.raise(:warning, :string, "El objeto símbolo esta vacío.")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celda.serial_slots()
+
+	keys << rope.new_with(:nRen,:nCol,:oElemento,:oElementos,:oElementos_captura)
+	values << rope.new_with(.nRen,.nCol,.oElemento,.oElementos,.oElementos_captura)
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celda.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_celda.texto << pVal
+	#---------------------------------------------------
+	## <Req. #> : Proporciona el acceso para asignar el valor (pVal) del
+	## texto que almacenará la celda.
+	## En caso que la celda no tenga el elemento que permita
+	## almacenar la información, se creará una instancia de c_texto_grafico
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	_if .oElemento _is _unset 
+	_then
+		.oElemento << c_texto_grafico.new(pVal)
+	_else
+		.oElemento.sTexto << pVal
+	_endif	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celda.texto
+	#---------------------------------------------------
+	## <Req. #> : Regresa el texto que almacena la celda. El valor
+	## realmente lo almacena el slot oElmento
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	_if .oElemento _is _unset 
+	_then
+		_return _unset 
+	_endif
+	_return .oElemento.sTexto
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celda.bordes
+	#---------------------------------------------------
+	## <Req. #> : Regresa el objeto, celda_grafica, el cual
+	## permite configurar las caracteristicas del borde de la celda.
+	## 
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	_return .oElementos.obten_elemento(:bordes_celda)
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celda.bordes(pLadoQSeUbica)
+	#---------------------------------------------------
+	## <Req. #> : Regresa si esta, true, activado o no esta, false,
+	## el borde que se ubica en el lado que se solicita.
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	_if (pLadoQSeUbica = :izquierda)
+	_then
+		_return .oElementos.obten_elemento(:bordes_celda).bBorde_izq?
+	_elif (pLadoQSeUbica = :derecha)
+	_then 
+		_return .oElementos.obten_elemento(:bordes_celda).bBorde_der?
+	_elif (pLadoQSeUbica = :superior)
+	_then
+		_return  .oElementos.obten_elemento(:bordes_celda).bBorde_sup? 
+	_elif (pLadoQSeUbica = :inferior)
+	_then
+		_return .oElementos.obten_elemento(:bordes_celda).bBorde_inf?
+	_endif	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celda.bordes(pBordeQSeUbica) << pVal
+	#---------------------------------------------------
+	## <Req. #> : Permite activar, true, el pBordeQSeUbica o
+	## desactivar el borde en la ubicación que se indique
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	_if (pBordeQSeUbica = :izquierda)
+	_then
+		 .oElementos.obten_elemento(:bordes_celda).bBorde_izq? << pVal
+	_elif (pBordeQSeUbica = :derecha)
+	_then 
+		 .oElementos.obten_elemento(:bordes_celda).bBorde_der? << pVal
+	_elif (pBordeQSeUbica = :superior)
+	_then
+		 .oElementos.obten_elemento(:bordes_celda).bBorde_sup? << pVal
+	_elif (pBordeQSeUbica = :inferior)
+	_then
+		 .oElementos.obten_elemento(:bordes_celda).bBorde_inf? << pVal
+	_endif
+
+	
+_endmethod
+$
+
+
+
+
+
+
+
+
+
+$

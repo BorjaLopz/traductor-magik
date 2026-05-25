@@ -1,0 +1,496 @@
+#----------------------------------------------------------------
+# style_element_mixin.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rbsaldan
+#
+# Date: 04/10/27
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+## Nombre de la Empresa: SIGMATAO S.A. de C.V.
+## Traza: planos funcianlidad comun.
+## Objetivo: Crear un estilo en tiempo de ejecucion y agregarlo
+##           a una pagina de un documento de Layout Designer.
+## Autor: rbsaldan.
+## Fecha de Creacion: 1/Nov/2004
+##
+##
+##
+_package user
+$
+def_mixin(:style_element_mixin)
+$
+
+style_element_mixin.define_shared_constant(:ESTILOS,
+					   property_list.new(),
+					   :public)
+$
+_pragma(classify_level=restricted)
+_private _method style_element_mixin.calcula_bound(PaEstilos)
+## Objetivo: Calcular la extension total de varias geometrias.
+## Parametros de Entrada:
+##    PaEstilos: Arreglo de figuras geometricas. 
+## Parametros de Salida: Ninguno
+## Regresa: La extension que ocupan las geometrias que se
+##          encuentran en PaFiguras.
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+LoExtentTotal   ## Maxima area de ocupacion de las geometrias.
+LoExtentParcial ## Area parcial que ocupa una geometria.
+## LoEstilo     ## Referencia a una figura geometrica (llamada Estilo.)
+
+	LoExtentTotal<<_unset 
+
+	## Recorrer todas los estilos, para calcular la maxima area que
+	## ocupan las geometrias.
+	_for LoEstilo _over PaEstilos.fast_elements ()
+	_loop
+		## Si un elemento del estilo es un area
+		## Se obtiene el extend de dicha area.
+		_if LoEstilo[1] _is :area
+		_then
+			LoExtentParcial<<LoEstilo[4].bounds
+		## Si un elemento del estilo es un circulo
+		## hacer nada.
+		_elif LoEstilo[2] _is :circle
+		_then
+			LoExtentParcial<<bounding_box.new_centred(LoEstilo[3],LoEstilo[4], LoEstilo[5])
+		## Si un elemento del estilo es un texto
+		## hacer un extent del texto.
+		_elif LoEstilo[1] _is :text
+		_then
+			LoExtentParcial<<bounding_box.new_centred(LoEstilo[3],LoEstilo[4], 2.0)
+		_endif
+		## Hacer una Union de las areas (extents) que se vayan encontrando.
+		_if LoExtentParcial _isnt _unset 
+		_then
+			LoExtentTotal<< LoExtentTotal.default(LoExtentParcial).union(LoExtentParcial)
+		_endif
+	_endloop
+	>>LoExtentTotal
+_endmethod
+$
+_pragma(classify_level=restricted)
+_private _method style_element_mixin.draw_style(PoAreaDibujo,PaEstilos,PiAngulo,
+						_optional PoObj,PyCpoGeoObj,RoViewport,PsUsaVp,PsConLinea,PsConPunta)
+## Objetivo: Dibuja el estilo definido en una de las entradas
+##           del arreglo de estilos.
+## Parametros de Entrada:
+##    PoAreaDibujo:Area de dibujo en el layout designer.
+##    PaEstilos:   Arreglo de figuras geometricas.
+##    PiAngulo:    Angulo del estilo.
+##    PoObj:       (Opcional) Objeto en el GIS, al que apunta en layout desinger.
+##    PyCpoGeoObj: (Opcional) Campo geometrico de PoObj.
+##    RoViewport:  (Opcional) Referncia al viewport, donde se hace el dibujo del plano.
+##    PsUsaVp:     (Opcional) Campo que indica si se debe usar el limite
+##                 del viewport, para hacer un doblez en la linea.
+##    PsConLinea:  (Opcional) Indica si el estilo lleva una linie que
+##                 apunte a un objeto en el GIS.
+##    PsConPunta:  (Opcional) Indica si en el extremo de la linea, se
+##                 dibuja una punta de flecha.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+	
+_local LoSectores  ## Sectores para construir una linea.
+_local LoLs        ## Estilo de una linea.
+_local LoCoord     ## Coordenada de un objeto en el GIS (transformada).
+_local LiAngulo    ## Angulo de una linea.
+_local LoCentro    ## Coordenada central del estilo.
+_local LoEscala    ## Escala del estilo.
+_local LoRotacion  ## Transformacion de rotacion para el estilo.
+_local LoOrigen    ## Origen de un texto.
+_local LiRadio     ## Radio de un circulo.
+_local LoCirculoPos## Posicion de un circulo.
+_local LoCirculo   ## Intacia de la clase circle.
+_local LoEstiloRot ## Un estilo rotado LiAngulo grados.
+
+   
+	LoRotacion  << transform.new().rotate(PiAngulo)
+	data_bounds << _self.calcula_bound(PaEstilos,PiAngulo)
+
+	# Rotate the outline to stop data from being rendered outside
+	# the box
+	data_bounds << LoRotacion.convert_all(data_bounds.outline).bounds
+	self_bounds << _self.bounds
+
+	LoCentro      << self_bounds.centre
+	###########################################
+	
+	LoCoord<<_unset
+	## Si El estilo apunta a un objeto en el GIS, dibujar una linea
+	## que apunte a dicho objeto.
+	_if PoObj _isnt _unset 
+	_then
+		## Obtener la gometria del objeto en el gis y accesar a sus
+		## cooordenadas para transformarlas a las coordenadas de pagina.
+
+		## Si la geometria es puntual, se toma la coordenada y se transforma.
+		_if PoObj.perform(PyCpoGeoObj).is_kind_of?(point)
+		_then
+			LoCoord<<_self.TransformaCoordenada(PoAreaDibujo,
+							    PoObj.perform(PyCpoGeoObj).coord,0.1,
+							    RoViewport.transform)
+		## Si la geometria es lineal, se toma el centro de la linea y
+		## se transforma.
+			
+		_elif PoObj.perform(PyCpoGeoObj).is_kind_of?(chain)
+		_then
+			(LoCoord,LiAngulo)<<PoObj.perform(PyCpoGeoObj).midpoint_coord_and_theta
+			LoCoord<<_self.TransformaCoordenada(PoAreaDibujo,
+							    LoCoord,0.1,
+							    RoViewport.transform)
+		_endif
+		
+	_endif
+	## Dibujar una linea hacia un objeto.
+	_if PsConLinea="Si"
+	_then
+		## Tomar en cuenta el limite del viewport, para hacer un doblez
+		## en la linea.
+		_if PsUsaVp="Si"
+		_then
+			## Ejecutar si existe una coordenada a quien apuntar y si
+			## existe una referencia a un viewport.
+			_if LoCoord _isnt _unset _and RoViewport _isnt _unset 
+			_then
+				LoSectores<<sector.new()
+				LoBoundVp<<RoViewport.bounds
+				LoBoundPagina<<_self.layout_page.bounds
+				LoSectores.add(LoCoord)
+				
+				## Area vertical a la Izquierda del Viewport.
+				_if LoCentro.x>LoBoundPagina.xmin _and LoCentro.x<LoBoundVp.xmin
+				_then
+					## Area horizontal que ocupa el viewport. (Izquierda)
+					_if LoCentro.y>=LoBoundVp.ymin _and LoCentro.y<=LoBoundVp.ymax
+					_then
+						PiAngulo<<PiAngulo+90.degrees_to_radians
+						LoSectores.add(coordinate(LoBoundVp.xmin,LoCentro.y))
+					## Area de la esquina inferior izquierda.
+					_elif LoCentro.y>LoBoundPagina.ymin _and LoCentro.y<LoBoundVp.ymin
+					_then
+						PiAngulo<<PiAngulo+180.degrees_to_radians
+					_endif
+				_endif
+				## Area Vertical que ocupa el viewport.
+				_if LoCentro.x>=LoBoundVp.xmin _and LoCentro.x<=LoBoundVp.xmax
+				_then
+					##Area Inferior al Viewport.
+					_if LoCentro.y>LoBoundPagina.ymin _and LoCentro.y<=LoBoundVp.ymin
+					_then
+						PiAngulo<<PiAngulo+1800.degrees_to_radians
+						LoSectores.add(coordinate(LoCentro.x,LoBoundVp.ymin))
+					##Area Superior al Viewport.
+					_elif LoCentro.y>=LoBoundVp.ymax _and LoCentro.y<LoBoundPagina.ymax
+					_then
+						LoSectores.add(coordinate(LoCentro.x,LoBoundVp.ymax))
+					_endif
+				_endif
+				## Area vertical a la Derecha del Viewport.
+				_if LoCentro.x>=LoBoundVp.xmin _and LoCentro.x<LoBoundPagina.xmax
+				_then
+					## Area horizontal que ocupa el viewport. (Derecha)
+					_if LoCentro.y>=LoBoundVp.ymin _and LoCentro.y<=LoBoundVp.ymax
+					_then
+						PiAngulo<<PiAngulo-90.degrees_to_radians
+						LoSectores.add(coordinate(LoBoundVp.xmax,LoCentro.y))
+					## Area de la esquina inferior derecha.
+					_elif LoCentro.y>LoBoundPagina.ymin _and LoCentro.y<LoBoundVp.ymin
+					_then
+						PiAngulo<<PiAngulo+180.degrees_to_radians
+					_endif
+				_endif
+				## Areaa del vieport
+				## Si el centro del Estilo esta dentro del area del viewpor,
+				## entonces no usar el bound del viewport para dibujar la linea.
+				_if LoCentro.x>=LoBoundVp.xmin _and LoCentro.x<=LoBoundVp.xmax _and
+				    LoCentro.y>=LoBoundVp.ymin _and LoCentro.y<=LoBoundVp.ymax
+				_then
+					_self.usa_viewport<<"No"
+				_endif
+				LoSectores.add(LoCentro)
+			_else
+				write("No se ha asigando una coordenada")
+			_endif
+		_else
+			_if LoCoord _isnt _unset
+			_then
+				LoSectores<<sector.new()
+				LoSectores.add(LoCoord)
+				LoSectores.add(LoCentro)
+				_if LoCentro.y<LoCoord.y
+				_then
+					PiAngulo<<PiAngulo+180.degrees_to_radians
+				_endif
+			_endif 
+		_endif
+
+		_if LoSectores _isnt _unset _andif LoSectores.size>0
+		_then
+			_if PsConPunta="Si"
+			_then
+				LoCoordP3<<_self.obten_pto_separado(LoSectores[1],LoSectores[2],50,15)
+				LoCoordP4<<_self.obten_pto_intersect(LoSectores[1],LoSectores[2],LoCoordP3)
+				LoSectores.add_first(LoCoordP3)
+				LoSectores.add_first(LoCoordP4)
+			_endif
+			LoSectores.draw_on(PoAreaDibujo,LoLs)
+		_endif
+		
+	_endif
+	###########################################
+	LoRotacion   << transform.new().rotate(PiAngulo)
+	
+	## Calcular la escala.
+	LoEscala << ( self_bounds.height / data_bounds.height ).min ( self_bounds.width / data_bounds.width )
+	## Dibujar el estilo rotado PiAngulo grados.
+	_for LoEstilo _over PaEstilos.fast_elements ()
+	_loop
+		_if LoEstilo[1] _is :area 
+		_then
+			## Rotar, escalar y dibujar un area.
+			LoEstiloRot << LoEstilo[4].copy()
+			LoRotacion.convert_all(LoEstiloRot)
+
+			_for j, k _over LoEstiloRot.fast_keys_and_elements ()
+			_loop
+				LoEstiloRot[j]<<coordinate(k.x*LoEscala+LoCentro.x,k.y*LoEscala+LoCentro.y )
+			_endloop
+
+			_if LoEstilo[2] _isnt _unset 
+			_then
+				LoEstiloRot.fill_on(PoAreaDibujo,fill_style.called(LoEstilo[2]))
+			_endif
+
+			_if LoEstilo[3] _isnt _unset 
+			_then
+				LoEstiloRot.draw_on(PoAreaDibujo, line_style.called(LoEstilo[3]))
+			_endif
+			
+		_elif LoEstilo[1] _is :circle
+		_then
+			## Escalar y dibujar un circulo.
+			LiRadio     << LoEscala * LoEstilo[5]
+			LoCirculoPos << coordinate(LoEstilo[3],LoEstilo[4] )
+			LoCirculoPos << LoRotacion.convert(LoCirculoPos)
+			LoCirculoPos << LoCentro+LoCirculoPos.scalar_multiply(LoEscala)
+
+			LoCirculo << circle.new(LoCirculoPos,LiRadio)
+			LoCirculo.draw_on(PoAreaDibujo,line_style.called(LoEstilo[2]))
+		_elif LoEstilo[1] _is :text
+		_then
+			## Rotar la posicion sobre la coordenada.
+			LoOrigen << coordinate.new(LoEstilo[3],LoEstilo[4])
+			
+			LoOrigen << LoRotacion.convert(LoOrigen)
+			
+			## Transladar y escalar la posicion.
+			LoOrigen << LoCentro+LoOrigen.scalar_multiply(LoEscala)
+			
+			## Dibujar.
+			PoAreaDibujo.draw_vtext_transform(
+				text_style.called(LoEstilo[2]),LoOrigen.x,LoOrigen.y,
+				LoEstilo[5],_unset,_unset,LoEscala,PiAngulo,:centre_centre)
+
+		_endif
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method style_element_mixin.nombre_estilos
+## Objetivo: Regresa un arreglo con todos nombres de los
+##           estilos definidos en la constate XXXXXX.
+## Parametros de Entrada: Ninguno.
+## Parametros de Salida: Ninguno.
+## Regresa: LaListaNombres.
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+	
+_local LasListaNombres   ## Lista de nombre de estilos.
+##_local LsNombre       ## Nombre del estilo.
+_local LsNombreExterno  ## Nombre externo de un estilo.
+
+        LasListaNombres << rope.new ()
+	## Recorrer el arreglo de estilos y regresar una lista de los
+	## nombres externos de dichos estilos.
+	_for LsNombre _over _self.ESTILOS.fast_keys ()
+	_loop
+		LsNombreExterno<< LsNombre
+		_if _self.has_message?(LsNombre)
+		_then
+			LsNombreExterno<<_self.message(LsNombre)
+		_endif
+		LasListaNombres.add_last ({LsNombre,LsNombreExterno})
+	_endloop
+	>> LasListaNombres
+_endmethod
+$
+_method style_element_mixin.agrega_linea(PaCoords,PoPagina, _optional PsTexto)
+## Objetivo: Dibujar en la pagina PoPagina de layout designer
+##           una linea formada por los puntos dados en PaCoords y con el
+##           texto PsTexto en medio de la linea y con la misma
+##           orientacion de la linea.
+## Parametros de Entrada:
+##        PaCoords:  Arreglo de coordenadas que forman la linea
+##        PoPagina:  Pagina del Layout designer donde se
+##                   agregara la linea.
+##        PsTexto:   (Opcional) texto descriptivo sobre la liena.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 25/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+_local LoLineaLayout ## Instacia de un objeto polyline_layout
+_local LaSectores    ## Arreglo de sectores
+_local LaSector      ## Un areglo de coordenadas (Las que forman la linea).
+_local LoPtoMedio    ## Punto medio de la linea.
+_local LoPtoTexto    ## Punto donde se coloca el texto
+_local LoAngPtoMedio ## Angulo del punto medio con respecto a la linea.
+_local LoTextLayout  ## Texto que se agrega a la pagina del layout designer.
+_local LoM           ## Pendiente de la linea LoLineaLayout.
+_local LoCA          ## Distancia desde el inicio al punto medio de la linea.
+_local LoCO          ## Separacion de la linea y el texto.
+_local LoAngulo      ## Angulo de la linea que va del punto inicial de la linea
+                     ## al punto donde se colocara el texto con respecto a la linea
+                     ## LoLineaLayout.
+
+       LoLineaLayout<<polyline_layout.new()
+       
+       LaSectores<<sector_rope.new()
+       LaSector<<sector.new()
+       ## Contruir los sectoes que forman la linea.
+       _for LoCoord _over PaCoords.fast_elements() 
+       _loop
+	       LaSector.add(LoCoord)
+       _endloop
+       LaSectores.add(LaSector)
+       LoLineaLayout.sectors<<LaSectores
+
+       ## Obtener el punto medio y angulo de LoLineaLayout
+       LoPtoMedio<<LaSectores.mid_point
+       LoAngPtoMedio<<LaSectores.angle_at_coordinate(LoPtoMedio)
+
+       ## Encontrar el punto donde sera colocado el texto.
+       LoCA<<LoLineaLayout.sectors.distance_to_coordinate(LoPtoMedio)
+       LoCO<<60
+       LoAngulo<<(LoCO/LoCA).atan.radians_to_degrees
+       LoPtoTexto<<_self.obten_pto_separado(LoLineaLayout.sectors.first_coord,LoPtoMedio,LoCA,LoAngulo)
+
+       ## Definir el bound del texto.
+       LoH<<PsTexto.size*40
+       LoM<<(LoLineaLayout.sectors[1][2].y-LoLineaLayout.sectors[1][1].y)/
+	    (LoLineaLayout.sectors[1][2].x-LoLineaLayout.sectors[1][1].x)
+       _if LoM >=0
+       _then
+	       LoBound<<bounding_box.new(0,0,50+LoAngPtoMedio.cos*LoH,50+LoAngPtoMedio.sin*LoH)
+       _else
+	       LoBound<<bounding_box.new(0,LoAngPtoMedio.sin*LoH,50+LoAngPtoMedio.cos*LoH,50)
+       _endif
+
+       LoBound.centre<<LoPtoTexto
+
+       ## Crear un textbox_layout para escribir el texto sobre la
+       ## linea LoLineaLayout.
+       LoTextLayout<<textbox_layout.new_with(:bounds,LoBound,
+					     :font_name,"plain",
+					     :font_size,6,
+					     :fill_style,_unset,
+					     :outline_style,_unset,
+					     :text,PsTexto,
+					     :angle,LoAngPtoMedio,
+					     :wrap,_false,
+					     :align_horizontal,:centre,
+					     :align_vertical,:centre,
+					     :orientation,:left_right)
+
+       ## Agregar el la linea y el texto a la pagina.
+       PoPagina.add_element(LoLineaLayout)
+       PoPagina.add_element(LoTextLayout)
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method style_element_mixin.obten_pto_intersect(PoCoordP1,PoCoordP2,PoCoordP3)
+## Objetivo: Obtener el punto que de interseccion de las rectas
+## L1 y L2. La recta L1 pasa por los punto P1, P2 y la recta L2
+## pasa por los puntos P3 y la interseccion con la recta L1.
+## Parametros de Entrada:
+##   PoCoordP1: Coordenada del pto P1.
+##   PoCoordP2: Coordenada del pto P2.
+##   PnCoordP3: Coordenada del pto P3.
+## Parametros de Salida: Ninguno
+## Regresa:
+##   LoCoord:  Coordenada de interseccion de las rectas L1 y L2.
+## Fecha de ultima modificacion: 16/Nov./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+
+LfM       ## Pendiente de la recta que pasa por los puntos P1, P2.
+LfM_inv   ## LfM_inv=1/LfM.
+LfX       ## Coordenada x de la recta que pasa por los puntos P3 y la interseccion.
+LfY       ## Coordenada y de la recta que pasa por los puntos P3 y la interseccion.
+LoCoord   ## Coordenada donde se intersectan L1 y L2.
+
+        LfM<<(PoCoordP2.y-PoCoordP1.y)/(PoCoordP2.x-PoCoordP1.x)
+	_if LfM<>0
+	_then
+		LfM_inv<<LfM.inverse
+		
+		LfX<<(LfM*(LfM*PoCoordP1.x+LfM_inv*PoCoordP3.x-PoCoordP1.y+PoCoordP3.y))/(LfM.to_power(2)+1)
+		LfY<<LfM_inv*(PoCoordP3.x-LfX)+PoCoordP3.y
+		
+		LoCoord<<coordinate(LfX,LfY)
+	_else
+		LoCoord<<coordinate(PoCoordP3.x,PoCoordP1.y)
+	_endif
+
+	>>LoCoord
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method style_element_mixin.obten_pto_separado(PoCoordP1,PoCoordP2,PfMagnitud,PfAlpha)
+## Objetivo: Obtiene un punto al redededor del punto PoCoordP2
+##           a una distancia PfMagnitud a un angulo PfAlpha.
+## Parametros de Entrada:
+##   PoCoordP1:  Coordenada del pto P1 de la Recta L1.
+##   PoCoordP2:  Coordenada del pto P2 de la recta L2.
+##   PfMagnitud: Magnitud del vector con punto origen PoCoordP1
+##               y magnitud PfMagnitud y angulo PfAlpha.
+##   PfAlpha:   Angulo (sexagesimal )que se le agrega al angulo de la recta L1.
+## Parametros de Salida: Ninguno.
+## Regresa:
+##   LoCoord:  Coordenada.
+## Fecha de ultima modificacion: 16/Nov./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LfTheta  ## Angulo de la recta que pasa por los puntos P1,P2.
+_local LfX      ## Coordenada X.
+_local LfY      ## Coordenada Y.
+
+      PfAlpha<<PfAlpha.degrees_to_radians
+      _if PoCoordP2.x>=PoCoordP1.x
+      _then
+	      LfTheta<<atan((PoCoordP2.y-PoCoordP1.y)/(PoCoordP2.x-PoCoordP1.x))
+      _else
+	      LfTheta<<atan((PoCoordP2.y-PoCoordP1.y)/(PoCoordP2.x-PoCoordP1.x))+180.degrees_to_radians
+      _endif
+      
+      LfX<<PoCoordP1.x+PfMagnitud*(LfTheta+PfAlpha).cos
+      LfY<<PoCoordP1.y+PfMagnitud*(LfTheta+PfAlpha).sin
+
+      >>coordinate(LfX,LfY)
+_endmethod
+$
+

@@ -1,0 +1,1412 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Proporcionar la clase que puede almacenar las caracteristicas
+#           de una celda
+# Autor: dsanchez
+# Fecha de creacion: 27-Octubre-2004
+#
+# 
+# Nota: Hay una validacion que si regresa la palbra "vacio" o ""
+#       se le asigna la ruta 97, en el metodo:
+#               obten_tramo(PsCve_tramo)
+# falta definir el OPB en la tabla proyecto_red
+#
+# ---------------- Revision History -----------------
+# Ult Mod.
+#  16/12/05 DSB - Se modificaron los metodo
+#                  cve_central
+#                  central
+#  25/05/05 DSB - se comento el codigo que accedia a los campos
+#                 PEP, OE, OEI, OPB y los metodos ahora
+#                 regresan el valor por defecto
+#  27/04/05 DSB - se modifico el metodo operacion ya que
+#                 verificaba que el campo existiera en una
+#                 tabla que no le correspondia
+#  11/04/05 DSB - Se deshabilito la excepcion y se manda con un
+#                 write en el metodo:
+#                    obten_tramo(PsCve_tramo, _optional PsCve_ruta)
+# Reviso.
+# fdiaz 
+# -------------- end revision history ---------------
+_package user
+$
+#remex(:c_proyecto_red)
+$
+def_slotted_exemplar(:c_proyecto_red,
+    {
+
+	   {:yTabla,         :user!_proyecto_red },# tabla donde se almacenan los proyectos de red
+	   {:yBdD,           :design_admin       },# B de D donde se localiza la tabla
+           {:collProyecto,                _unset },# almacena el proyecto que se desea consultar
+           {:collScheme,                  _unset },# Almacena el scheme que se desea consultar 
+           {:collCentral,                 _unset },# Almacena los datos de la central
+	   {:oDto,                        _unset },# ALmacena información del dto
+	   {:oCtl,                        _unset },# ALmacena información de la central
+	   {:oPlano,                      _unset },# ALmacena información del Plano
+           {:oScheme,                     _unset },# Scheme activo
+           {:oTramo_fo,                   _unset },# Un Tramo que se desea obtener de la ruta
+	                                           # en la que esta el proyecto
+	   {:sValor_Defecto,              ""} # valor que regresa cuando no hay proyecto
+                                              	   # seleccionado
+    }
+)
+$
+c_proyecto_red.define_slot_access(:yTabla,           :writable, :public)
+c_proyecto_red.define_slot_access(:yBdD,             :writable, :public)
+c_proyecto_red.define_slot_access(:collScheme,       :writable, :public)
+c_proyecto_red.define_slot_access(:collProyecto,     :writable, :public)
+c_proyecto_red.define_slot_access(:collCentral,      :writable, :public)
+c_proyecto_red.define_slot_access(:oDto,             :writable, :public)
+c_proyecto_red.define_slot_access(:oCtl,             :writable, :private)
+c_proyecto_red.define_slot_access(:oPlano,           :writable, :private)
+c_proyecto_red.define_slot_access(:oScheme,          :writable, :private)
+c_proyecto_red.define_slot_access(:oTramo_fo,        :writable, :private)
+c_proyecto_red.define_slot_access(:sValor_Defecto,   :writable, :private)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.new()
+
+## Objetivo: Crear una instancia de celda
+## Parámetros de entrada:
+## Parámetros de salida:   NA
+## Regresa: 
+## Fecha de última modificación: 25/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+   .oDto << _unset 
+	
+   _return _clone
+   
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.identificador_proyecto(RsValor)
+
+## Objetivo: Mandar llamar el metodo con el cual se obteienen
+## los datos del proyecto
+## Parámetros de entrada:
+##	RsValor Identificador del proyecto	
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 25/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+## NOTA: Por el momento se toma el valor del identificador del
+## proyecto del diseño que se encuentre activo	
+
+   .oDto << _unset 
+   _self.prvLeer_Proyecto_BdD(RsValor)
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private  _method c_proyecto_red.prvLeer_Proyecto_BdD(RsID_Proyecto, _optional RsID_Schema)
+
+## Objetivo: obtener el proyecto de acuerdo al valor que se le proporcione 
+##           como parametro
+## Parámetros de entrada:
+## 	 - RsID_Proyecto - Clave con la que identifica el proyecto
+##       - RSID_Schema   - Clave con la que se identifica el dise;o	
+## Parámetros de salida:   NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se escribio la consulta correcta para obtener
+##                el proyecto
+##   17/01/05 DSB Creacion
+
+
+ _local LoPAF         # pni_application   
+ _local LoScheme_BD   # Tabla de la B de D donde se almacenan los proyectos
+ _local LoProyecto_BD # Tabla de la B de D donde se almacenan los proyectos
+ _local LoCemntral_BD # Tabla de la B de D donde se almacenan los proyectos 
+ _local LnID_Scheme   # Identificador de scheme 
+ _local LnID_Proyecto # Identificador de proyecto
+ _local LsCve_Ctl     # Identificador o clave de la central
+ _local LoPredicado_proyecto # Sentencia que se define para la busqueda
+ _local LoPredicado_scheme   # Sentencia que se define para la busqueda 
+ _local LoPredicado_Central  # Sentencia que se define para la busqueda
+ _local LsDistrito # Distrito que se buscara
+
+    _self.oScheme << swg_dsn_admin_engine.active_scheme
+
+    LsDistrito << _unset
+    
+    _if _self.oScheme <> _unset 
+    _then
+	    
+       LoPAF     << smallworld_product.pni_application()
+    
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+       # Prepara todo lo relacionado para obtenr los datos de  SCHEME 
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+    
+       # recupera los objetos de Scheme
+       LoScheme_BD   << LoPAF.database.collection(:design_admin, :swg_dsn_scheme)        
+    
+       # Prepara el predicado para obtener el Scheme correspondiente
+       LnID_Scheme << _self.oScheme.id 
+       LoPredicado_Scheme << predicate.eq(:id, LnID_Scheme)    
+       
+       # Aplica el predicado para obtener el scheme seleccionado
+        _self.collScheme   << LoScheme_BD.select(LoPredicado_scheme)
+
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+       # Prepara todo lo relacionado para obtenr los datos de PROYECTO
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+    
+       # recupera los objetos proyecto
+       LoProyecto_BD << LoPAF.database.collection(:design_admin, :swg_dsn_project)    
+
+       # Prepara el predicado para obtener el proyecto al que pertenece el 
+       # scheme seleccionado
+
+       LnID_Proyecto << _self.collScheme.an_element().swg_dsn_project_id
+       #LsID_Proyecto << RsID_Proyecto.default("CAN0001")
+       LoPredicado_Proyecto << predicate.eq(:id, LnID_Proyecto)    
+
+       # Aplica el predicadpo para obtener el proyecto al que pertenece el scheme
+       _self.collProyecto << LoProyecto_BD.select(LoPredicado_proyecto)
+
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+       # Prepara todo lo relacionado para obtenr los datos de CENTRAL
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+
+       # recupera lso objetos proyecto
+       LoCentral_BD << LoPAF.database.collection(:catalogos, :user!_cat_nodos_cm)    
+
+       # Prepara el predicado para obtener la central 
+       LsCveCtl << _self.collProyecto.an_element().user!_central
+       LoPredicado_Central << predicate.eq(:user!_siglas, LsCveCtl)
+
+       # Aplica el predicadpo para obtener el proyecto al que pertenece el scheme
+       _self.collCentral << LoCentral_BD.select(LoPredicado_central)
+
+       LsDistrito <<  _self.collScheme.an_element().user!_distrito.write_string
+       
+    _endif
+
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # Crea la instancia de DISTRITO, se coloco afuera porque
+    # independientemente de que haya esquema activo se debe generar
+    # la instancia
+    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+
+       _self.oDto << c_distrito_e.new()
+
+       _if LsDistrito _isnt _unset 
+       _then
+	       _self.oDto.distrito << LsDistrito	       
+       _endif
+    
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_proyecto_red.prvValida_proyecto()
+
+## Objetivo: validar que se tenga un registro, si no existe
+## lanza una excepcion
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+	
+   _if _self.oScheme = _unset 
+   _then
+      _return _false 
+   _else
+      _return _true 
+   _endif	
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.direccion_divisional
+
+## Objetivo: Regresar el nombre de la dirección divisional a la que pertenece el proyecto
+##           
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  el nombre de la direccion divisional 
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_direccion_divisional.write_string
+   _else
+      _return _self.sValor_defecto
+   _endif
+
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.direccion
+   
+## Objetivo: Regresar la dirección del proyecto
+##           
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  direccion
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_direccion.write_string
+   _else
+      _return _self.sValor_defecto
+   _endif
+	
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.tel_responsable
+   
+## Objetivo: Regresar el número de teléfono del responsable
+##           
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  Número telefonico
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_telefono_responsable.write_string   
+   _else
+      _return _self.sValor_defecto
+   _endif
+	
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.responsable
+   
+## Objetivo: Regresar el nombre del responsable del proyecto
+##           
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  responsable del proyecto
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_responsable.write_string
+   _else
+      _return _self.sValor_defecto	   
+   _endif
+	
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.localidad
+   
+## Objetivo: Regresar el nombre de la localidad
+##           
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  localidad
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_loc_pr.write_string
+   _else
+      _return _self.sValor_defecto
+   _endif
+	
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.Municipio_delegacion
+   
+## Objetivo: Regresar el nombre del municipio o delagacion
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  Municipio o delegación
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_municipio.write_string
+   _else
+      _return _self.sValor_defecto 	   
+   _endif
+	
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.cve_central
+   
+## Objetivo: Proporcionar la clave de la central
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  clave de la central
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+## 16/12/05 DSB Se cambio el atributo el cual proporciona la
+##              clave de la centra, el user!_central contiene
+##              el objeto central
+
+   _local LbTodoBien
+   _local LbExisteCampo
+   
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      LbExisteCampo << _self.collProyecto.field(:user!_central) <> _unset 
+      _if LbExisteCampo
+      _then
+         _return _self.collProyecto.an_element().user!_central.user!_central.write_string
+      _else
+	_return "_ABC_"
+      _endif
+
+   _else
+      _return _self.sValor_defecto 	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.central
+   
+## Objetivo: Regresar el nombre de la central
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  Central
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien
+   _local LbExisteCampo
+   
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      LbExisteCampo << _self.collProyecto.field(:user!_central) <> _unset 
+      _if LbExisteCampo
+      _then
+         _return _self.collProyecto.an_element().user!_central.user!_nom_nodo.write_string
+      _else
+	_return "_NOMBRE_"
+      _endif
+
+   _else
+      _return _self.sValor_defecto 	   
+   _endif
+
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.pep
+   
+## Objetivo: Regresar el pep
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  pep
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+#      _return _self.collProyecto.an_element().user!_pep.write_string
+        _return _self.sValor_defecto 	   
+   _else
+      _return _self.sValor_defecto 	   
+   _endif
+	
+_endmethod 	      	   
+$   	   
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.nombre_proyecto
+   
+## Objetivo: Regresar el nombre del proyecto
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  nombr4 del proyecto
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().name.write_string
+   _else
+      _return _self.sValor_defecto 	   
+   _endif
+
+_endmethod 	      	      	   
+$   	   
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.supervisor
+   
+## Objetivo: nombre del supervisor 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  supervisor
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_supervisor.write_string
+   _else
+      _return _self.sValor_defecto 	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.programa
+   
+## Objetivo: nobre del programa
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  supervisor
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_Programa.write_string
+   _else
+      _return  _self.sValor_defecto	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.estado
+   
+## Objetivo: nombre del estado
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  nombre del estado
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+
+      LbExisteCampo << _self.collProyecto.field(:user!_est) <> _unset 
+      _if LbExisteCampo
+      _then
+         _return _self.collProyecto.an_element().user!_est.write_string
+      _else
+	_return "_EDO_"
+      _endif
+   _else
+      _return _self.sValor_defecto
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.empresa_proyecto
+   
+## Objetivo: oficina constructora
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  empresa proyecto
+## Fecha de última modificación: 06/05/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien
+   _local LbExisteCampo
+
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      LbExisteCampo << _self.collProyecto.field(:user!_empresa_proyecto) <> _unset 
+      _if LbExisteCampo
+      _then
+         _return _self.collProyecto.an_element().user!_empresa_proyecto.write_string
+      _else
+	_return "_OFI CONSTR_"
+      _endif	   
+   _else
+      _return _self.sValor_defecto	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.empresa_constructora
+   
+## Objetivo: empresa constructora
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  empresa constructora
+## Fecha de última modificación: 06/05/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien
+   _local LbExisteCampo
+
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      LbExisteCampo << _self.collProyecto.field(:user!_empresa_revisora) <> _unset 
+      _if LbExisteCampo
+      _then
+         _return _self.collProyecto.an_element().user!_empresa_revisora.write_string
+      _else
+	_return "_EMP CONSTR_"
+      _endif	   
+   _else
+      _return _self.sValor_defecto	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.oficina_constructora
+   
+## Objetivo: oficina constructora
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  oficina constructora
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien
+   _local LbExisteCampo
+
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      LbExisteCampo << _self.collProyecto.field(:user!_oficina_constructora) <> _unset 
+      _if LbExisteCampo
+      _then
+         _return _self.collProyecto.an_element().user!_oficina_constructora.write_string
+      _else
+	_return "_OFI CONSTR_"
+      _endif	   
+   _else
+      _return _self.sValor_defecto	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.SubDireccion
+   
+## Objetivo: Proporciona la subdireccion
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  subdireccion
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_subdireccion.write_string
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.Gerencia
+   
+## Objetivo: Proporcionar la gerencia
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  gerencia
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_gerencia.write_string
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.colonia
+   
+## Objetivo: Regresar el nombre de la colonia
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  Colonia
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_colonia.write_string
+   _else
+      _return _self.sValor_defecto 	   
+   _endif
+	
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.calles
+   
+## Objetivo: Regresar las calles
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  Calles
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_calles.write_string
+   _else
+      _return  _self.sValor_defecto	   
+   _endif
+	
+_endmethod 	   
+$   	   
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.dtos_afectados
+   
+## Objetivo: Regresar los distritos afectados 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  Central
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_dtos_afectados.write_string
+   _else
+      _return _self.sValor_defecto	      
+   _endif
+	
+_endmethod 	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.opb
+   
+## Objetivo: Regresar el opb
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  oei
+## Fecha de última modificación: 12/02/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien
+   _local LbExisteCampo
+   
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+#         _return _self.collScheme.an_element().user!_operacion.write_string
+      _return _self.sValor_defecto 
+   _else
+      _return _self.sValor_defecto 
+   _endif
+	
+_endmethod 	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.oei
+   
+## Objetivo: Regresar el oei
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  oei
+## Fecha de última modificación: 12/02/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+#      _return _self.collScheme.an_element().user!_oei.write_string
+       _return _self.sValor_defecto 
+   _else
+      _return _self.sValor_defecto 
+   _endif
+	
+_endmethod 	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.oe
+   
+## Objetivo: Regresar el oe
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  oe
+## Fecha de última modificación: 12/02/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+#      _return _self.collScheme.an_element().user!_oe.write_string
+       _return _self.sValor_defecto 
+	   
+   _else
+      _return _self.sValor_defecto 
+   _endif
+	
+_endmethod 	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.fecha_aprobacion
+   
+## Objetivo: fecha en que se aprobo el proyecto 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  supervisor
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collProyecto.an_element().user!_fecha_entrega.write_string	   
+   _else
+      _return _self.sValor_defecto 
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.aprobo
+   
+## Objetivo: nombre de quien aprobo
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  nombre de quien aprobo
+## Fecha de última modificación: 26/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_aprobo.write_string
+   _else
+      _return _self.sValor_defecto 
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.referencia_desmontaje
+   
+## Objetivo: nombre de la referecia de desmontaja
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  referencia de desmontaje
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_ref_desmontaje.write_string
+   _else
+      _return _self.sValor_defecto 
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.referencia_reconcentracion
+   
+## Objetivo: referecia de reconcentracion
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  referencia de reconcentracion
+## Fecha de última modificación: 25/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_ref_reconcentracion.write_string
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.referencia_canalizacion
+   
+## Objetivo: referecia de canalizacion
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  referencia de canalizacion
+## Fecha de última modificación: 12/02/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_ref_canalizacion.write_string
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.referencia_principales
+   
+## Objetivo: referecia de principales
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  referencia principales
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_ref_principales.write_string	   
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.referencia_secundarios
+   
+## Objetivo: nombre de la referecia de desmontaja
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  referencia secundarios
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_ref_secundarios.write_string
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+	   
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.distrito
+   
+## Objetivo: distrito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  distrito
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_distrito.write_string
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.numero_ruta
+   
+## Objetivo: numero que identifica la ruta
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  numero de ruta
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+       _return _self.collScheme.an_element().user!_numero_ruta.write_string
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.obten_tramo(PsCve_tramo, _optional PsCve_ruta)
+
+## Objetivo: Obtener el tramo de acuerdo a la clave que se le proporcione
+## Parámetros de entrada:
+##  String - PsNum_Tramo:Numero del tramo que se desea obtener	
+## Parámetros de salida:  NA
+## Regresa:
+##   c_tramo_fo_e -  Tramo del proyecto que se desea conultar
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+##	
+## 11/04/05 DSB - se deshabilito el condition raise, y se
+## cambio por un write 	
+## 08/04/05 DSB Se agrego el parametro de numero de ruta, para
+## que se proporcione de los sellos. Este se definio como
+## opcional, si no se pasa se toma del diseño
+## NOTA: - El numero de ruta se tomara de SCHEME si no se proporciona
+
+    # Si esta vacio se crea el objeto oTramo_fo
+	
+   _if _self.oTramo_fo = _unset
+   _then
+	 _self.oTramo_fo << c_Tramo_fo_e.new()
+
+   _endif
+
+
+   # Si existe el tramo y la clave del tramo que se solicita es
+   # diferente a la existente, se asigna nuevamente al objeto
+   # tramo la clave
+
+   _if _self.oTramo_fo _isnt _unset _and ( _self.oTramo_fo.sNum_Ruta <> PsCve_Ruta _or 
+       _self.oTramo_fo.sNum_Tramo <> PsCve_tramo )
+   _then
+
+      # se verifica si se mando como parametro el numero de ruta
+      # si no se mando se toma del dise;o	   
+      _if PsCve_Ruta _is  _unset 
+      _then 
+         LsCve_ruta << _self.numero_ruta
+	 write("Se tomó el nümero de ruta  del diseño")
+      _else
+         LsCve_Ruta  << PsCve_Ruta
+ 	 write("Se tomó el número de ruta del parámetro")
+      _endif    
+
+      _self.oTramo_fo.asigna_num_tramo( LsCve_ruta, PsCve_Tramo)
+	    
+   _endif
+
+   # se verifica que exista el tramo para regresarlo, si no existe
+   # se manda un mensaje de error
+    _if _self.oTramo_fo _isnt _unset 
+    _then
+       _return   _self.oTramo_fo
+    _else
+        write("No se localizó el tramo.")		 
+     _endif
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.cp
+   
+## Objetivo: Proporcionar el codigo postal 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  codigo postal
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien
+   _local LbExisteCampo
+
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+         LbExisteCampo << _self.collScheme.field(:user!_cp) <> _unset
+	 _if LbExisteCampo
+	 _then
+            _return _self.collScheme.an_element().user!_cp.write_string
+	 _else
+	    _return "_123_"
+	 _endif
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.cve_distrito
+   
+## Objetivo: Proporcionar la clave del distrito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  clave del distrito
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_distrito.write_string
+   _else
+      _return _self.sValor_defecto   	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.reviso
+   
+## Objetivo: Proporcionar quien reviso
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  oficina constructora
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.collScheme.an_element().user!_aprobo.write_string
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.existe?
+
+## Objetivo: Indicar si el proyecto esta vacio o que no se encontro
+##	el proyecto 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   boolean  -  true  SI existe el proyecto
+##	         false NO existe el proyecto  
+## Fecha de última modificación: 26/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien 	
+   LbTodoBien << _self.prvValida_proyecto()
+
+   _if LbTodoBien 
+   _then
+	_return _self.collProyecto.size > 0
+   _else
+	_return _false 
+   _endif
+	
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.mes_anio(RsFecha)
+	
+## Objetivo: convierte de una fecha con formato dd/mm/aaaa a mmm/aa
+##	el proyecto 
+## Parámetros de entrada:
+##  String - RsFecha - en formato dd/mm/aaaa
+## Parámetros de salida:  NA
+## Regresa:
+##   string  -  mmm/aa   OCT/04
+## Fecha de última modificación: 26/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+	_if RsFecha <> _unset _andif RsFecha <> .sValor_defecto
+        _then
+		_local LsMes, LsAnio # Cadena que almacena el numero de mes y anio respectivamente
+		_local LoCollMeses  << {"ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"}
+	
+		_if RsFecha.size <> 10 _and (RsFecha.subseq(4,2).as_number() > 12 _or RsFecha.subseq(4,2).as_number() < 1)
+		_then
+			condition.raise(:warning, :string, "Fecha incorrecta. "+RsFecha)
+		_endif 
+
+		LsMes << RsFecha.subseq(4,2)
+		LsAnio << RsFecha.subseq(9,2)
+
+		_return LoCollMeses[LsMes.as_number()] + "/" + LsAnio
+	_else 
+		_return _self.sValor_defecto  	   
+	_endif 
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.NSE_predominante
+   
+## Objetivo: Proporcionar el Nivel socioeconomico predominante
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   string -  NSE predominante
+## Fecha de última modificación: 17/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Creación
+
+   _local LbTodoBien
+   _local LbExisteCampo
+
+   LbTodoBien << _self.prvValida_proyecto()
+   
+   _if LbTodoBien 
+   _then
+      _return _self.oDto.Obten_Inicial_NSE(_self.oDto.sNSE_Predominante)
+   _else
+      _return _self.sValor_defecto  	   
+   _endif
+	
+_endmethod 	      	      	      	   
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.version()
+	## 
+	## 
+	_return "version 1.0.0.8 27/04/05 17:30 "
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.Central
+
+
+	_if _self.oCtl _is _unset 
+	_then
+		#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+		# Prepara todo lo relacionado para obtenr los datos de CENTRAL
+		#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+
+		.oCtl << c_central_e.new()
+
+		.oCtl.siglas << _self.collProyecto.an_element().user!_central.user!_central.write_string
+		
+	_endif
+	
+	_return .oCtl
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_proyecto_red.Plano(IdPlano)
+
+	_if _self.oPlano _is _unset 
+	_then
+	
+		LoApp   << smallworld_product.pni_application()
+		LtPlano << LoApp.database.dataset(:design_admin).collection(:user!_plano)
+
+		LoPred << predicate.eq(:id, IdPlano)
+
+		LoPlano << LtPlano.select(LoPred)
+
+		.oPlano << c_plano_e.new(LoPlano.an_element())
+	_endif
+	
+	_return .oPlano
+	
+_endmethod
+$

@@ -1,0 +1,58 @@
+_package user
+#remex(:c_sello_notas_sct_cruz_aereo)
+$
+def_slotted_exemplar(:c_sello_notas_sct_cruz_aereo, {}, :c_sello_notas_sct)
+$
+c_sello_notas_sct_cruz_aereo.define_shared_constant(:allowed_on_menu?, _false , :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct_cruz_aereo.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblTitulo # Tabla que almacena el título de la tabla
+
+	LoTblTitulo << _self.oTablas.crea_tabla(2,1,:tbl_notas_grales)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# Longitud de los renglones de la tabla, esta dada en mm
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 110
+
+	# Longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 160
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct_cruz_aereo.prvAsignaTexto()
+
+	_super.prvAsignaTexto()
+
+_local LsTexto << character.newLine
+     LsTexto +<<" 5.- LA UBICACIÓN DEL CRUZAMIENTO AÉREO CON CABLE DE " + .s_tipo_cable +" INDICADO EN "
+     LsTexto +<< character.newLine
+     LsTexto +<<" ESTE PROYECTO DEBERÁ SER VERIFICADO Y PRECISADO EN EL LUGAR, POR LA RESIDENCIA GENERAL "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE CONSERVACIÓN DE CARRETERAS EN EL ESTADO DE "+ .s_estado
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 6.- EL CRUZAMIENTO AÉREO CON POSTES, DEBERÁ EFECTUARSE CONFORME A LAS INDICACIONES DE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" LA RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS. "
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 7.- EL GÁLIBO O DISTANCIA LIBRE EXISTENTE ENTRE LA RASANTE DE LA CARRETERA Y EL CABLE DE "
+     LsTexto +<< character.newLine
+     LsTexto +<< .s_tipo_cable + ", DEBERÁ SER NO MENOR DE 8.00 M. "
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 8.- LA COLOCACIÓN DE LOS  POSTES DEBERÁN SER FUERA DEL ÁREA DEL DERECHO DE VÍA O DENTRO "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE UNA FRANJA NO MAYOR DE 2.50 M. DE ANCHO EN AMBOS LADOS DE LA CARRETERA, MEDIDOS A "
+     LsTexto +<< character.newLine
+     LsTexto +<<" PARTIR DEL LIMITE DEL DERECHO DE VÍA. "
+     LsTexto +<< character.newLine  
+
+_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+	
+_endmethod
+$

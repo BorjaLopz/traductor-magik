@@ -1,0 +1,693 @@
+#----------------------------------------------------------------
+# croquis.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: Alejandro Enriquez G.
+#
+# Date: 04/11/17
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+#remex(:c_plano_topologico)
+$
+def_slotted_exemplar (:c_plano_topologico,
+                      {
+		         {:app, smallworld_product.pni_application()},
+			 {:vp_nombre, _unset}
+		      }, {:layout_element,
+		          :viewport_layout_mixin})
+$
+c_plano_topologico.define_shared_constant(:activate_properties_dialog_on_insert?,
+	                            _false,:public)
+$
+c_plano_topologico.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from(_super.defined_attributes)
+	attribs.add (_self.viewport_attribute_definition)
+	>> attribs	
+_endmethod
+$
+
+c_plano_topologico.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.genera_plano()
+	## 
+	## 
+
+_local LoHoja   # Hoja de trabajo donde se genera el plano
+#_local LoPTopo  # Apuntador a funciones del plano Topologico
+_local LoSec    # Apuntador a funciones de Sectores
+
+#LoPTopo << c_plano_topologico.new()
+LoSec << c_sectores.new()
+_if _self.bounds _isnt _unset  
+_then
+	LoBound << _self.bounds 
+_else
+	LoBound << bounding_box.new(4400,1200,5900,2700)	
+_endif
+#LoCanaliz << LoPTopo.obtener_tcanaliz_selecion(:underground_route)
+LoCanaliz << _self.obtener_tcanaliz_selecion(:underground_route)
+_if LoCanaliz.size = 0
+_then
+	smallworld_product.pni_application().
+		show_message("Necesita seleccionar al menos un tramo de canalización.")
+        _return 
+_endif
+LoSec.dibuja_trazo(LoCanaliz, 3600)
+LoCanaliz << _self.obtener_tcanaliz_selecion(:underground_route)
+LoHoja <<_self.abrir_hoja()
+_self.dib_geom_layout(LoCanaliz, LoHoja)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.dib_geom_layout(LoElementos, LoPagina)
+	## 
+	## Este metodo dibuja en la hoja del layout las coordenadas 
+	## de los sectores del sector_rope que recibe como parametro
+ # LoElementos # Sector_rope que se dibujara en el Layout
+ # LoPagina # Hoja donde se dibuja la geometria
+
+_local LoLinea  # Linea que se agrega a la hoja
+_local LoTexto  # Texto que se agrega a la hoja
+_local LoVpAux  # Viewport Util para la transformacionde coordenadas
+#_local LoPTopo  # Apuntador a funciones del plano Topologico
+_local LoCajas  # Cajas de distribucion conectadas a la canalizacion
+
+#LoPTopo << c_plano_topologico.new()
+LoVpAux << _self.agrega_viewport(LoPagina)
+LoVpTrans << LoVpAux.transform
+_for e _over LoElementos.elements()
+_loop
+	LoLinea << polyline_layout.new()
+	LoLinea.sectors << e.sectors.transform_in_situ( LoVpTrans )
+	_if e.rwo.construction_status = "OPERACION" _orif e.rwo.construction_status = "EXISTENTE"
+	_then
+		_self.linea_existente(LoLinea)
+		_self.texlayout_del_tramo(e, LoPagina, LoVpTrans)
+		LoPagina.add_element( LoLinea )
+	_endif
+_endloop
+LoVpAux.bounds << bounding_box.new(50,50,100,100)
+LoCajas   << _self.obtener_estructuras_tcanaliz(LoElementos, :mit_terminal_enclosure)
+LoCentral << _self.obtener_estructuras_tcanaliz(LoElementos, :building)
+_self.agregar_cajas( LoCajas, LoPagina, LoVpTrans )
+_self.agregar_estructura(LoCentral, LoPagina, LoVpTrans )
+_self.agregar_calles(LoPagina, LoVpTrans)
+_self.agrega_reservas(LoPagina, LoVpTrans)
+_self.agrega_sello(LoPagina)
+ LoPagina.remove_element( LoVpAux )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agrega_sello( LoPagina )
+	## 
+	## Este metodo agrega el sello del Plano Topologico
+_Local LnInicio_X
+_local LnInicio_Y
+_local LnAltura
+_local LnAncho
+	
+	#altura total de la tabla. 1mm =10 pixeles
+LnAltura << 150  # 15 mm
+LnAncho  << 1900 #190 mm
+
+	#Coordenada donde iniciara el sello
+LnInicio_X << 300 # 30 mm del borde izquierdo de la pagina 
+LnInicio_Y << 250 # 15 mm del borde inferior de la pagina
+LnFinal_X << LnInicio_X + LnAncho
+LnFinal_Y << LnInicio_Y + LnAltura	
+
+	#La primera coordenada es la esquina inferior izquierda
+	#La segunda coordenada superior derecha del sello 
+	
+LoSello << c_sello_estandar.crea_sello("Topologico",
+				       bounding_box.new(LnInicio_X, LnInicio_Y , LnFinal_X , LnFinal_Y ))
+	LoSello.identificador_proyecto("RBS-123")
+	LoPagina.add_element(LoSello)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agrega_reservas( LoPagina, LoVpTrans )
+	## 
+	## Este metodo obtiene las reservas que corresponden al plano y
+	## las agrega a la Pagina
+
+_local LoReservas
+LoReservas << _self.obtener_objetos_en_trazo( :gis, :user!_reserva, :route)
+_self.dibuja_reservas( LoPagina, LoVpTrans, LoReservas )	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.dibuja_reservas( LoPagina, LoVpTrans, LoReservas )
+	## 
+	## Este metodo agrega el simbolo de reserva a la Pagina
+
+_local LoCoor  #coordenada de Referencia para colocar el simbolo
+
+_for reserva _over LoReservas.elements()
+_loop
+	# obtener la ruta de la reserva y dibujarla
+	_self.agregar_apuntador_reserva(LoPagina, LoVpTrans, reserva)
+_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agregar_apuntador_reserva(LoPagina, LoVpTrans, LoReserva)
+	## 
+	## Este metodo obtiene el apuntador de la reserva y lo agrega a
+	## la pagina
+
+_local LoCoor    # Coordenada GIS del texto
+_local LoOri     # Orientación GIS del Texto
+_local LoLinea   # Linea del apundador de la Reserva
+_local LoSim     # Simbolo de la Reserva
+_local LoDes     # Desplazamiento del Simbolo
+_local LoTexto   # Texto de la Reserva
+LoLinea << polyline_layout.new()
+LoSim << symbol_layout.new()
+LoTexto << textbox_layout.new()
+_if LoReserva.construction_status = "OPERACION" _orif LoReserva.construction_status = "EXISTENTE"
+_then
+	_self.linea_red_existente(LoLinea)
+	LoSim.name << "reserva"
+
+_elif 	LoReserva.construction_status = "PROYECTADO" _orif LoReserva.construction_status = "PLANEADO"
+_then
+	_self.linea_proyectada(LoLinea)
+	LoSim.name << "reserva proyectada"
+	
+_endif
+LoLinea.sectors << LoReserva.route.sectors.transform_in_situ( LoVpTrans )
+LoPagina.add_element( LoLinea )
+
+# colocar el simbolo de la reserva al final de la ruta
+(LoCoor, LoOri) << _self.obtener_coordenada_y_orientacion( LoReserva.location_symb, LoVpTrans )  
+
+_if LoLinea.sectors[1].last_coord.x > LoLinea.sectors[1].first_coord.x
+_then
+	LoDes << +1
+	
+_elif LoLinea.sectors[1].last_coord.x < LoLinea.sectors[1].first_coord.x
+_then
+	LoDes << -1
+_endif
+	
+LoSim.bounds << bounding_box.new(LoCoor.x,LoCoor.y-100,LoCoor.x+(200*LoDes),LoCoor.y+100)
+LoSim.outline_style << _unset
+LoSim.fill_style << _unset
+#	LoSim.angle <<LoOri # caja.location.orientation
+LoPagina.add_element(LoSim)
+LoTexto.text << LoReserva.user!_cantidad_pares.write_string
+LoTexto.text +<< "  PS"
+LoTexto.bounds << bounding_box.new(LoCoor.x+(110*LoDes), LoCoor.y+10,
+				  (LoCoor.x+(110+LoTexto.text.size*37)*LoDes), LoCoor.y+90)
+LoTexto.colour << colour.new_from_hex("FF0000")
+LoTexto.font_size << 5
+LoTexto.outline_style << _unset
+LoTexto.fill_style << _unset
+#		LoTexto.angle << LoOri
+LoTexto.clip << _false 
+LoPagina.add_element(LoTexto)
+
+#write("coordenada:  ", LoLinea.sectors[1].p)
+#write("Ultima_coord:  ",LoLinea.sectors[1].last_coord)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.linea_proyectada( LoLinea )
+	## 
+	## Este metodo asigna a la linea los atributos de la
+	## linea proyectada
+
+_Local LoColorEx  # Color Proyectado
+
+LoColorEx << colour.new_from_hex("FF0000")  
+LoLinea.line_style << line_style.new( LoColorEx, 4 )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.linea_red_existente( LoLinea )
+	## 
+	## Este metodo asigna a la linea los atributos de una linea de
+	## Red Existente
+
+_Local LoColorEx  # Color existente
+
+LoColorEx << colour.new_from_hex("4DBB52")  
+LoLinea.line_style << line_style.new( LoColorEx, 2 )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agregar_calles(LoPagina, LoVpTrans)
+	## 
+	## Este metodo agrega el nombre de las calles a la Pagina
+
+_local LoCalles
+LoCalles << _self.obtener_objetos_en_trazo( :landbase, :user!_eje_calle, :user!_posicion )
+_self.obtener_y_agregar_texto_calles( LoPagina, LoVpTrans, LoCalles )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.obtener_y_agregar_texto_calles( LoPagina, LoVpTrans, LoCalles )
+	## 
+	## Este metodo obtiene el nombre del Eje de Calle y lo coloca
+	## en el la pagina.
+
+_local LoCoor    # Coordenada GIS del texto
+_local LoOri     # Orientación GIS del Texto
+_local LoTexto   # Texto Generado
+
+_for calle _over LoCalles.elements()
+_loop
+	_if calle.user!_nombre_calle _isnt _unset _andif calle.user!_anotacion _isnt _unset 
+	_then
+		LoTexto << textbox_layout.new()
+		LoTexto.text << calle.user!_nombre_calle
+		(LoCoor, LoOri) << _self.obtener_coordenada_y_orientacion(calle.user!_anotacion, LoVpTrans)
+		LoTexto.bounds << bounding_box.new(LoCoor.x, LoCoor.y,
+				   (LoCoor.x+LoTexto.text.size*37), LoCoor.y+80)
+		LoTexto.colour << colour.new_from_hex("24CC2D")
+		LoTexto.font_size << 5
+		LoTexto.outline_style << _unset
+		LoTexto.fill_style << _unset
+		LoTexto.angle << LoOri
+		LoTexto.clip << _false 
+		LoPagina.add_element(LoTexto)
+	_endif
+_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.obtener_objetos_en_trazo( LoDB, LoTabla, LoCampo)
+	## 
+	## Este metodo obtiene los objetos indicados que se encuentran dentro del Trazo
+
+_local LoView_map  # Obtener el Plugin Viewport_mapper para manejo del viewport_layout
+_local LoCmv       # Obtener la vista actual para poder mapear el viewport
+_local LoTrazo     # Obtiene el trazo generado en el mapa
+_local LoObjetos    # Objetos dentro del trazo
+LoPaf << smallworld_product.pni_application()
+LoTrazo << LoPaf.plugin(:map_plugin).current_map.trail
+LoObjetos << LoPaf.database.collection(LoDb,LoTabla).select(predicate.interacts(LoCampo, LoTrazo.as_pseudo_geometry))
+
+_return LoObjetos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agregar_estructura( LoCentral, LoPagina, LoVpTrans )
+	## 
+	## Este metodo agrega el simbolo de la central en la Pagina
+_local LoCoor    # Coordenada GIS del texto
+_local LoOri     # Orientación GIS del Texto
+_local LoSec     # Sector donde se almacenan las coordenedas del bound del texto
+
+_for cen _over LoCentral.elements()
+_loop
+	LoSec << sector.new()
+	LoSim << symbol_layout.new()
+	LoSim.name << "central"
+	(LoCoor, LoOri) << _self.obtener_coordenada_y_orientacion( cen.structure_geometry(), LoVpTrans )  
+	LoSim.bounds << bounding_box.new(LoCoor.x-100,LoCoor.y-100,LoCoor.x+100,LoCoor.y+100)
+	LoSim.outline_style << _unset
+	LoSim.fill_style << _unset
+	LoSim.angle << cen.location.orientation
+	LoPagina.add_element(LoSim)
+	_self.agrega_texto(cen, LoPagina, LoVpTrans)
+_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agrega_texto( LoElem, LoPagina, LoVpTrans )
+	## 
+	## Este metodo agrega el texto de la central
+
+_local LoCoor    # Coordenada GIS del texto
+_local LoOri     # Orientación GIS del Texto
+#_local LoSec     # Sector donde se almacenan las coordenedas del bound del texto
+_local LoTexto   # Texto Generado
+
+LoTexto << textbox_layout.new()
+(LoCoor, LoOri) << _self.obtener_coordenada_y_orientacion( LoElem.structure_geometry(), LoVpTrans )
+LoTexto.text << LoElem.user!_siglas
+_if LoTexto.text _is _unset 
+_then 
+	LoTexto.text << "CENTRAL"
+_endif
+LoTexto.bounds << bounding_box.new(LoCoor.x-120, LoCoor.y+120,
+				   (LoCoor.x-120+LoTexto.text.size*37), LoCoor.y+200)
+LoTexto.outline_style << _unset
+LoTexto.fill_style << _unset
+LoTexto.angle << LoOri
+LoTexto.clip << _false 
+LoPagina.add_element(LoTexto)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agregar_cajas( LoCajas, LoPagina, LoVpTrans )
+	## 
+_local LoCoor    # Coordenada GIS del texto
+_local LoOri     # Orientación GIS del Texto
+_local LoSec     # Sector donde se almacenan las coordenedas de la caja
+
+
+Lo_Man << smallworld_product.pni_application().plugin(:layout_plugin).start_layout_designer().plugin(:layout_manager)
+
+_for caja _over Locajas.elements()
+_loop
+	LoSim << symbol_layout.new()
+	LoSim.name << "caja_topologico"
+	(LoCoor, LoOri) << _self.obtener_coordenada_y_orientacion( caja.structure_geometry(), LoVpTrans )  
+	
+	LoSim.bounds << bounding_box.new(LoCoor.x-100,LoCoor.y,LoCoor.x+100,LoCoor.y+200)
+	LoSim.outline_style << _unset
+	LoSim.fill_style << _unset
+	LoSim.angle <<LoOri # caja.location.orientation
+	LoPagina.add_element(LoSim)
+	_self.agrega_texto_dto(caja, LoPagina, LoVpTrans)	
+        LoSello << c_dto_pronostico.new_with(:bounds, bounding_box.new(LoCoor.x-160,LoCoor.y+300,
+					     LoCoor.x+170,LoCoor.y+580))
+	LoSello.Inicializa()
+	LoPagina.add_element(LoSello)
+	LoSello.Agrega_LYM(Lo_Man)
+	LoPagina.send_to_back(LoSello)
+_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agrega_texto_dto( LoElem, LoPagina, LoVpTrans )
+	## 
+	## Este metodo agrega el texto del Distrito
+
+_local LoCoor    # Coordenada GIS del texto
+_local LoOri     # Orientación GIS del Texto
+#_local LoSec     # Sector donde se almacenan las coordenedas del bound del texto
+_local LoTexto   # Texto Generado
+LoTexto << textbox_layout.new()
+(LoCoor, LoOri) << _self.obtener_coordenada_y_orientacion( LoElem.structure_geometry(), LoVpTrans )
+	LoTexto.text << LoElem.user!_nombre_distrito
+	_if LoTexto.text _is _unset 
+	_then 
+		LoTexto.text << "DISTRITO"
+	_endif
+LoTexto.bounds << bounding_box.new(LoCoor.x-150, LoCoor.y+220,
+				   (LoCoor.x-150+LoTexto.text.size*37), LoCoor.y+300)
+LoTexto.outline_style << _unset
+LoTexto.fill_style << _unset
+#LoTexto.angle << LoOri
+LoTexto.clip << _false 
+LoPagina.add_element(LoTexto)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.texlayout_del_tramo( LoElem, LoPagina, LoVpTrans )
+	## 
+	## Este metodo regresa un textbox_layout a partir de la
+	## anotación que trae el elemento
+_local LoCoor    # Coordenada GIS del texto
+_local LoOri     # Orientación GIS del Texto
+_local LoSec     # Sector donde se almacenan las coordenedas del bound del texto
+_local LoTexto   # Texto Generado
+
+LoTexto << textbox_layout.new()
+(LoCoor, LoOri) << _self.obtener_coordenada_y_orientacion( LoElem, LoVpTrans )  
+LoTexto.text << LoElem.rwo.annotation_1.string_buffer
+LoTexto.bounds << bounding_box.new(LoCoor.x, LoCoor.y-70,
+				   (LoCoor.x+LoTexto.text.size*37), LoCoor.y+10)
+LoTexto.outline_style << _unset
+LoTexto.fill_style << _unset
+LoTexto.angle << LoOri
+LoTexto.clip << _false 
+LoPagina.add_element( LoTexto )
+
+_self.agregar_texto_cables(LoElem, LoPagina, LoCoor, LoOri)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agregar_texto_cables(LoElem, LoPagina, LoCoor, LoOri )
+	## 
+	## Este metodo busca los cables que pasan por los tramos de
+	## canalizacion y genera su texto para colocarlo en la hoja
+
+_local RoCables  # Cables de cobre en el tramo de canalizacion
+_local LoTexto   # Texto Generado
+_local LoY       # Desplazamiento del texto
+LoY << 40
+RoCables << _self.busca_cables_en_tramo(LoElem)
+_if RoCables _is _unset 
+_then
+	_return  
+_endif
+_for cable _over RoCables.elements()
+_loop
+	LoTexto << textbox_layout.new()
+	LoTexto.text <<	cable.spec_id.slice(1, cable.spec_id.index_of( %(, 1)-1)
+	_if LoTexto.text _is _unset 
+	_then
+		LoTexto.text << "El cable no tiene texto"
+		LoTexto.colour << colour.new_from_hex("FF0000")
+		LoTexto.font_size << 4
+	_endif
+	LoTexto.bounds << bounding_box.new(LoCoor.x, LoCoor.y+LoY,
+				   (LoCoor.x+LoTexto.text.size*37), LoCoor.y+LoY+80)
+	LoY +<< 120
+	_if cable.construction_status = "EXISTENTE"
+	_then
+		LoTexto.colour << colour.new_from_hex("008000")
+		LoTexto.font_size << 6
+	_elif cable.construction_status = "PROYECTADO"
+	_then 
+		LoTexto.colour << colour.new_from_hex("FF0000")
+		LoTexto.font_size << 8
+	_endif
+	LoTexto.outline_style << _unset
+	LoTexto.fill_style << _unset
+	LoTexto.angle << LoOri
+	LoTexto.clip << _false 
+	LoPagina.add_element( LoTexto )
+_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.busca_cables_en_tramo(LoTramo)
+	## 
+	## Este metodo busca los cables de cobre que pasan por los
+	## tramos 
+
+_local  RoCables
+RoCables << rope.new()
+_for cable _over LoTramo.rwo.cables.elements()
+_loop
+	_if cable.copper_cable _isnt _unset 
+	_then
+		RoCables.add_last(cable.copper_cable)
+	_endif
+_endloop
+_return RoCables
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.obtener_coordenada_y_orientacion( LoElem, LoVpTrans )
+	## 
+	## Este metodo obtiene la coordenada y orientacion que tendra
+	## el texto en la hoja
+_local LoCoor    # Coordenada GIS del texto
+_local LoOri     # Orientación GIS del Texto
+_local LoSec     # Sector donde se almacenan las coordenedas del bound del texto
+
+LoSec << sector.new()
+
+	_if LoElem.class_name _is :chain
+	_then
+		(LoCoor, LoOri) << LoElem.midpoint_coord_and_theta
+	_elif LoElem.class_name _is :point  
+	_then
+		LoCoor << LoElem.coord
+		LoOri << LoElem.orientation
+	_elif LoElem.class_name _is :text
+	_then
+		LoCoor << LoElem.coord_1
+		LoOri <<  LoElem.orientation
+	_endif
+	_if LoOri > float.half_pi
+	_then
+		LoOri -<< float.pi
+	_elif LoOri < - float.half_pi
+	_then
+		LoOri +<< float.pi
+	_endif 
+	LoSec.add_last(LoCoor)
+	LoSec << LoSec.transform_in_situ( LoVpTrans )
+
+	_return LoSec[1], LoOri
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.linea_existente(LoLinea)
+	## 
+	## Este metodo asigna a la linea los atributos de la
+	## canalizacion existente
+
+_Local LoColorEx  # Color existente
+
+LoColorEx << colour.new_from_hex("008080")  
+LoLinea.line_style << line_style.new( LoColorEx, 2 )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.agrega_viewport(LoPagina)
+	## 
+	## 
+
+_local LoVpAux     # Viewport auxiliar para la transformacion
+_local LoView_map  # Obtener el Plugin Viewport_mapper para manejo del viewport_layout
+_local LoCmv       # Obtener la vista actual para poder mapear el viewport
+_local LoTrazo     # Obtiene el trazo generado en el mapa
+
+LoPaf << smallworld_product.pni_application()
+LoView_map << LoPaf.plugin(:layout_plugin).start_layout_designer().plugin(:viewport_mapper)
+LoCmv << LoPaf.plugin(:map_plugin).current_map_view
+LoTrazo << LoPaf.plugin(:map_plugin).current_map.trail
+LoVpAux << viewport_layout.new_with(:bounds, bounding_box.new(180,150,10800,8000))
+LoVpAux.ace_name << "OCULTOS"
+LoCmv.map.ace_name << "OCULTOS"
+LoPagina.add_element(LoVpAux)
+LoView_map.map_viewport_on_map_view(LoVpAux, LoCmv, LoTrazo.bounds, _true )
+LoCmv.map.ace_name << "CENTRALES"
+
+_return LoVpAux 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.abrir_hoja()
+	## 
+	##
+	_return smallworld_product.pni_application().plugin(:layout_plugin).start_layout_designer().plugin(:layout_manager).current_document.current_page
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.obtener_tcanaliz_selecion(LoObjeto)
+	## 
+	## 
+_local LoTramo           # Tramo de Canalización
+        LoMapa << smallworld_product.pni_application().plugin(:map_plugin)
+        LoElementos << LoMapa.current_map.current_selection
+        LoTCanaliz << sector_rope.new()
+	_for LoTramo _over LoElementos.fast_elements()
+	_loop
+		_if LoTramo.rwo.rwo_type _is LoObjeto _andif  LoTramo.is_kind_of?(chain)
+		_then
+			LoTCanaliz.add(LoTramo)
+		_endif
+	_endloop
+        _return LoTCanaliz	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.obtener_estructuras_tcanaliz(LoCanaliz, LoElemento)
+	## 
+	## Este metodo obtendra en un sector_rope las Cajas de
+	## Distribución o los elementos que se indiquen en el
+	## parametro, que esten relacionados a la canalizacion para
+	## posteriormente obtener sus datos y presentar ambos en el
+	## mapa
+_local RoCajas
+       RoCajas << rope.new()
+       
+	_for Lotc _over Locanaliz.elements()
+	_loop
+		_for Lost _over Lotc.rwo.connected_structures().elements()
+		_loop
+			_if Lost.rwo_type _is LoElemento
+			_then
+				RoCajas.add(Lost)
+			_endif
+		_endloop
+	_endloop
+	
+	_return RoCajas
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico.genera_plano_respaldo()
+	## 
+	## Este metodo se encarga de generar el Plano Topologico de
+	## Central (Estudio de Conjunto)
+	
+paf << smallworld_product.pni_application()
+LoCMV << paf.plugin(:map_plugin).current_map_view
+#LoLy_plu << _self.framework.plugin(:layout_plugin)
+LoLy_plu << paf.plugin(:layout_plugin) 
+LoLy_des << LoLy_plu.start_layout_designer()
+Lovi_map << LoLy_des.plugin(:viewport_mapper)
+LoLy_page << LoLy_des.plugin(:layout_manager).current_document.current_page
+
+LoCanaliz << _self.obtener_tcanaliz_selecion(:underground_route)
+
+Losec << c_sectores.new()
+LoSec.dibuja_trazo(LoCanaliz, 1000)
+
+LoTrazo << paf.plugin(:map_plugin).current_map.trail
+
+_if _self.bounds _isnt _unset  
+_then
+	LoBound << _self.bounds 
+_else
+	LoBound << bounding_box.new(4400,1200,5900,2700)	
+_endif
+LoBound1 << bounding_box.new(LoBound.xmin+100,LoBound.ymin+200,LoBound.xmax-100,LoBound.ymax-200)
+vp << viewport_layout.new_with(:bounds, LoBound1.bounds)	
+vp.name << "Vp_Croquis_Can"
+vp.ace_name << "Plano_topologico"
+LoCMV.map.ace_name << "Plano_topologico"
+LoLy_page.add_element(vp)
+Lovi_map.map_viewport_on_map_view(vp,LoCMV,LoTrazo.bounds,_true)
+LoCMV.map.ace_name << "CENTRALES"
+LoBound1 << bounding_box.new(LoBound.xmin,LoBound.ymax-1000,LoBound.xmin+950,LoBound.ymax)
+LoNorte << northarrow_layout.new_with(:bounds, LoBound1.bounds)
+LoNorte.style_name <<  "norte_1"
+LoNorte.fill_style <<  _unset
+LoNorte.outline_style << _unset
+vp.fill_style << _unset
+vp.outline_style << _unset 
+LoLy_page.add_element(LoNorte)
+
+LoCanaliz << _self.obtener_tcanaliz_selecion(:underground_route)
+_self.obtener_cajas_tcanaliz(LoCanaliz)
+
+
+_endmethod
+$

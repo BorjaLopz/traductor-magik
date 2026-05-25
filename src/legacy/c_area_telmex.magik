@@ -1,0 +1,96 @@
+_package user
+#remex(:c_area_telmex)
+
+$
+def_slotted_exemplar(:c_area_telmex,
+{
+	{:objeto,  _unset, :writable}
+})
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_area_telmex.new(PsNombre)
+
+	_return _clone.init(PsNombre)
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_area_telmex.init(PsNombre)
+
+	_self.objeto_area(PsNombre)
+	_return _self
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_area_telmex.objeto_area(PsNombre)
+
+	## Objetivo:
+	##     - Obtener y asignar a .objeto el elemento user!_area_da
+	##       que corresponde a PsNombre
+   	## Parámetros de entrada:
+	##     PsNombre - string con el nombre de un área Telmex
+	## vbluna
+
+	_try
+		_local LtbArea << gis_program_manager.cached_dataset(:landbase).collection(:user!_area)
+		_local LoPred  << predicate.eq(:user!_nombre, PsNombre)
+
+		.objeto << LtbArea.select(LoPred).an_element().infoadmin.an_element()
+	_when does_not_understand
+		write("Error al asignar el area")
+	_endtry
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_area_telmex.direccion
+
+   	## Parámetros de entrada:
+	##     - string con la direccion asociada al area
+	## vbluna
+
+	_try
+		_return .objeto.user!_direccion.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_area_telmex.telefono
+
+   	## Parámetros de entrada:
+	##     - string con el teléfono asociado al area
+	## vbluna
+
+	_try
+		_return .objeto.user!_telefono.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_area_telmex.responsable
+
+   	## Parámetros de entrada:
+	##     - string con el nombre del responsable asociado al area
+	## vbluna
+
+	_try
+		_return .objeto.user!_responsable.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$

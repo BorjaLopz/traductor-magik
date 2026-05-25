@@ -1,0 +1,462 @@
+_package user
+$
+#remex(:c_pep)
+$
+def_slotted_exemplar(:c_pep,
+{
+		{:oTipoEmpresaR,      _unset }, # catalogo para empresa que revisa
+		{:valor_empreviso,    _unset } # Valor para empresa que revisa
+	
+		     }, :c_base_sello_cobre)
+$
+_method c_pep.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add(layout_attribute_definition.new(:empreviso, :string,
+						    :description, "Empresa que revisa",	    
+                                                    :enum_method, :enum_tipo_empresar))
+
+	attribs.add(layout_attribute_definition.new(:desmontaje,      :string,
+		                                    :description,     "desmontaje",
+						      :default_value, _unset))
+	
+	attribs.add(layout_attribute_definition.new(:canalizacion,    :string,
+		                                    :description,     "canalizacion",
+						      :default_value, _unset))
+	
+	attribs.add(layout_attribute_definition.new(:principal,       :string,
+		                                    :description,     "principal",
+						      :default_value, _unset))
+	
+	attribs.add(layout_attribute_definition.new(:reconcentracion, :string,
+		                                    :description,     "reconcentracion",
+						      :default_value, _unset))
+
+
+	attribs.add(layout_attribute_definition.new(:pep, :string,
+						    :description, "PEP",
+						    :default_value, _unset ))
+
+
+	attribs.add(layout_attribute_definition.new(:opb,     :string,
+		                                    :description,     "opb",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:oei,     :string,
+		                                    :description,     "OEI",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:oe,     :string,
+		                                    :description,     "OE",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:programa_proyecto,     :string,
+		                                    :description,     "programa",
+						     :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:ot,     :string,
+		                                    :description,     "ot",
+						     :default_value, _unset ))
+
+	>> attribs
+	
+_endmethod
+$
+c_pep.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_pep.enum_tipo_empresar
+
+	        .oTipoEmpresaR    << hash_table.new()
+		.oTipoEmpresaR[1] << "RNUM"       #MULTIMA_MILLA"
+		.oTipoEmpresaR[2] << "RNUMN"      #ULTIMA_MILLA_N"
+		.oTipoEmpresaR[3] << "TELMEX"     
+	_return .oTipoEmpresaR
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_pep.configura_tabla()
+
+	.o_color_linea <<  {0.0, 0.8, 0.3}
+	
+	_local ln_espacio << 20 
+	_local lo_tabla         
+	_local ln_desp_y
+
+	_local pl_tam_pep      << property_list.new()
+	_local pl_tam_opb      << property_list.new()
+	_local pl_tam_ref_tit  << property_list.new()
+	_local pl_tam_ref_det  << property_list.new()
+	_local pl_tam_proyecto << property_list.new()
+	_local pl_tam_ruta     << property_list.new()		
+	
+	pl_tam_pep[:ren] << {9}
+	pl_tam_pep[:col] << {26, 52}
+
+	pl_tam_opb[:ren] << {7, 8, 8,8,8, 8,8}
+	pl_tam_opb[:col] << {26, 26, 26}
+
+	pl_tam_ref_tit[:ren] << {5}
+	pl_tam_ref_tit[:col] << {78}
+
+	pl_tam_ref_det[:ren] << {5,5,5,5}
+	pl_tam_ref_det[:col] << {39, 39}
+
+	pl_tam_proyecto[:ren] << { 5,10,10}
+	pl_tam_proyecto[:col] << {26,  26, 26}
+
+	pl_tam_ruta[:ren] << {7}
+	pl_tam_ruta[:col] << {26, 26, 26}
+
+
+	#-----------------------------------------------------------
+	#Tabla OPB
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(7,3,:tbl_OPB)
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio   ##
+	
+##	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_PEP})
+##	ln_desp_y << ln_desp_y + (ln_espacio*1)	
+##	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,.o_coord_inicio.y - ln_desp_y)
+
+	#Se asigna la longitud de los renglones y columnas
+	_self.asigna_medidas_tabla(lo_tabla, pl_tam_opb)
+	#Se ocultan los renglones internos
+	lo_tabla.bDibuja_columnas_internas? << _false
+	#-----------------------------------------------------------
+	# Tabla PEP
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,2,:tbl_PEP)
+	#Coordenada donde iniciara la tabla
+	##lo_tabla.oCoordenada_Origen << .o_coord_inicio
+
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_OPB})
+	ln_desp_y << ln_desp_y + (ln_espacio*1)	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,.o_coord_inicio.y - ln_desp_y)
+	
+	#Se asigna la longitud de los renglones y columnas 
+	_self.asigna_medidas_tabla(lo_tabla, pl_tam_pep)
+	#Se ocultan los renglones internos
+	lo_tabla.bDibuja_columnas_internas? << _false
+	
+	#-----------------------------------------------------------
+	#Tabla Referencias_Titulo
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_Referencias_Titulo)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_PEP,:tbl_OPB})
+	ln_desp_y << ln_desp_y + (ln_espacio*2)
+	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,
+						     .o_coord_inicio.y - ln_desp_y)
+
+	#Se asigna la longitud de los renglones y columnas
+	_self.asigna_medidas_tabla(lo_tabla, pl_tam_ref_tit)
+	
+	#-----------------------------------------------------------
+	#Tabla Referencias_Detalle
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(4,2,:tbl_Referencias_Detalle)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_PEP,:tbl_OPB,:tbl_Referencias_Titulo})
+	ln_desp_y << ln_desp_y + (ln_espacio*2)
+	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,
+						     .o_coord_inicio.y - ln_desp_y)
+
+	#Se asigna la longitud de los renglones y columnas
+	_self.asigna_medidas_tabla(lo_tabla, pl_tam_ref_det)
+
+	#-----------------------------------------------------------
+	#Tabla Proyecto
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(3,3,:tbl_Proyecto)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_PEP,:tbl_OPB,:tbl_Referencias_Titulo,
+							 :tbl_Referencias_Detalle})
+	ln_desp_y << ln_desp_y + (ln_espacio*3)
+	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,
+						     .o_coord_inicio.y - ln_desp_y)
+
+	#Se asigna la longitud de los renglones y columnas
+	_self.asigna_medidas_tabla(lo_tabla, pl_tam_proyecto)
+	lo_tabla.bDibuja_renglones_internos? << _false
+
+	#-----------------------------------------------------------
+	#Tabla Ruta
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,3,:tbl_Ruta)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_PEP,:tbl_OPB,:tbl_Referencias_Titulo,
+							 :tbl_Referencias_Detalle,:tbl_proyecto})
+	ln_desp_y << ln_desp_y + (ln_espacio*4)
+	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,
+						     .o_coord_inicio.y - ln_desp_y)
+
+	#Se asigna la longitud de los renglones y columnas
+	_self.asigna_medidas_tabla(lo_tabla, pl_tam_ruta)
+
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_pep.etiqueta_celdas()
+
+	_local lrope_textos
+
+	_self.asigna_texto_celda(:tbl_OPB,1,1,"OPB"    ,30,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_OPB,2,1,"OEI"    ,30,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_OPB,3,1,"OEs"    ,30,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_OPB,6,1,"PROG:"  ,30,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_OPB,7,1,"OT:"    ,30,:centre_left,2)
+
+	_self.asigna_texto_celda(:tbl_PEP,1,1,"PEP"    ,40,:centre_left,2)
+		
+	_self.asigna_texto_celda(:tbl_Referencias_Titulo,1,1,"REFERENCIAS",30)
+	
+	lrope_textos << rope.new()
+	lrope_textos.add("DESMONTAJE")
+	lrope_textos.add("CANALIZACION")
+	lrope_textos.add("PRINCIPAL")
+	lrope_textos.add("RECONCENTRACION")
+
+	_for n_ren ,s_txt _over lrope_textos.fast_keys_and_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_Referencias_Detalle,n_ren,1,s_txt,30,:centre_left)
+	_endloop
+
+	lrope_textos << rope.new()
+	lrope_textos.add("PROYECTO")
+	lrope_textos.add("SUPERVISO")
+	lrope_textos.add("RNUM")
+
+	_for n_col ,s_txt _over lrope_textos.fast_keys_and_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_Proyecto,1,n_col,s_txt,30)
+	_endloop
+
+
+	_self.asigna_texto_celda(:tbl_Ruta,1,1,"RUTA: "  ,30)	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_pep.llena_datos_celdas()
+
+	LoProyecto << swg_dsn_admin_engine.active_scheme.project	
+	LoDoc  << _self.layout_document
+
+
+	_local lpl_datos << _self.obten_registros()
+	
+	_local col_celdas_pep << .o_tablas.elemento(:tbl_PEP).oCeldas
+	_local col_celdas_opb << .o_tablas.elemento(:tbl_OPB).oCeldas
+	_local col_celdas_ref << .o_tablas.elemento(:tbl_Referencias_Detalle).oCeldas
+	_local col_celdas_ruta << .o_tablas.elemento(:tbl_Ruta).oCeldas
+	
+	
+	_if   LoDoc.user!_tipo_plano = :fosa_cables_fo _orif
+	      LoDoc.user!_tipo_plano = :esquema_secundario _orif
+	      LoDoc.user!_tipo_plano = :diagrama_empalmes
+	_then
+		sch  << swg_dsn_admin_engine.active_design
+		cedo << sch.user!_distrito_optico.obten_cedos_contenidos().an_element()
+	        trayectoria << cedo.obten_trayectoria
+		
+		_if trayectoria _isnt _unset 
+		_then
+			_self.asigna_texto_celda(:tbl_Ruta,1,1,"RUTA: " + Trayectoria.user!_numero_trayectoria.write_string,30)
+		_else
+			_self.asigna_texto_celda(:tbl_Ruta,1,1,"RUTA: "  ,30)	
+		_endif
+	_else
+		_self.asigna_texto_celda(:tbl_Ruta,1,1,"RUTA: " + lpl_datos[:ruta],30)
+	_endif
+	
+	_self.asigna_texto_celda(:tbl_PEP,1,2,lpl_datos[:pep],40)
+
+	_self.asigna_texto_celda(:tbl_OPB,1,2,lpl_datos[:opb],30)
+	_self.asigna_texto_celda(:tbl_OPB,2,2,lpl_datos[:oei],30)
+	_self.asigna_texto_celda(:tbl_OPB,3,2,lpl_datos[:oe],30)
+	_self.asigna_texto_celda(:tbl_OPB,4,2,lpl_datos[:oe_reco],30)
+	_self.asigna_texto_celda(:tbl_OPB,5,2,lpl_datos[:oe_desm],30)
+		
+	_self.asigna_texto_celda(:tbl_OPB,6,2,lpl_datos[:programa_proyecto],30)
+	_self.asigna_texto_celda(:tbl_OPB,7,2,lpl_datos[:ot],30)
+
+	
+	_self.asigna_texto_celda(:tbl_Referencias_Detalle,1,2,lpl_datos[:desmontaje],30)
+	_self.asigna_texto_celda(:tbl_Referencias_Detalle,2,2,lpl_datos[:canalizacion],30)
+	_self.asigna_texto_celda(:tbl_Referencias_Detalle,3,2,lpl_datos[:principal],30)
+	_self.asigna_texto_celda(:tbl_Referencias_Detalle,4,2,lpl_datos[:reconcentracion],30)
+
+	_self.asigna_texto_celda(:tbl_Proyecto,2,1,lpl_datos[:proyectista].substitute_character(%space, %newline),30)
+	_self.asigna_texto_celda(:tbl_Proyecto,2,2,lpl_datos[:supervisor].substitute_character(%space, %newline),30)
+	_self.asigna_texto_celda(:tbl_Proyecto,2,3,lpl_datos[:supervisor_telmex].substitute_character(%space, %newline),30)
+
+	col_celdas_pep.Celda(1,2).oElemento.sEstilo << "Bold"
+	
+	col_celdas_opb.Celda(1,2).oElemento.sEstilo << "Bold"
+	col_celdas_opb.Celda(2,2).oElemento.sEstilo << "Bold"
+	col_celdas_opb.Celda(3,2).oElemento.sEstilo << "Bold"
+	col_celdas_opb.Celda(4,2).oElemento.sEstilo << "Bold"
+	col_celdas_opb.Celda(5,2).oElemento.sEstilo << "Bold"
+	col_celdas_opb.Celda(6,2).oElemento.sEstilo << "Bold"
+	col_celdas_opb.Celda(7,2).oElemento.sEstilo << "Bold"
+	
+	col_celdas_ref.Celda(1,2).oElemento.sEstilo << "Bold"
+	col_celdas_ref.Celda(2,2).oElemento.sEstilo << "Bold"
+	col_celdas_ref.Celda(3,2).oElemento.sEstilo << "Bold"
+	col_celdas_ref.Celda(4,2).oElemento.sEstilo << "Bold"
+	col_celdas_ruta.Celda(1,1).oElemento.sEstilo << "Bold"   
+
+	_if ( _self.attributes[:empreviso] _isnt _unset _andif
+	      _self.attributes[:empreviso].value) _isnt  _unset _andif
+	      _self.attributes[:empreviso].value.size > 0
+	_then		
+		.valor_empreviso <<  _self.attributes[:empreviso].value.write_string.uppercase
+		lsvalor << .valor_empreviso
+		_self.asigna_texto_celda(:tbl_Proyecto,1,3, lsvalor,30)
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_pep.llena_datos_dinamicos()
+
+	_self.asigna_texto_celda(:tbl_Ruta,1,2,"PLANO: 2",30)
+	_self.asigna_texto_celda(:tbl_Ruta,1,3,"DE: 2",30)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_pep.asigna_celdas_a_colorear()
+## Asigna las celdas que van en color diferente
+
+	_local lst_celdas_color << rope.new()
+
+	lst_celdas_color.add({:tbl_PEP,1,2,.o_color_linea})
+
+	lst_celdas_color.add({:tbl_OPB,1,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_OPB,2,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_OPB,3,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_OPB,4,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_OPB,5,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_OPB,6,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_OPB,7,2,.o_color_linea})
+	
+	lst_celdas_color.add({:tbl_Referencias_Detalle,1,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_Referencias_Detalle,2,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_Referencias_Detalle,3,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_Referencias_Detalle,4,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_Ruta,1,1,.o_color_linea})
+	lst_celdas_color.add({:tbl_Proyecto,2,1,.o_color_linea})
+	lst_celdas_color.add({:tbl_Proyecto,2,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_Proyecto,2,3,.o_color_linea})
+	_return lst_celdas_color
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_pep.obten_registros()
+
+	LoProyecto << swg_dsn_admin_engine.active_scheme.project	
+	LoDoc  << _self.layout_document
+	.s_tipo_plano <<  _self.tipo_plano()
+	.o_distrito.asigna_distrito( .o_proyecto.distrito, _false )
+	
+	_local lpl_datos << property_list.new()
+		
+	#info administrativa
+	#
+	lpl_datos[:opb]             <<    .o_distrito.opb
+	lpl_datos[:oei]             <<    .o_distrito.oei
+	lpl_datos[:oe]              <<    .o_distrito.oe(:construccion)
+	lpl_datos[:oe_desm]         <<    .o_distrito.oe(:desmontaje)
+	lpl_datos[:oe_canal]        <<    .o_distrito.oe(:canalizacion)
+	lpl_datos[:oe_reco]         <<    .o_distrito.oe(:reconcentracion)
+	
+	lpl_datos[:proyectista]       << .o_proyecto.proyectista_disenio
+	lpl_datos[:supervisor]        << .o_proyecto.supervisor_disenio
+	lpl_datos[:supervisor_telmex] << .o_proyecto.supervisor_telmex_disenio
+
+	(info, lpl_datos[:pep])             <<   .o_distrito.pep_referencias("CONSTRUCCION",    :secundaria )	
+	(info, lpl_datos[:desmontaje])      <<   .o_distrito.pep_referencias("DESMONTAJE",      :secundaria )
+	(info, lpl_datos[:reconcentracion]) <<   .o_distrito.pep_referencias("RECONCENTRACION", :secundaria )
+
+	(info, lpl_datos[:principal])       <<   .o_distrito.pep_referencias(_unset  ,    :principales)
+	(info, lpl_datos[:canalizacion])    <<   .o_distrito.pep_referencias(_unset  ,    :canalizacion)
+	
+	_if   LoDoc.user!_tipo_plano = :fosa_cables_fo _orif
+	      LoDoc.user!_tipo_plano = :diagrama_empalmes
+	_then
+		sch         << swg_dsn_admin_engine.active_design.user!_distrito_optico
+	        trayectoria << sch.obten_cedos_contenidos().an_element().obten_trayectoria
+		
+		_if trayectoria _isnt _unset 
+		_then
+			lpl_datos[:ruta] << "RUTA: " + Trayectoria.user!_numero_trayectoria.write_string
+		_else
+			lpl_datos[:ruta] << "RUTA: " 
+		_endif
+	_else
+		 lpl_datos[:ruta]  << .o_proyecto.numero_ruta(_self.obten_opb())
+	_endif
+	
+
+	lpl_datos << _self.info_sello_propiedades(lpl_datos) 
+	
+	_return lpl_datos
+	
+	_return lpl_datos
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_pep.info_sello_propiedades(pl_datos)
+
+	pl_datos[:opb]                <<   _self.valor_propiedad(:opb,    .o_distrito.opb  )
+	pl_datos[:oei]                <<   _self.valor_propiedad(:oei,    .o_distrito.oei  )
+	pl_datos[:oe]                 <<   _self.valor_propiedad(:oe,     .o_distrito.oe(:construccion))
+	pl_datos[:programa_proyecto]  <<   _self.valor_propiedad(:programa_proyecto,   "")
+	pl_datos[:ot]                 <<   _self.valor_propiedad(:ot,    "")
+
+	pl_datos[:pep]                <<   _self.valor_propiedad(:pep,            pl_datos[:pep] )
+	pl_datos[:canalizacion]       <<   _self.valor_propiedad(:canalizacion,   pl_datos[:canalizacion])
+	pl_datos[:desmontaje]         <<   _self.valor_propiedad(:desmontaje,     pl_datos[:desmontaje])
+	pl_datos[:reconcentracion]    <<   _self.valor_propiedad(:reconcentracion,pl_datos[:reconcentracion])
+	pl_datos[:principal]          <<   _self.valor_propiedad(:principal,      pl_datos[:principal])
+
+	_return pl_datos
+	
+_endmethod
+$	
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_pep.valor_propiedad(Propiedad, dato_actual)
+	## 
+	##
+	_if _self.attributes[Propiedad]  _isnt _unset  _andif
+	    _self.attributes[Propiedad].value _isnt _unset _andif
+	    _self.attributes[Propiedad].value.write_string.size > 0
+	_then
+		LoPropiedad << _self.attributes[Propiedad].value.write_string.uppercase
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+	
+_endmethod
+$
+

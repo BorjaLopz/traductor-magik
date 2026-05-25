@@ -1,0 +1,568 @@
+_package user
+$
+def_slotted_exemplar(:c_fibras_por_distrito_falc,
+{
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.asigna_texto_celda(ps_nom_tabla, pn_num_ren, pn_num_col, ps_texto,
+		                           pn_tamanio, _optional ps_alineacion, pn_margen, ps_color, ps_color_hex)
+
+# INICIO DEL CAMBIO
+# (2011-07-20 AHERNAN, HILDEBRANDO) :  se subclasea metodo para
+# que pueda recibir el color en rgb  en hexadecimal y asi tener
+# mas gama de colores., el parametro ps_color_hex tiene
+# elformato "RRGGBB".
+#
+# FIN DEL CAMBIO
+	
+	o_texto << c_texto_grafico.new(ps_texto)
+	o_texto.nTamanio    << pn_tamanio
+
+	_if ps_alineacion _isnt _unset 
+	_then
+		o_texto.sAlineacion << ps_alineacion		
+	_endif
+
+	_if pn_margen _isnt _unset 
+	_then
+		o_texto.nMargen_Izq << pn_margen
+	_endif
+
+	_if ps_color _isnt _unset 
+	_then
+		o_texto.sColor << colour.new_rgb(ps_color[1],ps_color[2],ps_color[3])
+	_endif
+
+	# INICIO DEL CAMBIO
+	# (2011-07-20 AHERNAN, HILDEBRANDO) :  Cuando el parametro no
+	# es unset el parametro redefine el color.
+	#
+	_if ps_color_hex _isnt _unset 
+	_then
+		o_texto.sColor << colour.new_from_hex(ps_color_hex)
+	_endif
+	#
+	# FIN DEL CAMBIO
+		
+	lo_tabla << .o_tablas.elemento(ps_nom_tabla)
+	lo_celda << lo_tabla.oceldas.celda(pn_num_ren,pn_num_col)
+	
+	lo_celda.oelemento << o_texto
+		
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.configura_tabla()
+	# Objetivo: Configurar la tabla base que formara el sello. 
+	# Parámetros de entrada: n/a
+	# Parámetros de salida: n/a
+	# Regresa: n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :n/a
+
+	#-------------------------------------------------------------
+	#         Tabla Contenedora
+	#-------------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_contenedora)
+	lo_tabla.ocoordenada_origen << .o_coord_inicio
+	lo_tabla.orenglones.elemento(1).nlongitud << 25
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 24
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Inf? << _false
+	lo_celda.bBorde_Sup? << _false
+	#--------
+	# tabla 1
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(1,1, :tbl_1)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 10, .o_coord_inicio.y - 10)
+	lo_tabla.orenglones.elemento(1).nlongitud << 5
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 22
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Sup? << _false
+	lo_celda.bBorde_Inf? << _false
+	#--------
+	# tabla 2
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(1,1, :tbl_2)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_1})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 10 , .o_coord_inicio.y - 60)
+	lo_tabla.orenglones.elemento(1).nlongitud << 10
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 22
+	LcollColores <<   rope.new_with(1,0,0)
+	c_tabla.color_linea <<  LcollColores
+	#--------
+	# tabla 2_1
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(5,3, :tbl_2_1)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 20, .o_coord_inicio.y - 70) 
+	lo_tabla.orenglones.elemento(1).nlongitud << 2
+	lo_tabla.orenglones.elemento(2).nlongitud << 1
+	lo_tabla.orenglones.elemento(3).nlongitud << 2
+	lo_tabla.orenglones.elemento(4).nlongitud << 1
+	lo_tabla.orenglones.elemento(5).nlongitud << 2
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 9
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 1
+	lo_tabla.ocolumnas.elemento(3).nlongitud  << 10
+	ocultaIzqyDer << rope.new_with({"2","1"},{"4","1"},{"2","2"},{"4","2"},{"2","3"},{"4","3"})
+	_for e _over ocultaIzqyDer.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Der? << _false
+	_endloop
+	ocultaSupyInf << rope.new_with({"1","2"},{"2","2"},{"3","2"},{"4","2"},{"5","2"})
+	_for e _over ocultaSupyInf.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Sup? << _false
+		lo_celda.bBorde_Inf? << _false
+	_endloop
+	#--------
+	# tabla 3
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(4,1, :tbl_3)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 10, .o_coord_inicio.y - 160 )
+	_for n_reng _over range(1,4)
+	_loop
+		lo_tabla.orenglones.elemento(n_reng).nlongitud << 2
+	_endloop
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 22
+
+	ocultabordes << rope.new_with({"1","1"},{"2","1"},{"3","1"},{"4","1"})
+	_for e _over ocultabordes.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Der? << _false
+		lo_celda.bborde_Inf? << _false
+		lo_celda.bBorde_Sup? << _false 
+	_endloop
+	
+
+		   
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_fibras_por_distrito_falc.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add(layout_attribute_definition.new(:idcedo, :string,
+						    :description, "CEDO",
+						    :default_value, 0))
+	attribs.add(layout_attribute_definition.new(:fibras, :string,
+						    :description, "FIBRAS",
+						    :default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:nco, :string,
+						    :description, "NCO",
+						    :default_value, _unset  ))
+	attribs.add(layout_attribute_definition.new(:nipp, :string,
+						    :description, "NIPP",
+						    :default_value, _unset  ))
+	attribs.add(layout_attribute_definition.new(:cve_dto, :string,
+						    :description, "CLAVE DTO",
+						    :default_value, _unset  ))
+	attribs.add(layout_attribute_definition.new(:viv, :string,
+						    :description, "VIV",
+						    :default_value, _unset  ))
+	attribs.add(layout_attribute_definition.new(:no_fibras, :string,
+						    :description, "NUMERO DE FIBRAS",
+						    :default_value, "" ))
+	attribs.add(layout_attribute_definition.new(:dist_a_nco, :string,
+						    :description, "DISTANCIA A NCO",
+						    :default_value, _unset  ))
+	attribs.add(layout_attribute_definition.new(:distrito, :string,
+						    :description, "DISTRITO",
+						    :default_value,  _unset ))
+	attribs.add(layout_attribute_definition.new(:dist_a_oc, :string,
+						    :description, "DISTANCIA A OC",
+						    :default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:siglas_oc, :string,
+						    :description, "SIGLAS OC",
+						    :default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:cuentas, :string,
+						    :description, "CUENTAS",
+						    :default_value, _unset ))
+	# INICIO DEL CAMBIO
+	# (2011-07-20 AHERNAN, HILDEBRANDO) : Permite controlar que el
+	# sello sea "editable"
+	#
+        attribs.add(layout_attribute_definition.new ( :recalcular, :boolean,
+						      :description, "Recalcular los valores",
+						      :default_value, _true   ,
+						      :allowed_on_properties_page?, _false))
+	#
+	# FIN DEL CAMBIO
+		
+	>> attribs
+	
+
+_endmethod
+$
+c_fibras_por_distrito_falc.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.draw_content_on(window)
+	# (2011-07-21 AHERNAN, HILDEBRANDO) : se particulariza el metodo
+	# pues este comportamiento es para este sello.
+	# Sello editable.
+	_self.configura_color_sello()
+
+	# INICIO DEL CAMBIO
+	# (2011-07-20 AHERNAN, HILDEBRANDO) : 
+	#Permite que el sello sea "editable" porque toma los valores
+	# de sus propiedades y los vuelve a "calcular" si  se requiere
+	# que se vuelvan a calcular haremos que la propiedad  aparezca
+	# en el sello para poder cambiar a true.
+	_self.llena_datos_celdas_properties()
+	#
+	# FIN DEL CAMBIO
+	
+	_super.draw_content_on(window)
+
+	_if .col_tablas _isnt _unset
+	_then
+		_for tabla _over .col_tablas.fast_elements()
+		_loop
+			tabla.Despliega(window)
+		_endloop
+	_endif
+		
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.etiqueta_celdas()
+	# Objetivo: colocar los encabezados de la tabla.
+	# Parámetros de entrada: n/a
+	# Parámetros de salida: n/a
+	# Regresa: n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación : n/a
+	ROJO <<   rope.new_with(1,0,0)
+	AZUL <<   rope.new_with(0,0,1)
+#	VERDE << colour.called(:green)
+#	AMARILLO << colour.called(:golden)
+#	VERDESECO << colour.called(:olive)
+	
+	_self.asigna_texto_celda(:tbl_2_1,1,1,"DTOS:",7,_unset,_unset,AZUL)
+	_self.asigna_texto_celda(:tbl_2_1,3,1,"VIV:",7,_unset,_unset,AZUL)
+	_self.asigna_texto_celda(:tbl_2_1,5,1,"FIBRAS:",7,_unset,_unset,AZUL)
+	
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.llena_datos_celdas()
+	# Objetivo: colocar los datos editados del sello.
+	# Parámetros de entrada: n/a
+	# Parámetros de salida: n/a
+	# Regresa: n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación : n/a 
+	
+
+	ROJO <<   rope.new_with(1,0,0)
+	AZUL <<   rope.new_with(0,0,1)
+	
+	# (11/06/08 lgranados) : Obtiene los datos editados.
+	_local lpl_datos << _self.obten_registros()
+	# (11/06/08 lgranados) : Arma las cadenas con los datos.
+	FIBRAS << lpl_datos[:fibras]
+	NCO << "NCO_" + lpl_datos[:nco]
+	NIPP << lpl_datos[:nipp]
+	DTOS << lpl_datos[:cve_dto]
+	VIVIENDAS << lpl_datos[:viv]
+	NUMERO_DE_FIBRAS << lpl_datos[:no_fibras] 
+	DIST_A_NCO << lpl_datos[:dist_a_nco].write_string + " A NCO_" + lpl_datos[:nco]
+	DTO << lpl_datos[:distrito]
+	DIST_A_OC << lpl_datos[:dist_a_oc].write_string + " A O.C. " + lpl_datos[:siglas_oc]
+	FIBRAS_ASIGNADAS << "F.O."  +  lpl_datos[:cuentas]  
+	
+	LoTitulo << "FIBRAS " + "("+ FIBRAS +")" + %newline
+	LoTitulo +<< NCO + %newline
+	LoTitulo +<< "NIPP " + NIPP
+
+	# (11/06/08 lgranados) : Asigna los datos a cada celda del sello
+	_self.asigna_texto_celda(:tbl_1,1,1,LoTitulo,          14,:top_centre,_unset,ROJO )
+	_self.asigna_texto_celda(:tbl_2_1,1,3,DTOS            ,10,_unset,_unset,AZUL )
+	_self.asigna_texto_celda(:tbl_2_1,3,3,VIVIENDAS       ,10,_unset,_unset,AZUL )
+	_self.asigna_texto_celda(:tbl_2_1,5,3,NUMERO_DE_FIBRAS,10,_unset,_unset,AZUL )
+	_self.asigna_texto_celda(:tbl_3,1,1,DIST_A_NCO,        10,_unset,_unset,_unset , "BBBB20" ) 
+	_self.asigna_texto_celda(:tbl_3,2,1,DTO,               16,_unset,_unset,_unset , "DAA520" )
+	_self.asigna_texto_celda(:tbl_3,3,1,DIST_A_OC,         12,_unset,_unset,_unset , "BBBB20" )
+	_self.asigna_texto_celda(:tbl_3,4,1,FIBRAS_ASIGNADAS,  14,_unset,_unset,_unset , "4C9526" )
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.llena_datos_celdas_properties()
+	#---------------------------------------------------
+	##  Objetivo  : Toma los valores de las propiedades para
+	## respetar los cambios que se hagan al editar el sello.
+	## # (2011-07-21 AHERNAN, HILDEBRANDO) .
+
+	ROJO <<   rope.new_with(1,0,0)
+	AZUL <<   rope.new_with(0,0,1)
+	
+	lpl_datos <<  _self.attributes
+
+	FIBRAS           << lpl_datos[:fibras].value.write_string
+	NCO              << "NCO_" + lpl_datos[:nco].value.write_string
+	NIPP             << lpl_datos[:nipp].value.write_string
+	DTOS             << lpl_datos[:cve_dto].value.write_string
+	VIVIENDAS        << lpl_datos[:viv].value.write_string
+	NUMERO_DE_FIBRAS << lpl_datos[:no_fibras].value.write_string
+	DIST_A_NCO       << lpl_datos[:dist_a_nco].value.write_string + " A NCO_" + lpl_datos[:nco].value.write_string
+	DTO              << lpl_datos[:distrito].value.write_string
+	DIST_A_OC        << lpl_datos[:dist_a_oc].value.write_string + " A O.C. " + lpl_datos[:siglas_oc].value.write_string
+	FIBRAS_ASIGNADAS << "F.O."  +  lpl_datos[:cuentas].value.write_string  	
+	LoTitulo         << "FIBRAS " + "("+ FIBRAS +")" + %newline
+	LoTitulo        +<< NCO + %newline
+	LoTitulo        +<< "NIPP " + NIPP
+	
+	# (11/06/08 lgranados) : Asigna los datos a cada celda del sello	
+	_self.asigna_texto_celda(:tbl_1,1,1,LoTitulo                      ,14,:top_centre,_unset,ROJO )
+	_self.asigna_texto_celda(:tbl_2_1,1,3,DTOS                        ,10,_unset,_unset,AZUL )
+	_self.asigna_texto_celda(:tbl_2_1,3,3,VIVIENDAS                   ,10,_unset,_unset,AZUL )
+	_self.asigna_texto_celda(:tbl_2_1,5,3,NUMERO_DE_FIBRAS            ,10,_unset,_unset,AZUL )
+	_self.asigna_texto_celda(:tbl_3,1,1,DIST_A_NCO                    ,10,_unset,_unset,_unset , "BBBB20" ) 
+	_self.asigna_texto_celda(:tbl_3,2,1,DTO                           ,16,_unset,_unset,_unset , "DAA520" )
+	_self.asigna_texto_celda(:tbl_3,3,1,DIST_A_OC                     ,12,_unset,_unset,_unset , "BBBB20" )
+	_self.asigna_texto_celda(:tbl_3,4,1,FIBRAS_ASIGNADAS              ,14,_unset,_unset,_unset , "4C9526" )
+			
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.obten_registros()
+	## 
+	##
+	# (11/06/09 lgranados) : Busca el cedo guardado en el attribute idcedo.
+	
+	idcedo      << _self.attributes[:idcedo].value
+	LoTablaCedo << gis_program_manager.cached_dataset(:gis).collections[:user!_empalme_distribucion]
+	cedo        << LoTablaCedo.select(predicate.eq(:id,idcedo)).an_element()
+	cedo_geoms  << cedo.user!_empalme_distribucion_geoms.an_element()
+
+	NUM_DE_FIBRAS << 0
+
+	# (11/06/09 lgranados) : Se Calculan los datos apartir del cedo
+	
+	NCO                <<  cedo_geoms.siglas_NCO
+	datos_dog          << cedo_geoms.obten_info_de_dog()
+
+	_if datos_dog _isnt _unset
+	_then
+		nav                << datos_dog.nav
+		nbv                << datos_dog.nbv
+		ncv                << datos_dog.ncv 
+		ndv                << datos_dog.ndv
+		nev                << datos_dog.nev
+		nc1v               << datos_dog.nc1v
+		nc2v               << datos_dog.nc2v
+		nc3v               << datos_dog.nc3v
+		nilv               << datos_dog.nilv
+		nimv               << datos_dog.nimv
+		nipv               << datos_dog.nipv
+		NIPP               << datos_dog.nipp
+		DTOS               << cedo_geoms.siglas_distrito
+		VIVIENDAS          << nav + nbv + ncv + ndv + nev + nc1v  + nc2v + nc3v + nilv + nimv + nipv 
+		NUM_DE_FIBRAS      << VIVIENDAS _div 64
+	_endif
+
+	DIST_A_NCO         << cedo_geoms.distancia_a_nco()
+	SIGLAS_OC          << cedo_geoms.siglas_OC
+	DIST_A_OC          << cedo_geoms.distancia_mas_corta_a_OC(_true)
+	(FIBRAS,FIBRAS_ASIGNADAS)   << cedo.obtener_informacion_de_cuenta()
+	# Si el número de fibras es menor de dos entonces por defalt se
+	# pondra 2 ya que es el mínimo establecido.
+	_if NUM_DE_FIBRAS > 2
+	_then
+		NUMERO_DE_FIBRAS << NUM_DE_FIBRAS
+	_else
+		NUMERO_DE_FIBRAS << 2
+	_endif
+	# Si el distrito optico esta vacío entonces se tomara el
+	# distrito de cobre.
+	_if cedo.distrito_optico _isnt _unset 
+	_then
+		DTO << cedo.distrito_optico.user!_distrito 
+	_else
+		DTO << cedo_geoms.siglas_distrito
+	_endif
+	
+	
+
+	# (11/06/15 lgranados) : Se llenan los atributos. 
+	
+	_self.attributes[:fibras].value      << FIBRAS.write_string.default(" ")
+	_self.attributes[:nco].value         << NCO.write_string.default(" ")
+	_self.attributes[:nipp].value        << NIPP.write_string.default(" ")
+	_self.attributes[:cve_dto].value     << DTOS.write_string.default(" ")
+	_self.attributes[:viv].value         << VIVIENDAS.write_string.default(" ")
+	_self.attributes[:no_fibras].value   << NUMERO_DE_FIBRAS.write_string.default(" ")
+	_self.attributes[:dist_a_nco].value  << DIST_A_NCO.write_string.default(" ")
+	_self.attributes[:siglas_oc].value   << SIGLAS_OC.write_string.default(" ")
+	_self.attributes[:distrito].value    << DTO.write_string.default(" ")
+	_self.attributes[:dist_a_oc].value   << DIST_A_OC.write_string.default(" ")
+	_self.attributes[:cuentas].value     << FIBRAS_ASIGNADAS.write_string.default(" ")
+
+		
+	# (11/06/09 lgranados) : Se llena el property_list con los
+	# valores que llenaran el sello.
+	
+	lpl_datos << property_list.new()
+
+	lpl_datos[:fibras]     << _self.attributes[:fibras].value.write_string
+	lpl_datos[:nco]        << _self.attributes[:nco].value.write_string
+	lpl_datos[:nipp]       << _self.attributes[:nipp].value.write_string
+	lpl_datos[:cve_dto]    << _self.attributes[:cve_dto].value.write_string
+	lpl_datos[:viv]        << _self.attributes[:viv].value.write_string
+	lpl_datos[:no_fibras]  << _self.attributes[:no_fibras].value.write_string
+	lpl_datos[:dist_a_nco] << _self.attributes[:dist_a_nco].value.write_string
+	lpl_datos[:distrito]   << _self.attributes[:distrito].value.write_string
+	lpl_datos[:dist_a_oc]  << _self.attributes[:dist_a_oc].value.write_string
+	lpl_datos[:siglas_oc]  << _self.attributes[:siglas_oc].value.write_string
+	lpl_datos[:cuentas]    << _self.attributes[:cuentas].value.write_string
+
+	_return lpl_datos
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.obten_registros_caja(caja_distribucion_geoms)
+	## 
+	##
+	# (11/06/09 lgranados) : Busca el cedo guardado en el attribute idcedo.
+        caja_distribucion << caja_distribucion_geoms.owner 
+	
+	_local NUM_DE_FIBRAS << 0
+	_local nav << 0
+	_local nbv << 0
+	_local ncv << 0
+	_local ndv << 0
+	_local nev << 0
+	_local nc1v << 0
+	_local nc2v << 0
+	_local nc3v << 0
+	_local nilv << 0
+	_local nimv << 0
+	_local nipv << 0
+	_local NIPP,VIVIENDAS  
+	
+	# START CHANGE
+	# (12/08/22 ahernanram) : a partir de las siglas del distrito
+	# obtener los datos de dog. 
+	#	
+	datos_dog          << caja_distribucion.obten_info_de_dog()
+	
+	#
+	# END CHANGE
+
+
+
+	
+	_if datos_dog _isnt _unset
+	_then
+		write("Tomando datos de dog...")
+		nav                << datos_dog.nav
+		nbv                << datos_dog.nbv
+		ncv                << datos_dog.ncv 
+		ndv                << datos_dog.ndv
+		nev                << datos_dog.nev
+		nc1v               << datos_dog.nc1v
+		nc2v               << datos_dog.nc2v
+		nc3v               << datos_dog.nc3v
+		nilv               << datos_dog.nilv
+		nimv               << datos_dog.nimv
+		nipv               << datos_dog.nipv
+		NIPP               << datos_dog.nipp	
+		VIVIENDAS          << nav + nbv + ncv + ndv + nev + nc1v  + nc2v + nc3v + nilv + nimv + nipv 
+		NUM_DE_FIBRAS      << VIVIENDAS _div 64
+	_endif
+
+	_if caja_distribucion.user!_distancia_nco _isnt _unset 
+	_then
+		DIST_A_NCO         << caja_distribucion.user!_distancia_nco.value
+	_else
+		DIST_A_NCO         << 0
+	_endif
+
+	_if caja_distribucion.user!_distancia_central _isnt _unset 
+	_then
+		DIST_A_OC          << caja_distribucion.user!_distancia_central.value
+	_else
+		DIST_A_OC          <<  0
+	_endif
+
+	
+	SIGLAS_OC          << caja_distribucion.user!_nombre_distrito.numbers_and_strings[1]
+        DTOS               << caja_distribucion.user!_nombre_distrito
+	FIBRAS_ASIGNADAS   << caja_distribucion_geoms.Obten_num_fibras_tba_asignadas
+	FIBRAS             << caja_distribucion_geoms.Obten_cuentas_tba_asignadas
+	DTO <<   caja_distribucion.user!_nombre_distrito
+	NCO << _self.siglas_nco
+	# Si el número de fibras es menor de dos entonces por defalt se
+	# pondra 2 ya que es el mínimo establecido.
+	
+	NUMERO_DE_FIBRAS << FIBRAS_ASIGNADAS
+	
+
+	# (11/06/15 lgranados) : Se llenan los atributos. 
+	
+	_self.attributes[:fibras].value      << FIBRAS.write_string.default(" ")
+	_self.attributes[:nco].value         << NCO.write_string.default(" ")
+	_self.attributes[:nipp].value        << NIPP.write_string.default(" ")
+	_self.attributes[:cve_dto].value     << DTOS.write_string.default(" ")
+	_self.attributes[:viv].value         << VIVIENDAS.write_string.default(" ")
+	_self.attributes[:no_fibras].value   << NUMERO_DE_FIBRAS.write_string.default(" ")
+	_self.attributes[:dist_a_nco].value  << DIST_A_NCO.write_string.default(" ")
+	_self.attributes[:siglas_oc].value   << SIGLAS_OC.write_string.default(" ")
+	_self.attributes[:distrito].value    << DTO.write_string.default(" ")
+	_self.attributes[:dist_a_oc].value   << DIST_A_OC.write_string.default(" ")
+	_self.attributes[:cuentas].value     << FIBRAS_ASIGNADAS.write_string.default(" ")
+
+		
+	# (11/06/09 lgranados) : Se llena el property_list con los
+	# valores que llenaran el sello.
+
+       # (12/08/22 ahernanram) :  si el usuario proporciona un dato se
+       # toma como elbueno.....  
+	
+	lpl_datos << property_list.new()
+
+	lpl_datos[:fibras]     << _self.attributes[:fibras].value.write_string
+	lpl_datos[:nco]        << _self.attributes[:nco].value.write_string
+	lpl_datos[:nipp]       << _self.attributes[:nipp].value.write_string
+	lpl_datos[:cve_dto]    << _self.attributes[:cve_dto].value.write_string
+	lpl_datos[:viv]        << _self.attributes[:viv].value.write_string
+	lpl_datos[:no_fibras]  << _self.attributes[:no_fibras].value.write_string
+	lpl_datos[:dist_a_nco] << _self.attributes[:dist_a_nco].value.write_string
+	lpl_datos[:distrito]   << _self.attributes[:distrito].value.write_string
+	lpl_datos[:dist_a_oc]  << _self.attributes[:dist_a_oc].value.write_string
+	lpl_datos[:siglas_oc]  << _self.attributes[:siglas_oc].value.write_string
+	lpl_datos[:cuentas]    << _self.attributes[:cuentas].value.write_string
+
+	write(666666666666)
+	_return lpl_datos
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_fibras_por_distrito_falc.siglas_nco
+	## 
+	## 
+          >> swg_dsn_admin_engine.active_design.project.user!_central.building.user!_siglas
+	
+_endmethod
+$

@@ -1,0 +1,151 @@
+_package user
+$
+def_slotted_exemplar(:c_sello_pie_diag_emp,
+{}, :c_sello_estandar_ctl_edo)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.codigo_postal
+	## 
+	## 
+	_return ""
+_endmethod
+$
+_method c_sello_pie_diag_emp.colonia
+	## 
+	## 
+
+	_return ""
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.configura_tabla()
+
+	_super.configura_tabla()
+
+	_local pl_colonia_cp << property_list.new()
+
+	pl_colonia_cp[:ren] << {5,5}
+	pl_colonia_cp[:col] << {22,45}
+	
+	lo_tabla << .o_tablas.crea_tabla(2,2,:tbl_colonia_cp)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion, :tbl_compania, :tbl_FecDibRev,
+						       :tbl_Escala, :tbl_pob_ctl, :tbl_central})
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_ubicacion, :tbl_del_mpo})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	_self.asigna_medidas_tabla(lo_tabla, pl_colonia_cp)
+	lo_tabla.bDibuja_bordes? << _false
+	lo_tabla.bDibuja_Columnas_Internas? << _false
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.delegacion_municipio()
+	
+	LoV << mit_manager.modelit_dataset
+	# (10/06/25 lgranados) : Se asegura que el municipio siempre se llene.
+	_if swg_dsn_admin_engine.active_design.tipo_diseno _is :principales _orif
+	    swg_dsn_admin_engine.active_design.tipo_diseno _is :trabajo _orif
+	    swg_dsn_admin_engine.active_design.tipo_diseno _is :enlace 
+	_then
+		# (10/06/25 lgranados) : Cuando el esquema se genere en
+		# principales entonces el municipio será donde se encuentre la central
+		tabla << LoV.collection(:building)
+		LoArea << swg_dsn_admin_engine.active_design.project.user!_central.user!_limite
+		pred << predicate.within(:location,LoArea)
+		Lonodo << tabla.select(pred).an_element()
+		LoTabMun << gis_program_manager.cached_dataset(:landbase).collection(:user!_municipio)
+		LoPred << predicate.interacts(:user!_limite,Lonodo.location)
+		LoSel << LoTabMun.select(LoPred)
+		_if LoSel.size = 1
+		_then
+			LoMun << LoSel.an_element()
+			Lomunicipio << LoMun.user!_nombre_telmex + ", " + LoMun.user!_estado
+		_endif
+	_elif swg_dsn_admin_engine.active_design.tipo_diseno _is :secundaria
+	_then
+		# (10/06/25 lgranados) : Si el esquema se genera en un diseño
+		# de secundarios entonces el municipio será donde se encuentre
+		# la CD.
+		tabla << LoV.collection(:mit_terminal_enclosure)
+		LoArea << swg_dsn_admin_engine.active_design.project.user!_central.user!_limite
+		pred << predicate.within(:location,LoArea)
+		Locd << tabla.select(pred).an_element()
+		_if Locd _isnt _unset 
+		_then
+			LoTabMun << gis_program_manager.cached_dataset(:landbase).collection(:user!_municipio)
+			LoPred << predicate.interacts(:user!_limite,Locd.location)
+			LoSel << LoTabMun.select(LoPred)
+			_if LoSel.size = 1
+			_then
+				LoMun << LoSel.an_element()
+				Lomunicipio << LoMun.user!_nombre_telmex + "," + LoMun.user!_estado
+			_endif
+		_else
+			# (10/06/25 lgranados) : si no se encuentra CD entonces el
+			# municipio será donde se encuentre la central.
+			tabla << LoV.collection(:building)
+			LoArea << swg_dsn_admin_engine.active_design.project.user!_central.user!_limite
+			pred << predicate.within(:location,LoArea)
+			Lonodo << tabla.select(pred).an_element()
+			LoTabMun << gis_program_manager.cached_dataset(:landbase).collection(:user!_municipio)
+			LoPred << predicate.interacts(:user!_limite,Lonodo.location)
+			LoSel << LoTabMun.select(LoPred)
+			_if LoSel.size = 1
+			_then
+				LoMun << LoSel.an_element()
+				Lomunicipio << LoMun.user!_nombre_telmex + ", " + LoMun.user!_estado
+			_endif	
+		_endif
+	_endif
+	
+
+	_return(Lomunicipio)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.etiqueta_celdas()
+
+	_super.etiqueta_celdas()
+	
+	_self.asigna_texto_celda(:tbl_colonia_cp,1,1,"COLONIA: ",35,:top_left,1)
+	_self.asigna_texto_celda(:tbl_colonia_cp,2,1,"C.P.: ",35,:top_left,1)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.llena_datos_celdas()
+
+	_super.llena_datos_celdas()
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.municipio
+	## 
+	## 
+	_return ""
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.obten_registros()
+
+	_super.obten_registros()
+
+	.o_distrito.asigna_distrito(.o_proyecto.distrito, _false)
+	
+	.pl_datos[:colonia] << .o_distrito.nombre_colonia
+	.pl_datos[:cp] << .o_distrito.codigo_postal
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_pie_diag_emp.valor_casilla_central()
+
+	_return  .pl_datos[:clave_ctl] + " - " + .o_proyecto.numero_distrito
+	
+_endmethod
+$

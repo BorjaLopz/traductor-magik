@@ -1,0 +1,272 @@
+_package user
+$
+def_slotted_exemplar(:c_resumen_competencia_tvpaga,
+{
+	{:oDtoOptico,_unset,:writable}
+}, :c_base_sello_fibra)
+$
+c_resumen_competencia_tvpaga.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_competencia_tvpaga.calcula_datos()
+	## 
+	##
+	lo_valores << property_list.new()
+	lo_valores[:tv_satelital] << 0
+	lo_valores[:tv_dish]      << 0
+	lo_valores[:tv_cable]     << 0
+	lo_valores[:lineas_inalambricas] << 0
+	lo_valores[:lineas_ladafon]      << 0
+	lo_valores[:lineas_ladatel]      << 0
+	lo_valores[:infinitum] << 0
+	lo_valores[:lineas_cobre] << 0
+	lo_valores[:lineas_pslt] << 0
+	lo_valores[:solicitudes] << 0
+	lo_valores[:lineas_competencia_cobre] << 0
+	lo_valores[:lineas_competencia_inalambrica] << 0
+	lo_valores[:telefono_publico_competencia] << 0
+	lo_valores[:fibra_telmex] << 0
+	lo_valores[:fibra_competencia] << 0
+	
+		# START CHANGE
+	# (11/09/12 fmejia) : se agrega valor a casetas ladatel con
+	# c_distrito similar a como se calcula para el sello principal
+	# de red secundaria.
+	#
+	LoDis << c_distrito.new()
+	LoPro << c_proyecto.new()
+	LoDis.asigna_distrito(LoPro.distrito)
+	LoTelPublicos << LoDis.telefonos_publicos
+	lo_valores[:lineas_ladatel] << LoTelPublicos[:|TPTC|].default(0)
+	#
+	# END CHANGE
+
+# INICIO DEL CAMBIO
+# (2012-07-05 AHERNAN, HILDEBRANDO) : para corregir el calculo
+# en el sello de servicios en el plano de construccion.
+#
+#	_local LoDesigAdmin << gis_program_manager.cached_dataset(:design_admin)
+	_local LoDesigAdmin << gis_program_manager.cached_dataset(:gis)
+#
+# FIN DEL CAMBIO
+	
+	_local LoSelViviendas
+	
+	_local LoTabVivienda << LoDesigAdmin.collection(:user!_vivienda)
+	_local LoPsa
+
+	_if .oDtoOptico.user!_limite _isnt _unset 
+	_then
+		LoPsa << pseudo_area.new_for_world(.oDtoOptico.user!_limite, LoDesigAdmin.world)
+		LoSelViviendas << LoTabVivienda.select(predicate.interacts(:location,LoPsa))
+	_endif
+	
+
+	#write("@ LoSelViviendas.size ", LoSelViviendas.size)
+	
+	_if LoSelViviendas _isnt _unset
+	_then
+		_for LoVivienda _over LoSelViviendas.fast_elements()
+		_loop			
+			
+#			_if LoVivienda.user!_detalle_lote _isnt _unset _andif
+#			    LoVivienda.user!_detalle_lote.user!_lote _isnt _unset				
+#			_then
+			#	LoLote << LoVivienda.user!_detalle_lote.user!_lote
+
+				_for inv _over LoVivienda.user!_inventario_viviendas.fast_elements()
+				_loop
+					_if inv.user!_servicio = "TELEFONO"
+					_then
+						_if inv.user!_producto = "LINEAS INALAMBRICAS" 
+						_then
+							lo_valores[:lineas_inalambricas] +<< inv.user!_cantidad.default(0)
+						_elif inv.user!_producto = "LINEAS LADAFON" 
+						_then
+							lo_valores[:lineas_ladafon] +<< inv.user!_cantidad.default(0)
+						_elif inv.user!_producto = "LINEAS COBRE" 
+						_then
+							lo_valores[:lineas_cobre] +<< inv.user!_cantidad.default(0)
+						_elif inv.user!_producto = "LINEAS PSLT" 
+						_then
+							lo_valores[:lineas_pslt] +<< inv.user!_cantidad.default(0)
+						_elif inv.user!_producto = "SOLICITUDES" 
+						_then
+							lo_valores[:solicitudes] +<< inv.user!_cantidad.default(0)
+						_elif inv.user!_producto = "LINEAS COMPETENCIA COBRE" 
+						_then
+							lo_valores[:lineas_competencia_cobre] +<< inv.user!_cantidad.default(0)
+						_elif inv.user!_producto = "LINEAS COMPETENCIA INALAMBRICAS" 
+						_then
+							lo_valores[:lineas_competencia_inalambrica] +<< inv.user!_cantidad.default(0)
+						_elif inv.user!_producto = "TELEFONO PUBLICO COMPETENCIA" 
+						_then
+							lo_valores[:telefono_publico_competencia] +<< inv.user!_cantidad.default(0)				
+						_elif inv.user!_producto = "TELMEX LINEAS FIBRA" 
+						_then
+							lo_valores[:fibra_telmex] +<< inv.user!_cantidad.default(0)				
+						_elif inv.user!_producto = "COMPETENCIA LINEAS FIBRA" 
+						_then
+							lo_valores[:fibra_competencia] +<< inv.user!_cantidad.default(0)				
+						_endif							
+					_elif inv.user!_servicio = "TV"
+					_then
+						# (12/08/10 lunal) : Modificacion, se filtra para que los
+						# servicios de tipo DISH no se cuenten en SATELITAL, y para el
+						# caso de servicios tipo CABLE, se suman todas las cableras en
+						# uno solo, independiente de la compañia
+						_if inv.user!_tipo_servicio = "SATELITAL" _and
+						    inv.user!_empresa <> "DISH"
+						_then
+							lo_valores[:tv_satelital] +<< inv.user!_cantidad.default(0)
+						_endif 
+						_if inv.user!_empresa = "DISH"
+						_then 
+							lo_valores[:tv_dish] +<< inv.user!_cantidad.default(0)
+						_endif
+						_if inv.user!_tipo_servicio = "CABLE" 
+						_then 
+							lo_valores[:tv_cable] +<< inv.user!_cantidad.default(0)
+						_endif
+						_if inv.user!_producto = "TELMEX LINEAS FIBRA" 
+						_then
+							lo_valores[:fibra_telmex] +<< inv.user!_cantidad.default(0)				
+						_elif inv.user!_producto = "COMPETENCIA LINEAS FIBRA" 
+						_then
+							lo_valores[:fibra_competencia] +<< inv.user!_cantidad.default(0)				
+						_endif							
+					_elif inv.user!_servicio = "INTERNET"
+					_then
+						_if inv.user!_producto = "INFINITUM"
+						_then
+							lo_valores[:infinitum] +<< inv.user!_cantidad.default(0)
+						_elif inv.user!_producto = "TELMEX LINEAS FIBRA" 
+						_then
+							lo_valores[:fibra_telmex] +<< inv.user!_cantidad.default(0)				
+						_elif inv.user!_producto = "COMPETENCIA LINEAS FIBRA" 
+						_then
+							lo_valores[:fibra_competencia] +<< inv.user!_cantidad.default(0)				
+						_endif 					
+					_endif
+				_endloop					
+#			_endif							
+		_endloop    					
+	_endif
+	_return  lo_valores
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_competencia_tvpaga.configura_tabla()
+
+	_local LoTblTitulo
+	_local LoTblContenido
+	_local LoTbl
+	_local LfDesplazaY
+	
+	# Titulo1
+	LoTblTitulo<<property_list.new_with_properties(:ren,{6},
+						       :col,{50})
+	LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_titulo)
+	LoTbl.ocoordenada_origen << .o_coord_inicio
+	_self.asigna_medidas_tabla(LoTbl, LoTblTitulo)
+	
+	# Titulo2
+	LoTblTitulo2<<property_list.new_with_properties(:ren,{6},
+							:col,{11,9,30})
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo})
+	LoTbl2<<.o_tablas.crea_tabla(1,3,:tbl_titulo2)
+	LoTbl2.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,
+						     .o_coord_inicio.y - LfDesplazaY)
+	_self.asigna_medidas_tabla(LoTbl2, LoTblTitulo2)
+	
+	# Contenido
+	LoTblContenido << property_list.new_with_properties(:ren,{6,6,6,6,6,6,6,6,6,6,6,6,7,6,6},
+							    :col,{11,9,30})
+	LfDesplazaY << LfDesplazaY+.o_tablas.longitud_total_renglones({:tbl_titulo2})
+	
+	LoTbl <<.o_tablas.crea_tabla(15,3, :tbl_contenido)
+	
+	LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,
+						    .o_coord_inicio.y - LfDesplazaY)
+	_self.asigna_medidas_tabla(LoTbl, LoTblContenido)
+	
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_competencia_tvpaga.etiqueta_celdas()
+	
+	_self.asigna_texto_celda(:tbl_titulo,1,1,"LINEAS COMP. Y T.V. DE PAGA",
+				 25, :centre_centre,0,{0.0,0.2993,0.0})	
+	_self.asigna_texto_celda(:tbl_titulo2,1,1,"SIMBOLO",
+				 20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_titulo2,1,2,"LINEAS",
+				 20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_titulo2,1,3,"TIPO",
+				 20,:centre_centre,0,{0.0,0.2993,0.0})
+	
+	# (11/09/29 lgranados) : Se oculta el renglon donde aparecen
+	# los datos de las lineas de cobre.
+	_self.asigna_simbolo_celda(:tbl_contenido,1,1,"p_predio_deshabitado",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,2,1,"p_tv_satelital",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,3,1,"p_tv_dish",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,4,1,"p_tv_por_cable",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,5,1,"p_operteles",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,6,1,"p_operteles_inalambrica",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,7,1,"p_telmex_inalambrica",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,8,1,"p_telpub_compet",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,9,1,"p_caseta_ladafon",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,10,1,"p_caseta_ladatel",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,11,1,"p_solicitud",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,12,1,"p_telmex_inf",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,13,1,"p_telefono_pslt",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,14,1,"p_fo_telmex",1)
+	_self.asigna_simbolo_celda(:tbl_contenido,15,1,"p_fo_competencia",1)
+
+	_self.asigna_texto_celda(:tbl_contenido,1,3,"PREDIO DESHABITADO",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,2,3,"TELEVISION SATELITAL",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,3,3,"TELEVISION SATELITAL",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,4,3,"TELEVISION/CABLE",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,5,3,"OPERTELES",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,6,3,"INALAMBRICA OPERTELES",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,7,3,"INALAMBRICA TELMEX",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,8,3,"TEL/PUB COMPET.",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,9,3,"CASETA LADAFON",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,10,3,"CASETA LADATEL",20,:centre_centre,0,{0,0.2953,0})
+	_self.asigna_texto_celda(:tbl_contenido,11,3,"SOLICITUD",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,12,3,"INFINITUM",20,:centre_centre,0,{0.0,0.2993,0.0})
+	lo_texto  << "LINEA DE TELEFONO DE TIPO" + character.newLine + "RESIDENCIAL (PSLT)"
+	_self.asigna_texto_celda(:tbl_contenido,13,3,lo_texto,20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,14,3,"FIBRA TELMEX",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,15,3,"FIBRA COMPETENCIA",20,:centre_centre,0,{0.0,0.2993,0.0})
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_competencia_tvpaga.llena_datos_celdas()
+	## 
+	##
+	_if _self.elementos_bd_lb _isnt _unset _andif
+	    _self.elementos_bd_lb.size > 0
+	_then
+		.oDtoOptico << _self.obtener_elementos_bd_landbase()[1]
+	_endif
+	valores << _self.calcula_datos()
+	_self.asigna_texto_celda(:tbl_contenido,1,2,"",20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,2,2,valores[:tv_satelital],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,3,2,valores[:tv_dish],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,4,2,valores[:tv_cable],20,:centre_centre,0,{0.0,0.2993,0.0})	
+	_self.asigna_texto_celda(:tbl_contenido,5,2,valores[:lineas_competencia_cobre],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,6,2,valores[:lineas_competencia_inalambrica],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,7,2,valores[:lineas_inalambricas],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,8,2,valores[:telefono_publico_competencia],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,9,2,valores[:lineas_ladafon],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,10,2,valores[:lineas_ladatel],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,11,2,valores[:solicitudes],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,12,2,valores[:infinitum],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,13,2,valores[:lineas_pslt],20,:centre_centre,0,{0.0,0.2993,0.0})
+        _self.asigna_texto_celda(:tbl_contenido,14,2,valores[:fibra_telmex],20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_contenido,15,2,valores[:fibra_competencia],20,:centre_centre,0,{0.0,0.2993,0.0})
+	
+_endmethod
+$

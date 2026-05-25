@@ -1,0 +1,81 @@
+#----------------------------------------------------------------
+# c_titulo_de_plano.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rbsaldan
+#
+# Date: 05/05/18
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+
+#remex(:c_titulo_de_plano)
+$
+
+def_slotted_exemplar(:c_titulo_de_plano,
+		     {
+			     {:oBoundContenedor,_unset,:writable,:private},
+			     {:sEscala, _unset, :writable}
+		     },:textbox_layout)
+$
+c_titulo_de_plano.define_shared_constant(:activate_properties_dialog_on_insert?,
+					 _false,
+					 :public)
+
+c_titulo_de_plano.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_titulo_de_plano.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from(_super.defined_attributes)	
+	>> attribs
+_endmethod
+$
+
+c_titulo_de_plano.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_titulo_de_plano.oBoundContenedor<<PoBoundingBox
+	## 
+	##
+	write("PoBoundingBox--- ",PoBoundingBox.ap(:cor) )
+	_if PoBoundingBox.is_kind_of?(bounding_box)
+	_then
+		.oBoundContenedor<<PoBoundingBox
+	_else
+		.oBoundContenedor<<_unset
+	_endif
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_titulo_de_plano.draw_content_on(window)
+	## 
+	##
+_local LoBound
+
+
+	_if .oBoundContenedor _isnt _unset 
+	_then
+		LoBound<<bounding_box.new(_self.oBoundContenedor.xmax-400-_self.bounds.width,
+					  _self.oBoundContenedor.ymin+400,
+					  _self.oBoundContenedor.xmax-400,
+					  _self.oBoundContenedor.ymin+400+_self.bounds.height)
+		_self.bounds<<LoBound
+	_endif
+
+	
+	_super.draw_content_on(window)
+
+	
+_endmethod
+$
+

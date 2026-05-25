@@ -1,0 +1,80 @@
+
+#  Nombre de la Empresa: Sigma Tao
+#  Traza: El presente código fuente procede de la realización
+# de caso de uso "Generacion de planos (Planos de detalle)"
+#          
+#  Objetivo: Generación de Margen  de planos de larguillos.
+#  Autor: hramirea
+#  Fecha de creación: Feb-2004
+#
+_package user
+$
+#remex(:c_margen_layout)
+$
+def_slotted_exemplar(:c_margen_layout,
+                     {  },:layout_element)
+$
+c_margen_layout.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_method c_margen_layout.defined_attributes
+#  Objetivo: Se definiewn atributos para el plano de detalles.
+#  Parámetros de entrada:  Ninguno.                                    
+#  Parámetros de salida:   Ninguno.                                    
+#  Regresa:  vector  -  LoAtributos  - Atributos el layout element que se agregan a la definicion del elemento. 
+# Fecha de última modificación: 23 febrero 2005
+# Autor de la modificación hramirea
+# Descripción de la modificación: Nuevo.
+#
+_Local LvAtributos
+	
+LvAtributos << rope.new_from(_super.defined_attributes)	
+>> LvAtributos
+_endmethod
+$
+c_margen_layout.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_margen_layout.initialise_for_page(a_layout_page)	
+	##
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_margen_layout.draw_content_on ( window )
+
+	
+	(LbBandera, LoElemento) << c_larguillos_layout.busca_elemento(_self.layout_page,"marco_layout")
+
+         _if LbBandera
+	 _then
+		 
+		 _self.margen(window)	
+	
+	 _endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_margen_layout.margen(PoWindow)
+	## 
+	##
+	LoBounds << _self.layout_page.bounds
+
+	LoP1 << coordinate( LoBounds.xmin  + 250,  LoBounds.ymin + 100)	
+	LoP2 << coordinate( LoBounds.xmin  + 250,  LoBounds.ymax - 250 )
+	LoP3 << coordinate( LoBounds.xmax -   100,  LoBounds.ymin + 100 )	
+	LoP4 << coordinate( LoBounds.xmax -   100 , LoBounds.ymax - 250 )
+	
+	LvSec << sector.new_with ( LoP1, LoP2 )
+	lvSec.draw_on ( PoWindow, line_style.called(:black))
+	lvSec << sector.new_with ( LoP1, LoP3 )
+	lvSec.draw_on ( PoWindow, line_style.called(:black))
+	LvSec << sector.new_with ( LoP3, LoP4 )
+	LvSec.draw_on ( PoWindow, line_style.called(:black))
+	lvSec << sector.new_with ( LoP2, LoP4 )
+	LvSec.draw_on ( PoWindow, line_style.called(:black))
+
+	
+_endmethod
+$

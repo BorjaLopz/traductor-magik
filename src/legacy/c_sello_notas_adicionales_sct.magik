@@ -1,0 +1,247 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza:               Planos
+# Objetivo:            Genera las notas adicionales para permisos de la SCT
+# Autor:               Viridiana Baltazar
+# Fecha de creacion:   03-Enero-2006
+
+_package user
+#remex(:c_sello_notas_adicionales_sct)
+$
+
+def_slotted_exemplar(:c_sello_notas_adicionales_sct, {
+	{:oTablas,          _unset },  # Almacena la coleccion de tablas que componen el sello
+	{:oCoordOrigen,     _unset },  # Coord donde inicia el sello	
+        {:oWindow,          _unset },  # Ventana o canvas en el que se desplegara en el sello
+	{:bTablas_creadas,  _unset },  # Indica si las tabals ya fueron creadas
+	{:oTipoMaterial,    _unset },  # Almacena los tipos de materiales
+	{:oTipoTrabajo,     _unset },  # Almacena los tipos de trabajo
+	{:oTipoCable,       _unset }   # Almacena los tipos de cable
+}, :layout_element )
+$
+
+c_sello_notas_adicionales_sct.define_shared_constant(:allowed_on_menu?, _false  , :public)
+$
+
+c_sello_notas_adicionales_sct.define_slot_access(:oTablas,         :writable, :public)
+c_sello_notas_adicionales_sct.define_slot_access(:oCoordOrigen,    :writable, :public)
+c_sello_notas_adicionales_sct.define_slot_access(:oWindow,         :writable, :public)
+c_sello_notas_adicionales_sct.define_slot_access(:bTablas_creadas, :writable, :public)
+c_sello_notas_adicionales_sct.define_slot_access(:oTipoMaterial,   :writable, :public)
+c_sello_notas_adicionales_sct.define_slot_access(:oTipoTrabajo,    :writable, :public)
+c_sello_notas_adicionales_sct.define_slot_access(:oTipoCable,      :writable, :public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_adicionales_sct.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+	
+	_for attrib _over attribs.fast_elements()
+	_loop
+		attrib.allowed_on_properties_page? << _false
+	_endloop
+	
+	attribs.add(layout_attribute_definition.new(:Tipo_Material, :string,
+						    :description, "Tipo de Material",
+                                                    :enum_method, :enum_tipo_material))
+	attribs.add(layout_attribute_definition.new(:Tipo_Trabajo, :string,
+						    :description, "Tipo de Trabajo",
+                                                    :enum_method, :enum_tipo_trabajo))
+	attribs.add(layout_attribute_definition.new(:Tipo_Cable, :string,
+						    :description, "Tipo de Cable",			    
+                                                    :enum_method, :enum_tipo_cable))
+	>> attribs
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_adicionales_sct.enum_tipo_material
+
+	.oTipoMaterial << hash_table.new()
+	.oTipoMaterial[1] << "POSTERIA"
+	.oTipoMaterial[2] << "FLEXODUCTO"
+	.oTipoMaterial[3] << "TUBO DE PVC"
+	.oTipoMaterial[4] << "TUBO NEGRO"
+	.oTipoMaterial[5] << "CANALETA"
+	_return .oTipoMaterial
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_adicionales_sct.enum_tipo_trabajo
+
+	.oTipoTrabajo << hash_table.new()
+	.oTipoTrabajo[1] << "CRUZAMIENTO AÉREO"
+	.oTipoTrabajo[2] << "CRUZAMIENTO SUBTERRÁNEO"
+	.oTipoTrabajo[3] << "CRUZAMIENTO SUBTERRÁNEO BAJO PUENTE"
+	.oTipoTrabajo[4] << "INSTALACION LATERAL EN PUENTE"
+	.oTipoTrabajo[5] << "INSTALACION LATERAL EN PUENTE CON TUBO NEGRO"
+	.oTipoTrabajo[6] << "INSTALACION MARGINAL AÉREA"
+	.oTipoTrabajo[7] << "INSTALACION MARGINAL SUBTERRÁNEA"
+	_return .oTipoTrabajo
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_adicionales_sct.enum_tipo_cable
+
+	.oTipoCable << hash_table.new()
+	.oTipoCable[1] << "FIBRAS ÓPTICAS"
+	.oTipoCable[2] << "COBRE"
+	_return .oTipoCable
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+c_sello_notas_adicionales_sct.define_attributes()
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_adicionales_sct.draw_content_on ( window )
+	
+	_self.prvAsignaTexto()
+	_self.oWindow << window
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << .oTablas.area_total()
+        _self.oTablas.Despliega(window)
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_notas_adicionales_sct.post_initialisation()
+	
+        _self.inicializa(coordinate.new(0,0))	
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_adicionales_sct.Agrega_LYM(RoLym)
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_adicionales_sct.Inicializa(_optional RoCoord)
+
+	_local LoArea # Area que ocupan todas la tablas
+
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord	
+
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	# Crea y configura cada una de las tablas 
+	_self.prvCrea_Cfg_Tabla(RoCoord)
+
+	# Se conoce el area de la tabla dibujada
+	LoArea << _self.oTablas.area_total()
+
+	# Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	# Crea a los objetos que tendra c/u de las tablas
+	_self.prvLlena_Celdas()
+	
+	# Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_adicionales_sct.prvCrea_Cfg_Tabla(RoCoord)
+
+	_local LoTblTitulo # Tabla que almacena el título de la tabla
+
+	LoTblTitulo << _self.oTablas.crea_tabla(2,1,:tbl_notas_adic)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# Longitud de los renglones de la tabla, esta dada en mm 
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 50
+
+	# Longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 160
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_adicionales_sct.prvLlena_Celdas()
+
+	# Tamaño de la letra en cada una de los objetos
+        _local LoTitulo      << c_texto_grafico.new("NOTAS ADICIONALES SCT")
+        _local LoDescripcion << c_texto_grafico.new("")
+
+	LoTitulo.nTamanio      << 50
+	LoDescripcion.nTamanio << 30
+	LoDescripcion.sALineacion << :top_left
+
+	# Asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_notas_adic).oCeldas.Celda(1,1).oElemento << LoTitulo
+	_self.oTablas.elemento(:tbl_notas_adic).oCeldas.Celda(2,1).oElemento << LoDescripcion	
+
+	_self.prvAsignaTexto()
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_adicionales_sct.prvAsignaTexto()
+
+   _local LsPrefijo    << " ESTE "
+   _local LsPrefijoMat << " INSTALADO EL "
+   _local ls_trabajo   << _self.Tipo_Trabajo.write_string
+   _local ls_material  << _self.Tipo_Material.write_string
+   _local ls_cable     << _self.Tipo_Cable.write_string
+
+   _if ls_trabajo = "INSTALACION LATERAL EN PUENTE" _orif ls_trabajo = "INSTALACION LATERAL EN PUENTE CON TUBO NEGRO" _orif ls_trabajo = "INSTALACION MARGINAL AÉREA" _orif ls_trabajo = "INSTALACION MARGINAL SUBTERRÁNEA"
+   _then
+	   LsPrefijo << " ESTA "
+   _endif	
+
+   _if ls_material = "POSTERIA" _orif ls_material = "CANALETA"
+   _then
+	   LsPrefijoMat << " INSTALADA LA "
+   _endif
+
+_local LsTexto <<  character.newLine
+       LsTexto +<< " TELÉFONOS DE MÉXICO, S.A. DE C.V. DEBERÁ EXHIBIR EL PROGRAMA DE OBRA ANTES DE INICIAR "
+       LsTexto +<< character.newLine
+       LsTexto +<< " LOS TRABAJOS PARA LA CONSTRUCCIÓN DE" + LsPrefijo + ls_trabajo
+       LsTexto +<< character.newLine
+       LsTexto +<< " CON CABLE DE "+ ls_cable + " DENTRO DEL DERECHO DE VÍA, INCLUYENDO EL RETIRO "
+       LsTexto +<< character.newLine
+       LsTexto +<< " DEL MATERIAL SOBRANTE Y PRODUCTO DE LA EXCAVACIÓN PARA "+ LsPrefijo 
+       LsTexto +<< character.newLine
+       LsTexto +<< ls_trabajo + "."
+       LsTexto +<< character.newLine + character.newLine
+       LsTexto +<< " TELÉFONOS DE MÉXICO, S.A. DE C.V. SE HA COMPROMETIDO A ENTREGAR UNA VEZ TERMINADA"
+       LsTexto +<< character.newLine
+       LsTexto +<< " LA OBRA EL PLANO 'AS BUILT' O PLANO DEFINITIVO, EN EL CUAL SE INDIQUE DONDE Y COMO"
+       LsTexto +<< character.newLine
+       LsTexto +<< " FUE "+LsPrefijoMat+ls_material+" CON CABLE DE "+ls_cable
+       LsTexto +<< " DICHO PLANO DEBERA CONTENER"
+       LsTexto +<< character.newLine       
+       LsTexto +<< " LA SEÑALIZACIÓN QUE INDIQUE A QUE DISTANCIA SE ENCUENTRA EL CABLE DE "+ls_cable
+       LsTexto +<< character.newLine
+       LsTexto +<< " INSTALADO A PARTIR DEL LIMITE DEL DERECHO DE VIA O DEL EJE CENTRAL DE LA CARRETERA"
+
+_self.oTablas.elemento(:tbl_notas_adic).oCeldas.Celda(2,1).oElemento.sTexto << LsTexto
+	
+_endmethod
+$

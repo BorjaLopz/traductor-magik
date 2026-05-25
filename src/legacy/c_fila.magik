@@ -1,0 +1,119 @@
+_package user
+$
+def_slotted_exemplar(:c_fila,
+                      {
+                         {:nLongitud, _unSet} # Longitud de la fila
+                      }
+)
+
+$
+c_fila.define_slot_access(:nLongitud, :writable, :private)
+$
+_pragma(classify_level=restricted)
+_method c_fila.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_fila.new(RnLongitud)
+## Objetivo: Permite crear una nueva instancia
+## Parámetros de entrada: 
+## 	Entero - RnLongitud : Numero de filas
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_fila - Una nueva instancia de la clase
+## Fecha de última modificación : 3 / Noviemnre / 2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación : Creación
+	
+	.nLongitud << RnLongitud 
+	_return _clone
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_fila.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_fila.nLongitud
+## Objetivo: retornar en valor del slot nLongitud
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Entero - nLongitud : Longitud de la fila
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .nLongitud
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_fila.nLongitud << RnValor
+## Objetivo: Asignar un valor permitido al slot nLongitud
+## Parámetros de entrada:
+## 	Entero - RnValor : Longitud de la fila
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	# Se valida que la longitud no sea negativa
+	_if RnValor < 0
+	_then
+	   condition.raise(:warning, :string, "Longitud no puede ser menor que cero")	
+	_endif
+	
+	# Se almacena el valor de la longitud
+	.nLongitud << RnValor * 10
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_fila.serial_slots()
+
+	_local ln_long
+
+	_try
+		ln_long << .nLongitud/10
+	_when does_not_understand
+		ln_long << 0
+	_endtry
+	
+	keys << rope.new_with(:nLongitud)
+	values << rope.new_with(ln_long)
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_fila.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$

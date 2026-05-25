@@ -1,0 +1,225 @@
+_package user
+$
+def_slotted_exemplar(:c_tabla_georeferencia,
+                      {
+	                 {:oDtoOptico,_unset,:writable},
+			 {:oCedo,_unset,:writable},
+	                 {:oRenglones,1,:writable},
+			 {:oDatosSello,_unset,:writable}
+                      }, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_georeferencia.configura_tabla()
+	#----------------------------------------------------------
+	# Tabla Datos
+	#-----------------------------------------------------------
+        lo_tabla << .o_tablas.crea_tabla(.oRenglones,3, :tbl_datos)
+	lo_tabla.oCoordenada_Origen << coordinate.new( .o_coord_inicio.x,
+						       .o_coord_inicio.y)
+	_for nRen _over range(1,.oRenglones)
+	_loop
+		lo_tabla.orenglones.elemento(nRen).nlongitud<< 6
+	_endloop
+	lo_tabla.ocolumnas.elemento(1).nlongitud << 8
+	lo_tabla.ocolumnas.elemento(2).nlongitud << 6
+	lo_tabla.ocolumnas.elemento(3).nlongitud << 11
+	lo_tabla.color_linea << rope.new_with(0.2,0.6,0)	
+
+	#----------------------------------------------------------
+	# Tabla Coordenadas
+	#-----------------------------------------------------------
+	ln_desp_x << .o_tablas.longitud_total_columnas({:tbl_datos})
+        lo_tabla << .o_tablas.crea_tabla( .oRenglones * 2,3, :tbl_coord )
+	lo_tabla.oCoordenada_Origen << coordinate.new( .o_coord_inicio.x + ln_desp_x,
+						       .o_coord_inicio.y)
+	_for nRen _over range(1,.oRenglones*2)
+	_loop
+		lo_tabla.orenglones.elemento(nRen).nlongitud<< 3
+	_endloop
+	lo_tabla.ocolumnas.elemento(1).nlongitud << 3	
+	lo_tabla.ocolumnas.elemento(2).nlongitud<< 8
+	lo_tabla.ocolumnas.elemento(3).nlongitud<< 14
+	lo_tabla.color_linea << rope.new_with(0.2,0.6,0)
+
+	_self.etiqueta_celdas()
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_georeferencia.coordenada_ubicacion_terminal(PoTerminal)
+	## Objetivo: Encontrar la coordenada de la ubicacion de la
+	## terminal optica de distribucion, considera que una terminal
+	## puede estar dentro del edificio del cliente
+	## PoTerminal: user!_terminal_fo
+	## autor: rraragon 13/09/2011
+	
+	_local l_terminal << PoTerminal
+	_local l_str << l_terminal.get_structure()
+	
+	a_geom << l_str.perform(l_str.primary_geometry) # Buscamos por la geometria primaria de la estructura
+	
+	_if a_geom _is _unset _andif l_str.responds_to?(:inside_location)
+	_then
+		# Buscamos por la geometria interna
+		a_geom << l_str.inside_location
+	_endif
+	
+	# Verificamos si la geometria de la structura esta en un edificio
+	_if a_geom.world.world_id <> 0 _andif a_geom.world.owner.user!_building _isnt _unset 
+	_then		
+		a_geom << a_geom.world.owner.user!_building.location
+	_endif
+	
+	_return a_geom.coord
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_georeferencia.defined_attributes
+	## 
+	## 
+	_local LcollAtributos
+
+	LcollAtributos << rope.new_from(_super.defined_attributes)
+
+	LcollAtributos.add(layout_attribute_definition.new(:LiteralTerminal, :character,
+							   :description, "Literal Terminal",
+							   :default_value, _unset,
+							   :allowed_on_properties_page?, _false,
+							   :editor, _unset))
+
+	LcollAtributos.add(layout_attribute_definition.new(:zona_utm, :string,
+							   :description, "Zona UTM Lista",
+							   :default_value, "",
+							   :allowed_on_properties_page?, _true,
+							   :enum_method, :zona_utm,
+							   :editor, _unset))
+	
+	LcollAtributos.add(layout_attribute_definition.new(:zutm, :string,
+							   :description, "Zona UTM",
+							   :default_value, _unset,
+							   :allowed_on_properties_page?, _false,
+							   :editor, _unset))
+	
+	_return LcollAtributos
+_endmethod
+$
+
+c_tabla_georeferencia.define_attributes()
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_georeferencia.etiqueta_celdas()
+	## 
+	##
+	_for iterRenglones _over range(1,.oRenglones*2,2)
+	_loop
+		_self.asigna_texto_celda(:tbl_coord, iterRenglones, 1, "X", 19 ,_unset,_unset, {0.4,0.2,0})
+		_self.asigna_texto_celda(:tbl_coord, iterRenglones+1, 1, "Y", 19 ,_unset,_unset, {0.4,0.2,0})				
+	_endloop
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_georeferencia.llena_datos_celdas()
+	## 
+	##
+	_if _self.elementos_bd_lb _isnt _unset _andif
+	    _self.elementos_bd_lb.size > 0
+	_then
+		.oDtoOptico << _self.obtener_elementos_bd_landbase()[1]
+	_endif
+
+	_if _self.elementos_bd_gis _isnt _unset _andif
+	    _self.elementos_bd_gis.size > 0
+	_then
+		.oCedo << _self.obtener_elementos_bd_gis()[1]
+	_endif
+	
+	_self.obtener_informacion()
+
+	_local LoCont << 1
+	_for iterRengDatos _over .oDatosSello.elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_datos,LoCont,1,iterRengDatos[:nombre],21,_unset,_unset,{0.2,0.6,0})
+		_self.asigna_texto_celda(:tbl_datos,LoCont,2,iterRengDatos[:estado],21,_unset,_unset,{0.2,0.6,0})
+		_self.asigna_texto_celda(:tbl_datos,LoCont,3,iterRengDatos[:distancia],21,_unset,_unset,{0.2,0.6,0})
+		_self.asigna_texto_celda(:tbl_coord,((LoCont-1)*2)+1,3,iterRengDatos[:xUTM],18,_unset,_unset,{0.2,0.6,0})
+		_self.asigna_texto_celda(:tbl_coord,((LoCont-1)*2)+2,3,iterRengDatos[:yUTM],18,_unset,_unset,{0.2,0.6,0})
+		_self.asigna_texto_celda(:tbl_coord,((LoCont-1)*2)+1,2,iterRengDatos[:xGEO],18,_unset,_unset,{0.2,0.6,0})
+		_self.asigna_texto_celda(:tbl_coord,((LoCont-1)*2)+2,2,iterRengDatos[:yGEO],18,_unset,_unset,{0.2,0.6,0})
+		
+		LoCont +<< 1
+	_endloop
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_georeferencia.obtener_informacion()
+	## 
+	##
+	_dynamic !current_coordinate_system!
+	!current_coordinate_system!<<_unset
+	
+	loTerminales << .oCedo.obten_terminales_atendidas()
+	.oDatosSello << rope.new()
+	_for iterTerminal _over LoTerminales.elements()
+	_loop
+		_if iterTerminal.user!_nombre.numbers_and_strings[1].last = _self.attributes[:LiteralTerminal].value
+		_then
+			LoRenglon << property_list.new()
+			
+			LoRenglon[:nombre] << iterTerminal.user!_nombre
+			Loval << iterTerminal.field(:user!_estado_terminal).type.enumerator.
+				 map_record_for_visible_value(iterTerminal.user!_estado_terminal).stored_val
+			LoRenglon[:estado] << Loval
+			#LoRenglon[:distancia] << iterTerminal.user!_dist_optica_emp_dist.default("0.0").as_number().write_string_normal(1)
+			_if iterTerminal.user!_dist_optica_emp_dist _is _unset 
+			_then
+				LoRenglon[:distancia] << "0.0"
+			_else
+				# (vbluna-16/ago/2012)
+				LoRenglon[:distancia] << iterTerminal.display_value(:user!_distancia_cal_emp_dist).value.write_string_normal(1)
+				# ----
+			_endif
+
+			LoCs << sw:c_coord_system_engine.new(smallworld_product.pni_application())
+			
+			LoCoordenada << _self.coordenada_ubicacion_terminal(iterTerminal)
+			LoGeo <<LoCs.get_coord_as_geograficas(LoCoordenada)
+			LoRenglon[:xGEO] << LoGeo.x.as_fixed_string(10,4)
+			LoRenglon[:yGEO] << LoGeo.y.as_fixed_string(10,4)
+
+			_if _self.attributes[:zona_utm].value.class_name _is :rope
+			_then
+				LsUtm << _self.attributes[:zutm].value				
+			_else
+				LsUtm << _self.attributes[:zona_utm].value
+				_self.attributes[:zutm].value << _self.attributes[:zona_utm].value
+			_endif
+			
+			_if  LsUtm <> "" _andif
+			     LsUtm <> _unset
+			_then
+				LoTransf<<LoCs.get_transform_from_cs_to_cs("conic","utm"+LsUtm,:gis)
+				LoCoordUtm<<LoCoordenada.transformed(LoTransf)
+
+				LoRenglon[:xUTM] << LoCoordUtm.x.as_fixed_string(10,2)
+				LoRenglon[:yUTM] << LoCoordUtm.y.as_fixed_string(10,2)
+			_else
+				LoRenglon[:xUTM] << ""
+				LoRenglon[:yUTM] << ""
+			_endif
+			
+			.oDatosSello.add(LoRenglon)
+		_endif
+	_endloop
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_georeferencia.zona_utm
+	## 
+	##
+	_local LcollZonasUtm
+
+	LcollZonasUtm<<rope.new_with("11","12","13","14","15","16")
+       
+	_return LcollZonasUtm
+_endmethod
+$

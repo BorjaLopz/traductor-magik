@@ -1,0 +1,1028 @@
+_package user
+$
+def_slotted_exemplar(:c_construccion_microcanalizacion,
+    {
+            {:oLayout,         _unset, :writable}, # Objeto layout_element
+	    {:otablas,         _unset, :writable}, # Objeto que contiene a las tablas
+	    {:oCoordOrigen,    _unset, :writable}, # Coord donde inicia el sello
+	    {:oWindow,         _unset, :writable}, # Ventana o canvas en el que se desplegara el sello
+	    {:bTablas_Creadas, _false, :writable}, # Indica si las tabals ya fueron creadas
+	    {:lst_celdas_color,_false, :writable}, # Celdas que cambian en color
+	    {:b_blanco_negro?, _false, :writable} # Indica si los datos del sello van en color
+    }
+)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_cajas_dist(col_cajas)	
+
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 30
+	LoTexto.sEstilo << "Bold"
+
+	LoTxt_Sen << c_texto_grafico.new_from(LoTexto, col_cajas[:|CD700-80PS DESPLA|].write_string)
+	LoTxt_Sen.nMargen_Inf << 5
+	LoTxt_Dbl << c_texto_grafico.new_from(LoTexto, col_cajas[:|CD 1400-1600 DESP|].write_string)
+	LoTxt_Dbl.nMargen_Inf << 5	
+
+	.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(2,17).oElemento << LoTxt_Dbl
+	.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(2,18).oElemento << LoTxt_Sen
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_longitudes(col_obra,col_superficie,col_resumen_long)
+
+	_local ln_col_ban_ini
+	_local ln_col_arr_ini
+	_local ln_ren_ini << 3
+	_local ln_longitud
+
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 15
+	LoTexto.sEstilo << "Bold"
+	
+	_for key_obra _over col_obra.keys()
+	_loop
+		ln_col_ban_ini << 2
+		ln_col_arr_ini << 8
+
+		_for key_sup _over col_superficie.keys()
+		_loop
+			_if ln_ren_ini = 10
+			_then
+				_leave
+			_endif
+			
+			ln_longitud << col_resumen_long[key_obra, key_sup[1] + "_" + key_sup[2]]
+
+			LoTexto << c_texto_grafico.new_from(LoTexto, ln_longitud.write_string)
+
+			LoCeldas << .oTablas.elemento(:tbl_Tipo_Obra).oCeldas
+		
+			_if key_sup[1] = :|BANQUETA|
+			_then
+				LoCeldas.Celda(ln_ren_ini,ln_col_ban_ini).oElemento << LoTexto
+				ln_col_ban_ini << ln_col_ban_ini + 1
+			_elif key_sup[1] = :|ARROYO|
+			_then
+				LoCeldas.Celda(ln_ren_ini,ln_col_arr_ini).oElemento << LoTexto
+				ln_col_arr_ini << ln_col_arr_ini + 1
+			_elif key_sup[1] = :|OTROS|
+			_then
+				_if key_sup[2] = :|Total|
+				_then
+					LoCeldas.Celda(ln_ren_ini,14).oElemento << LoTexto	
+				_elif key_sup[2] = :|Cepa_Hecha|
+				_then
+					LoCeldas.Celda(ln_ren_ini,15).oElemento << LoTexto	
+				_elif key_sup[2] = :|Tubos_Adic|
+				_then
+					LoCeldas.Celda(ln_ren_ini,16).oElemento << LoTexto	
+				_elif key_sup[2] = :|Mts_Via|
+				_then
+					LoCeldas.Celda(ln_ren_ini,17).oElemento << LoTexto	
+				_endif
+			_endif
+		_endloop
+		ln_ren_ini +<< 1
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_pozos(col_pozos)
+
+	# Se corrige la ubicación en que aparecen los pozos en los
+	# cuadros del sello (Arroyo-Banqueta).
+	
+	_local LnCol_Arr_Ini << 1
+	_local LnCol_Ban_Ini << 9
+
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 20
+	LoTexto.sEstilo << "Bold"
+
+	_for key, num_pozos _over col_pozos.keys_and_elements()
+	_loop
+		_if key[1] = :|BANQUETA|
+		_then
+			LoTxt << c_texto_grafico.new_from(LoTexto, key[2].write_string)
+			.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(1,LnCol_Ban_Ini).oElemento << LoTxt
+
+			LoTxt << c_texto_grafico.new_from(LoTexto, num_pozos.write_string)
+			.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(2,LnCol_Ban_Ini).oElemento << LoTxt
+			LnCol_Ban_Ini << LnCol_Ban_Ini + 1			
+		_elif key[1] = :|ARROYO|
+		_then
+			LoTxt << c_texto_grafico.new_from(LoTexto, key[2].write_string)
+			.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(1,LnCol_Arr_Ini).oElemento << LoTxt
+
+			LoTxt << c_texto_grafico.new_from(LoTexto, num_pozos.write_string)		
+			.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(2,LnCol_Arr_Ini).oElemento << LoTxt
+			LnCol_Arr_Ini << LnCol_Arr_Ini + 1			
+		_endif
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_tipos_obra(col_Tipos_Obra)
+
+	_local LnRen_Ini << 3
+
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 20
+	LoTexto.sEstilo << "Bold"
+	
+	_for LoKey _over col_Tipos_Obra.keys()
+	_loop
+		_if LnRen_Ini = 10
+		_then
+			_leave
+		_endif
+
+		LoTexto << c_texto_grafico.new_from(LoTexto, LoKey.write_string)
+		.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(LnRen_Ini,1).oElemento << LoTexto
+		LnRen_Ini +<< 1
+		
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_tipos_superficie(col_Tipos_Sup)
+	
+	_local LnCol_Ban_Ini << 2
+	_local LnCol_Arr_Ini << 8
+
+	_local LsTipo_Sup
+
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 15
+	LoTexto.sEstilo << "Bold"
+
+	_for LoKey _over col_Tipos_Sup.keys()
+	_loop
+		LsTipo_Sup << c_Traductor.tipo_superficie(LoKey[2])
+		LoTxt << c_texto_grafico.new_from(LoTexto, LsTipo_Sup.write_string)
+		
+		_if LoKey[1] = :|BANQUETA|
+		_then
+			.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(2,LnCol_Ban_Ini).oElemento << LoTxt
+			LnCol_Ban_Ini << LnCol_Ban_Ini + 1			
+		_elif LoKey[1] = :|ARROYO|
+		_then
+			.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(2,LnCol_Arr_Ini).oElemento << LoTxt
+			LnCol_Arr_Ini << LnCol_Arr_Ini + 1
+		_endif
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_totales_ruta(p_ruta)
+
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 20
+	LoTexto.sEstilo << "Bold"
+
+	_local mts_lineales << p_ruta.total_metros_lineales.write_string
+	_local mts_via << p_ruta.total_metros_via.write_string
+	
+	LoTxt << c_texto_grafico.new_from(LoTexto, mts_lineales)
+	.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(3,4).oElemento << LoTxt	
+
+	LoTxt << c_texto_grafico.new_from(LoTexto, mts_via)
+	.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(4,4).oElemento << LoTxt	
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_totales_tramo(p_tramo)
+
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 20
+	LoTexto.sEstilo << "Bold"
+
+	LoTxt << c_texto_grafico.new_from(LoTexto, p_tramo.total_metros_lineales)
+	.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(10,14).oElemento << LoTxt
+	.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(1,4).oElemento << LoTxt	
+
+	LoTxt << c_texto_grafico.new_from(LoTexto, p_tramo.total_metros_via)
+	.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(10,17).oElemento << LoTxt
+	.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(2,4).oElemento << LoTxt	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.blanco_negro << valor
+
+	.b_blanco_negro? << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.celdas_color << celdas_col
+
+	.lst_celdas_color << celdas_col
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.configura_color_sello()
+
+	_local lo_color
+	
+	_if .b_blanco_negro?
+	_then
+		lo_color << colour.new_rgb(0.0, 0.0, 0.0)
+	_else
+		lo_color << colour.new_rgb(1.0, 0.0, 0.0)
+	_endif
+
+	_for celda_color _over .lst_celdas_color.fast_elements()
+	_loop
+		nombre_tabla << celda_color[1]
+		num_renglon  << celda_color[2]
+		num_columna  << celda_color[3]
+
+		celda << .oTablas.elemento(nombre_tabla).oCeldas.Celda(num_renglon,num_columna)
+
+		_if (texto << celda.oElemento) _isnt _unset
+		_then
+			texto.sColor << lo_color
+		_endif
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.Despliega(window)
+
+	.oWindow << window
+	_self.configura_color_sello()
+        .oTablas.Despliega(window)	
+	 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.inicializa(_optional RoCoord)
+
+	#-----------------------------------------------------------
+	#Se Inicializa la coordenada de origen
+	#-----------------------------------------------------------
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	.oCoordOrigen << RoCoord
+	
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	.oTablas << c_tablas.new( .oLayout)
+
+	#Crea y configura cada una de las tablas 
+	_self.prvCreaCfgTablas(RoCoord)
+
+	#Se conoce el area de la tabla dibujada
+        LoArea << .oTablas.area_total()
+
+	#Crea a los objetos que tendra c/u de las tablas
+	_self.prvLlenaEtiquetas()
+
+	#Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+
+	#Asignar las celdas en las que se configura el color
+	.lst_celdas_color << _self.asigna_celdas_a_colorear()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.init(RoLayout, RoCoord)
+
+	.oLayout << RoLayout 
+        _self.inicializa(RoCoord)
+	_return _self 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.new(RoLayout, RoCoord)
+
+	_return _clone.init(RoLayout, RoCoord)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.oLayout
+
+	>> .oLayout
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.oLayout << layout
+
+	.oLayout << layout
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.otablas << p_tablas
+
+	.otablas << p_tablas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_construccion_microcanalizacion.prvCreaCfgTablas(RoCoord)
+
+	
+_local LoTabla     # Objeto tabla a utilizarse
+_local LnRenglones # Numero de renglones
+_local LnColumnas  # Numero de tablas
+_local LnDesX	   # Desplazamiento en X	
+_local LnDesY      # Desplazamiento en Y	
+
+	#-----------------------------------------------------------
+	#Tabla Titulo
+	#-----------------------------------------------------------
+	LnRenglones << 1
+	LnColumnas  << 1
+	LoTabla << .oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Titulo)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud << 5
+	LoTabla.oColumnas.elemento(1).nLongitud << 133
+
+	#-----------------------------------------------------------
+	#Tabla Tipo_Obra
+	#-----------------------------------------------------------
+	LnRenglones << 10
+	lnColumnas  << 17
+	LoTabla << .oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Tipo_Obra)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << .oTablas.Longitud_total_Renglones({:tbl_Titulo})
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+
+	#longitudes de los renglones de la tabla, esta dada en mm
+	LoTabla.oRenglones.elemento(1).nLongitud << 4
+	LoTabla.oRenglones.elemento(2).nLongitud << 3
+
+	LoTabla.oRenglones.elemento(3).nLongitud << 4
+	LoTabla.oRenglones.elemento(4).nLongitud << 4		
+	LoTabla.oRenglones.elemento(5).nLongitud << 4
+	LoTabla.oRenglones.elemento(6).nLongitud << 4		
+	LoTabla.oRenglones.elemento(7).nLongitud << 4
+	LoTabla.oRenglones.elemento(8).nLongitud << 4		
+	LoTabla.oRenglones.elemento(9).nLongitud << 4
+	LoTabla.oRenglones.elemento(10).nLongitud << 3
+
+	LoTabla.oColumnas.elemento(1).nLongitud << 9
+
+	_for LnCol _over range(2,13)
+	_loop
+		LoTabla.oColumnas.elemento(LnCol).nLongitud << 7		
+	_endloop
+
+	_for LnCol _over range(14,17)
+	_loop
+		LoTabla.oColumnas.elemento(LnCol).nLongitud << 10
+	_endloop
+
+	LoCelda << LoTabla.oCeldas.Celda(1,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Inf? << _false
+
+	_for LnCol _over range(14,17)
+	_loop
+		LoCelda << LoTabla.oCeldas.Celda(1,LnCol).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Inf? << _false
+	_endloop
+	
+	_for LnCol _over range(2,6)
+	_loop
+		LoCelda << LoTabla.oCeldas.Celda(1,LnCol).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Der? << _false
+	_endloop
+
+	_for LnCol _over range(8,12)
+	_loop
+		LoCelda << LoTabla.oCeldas.Celda(1,LnCol).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Der? << _false
+	_endloop
+
+	_for LnCol _over range(1,12)
+	_loop
+		LoCelda << LoTabla.oCeldas.Celda(10,LnCol).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Der? << _false
+	_endloop
+
+	LoCelda << LoTabla.oCeldas.Celda(10,15).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Der? << _false	
+
+	#-----------------------------------------------------------
+	#Tabla R1_Vacio
+	#-----------------------------------------------------------
+	LnRenglones << 1
+	lnColumnas << 1
+	LoTabla << .oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_R1_Vacio)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << .oTablas.Longitud_total_Renglones({:tbl_Titulo,:tbl_Tipo_Obra})
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+
+	#longitudes de los renglones de la tabla, esta dada en mm
+	LoTabla.oRenglones.elemento(1).nLongitud << 2
+	LoTabla.oColumnas.elemento(1).nLongitud << 133
+
+	#-----------------------------------------------------------
+	#Tabla Detalle_totales
+	#-----------------------------------------------------------
+	LnRenglones << 4
+	lnColumnas << 4
+	LoTabla << .oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Detalle_totales)
+	
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << .oTablas.Longitud_total_Renglones({:tbl_Titulo,:tbl_Tipo_Obra,:tbl_R1_Vacio})
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+
+	#longitudes de los renglones de la tabla, esta dada en mm
+	_for LnRen _over range(1,4)
+	_loop
+		LoTabla.oRenglones.elemento(LnRen).nLongitud << 4		
+	_endloop
+
+	LoTabla.oColumnas.elemento(1).nLongitud << 35
+	LoTabla.oColumnas.elemento(2).nLongitud << 35
+	LoTabla.oColumnas.elemento(3).nLongitud << 35	
+	LoTabla.oColumnas.elemento(4).nLongitud << 28
+
+	_for LnRen _over range(1,3)
+	_loop
+		LoCelda << LoTabla.oCeldas.Celda(LnRen,1).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Inf? << _false
+	_endloop
+
+	LoCelda << LoTabla.oCeldas.Celda(1,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Inf? << _false
+
+	LoCelda << LoTabla.oCeldas.Celda(3,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Inf? << _false
+
+	#-----------------------------------------------------------
+	#Tabla Suministros
+	#-----------------------------------------------------------
+	LnRenglones << 3
+	lnColumnas << 4
+	LoTabla << .oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Suministros)
+	
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << .oTablas.Longitud_total_Renglones({:tbl_Titulo,:tbl_Tipo_Obra,:tbl_R1_Vacio,:tbl_Detalle_totales})
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+
+	#longitudes de los renglones de la tabla, esta dada en mm
+	_for LnRen _over range(1,3)
+	_loop
+		LoTabla.oRenglones.elemento(LnRen).nLongitud << 4		
+	_endloop
+
+	LoTabla.oColumnas.elemento(1).nLongitud << 50
+	LoTabla.oColumnas.elemento(2).nLongitud << 20
+	LoTabla.oColumnas.elemento(3).nLongitud << 35	
+	LoTabla.oColumnas.elemento(4).nLongitud << 28
+
+	#--------------------------------------------------------
+	#Tabla Elementos_construccion
+	#-----------------------------------------------------------
+	LnRenglones << 4
+	lnColumnas << 4
+	LoTabla << .oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Elementos_Construccion)
+	
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << .oTablas.Longitud_total_Renglones({:tbl_Titulo,:tbl_Tipo_Obra,:tbl_R1_Vacio,:tbl_Detalle_totales, :tbl_Suministros})
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+
+	#longitudes de los renglones de la tabla, esta dada en mm
+	LoTabla.oRenglones.elemento(1).nLongitud << 2
+	LoTabla.oRenglones.elemento(2).nLongitud << 5
+	LoTabla.oRenglones.elemento(3).nLongitud << 4
+	LoTabla.oRenglones.elemento(4).nLongitud << 4
+	
+	LoTabla.oColumnas.elemento(1).nLongitud << 56
+	LoTabla.oColumnas.elemento(2).nLongitud << 56
+	LoTabla.oColumnas.elemento(3).nLongitud << 10
+	LoTabla.oColumnas.elemento(4).nLongitud << 11
+
+	_for LnCol _over range(1,3)
+	_loop
+		LoCelda << LoTabla.oCeldas.Celda(1,LnCol).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Der? << _false
+		LoCelda << LoTabla.oCeldas.Celda(2,LnCol).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Der? << _false
+	_endloop
+
+	LoCelda << LoTabla.oCeldas.Celda(3,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Der? << _false
+
+	LoCelda << LoTabla.oCeldas.Celda(3,3).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Der? << _false
+	
+	#--------------------------------------------------------
+	#Tabla Pozos
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas << 18
+	LoTabla << .oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Pozos)
+	
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << .oTablas.Longitud_total_Renglones({:tbl_Titulo,:tbl_Tipo_Obra,:tbl_R1_Vacio,:tbl_Detalle_totales, :tbl_Suministros,:tbl_Elementos_construccion})
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x, RoCoord.y - LnDesY)
+
+	#longitudes de los renglones de la tabla, esta dada en mm
+	LoTabla.oRenglones.elemento(1).nLongitud << 4
+	LoTabla.oRenglones.elemento(2).nLongitud << 5
+
+	_for LnCont  _over  range(1,16)
+	_loop
+		LoTabla.oColumnas.elemento(LnCont).nLongitud << 7
+	_endloop 	
+
+	LoTabla.oColumnas.elemento(17).nLongitud << 10
+	LoTabla.oColumnas.elemento(18).nLongitud << 11
+
+	LoCelda << LoTabla.oCeldas.Celda(1,17).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Inf? << _false
+
+	LoCelda << LoTabla.oCeldas.Celda(1,18).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Inf? << _false
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.prvLlenaEtiquetas()
+
+	_local LoTexto # Objeto que contiene el texto a mostrar en la tabla
+
+	#se crean los objetos que almacenara la tabla
+	LoTexto  << c_texto_grafico.new("CONSTRUCCIÓN DE CANALIZACIÓN")
+	LoTexto.nTamanio << 25
+	_self.oTablas.elemento(:tbl_Titulo).oCeldas.Celda(1,1).oElemento << LoTexto
+
+	
+	LoTexto  << c_texto_grafico.new("TIPO" + character.newLine + "OBRA")
+	LoTexto.nTamanio << 20
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(1,1).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,"BANQUETA")
+	LoTexto.nMargen_Izq << 6
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(1,4).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,"ARROYO")
+	LoTexto.nMargen_Izq << 6	
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(1,10).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,"TOTAL")
+	LoTexto.nMargen_Sup << 2
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(1,14).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,"EN CEPA" + character.newLine + "YA HECHA")
+	LoTexto.nTamanio << 15	
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(1,15).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,"TUBOS" + character.newLine + "ADICIONALES")
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(1,16).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,"TOTAL" + character.newLine + "MTS. VIA")
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(1,17).oElemento << LoTexto
+
+	LoTxt  << c_texto_grafico.new("TOTAL METROS LINEALES : ")
+	LoTxt.nTamanio << 17
+	LoTxt.sAlineacion << :centre_right
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(10,13).oElemento << LoTxt
+	
+	LoTxt  << c_texto_grafico.new_from(LoTxt,"TOTAL METROS VIA : ")
+	_self.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(10,16).oElemento << LoTxt
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "TOTALES")
+	LoTexto.nTamanio << 23
+	LoTexto.nMargen_Inf << -4
+	_self.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(2,1).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "TOTALES  EN TRAMO")
+	LoTexto.nMargen_Inf << -4
+	_self.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(1,2).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "TOTALES EN RUTA")
+	LoTexto.nMargen_Inf << -4	
+	_self.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(3,2).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "METROS LINEALES")
+	_self.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(1,3).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "METROS DUCTO_VIA")
+	_self.oTablas.elemento(:Tbl_Detalle_Totales).oCeldas.Celda(2,3).oElemento << LoTexto	
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "METROS LINEALES")
+	_self.oTablas.elemento(:Tbl_Detalle_Totales).oCeldas.Celda(3,3).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "METROS DUCTO_VIA")
+	_self.oTablas.elemento(:Tbl_Detalle_Totales).oCeldas.Celda(4,3).oElemento << LoTexto
+
+
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "SUMINISTRO CODO 90° DE PVC 26.7 mm")
+	LoTexto.nTamanio << 16
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(1,1).oElemento << LoTexto	
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "SUMINISTRO COPLE DE PVC 26.7 mm")
+	LoTexto.nTamanio << 16
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(2,1).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "SUMINISTRO CONECTOR DE PVC 26.7 mm")
+	LoTexto.nTamanio << 16
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(3,1).oElemento << LoTexto
+
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "CONST RADIAL PVC Ø19mm")
+	LoTexto.nTamanio << 16
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(1,3).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "CONST RADIAL CEPA YA HECHA PVC Ø19mm")
+	LoTexto.nTamanio << 16
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(2,3).oElemento << LoTexto
+	
+
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "ELEMENTOS DE CONSTRUCCIÓN")
+	LoTexto.nTamanio << 25
+	LoTexto.nMargen_Izq << 60 
+	_self.oTablas.elemento(:Tbl_Elementos_Construccion).oCeldas.Celda(2,1).oElemento << LoTexto	
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "POZOS Y REGISTROS")
+	LoTexto.nTamanio << 20
+	LoTexto.nMargen_Izq << 60
+	_self.oTablas.elemento(:Tbl_Elementos_Construccion).oCeldas.Celda(3,1).oElemento << LoTexto	
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "C.D.'S")
+	LoTexto.nMargen_Izq << 10	
+	_self.oTablas.elemento(:Tbl_Elementos_Construccion).oCeldas.Celda(3,3).oElemento << LoTexto	
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "ARROYO")
+	_self.oTablas.elemento(:Tbl_Elementos_Construccion).oCeldas.Celda(4,1).oElemento << LoTexto	
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "BANQUETA")
+	_self.oTablas.elemento(:Tbl_Elementos_Construccion).oCeldas.Celda(4,2).oElemento << LoTexto	
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "MINIPOSTE")
+	LoTexto.nTamanio << 15
+	_self.oTablas.elemento(:Tbl_Elementos_Construccion).oCeldas.Celda(4,3).oElemento << LoTexto	
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto, "SIECOR" + %newline + "SENCILLA")
+	LoTexto.nTamanio << 13
+	_self.oTablas.elemento(:Tbl_Elementos_Construccion).oCeldas.Celda(4,4).oElemento << LoTexto
+
+	inter << 1
+	_for a_pozo _over _self.pozos_en_arroyo.elements()
+	_loop
+		LoTexto  << c_texto_grafico.new_from(LoTexto, a_pozo)
+		LoTexto.nTamanio << 16
+		_self.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(1,inter).oElemento << LoTexto
+		inter +<< 1 
+	_endloop
+
+	inter << 9
+	_for a_pozo _over _self.pozos_en_banqueta.elements()
+	_loop
+		LoTexto  << c_texto_grafico.new_from(LoTexto, a_pozo)
+		LoTexto.nTamanio << 16
+		_self.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(1,inter).oElemento << LoTexto
+		inter +<< 1 
+	_endloop
+
+
+	
+_endmethod
+$
+
+c_construccion_microcanalizacion.define_shared_constant(:pozos_en_arroyo,
+	                                                           {"K1C", "K2C", "M1C", "M3C", "G1" },
+								    :private)
+$
+
+
+c_construccion_microcanalizacion.define_shared_constant(:pozos_en_banqueta,
+	                                                           {"L1T", "L2T", "L3T", "L4T", "L5T", "L6T", "M2T", "G1"},
+								   :private)
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.serial_slots()
+
+	keys << rope.new_with( :oTablas, :celdas_color, :blanco_negro )
+	values << rope.new_with( .oTablas, .lst_celdas_color, .b_blanco_negro? )
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_informacion(PoRuta, PoTramo)
+
+	_local col_tipos_obra << PoTramo.tipos_obra_proyectadas
+	_self.asigna_tipos_obra(col_tipos_obra)
+
+	_local col_tipos_superficie << PoTramo.tipos_superficie_can_obra_proy
+	_self.asigna_tipos_superficie(col_tipos_superficie)
+
+	_local col_resumen_long << PoTramo.genera_resumen_total_tipo_obra()
+	_self.asigna_longitudes(col_tipos_obra,col_tipos_superficie,col_resumen_long)
+
+	_self.asigna_totales_tramo(PoTramo)
+
+	_if PoRuta _isnt _unset 
+	_then
+		_self.asigna_totales_ruta(PoRuta)			
+	_endif
+	
+	##_self.asigna_pozos(PoTramo.num_pozos_proy_por_tipo())
+
+
+	# START CHANGE
+	# (22/12/15 des_aaron) : 
+	#
+	_self.asigna_informacion_pozos()
+	#
+	_self.asigna_informacion_minipostes()
+	# END CHANGE	
+	_self.asigna_cajas_dist(_self.num_cajas_dist_proy_por_tipo())	
+
+_endmethod
+$
+# (22/12/14 des_aaron) : adds
+#
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.get_lista_objetos(lista,campoagrupa, name)
+	
+	result         << rope.new()
+        tipos          << hash_table.new()
+
+	_for iterobj  _over lista.fast_elements()
+	_loop
+		_if iterobj.source_collection.name.write_string = name
+		_then
+			result.add(iterobj)
+
+                         mkey <<  iterobj.perform(campoagrupa)
+			
+			_if tipos[mkey] _is _unset   
+			_then
+				tipos[mkey] << rope.new()
+				tipos[mkey].add(iterobj)
+			_else
+				tipos[mkey].add(iterobj)
+			_endif
+					
+		_endif
+	_endloop	
+
+	_return result, tipos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_informacion_pozos()
+
+
+	_local LnCol_Arr_Ini << 1
+	_local LnCol_Ban_Ini << 9
+	
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 20
+	LoTexto.sEstilo << "Bold"
+	
+	lista << swg_dsn_admin_engine.active_design.scan_geometries
+
+	(pozos, tipos)      << _self.get_lista_objetos(lista,:spec_id, "uub")
+	
+        _for iterk,value    _over tipos.keys_and_elements()
+	_loop
+		
+		_if {"K1C", "K2C", "M1C", "M3C", "G1" }.eq_includes?( iterk.write_string)
+		_then
+			#show(:en_arroyo,iterk  ,   value.size)
+			indice_arroyo << {"K1C", "K2C", "M1C", "M3C", "G1" }.index_of_eq(iterk.write_string)			
+			LoTxt << c_texto_grafico.new_from(LoTexto, value.size.write_string)		
+			.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(2,indice_arroyo).oElemento << LoTxt
+			LnCol_Arr_Ini << LnCol_Arr_Ini + 1						
+		_endif
+		
+		_if {"L1T", "L2T", "L3T", "L4T", "L5T", "L6T", "M2T", "G1"}.eq_includes?( iterk.write_string)
+		_then
+			#show(:en_banqueta, value.size)
+			indice_banqueta<<{"L1T", "L2T", "L3T", "L4T", "L5T", "L6T", "M2T", "G1"}.index_of_eq(iterk.write_string)
+			LoTxt << c_texto_grafico.new_from(LoTexto, value.size.write_string)
+			.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(2,indice_banqueta ).oElemento << LoTxt
+			LnCol_Ban_Ini << LnCol_Ban_Ini + 1			
+			
+		_endif
+		
+		
+	_endloop
+
+
+
+
+	
+#	show(pozos,tipos )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_informacion_minipostes()
+	#---------------------------------------------------
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 20
+	LoTexto.sEstilo << "Bold"
+	
+	lista << swg_dsn_admin_engine.active_design.scan_geometries
+
+	(minipostes, tiposmini) << _self.get_lista_objetos(lista,:user!_tipo, "user!_miniposte")
+	LoTxt << c_texto_grafico.new_from(LoTexto, minipostes.size.write_string)
+	_self.oTablas.elemento(:tbl_Pozos).oCeldas.Celda(1,17).oElemento << LoTxt
+
+	.oTablas.elemento(:tbl_Pozos).oCeldas.dp
+	
+	#show(minipostes, tiposmini)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_celdas_a_colorear()
+
+	_local lst_celdas_color << rope.new()
+
+	_for renglon _over range(3,9)
+	_loop
+		_for columna _over range(1,17)
+		_loop
+			lst_celdas_color.add({:tbl_Tipo_Obra,renglon,columna})
+		_endloop
+	_endloop
+	
+	lst_celdas_color.add({:tbl_Tipo_Obra,10,14})
+	lst_celdas_color.add({:tbl_Tipo_Obra,10,17})
+	lst_celdas_color.add({:tbl_Detalle_totales,1,4})
+	lst_celdas_color.add({:tbl_Detalle_totales,2,4})
+	lst_celdas_color.add({:tbl_Detalle_totales,3,4})
+	lst_celdas_color.add({:tbl_Detalle_totales,4,4})
+
+	# (23/01/02 des_aaron) : suministros_ahr
+	lst_celdas_color.add({:tbl_Suministros,1,2})
+	lst_celdas_color.add({:tbl_Suministros,2,2})
+	lst_celdas_color.add({:tbl_Suministros,3,2})
+	
+	lst_celdas_color.add({:tbl_Suministros,1,4})
+	lst_celdas_color.add({:tbl_Suministros,2,4})
+	
+	# (22/12/15 des_aaron) : add
+	lst_celdas_color.add({:tbl_Pozos,1,17})
+
+	_for columna _over range(1,18)
+	_loop
+		lst_celdas_color.add({:tbl_Pozos,2,columna})
+	_endloop
+	
+	_return lst_celdas_color
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.num_cajas_dist_proy_por_tipo()
+
+
+	_local Lcol_cajas_dist << hash_table.new()
+	_local LsModelo
+	_local ln_num_cajas
+
+	lista << swg_dsn_admin_engine.active_design.scan_geometries
+
+	(cds, tiposcds) << _self.get_lista_objetos(lista,:spec_id, "mit_terminal_enclosure")
+
+	
+	_for o_caja _over cds.elements()
+	_loop
+		_if  o_caja.construction_status = "PROYECTADO"
+		_then
+			#Asigna el modelo de las cajas
+			LsModelo << o_caja.spec_id.write_string.as_symbol()
+			ln_num_cajas << Lcol_cajas_dist[LsModelo]
+			Lcol_cajas_dist[LsModelo] << ln_num_cajas.default(0) + 1
+		_endif
+	_endloop
+
+	_return Lcol_cajas_dist
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_construccion_microcanalizacion.asigna_informacion_editable(pl_datos)
+	#asignar la informacion editable al sello de construcción	
+		
+	LoTexto << c_texto_grafico.new("")
+	LoTexto.nTamanio << 20
+	LoTexto.sEstilo << "Bold"
+	
+	_local mts_lineales << pl_datos[:totales_en_ruta_ml].write_string
+	_local mts_via      << pl_datos[:totales_en_ruta_dv].write_string
+
+	LoTxt << c_texto_grafico.new_from(LoTexto, mts_lineales)
+	.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(3,4).oElemento << LoTxt	
+	
+	LoTxt << c_texto_grafico.new_from(LoTexto, mts_via)
+	.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(4,4).oElemento << LoTxt	
+
+	# (22/12/27 des_aaron) :
+		
+	LoTxt << c_texto_grafico.new_from(LoTexto, pl_datos[:totales_en_tramo_ml])	
+	#.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(10,14).oElemento << LoTxt
+	.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(1,4).oElemento << LoTxt	
+
+	LoTxt << c_texto_grafico.new_from(LoTexto, pl_datos[:totales_en_tramo_dv])	
+	.oTablas.elemento(:tbl_Detalle_totales).oCeldas.Celda(2,4).oElemento << LoTxt	
+
+	LoTxt << c_texto_grafico.new_from(LoTexto, pl_datos[:totales_en_canal_ml])	
+	.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(10,14).oElemento << LoTxt
+	
+	LoTxt << c_texto_grafico.new_from(LoTexto, pl_datos[:totales_en_canal_dv])	
+	.oTablas.elemento(:tbl_Tipo_Obra).oCeldas.Celda(10,17).oElemento     << LoTxt
+
+	# (23/01/02 des_aaron) : 
+	LoTexto  << c_texto_grafico.new_from(LoTexto, pl_datos[:suministro_codo_90])
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(1,2).oElemento << LoTexto	
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto, pl_datos[:suministro_cople])
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(2,2).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,pl_datos[:suministro_conector])
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(3,2).oElemento << LoTexto
+
+	# (23/01/02 des_aaron) : 
+	LoTexto  << c_texto_grafico.new_from(LoTexto, pl_datos[:suministro_const_radial])
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(1,4).oElemento << LoTexto
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,pl_datos[:suministro_const_radial_cepa])
+	_self.oTablas.elemento(:tbl_Suministros).oCeldas.Celda(2,4).oElemento << LoTexto
+
+_endmethod
+$
+

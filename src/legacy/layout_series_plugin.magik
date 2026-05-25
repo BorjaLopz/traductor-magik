@@ -1,0 +1,401 @@
+_package sw
+$
+layout_series_plugin.define_shared_constant(:databus_producer_data_types,{:post_render_sets},:public)
+$
+layout_series_plugin.define_shared_variable(:mismo_cedo_id, _unset, :public)
+$
+layout_series_plugin.define_shared_variable(:elementos_plano_trayectoria, property_list.new(), :public)
+$
+layout_series_plugin.define_shared_variable(:elementos_plano_ruta,        property_list.new(), :public)
+$
+layout_series_plugin.define_shared_variable(:propiedades_plano_ruta,      property_list.new(), :public) 
+$
+layout_series_plugin.define_shared_variable(:propiedades_plano_trayectoria,property_list.new(), :public) 
+$
+layout_series_plugin.define_shared_variable(:propiedades_plano_esquematico_ftth,property_list.new(), :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_series_plugin.propiedades_plano(ace_name,display_style,style_group)
+	## 
+	##
+	
+	_self.elementos_plano_ruta[:elementos] << rope.new()
+	_self.elementos_plano_ruta[:sellos] << rope.new()
+	
+	_local maestra << _self.master_series_page()
+		
+	_if _self.propiedades_plano_ruta[:plano_ruta?] _isnt _unset _andif
+	    _self.propiedades_plano_ruta[:plano_ruta?]
+	_then
+		(ace_name,display_style,style_group) << _self.obten_propiedades_desde_xml(:plano_ruta)
+				
+#		_for el _over maestra.elements.elements.fast_elements()
+#		_loop
+#			_if el.class_name _isnt :c_vp_ruta_de_cables_fo _and
+#			    el.class_name _isnt :c_vp_comparticion_infra
+#			_then
+#				_self.elementos_plano_ruta[:elementos].add(el)
+#				num << maestra.elements.index_of(el)
+#				maestra.elements.remove_nth(num)
+#			_endif
+#			
+#		_endloop
+		
+	_elif _self.propiedades_plano_ruta[:plano_ruta_compa?] _isnt _unset _andif
+	      _self.propiedades_plano_ruta[:plano_ruta_compa?]
+	_then
+		
+		(ace_name,display_style,style_group) << _self.obten_propiedades_desde_xml(:plano_ruta_compa)
+
+		_for el _over maestra.elements.elements.fast_elements()
+		_loop	
+			_if el.class_name _isnt :c_vp_ruta_de_cables_fo _and el.class_name _isnt :c_vp_configurable_xml
+			_then
+				_self.elementos_plano_ruta[:elementos].add(el)
+				num << maestra.elements.index_of(el)
+			_endif
+			
+		_endloop
+		
+	_elif _self.propiedades_plano_ruta[:plano_esquematico_ftth?] _isnt _unset _andif
+	      _self.propiedades_plano_ruta[:plano_esquematico_ftth?]
+	_then
+
+		(ace_name,display_style,style_group) << _self.obten_propiedades_desde_xml(:plano_esquematico_ftth)
+		
+		_for el _over maestra.elements.elements.fast_elements()
+		_loop	
+			_if el.class_name _isnt :c_vp_ruta_de_cables_fo _and el.class_name _isnt :c_vp_configurable_xml
+			_then
+				_self.elementos_plano_ruta[:elementos].add(el)
+				num << maestra.elements.index_of(el)
+			_endif
+			
+		_endloop
+		
+	_elif _self.propiedades_plano_trayectoria[:plano_trayectoria?] _isnt _unset _andif
+	      _self.propiedades_plano_trayectoria[:plano_trayectoria?] _andif
+	      _self.propiedades_plano_trayectoria[:tipo_plano] _isnt _unset 
+	_then
+		(ace_name,display_style,style_group) << _self.obten_propiedades_desde_xml(_self.propiedades_plano_trayectoria[:tipo_plano])
+		
+		_for el _over maestra.elements.elements.fast_elements()
+		_loop
+			_if el.class_name _isnt :c_pagrefs_viewport_layout
+			_then
+				_self.elementos_plano_trayectoria[:elementos].add(el)
+				num << maestra.elements.index_of(el)
+				maestra.elements.remove_nth(num)
+			_endif
+		_endloop
+		
+	_elif _self.propiedades_plano_ruta[:plano_ruta_lar?] _isnt _unset _andif
+	      _self.propiedades_plano_ruta[:plano_ruta_lar?]
+	_then
+		(ace_name,display_style,style_group) << _self.obten_propiedades_desde_xml(:plano_ruta_lar)
+		
+		
+		_for el _over maestra.elements.elements.fast_elements()
+		_loop
+			_if el.class_name _isnt :c_vp_plano_ruta_de_cables_fo_lar 
+			_then
+				_self.elementos_plano_ruta[:elementos].add(el)
+				num << maestra.elements.index_of(el)
+				maestra.elements.remove_nth(num)
+			_endif
+		_endloop
+	_elif _self.propiedades_plano_ruta[:plano_ruta_lar_gral?] _isnt _unset _andif
+	      _self.propiedades_plano_ruta[:plano_ruta_lar_gral?]
+	_then
+		(ace_name,display_style,style_group) << _self.obten_propiedades_desde_xml(:plano_ruta_lar_gral)
+				
+		_for el _over maestra.elements.elements.fast_elements()
+		_loop
+			_if el.class_name _isnt :c_vp_plano_ruta_de_cables_fo_lar_gral 
+			_then
+				_self.elementos_plano_ruta[:elementos].add(el)
+				num << maestra.elements.index_of(el)
+				maestra.elements.remove_nth(num)
+			_endif
+		_endloop
+	_elif _self.propiedades_plano_ruta[:plano_ftth?] _isnt _unset _andif
+	      _self.propiedades_plano_ruta[:plano_ftth?]
+	_then
+		plano << _self.propiedades_plano_ruta[:tipo_plano]
+		(ace_name,display_style,style_group) << _self.obten_propiedades_desde_xml(plano)
+		
+		_for el _over maestra.elements.elements.fast_elements()
+		_loop
+			_if el.class_name.write_string.index_of_seq("c_vp_") _is _unset _andif
+			    el.responds_to?(:ace_name) _is _false
+			_then
+				_self.elementos_plano_ruta[:elementos].add(el)
+				num << maestra.elements.index_of(el)
+				maestra.elements.remove_nth(num)
+			_endif
+		_endloop
+	_endif
+
+	
+	_return ace_name,display_style,style_group
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_series_plugin.obten_propiedades_desde_xml(tipo_plano)
+	## 
+	##
+	
+	rut << smallworld_product.get_data_file("planos_config.xml", :layout_gui)
+ 	xml << simple_xml.new()
+	lista<<property_list.new()
+	_if xml.read_document_file(rut).elements[1].xml_done().type = :planos
+	_then
+	     planos << xml.read_document_file(rut).elements[1].xml_done()
+	     _for coleccion _over planos.elements.fast_elements()
+	     _loop
+		  eq << coleccion.attributes.elements
+		  
+		  _if eq[1].as_symbol() = tipo_plano
+		  _then
+			  _for attri _over coleccion.elements.fast_elements()
+			  _loop
+				  lista[attri.xml_done().attributes.elements[1].as_symbol()] << attri.xml_done().attributes.elements[2]
+			  _endloop		
+		  _endif
+
+	     _endloop
+	_endif
+	
+	_return lista[:ace_name],lista[:display_style],lista[:style_group]
+_endmethod
+$
+
+_pragma(classify_level=restricted, topic={plotting})
+_method layout_series_plugin.actualizar_sectors(an_document,a_sectors)
+    ## 
+    ## 
+    _for pag _over an_document.pages()
+    _loop
+	_for el _over pag.elements.fast_elements()
+	_loop
+		
+		_if    el.class_name _is :c_vp_ruta_de_cables_fo _or
+		       el.class_name _is :c_vp_comparticion_infra 
+		_then	
+			el.elementos_bd_gis[:sectors_buffer] << a_sectors
+		_endif 				
+	_endloop
+    _endloop
+    
+    l_master_page << an_document.get_master_page (:master_series_page )
+    l_viewports << l_master_page.all_elements_of(c_vp_ruta_de_cables_fo)
+    
+    _if l_viewports _is _unset 
+    _then
+	l_viewports << l_master_page.all_elements_of(c_vp_comparticion_infra)    
+    _endif
+    
+    _if l_viewports _isnt _unset _andif l_viewports.size > 0
+    _then
+	    a_viewport << l_viewports.an_element()	
+	    a_viewport.elementos_bd_gis[:sectors_buffer] << a_sectors
+    _endif    
+
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plotting})
+_method layout_series_plugin.add_as_producer()
+	## 	## 
+	smallworld_product.pni_application().databus.add_producer(_self,:post_render_sets)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_series_plugin.agrega_particulares()
+	## metodo que agrega los sellos (9) a las paginas del document
+	## 
+	loPaf  << smallworld_product.pni_application()
+	lp   << lopaf.plugin(:layout_plugin)
+	lp.start_layout_designer()
+	l_designer << lp.dialogs[:layout_designer]		
+	l_manager  << l_designer.plugin(:layout_manager)
+	l_series   << l_designer.plugin(:layout_series)
+	LoViewport<< l_designer.plugin(:viewport_mapper)
+	
+	_for pag _over l_manager.current_document.pages()
+	_loop
+		_for el _over _self.elementos_plano_ruta[:elementos].fast_elements()
+		_loop
+			_if el.class_name _isnt :c_sello_ruta_cables_fo
+			_then
+				pag.add_element(el)
+			_else
+				sello << user:c_sello_ruta_cables_fo.new_with(:bounds, bounding_box.new(450,400,2100,3000 ))
+				pag.add_element(sello)
+			_endif
+
+		_endloop
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plotting})
+_method layout_series_plugin.agrega_particulares_diag_empalmes_falc()
+	## 
+	### (12/03/09 rhernan) :
+	
+	loPaf  << smallworld_product.pni_application()
+	lp   << lopaf.plugin(:layout_plugin)
+	lp.start_layout_designer()
+	l_designer << lp.dialogs[:layout_designer]
+	l_manager  << l_designer.plugin(:layout_manager)
+	l_series   << l_designer.plugin(:layout_series)
+	LoViewport<< l_designer.plugin(:viewport_mapper)
+	paf << smallworld_product.pni_application()
+	plug << paf.plugin(:esquema_tab_plugin)
+	LoEsqGui << plug.sys!slot(:esq_gui)			
+	LoCedos <<  LoEsqGui.get_esquema().user!_empalme_distribucions
+	
+    _local LoPag << _unset 								
+
+    _if LoCedos.size > 0
+    _then
+	desplazaX << 5500
+	# (12/03/21 rhernan) : crear el sello de correspondencias.
+	_self.crear_sellos_correspondencias(l_manager.current_document, LoCedos)
+    _endif
+    
+_endmethod
+$
+
+_pragma(classify_level=restricted, topic={plotting})
+_method layout_series_plugin.remove_as_producer()
+	## 
+	## 
+	smallworld_product.pni_application().databus.remove_producer(_self)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plotting})
+_method layout_series_plugin.sectors_buffer(an_document)
+    ## 
+    ##
+    l_sectors << _unset 
+    l_master_page << an_document.get_master_page (:master_series_page )
+    l_viewports << l_master_page.all_elements_of(user:c_vp_ruta_de_cables_fo)
+    
+    _if l_viewports _isnt _unset _andif l_viewports.size > 0
+    _then
+	    a_viewport << l_viewports.an_element()
+	    l_sectors << a_viewport.elementos_bd_gis[:sectors_buffer]
+	    a_viewport.elementos_bd_gis[:sectors_buffer] << _unset 
+    _endif
+    
+    _return l_sectors
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_series_plugin.sw_databus_data_requested(type)
+	## 
+	##
+	l_color << colour.new_from_hex("00FF00")
+	ls << line_style.new_with_properties(:foreground_colour,l_color,:width,2)	
+	
+	_if type _is :post_render_sets
+	_then
+		_if _self.propiedades_plano_ruta[:plano_ruta?] _isnt _unset _andif
+		    _self.propiedades_plano_ruta[:plano_ruta?] _andif
+		    (l_areas << _self.propiedades_plano_ruta[:areas_ruta]) _isnt _unset 
+		_then
+			l_mv << _self.current_map_view			
+			_for l_area _over l_areas.elements()
+			_loop
+				l_area.draw_on(l_mv.window,ls)
+			_endloop
+		_endif		
+	_endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plotting})
+_method layout_series_plugin.int!make_document ()
+	## 
+	## Supposed to run in a separate thread to allow interruption
+	## and progress indication
+	## 
+	
+#	# Remove all pages which have the :generated_series role on them
+#	the_document.remove_pages_with_role ( :generated_series )	
+
+	the_document  << _self.current_document 	
+	display_style << _self.display_style
+	view_scale    << _self.view_scale
+	
+	style_group   << _unset	
+	frames_done << 0	
+	universe_id << 0
+	world_id    << 0
+	frame_cs    << _unset	
+
+	# Try to get the current map views world and view params
+	_if ( mv << .map_view ) _is _unset
+	_then
+	      mv << _self.current_map_view
+	_endif
+
+	_if mv _isnt _unset
+	_then
+		ace_name << mv.ace_name
+		style_group << mv.style_category
+			
+		_if ( a_world << mv.world ) _isnt _unset
+		_then 
+			universe_id << a_world.universe_id
+			world_id    << a_world.world_id
+		_endif
+
+		_if ( cvp << mv.current_view_parameters() ) _isnt _unset _andif
+		    ( ccs << cvp.coordinate_system ) _isnt _unset
+		_then 
+			frame_cs << ccs
+		_endif 
+	_endif
+
+	(ace_name,display_style,style_group) << _self.propiedades_plano(ace_name,display_style,style_group)
+
+	vp_props << property_list.new_with(
+			    :projection,           frame_cs,
+			    :ace_name,             ace_name,
+			    :display_style,        display_style,
+			    :style_system_category, style_group )
+
+	
+	progress_handler << handler.new ( _self, :progressed|()| )
+	
+	frames_done << layout_series_engine.update_document ( the_document,
+							      _self.frames,
+							      universe_id,
+							      world_id,
+							      view_scale,
+							      progress_handler , _scatter vp_props )
+
+#	# sectores de la ruta
+#	l_sectors << _self.sectors_buffer(the_document)
+#
+#	_if l_sectors _isnt _unset 
+#	_then
+#	    _self.actualizar_sectors(the_document,l_sectors) 
+#	_endif
+
+	_self.current_layout_view.start_render_page ()
+	_self.changed ( :finished )
+	_self.close_create_and_edit_series ()
+	_self.end_progress_dialog ()
+	.engine_thread << _unset
+
+	
+_endmethod
+$

@@ -1,0 +1,109 @@
+# Nombre de la empresa:           SIGTAO SOFTWARE S.A. DE C.V.
+# Traza:                          SIGC 11, PLANO RUTA DE CABLES
+# Objetivo principal del archivo: GENERAR EL PLANO RUTA DE CABLES
+# Autor:                          vnguzman
+# Fecha de creación:              Jueves 18 de Mayo DE 2006
+$
+_package user
+$
+#remex(:c_plano_ruta_de_cables)
+$
+def_slotted_exemplar (:c_plano_ruta_de_cables
+                     ,{
+                       {:app,       smallworld_product.pni_application(), :writable, :public}
+#                   ,{:origen,    coordinate.new(200,200),              :writable, :public}
+#                   ,{:vp_nombre, _unset,                               :writable, :public}
+#                   ,{:marco,     _unset,                               :writable, :public}
+#		      ,{:rutas,     _unset,                               :writable, :private}
+		      }
+		     ,{:layout_element, :viewport_layout_mixin}
+                     )
+$
+c_plano_ruta_de_cables.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_ruta_de_cables.defined_attributes
+        ##  Objetivo:              Este método define atributos de este plano.
+        ##  Parámetros de entrada: N/A.
+        ##  Parámetros de salida:  sw:rope:[1-4] - _super.defined_attributes -
+	##                         atributos de viewport_layout_mixin.
+        ##                         sw:layout_attribute_definition -
+	##                         _self.viewport_attribute_definition - .
+        ##  Regresa:               sw:rope:[1-5] - attribs - Regresa Los atributos de este plano.
+	
+        attribs                    << rope.new_from(_super.defined_attributes)
+        attribs.add (_self.viewport_attribute_definition)
+        >> attribs
+_endmethod
+$
+c_plano_ruta_de_cables.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_ruta_de_cables.new()
+	## Objetivo:              Este método genera una nueva instancia
+	##                        del plano de ruta de cables
+	## Parámetros de entrada: N/A.
+	## Parámetros de salida:  
+	## Regresa:               Una nueva instancia del plano ruta de
+	##                        cables
+	
+        >> _clone.init()
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_ruta_de_cables.init()
+	## Objetivo:              Este método inicializa una nueva instancia
+	##                        del plano de ruta de cables
+	## Parámetros de entrada: N/A
+	## Parámetros de salida:  N/A
+	## Regresa:               Esta instancia
+	
+	.app                      << smallworld_product.pni_application()
+	>> _self
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_ruta_de_cables.genera_plano()
+        ##  Objetivo:              Este método genera el plano ruta de cables.
+        ##  Parámetros de entrada: N/A.
+        ##  Parámetros de salida:  a sw:layout_page - LoPagina - Página actual del Layout Designer.
+        ##  Regresa:               N/A
+
+#	_self.show_message("Esta opción se encuentra en desrrollo")
+#        _local LoLayoutDesigner << .app.plugin(:layout_plugin).start_layout_designer()
+#	_local LoPagina << _unset
+#	_if LoLayoutDesigner _isnt _unset
+#	_then
+#                _local LoLayoutManager << LoLayoutDesigner.plugin(:layout_manager)
+#		LoDoc << LoLayoutManager.current_document
+#		LoPagina << LoDoc.current_page
+#		_if LoPagina.elements.size > 0
+#		_then
+#			LoPagina.elements.empty()
+#		_endif
+#	_else
+#		_return
+#	_endif
+#		
+#        LoDoc.name          << "Plano ruta de cables"
+#        LoDoc.user!_tipo_plano << :ruta_cables
+#	
+#        _local LoMarco << c_marco.new_with(:bounds, bounding_box.new(0, 0, 1, 1))
+#        LoMarco.Largo << 6
+#        LoMarco.Alto << 3
+#	LoMarco.set_fill_colour(_unset)
+#	LoPagina.add_element(LoMarco)
+#
+#        _local LoSelloPep << c_pep.new_with(:bounds,bounding_box.new(450,500,450+880,500+910))
+#        LoPagina.add_element(LoSelloPep)
+#        _local LnPulgada << 250
+#        _local LoSelloEstandar << c_sello_estandar_ctl_edo.new_with(:bounds,
+#							    bounding_box.new(250,
+#									     250,
+#									     3000,
+#									     2990))
+#	LoPagina.add_element(LoSelloEstandar)
+_endmethod
+$

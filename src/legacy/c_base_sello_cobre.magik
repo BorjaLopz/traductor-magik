@@ -1,0 +1,491 @@
+_package user
+$
+def_slotted_exemplar(:c_base_sello_cobre,
+{
+	{:o_proyecto,        _unset,  :writable},
+	{:o_distrito,        _unset,  :writable},
+	{:s_tipo_plano,      _unset,  :writable},
+	{:lst_celdas_color,  _unset,  :writable}
+}, :c_base_sello)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.asigna_celdas_a_colorear()
+## Asigna las celdas que van en color diferente en cada sello,
+## este método tiene que regresar un rope con un conjunto de
+## property_list que incluya:
+##	{nombre_tabla, num_renglon, num_columna, color_celda}
+## vbluna(17-nov-2006)
+
+	# Redefinible
+
+	_return rope.new()
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.configura_color_sello()
+
+	_if _self.attributes[:blanco_negro].value = "SI"
+	_then
+		_for celda_color _over .lst_celdas_color.fast_elements()
+		_loop
+			nombre_tabla << celda_color[1]
+			num_renglon  << celda_color[2]
+			num_columna  << celda_color[3]
+			color        << colour.new_rgb(0.0, 0.0, 0.0)
+
+			celda << .o_tablas.elemento(nombre_tabla).oCeldas.Celda(num_renglon,num_columna)
+
+			_if (texto << celda.oElemento) _isnt _unset
+			_then
+				texto.sColor << color
+			_endif
+		_endloop
+	_else
+		_for celda_color _over .lst_celdas_color.fast_elements()
+		_loop
+			nombre_tabla << celda_color[1]
+			num_renglon  << celda_color[2]
+			num_columna  << celda_color[3]
+			color << colour.new_rgb(celda_color[4][1],celda_color[4][2],celda_color[4][3])
+
+			celda << .o_tablas.elemento(nombre_tabla).oCeldas.Celda(num_renglon,num_columna)
+
+			_if (texto << celda.oElemento) _isnt _unset
+			_then
+				texto.sColor << color
+			_endif			
+		_endloop
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello_cobre.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+	
+	# Atributo que indica si el sello debe presentarse en color
+	# negro o en color rojo (vbluna-16-nov-2006)
+	attribs.add(layout_attribute_definition.new(:blanco_negro,  :string,
+		                                    :description,   "blanco_negro",
+						    :enum_method,   :enum_bool,
+						    :default_value, "NO"))
+	>> attribs
+	
+_endmethod
+$
+c_base_sello_cobre.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello_cobre.draw_content_on(window)
+
+	_self.configura_color_sello()
+	_super.draw_content_on(window)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello_cobre.enum_bool
+
+	_local lht_bool << hash_table.new()
+	
+	lht_bool[1] <<  "SI"
+	lht_bool[2] <<  "NO"
+
+	_return lht_bool	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello_cobre.enum_pep_cobre
+	## Se subclasea este metodo para que ahora tome la descripcion
+	## de las pep asociadas al proyecto.
+	##
+	l_pep_asoc_proj << rope.new()
+	l_pep_asoc_proj.add_last("")
+	_if (l_design << swg_dsn_admin_engine.active_design) _isnt _unset	
+	_then
+		l_peps << l_design.project.user!_peps		
+		_for a_pep _over l_peps.fast_elements()
+		_loop
+			l_tipo << ""
+			_if (l_tipo_pep << a_pep.user!_catalogo_pep) _isnt _unset 
+			_then
+				l_tipo << l_tipo_pep.user!_descripcion
+			_endif
+
+			l_pep_asoc_proj.add_last(a_pep.user!_clave.write_string + " -- " + l_tipo)
+			
+		_endloop		
+	_endif
+
+	_return l_pep_asoc_proj
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.escala()
+	#31/03/2011  aalarcon, se modifica para mostrar la F/E en la
+	# escala de los planos de esquematicos
+        _try
+		lo_viewport << _self.layout_page.get_first_element_of(
+				       .viewport_principal.default(viewport_layout))
+		
+		#31/03/2011 aalarcon, obtener el tipo de plano		
+		ls_TipoPlano << _self.tipo_plano().write_string		
+    
+		lo_escala << lo_viewport.view_scale.rounded
+
+		# INICIO DEL CAMBIO
+		# (2010-07-22 Aarón Hernández Ramírez, SIGMATAO) : 
+		# se modifica dato de escala pues por unidades de la base de
+		# datos lo da erroneo (la aplicacion esta e n mmm y debe ser en
+		# CM como lo esta definida la base de datos.
+
+		_if lo_viewport.class_name = "c_vp_plano_proy_can"
+		_then	
+			un_v<<unit_value.new(lo_escala ,:mm)    
+			LoEscala   <<  un_v.convert_to(:cm).value
+			(LoEscala, LoDecimal)   <<  LoEscala.integral_and_fraction() 		 
+		        ls_escala << "1:" + loEscala.write_string
+			#25/03/2011 fmejiar,aalarcon, se coloca el return ls_escala
+			_return ls_escala			
+			#
+		# FIN DEL CAMBIO
+
+		_endif
+
+		#31/03/2011 fmejiar,aalarcon, mostrar la F/E en la
+   	        # escala de los planos de esquematicos
+                _if ls_TipoPlano.index_of_seq("esquema") _isnt _unset 
+		_then
+			_return "F/E"			
+		_endif
+		#25/03/2011 fmejiar,aalarcon, se coloca el _return "1:" + lo_escala.write_string
+		_return "1:" + lo_escala.write_string
+	_when does_not_understand
+		_return "F/E"
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello_cobre.inicializa( properties )
+
+	# vbluna(23-feb-07)
+	# - Se agrega el parámetro: properties como resultado de las
+	#   modificaciones para almacenar los valores del sello
+	#   en archivo .xml
+
+	_super.inicializa( properties )
+	.lst_celdas_color << _self.asigna_celdas_a_colorear()
+
+	.o_proyecto << c_proyecto.new()
+	.o_distrito << c_distrito.new()
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_base_sello_cobre.lst_celdas_color << valor
+
+	.lst_celdas_color << valor
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.nombre_plano()
+
+	_try
+		diseno << swg_dsn_admin_engine.active_scheme
+		_return _self.layout.layout_document.identificador_de_plano(diseno)
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_oe()
+
+	_try
+		_if .s_tipo_plano = :ruta_cables _orif .s_tipo_plano = :fosa_cables
+		_then
+			_return smallworld_product.pni_application().plugin(:gen_planos).oe_seleccionada
+		_else
+			_return _self.layout_document.user!_oe
+		_endif
+	_when does_not_understand
+		_return _unset
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_oe_lo()
+
+
+	_try
+		_if .s_tipo_plano = :ruta_cables _orif .s_tipo_plano = :fosa_cables
+		_then
+			_return smallworld_product.pni_application().plugin(:gen_planos).oe_seleccionada
+		_else
+			_return _self.layout_document.oe_lo
+		_endif
+	_when does_not_understand
+		_return _unset
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_oei()
+
+	_try
+		_if .s_tipo_plano = :ruta_cables _orif .s_tipo_plano = :fosa_cables
+		_then
+			_return smallworld_product.pni_application().plugin(:gen_planos).oei_seleccionada
+		_else
+			_return _self.layout_document.user!_oei
+		_endif
+	_when does_not_understand
+		_return _unset
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_opb()
+
+	_try
+		_if .s_tipo_plano = :ruta_cables _orif .s_tipo_plano = :fosa_cables
+		_then
+			_return smallworld_product.pni_application().plugin(:gen_planos).opb_seleccionada
+		_else
+			_return _self.layout_document.user!_oei.user!_opb
+		_endif
+	_when does_not_understand
+		_return _unset
+	_endtry
+	
+_endmethod
+$
+_method c_base_sello_cobre.obten_tramo_cobre()
+
+	_try
+		_return _self.layout_document.user!_oe.user!_tramo_cobre
+	_when does_not_understand
+		_return _unset
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_tramo_cobre_lo()
+
+	_try
+		_return _self.layout_document.oe_lo.user!_tramo_cobre
+	_when does_not_understand
+		_return _unset
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_valor_oe()
+
+#	_try
+#		_return _self.obten_oe().user!_valor_oe.write_string
+#	_when does_not_understand
+#		_return ""
+#	_endtry
+
+	proy_act << swg_dsn_admin_engine.active_scheme
+	LoDisenoActivo << swg_dsn_admin_engine.active_design
+	#Se recupera el valor de la oe para los proyectos de tipo Falc
+	_if LoDisenoActivo.tipo_diseno = :secundaria _andif
+	    proy_act.project.name.matches?("FALC*") _andif
+	    (oeis<<swg_dsn_admin_engine.active_design.user!_oei_locals).size = 1
+	_then
+		LoOEI << oeis.an_element()
+		#08/Agosto/2011
+		#Validar la oe
+		_if  LoOEI.user!_oe_locals.an_element() _isnt _unset 
+		_then
+			LoOE << LoOEI.user!_oe_locals.an_element()
+			_return LoOE.user!_num_oe
+		_else
+			_return _unset 
+		_endif		
+	_endif
+	
+	_if proy_act.project.user!_opbs _isnt _unset 
+	_then
+	     _for op _over proy_act.project.user!_opbs.elements()
+	     _loop
+		  _if proy_act.name.matches?("Principales*") _is _true _and op.user!_tipo_opb = "PRINCIPAL"
+		  _then
+		       _if op.user!_oeis _isnt _unset _andif op.user!_oeis.an_element().user!_oes _isnt _unset 
+		       _then
+			    _return  op.user!_oeis.an_element().user!_oes.an_element().user!_valor_oe
+		       _endif
+		       
+		  _elif op.user!_tipo_opb = "SECUNDARIO"
+		  _then
+		       _if op.user!_oeis _isnt _unset _andif op.user!_oeis.an_element().user!_oes _isnt _unset 
+		       _then
+			    _return op.user!_oeis.an_element().user!_oes.an_element().user!_valor_oe
+		       _endif
+		  _endif
+	     _endloop
+	_endif
+
+	_return _unset 
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_valor_oei()
+
+#	_try
+#		_return _self.obten_oei().user!_valor_oei.write_string
+#	_when does_not_understand
+#		_return ""
+#	_endtry
+
+	proy_act << swg_dsn_admin_engine.active_scheme
+	LoDisenoActivo << swg_dsn_admin_engine.active_design
+	
+	#Se recupera el valor de la oei para los proyectos de tipo Falc
+	_if LoDisenoActivo.tipo_diseno = :secundaria _andif
+	    proy_act.project.name.matches?("FALC*") _andif
+	    (oeis<<swg_dsn_admin_engine.active_design.user!_oei_locals).size = 1
+	_then
+		LoOEI << oeis.an_element()
+		_return LoOEI.user!_num_oei
+	_endif
+	
+	_if proy_act.project.user!_opbs _isnt _unset 
+	_then
+	     _for op _over proy_act.project.user!_opbs.elements()
+	     _loop
+		  _if proy_act.name.matches?("Principales*") _is _true _and op.user!_tipo_opb = "PRINCIPAL"
+		  _then
+			  write("uno")
+		       _if op.user!_oeis _isnt _unset 
+		       _then
+			     _return  op.user!_oeis.an_element().user!_valor_oei
+		       _endif
+		       
+		  _elif op.user!_tipo_opb = "SECUNDARIO"
+		  _then
+		       _if op.user!_oeis _isnt _unset
+		       _then
+			    _return op.user!_oeis.an_element().user!_valor_oei
+		       _endif
+		  _endif
+	     _endloop
+	_endif
+	
+	_return _unset
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_valor_opb()
+
+#	_try
+#		_return _self.obten_opb().user!_valor_opb.write_string
+#	_when does_not_understand
+#		_return ""
+#	_endtry
+
+	proy_act << swg_dsn_admin_engine.active_scheme
+	LoDisenoActivo << swg_dsn_admin_engine.active_design
+	
+	#Se recupera el valor de la opb para los proyectos de tipo Falc
+	_if LoDisenoActivo.tipo_diseno = :secundaria _andif
+	    proy_act.project.name.matches?("FALC*") _andif
+	    (oeis<<swg_dsn_admin_engine.active_design.user!_oei_locals).size = 1
+	_then
+		LoOEI << oeis.an_element()
+		LoOpb << LoOEI.user!_op_local
+		_return LoOpb.user!_num_op
+	_endif
+
+	
+	_if proy_act.project.user!_opbs _isnt _unset _andif
+	    proy_act.project.user!_opbs.size >0
+	_then
+             _for op _over proy_act.project.user!_opbs.elements()
+	     _loop
+		  _if proy_act.name.matches?("Principales*") _is _true _and
+		      op.user!_tipo_opb = "PRINCIPAL"
+		  _then
+		       opb<< op.user!_valor_opb
+		       _return opb
+		  _elif op.user!_tipo_opb = "SECUNDARIO"
+		  _then 
+		       opb<< op.user!_valor_opb
+		       _return opb	
+		  _endif
+	     _endloop
+	_else
+	     _return _unset 
+	_endif
+
+		
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.obten_valor_pep()
+
+	_local ls_pep
+	_if .s_tipo_plano = :principales _orif .s_tipo_plano = :fosa_cables
+	_then
+		ls_pep << .o_proyecto.pep_cons_princ
+	_elif .s_tipo_plano = :diagrama_empalmes _orif .s_tipo_plano = :esquema_secundario
+	_then
+		ls_pep << .o_proyecto.pep_cons_sec
+	_elif .s_tipo_plano = :esquema_principal
+	_then
+		ls_pep << .o_proyecto.pep_cons_princ
+	_endif
+
+	_return ls_pep.write_string
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_base_sello_cobre.s_tipo_plano << valor
+
+	.s_tipo_plano << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_base_sello_cobre.serial_slots()
+
+	(keys,values) << _super.serial_slots()
+
+	keys.add_all_last( rope.new_with(:s_tipo_plano,:lst_celdas_color) )
+	values.add_all_last( rope.new_with(.s_tipo_plano,.lst_celdas_color) )
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello_cobre.tipo_plano()
+	## regresa en un symbol el tipo de plano asignado al layout document
+	## (vbluna-26/oct/06)
+	_try
+		_return _self.layout_document.user!_tipo_plano.as_symbol()
+	_when does_not_understand
+		_return _unset
+	_endtry
+	
+_endmethod                                                                                                              
+$

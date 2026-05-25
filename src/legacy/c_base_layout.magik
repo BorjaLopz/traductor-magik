@@ -1,0 +1,23 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Clase base de la cual heredan las clases que son layout
+# Autor: fadd
+# Fecha de creacion: 10-Marzo-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_base_layout)
+
+$
+def_slotted_exemplar(:c_base_layout,
+		     {
+			
+		     },
+		     :c_elemento_grafico
+)
+
+

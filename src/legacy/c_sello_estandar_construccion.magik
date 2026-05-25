@@ -1,0 +1,308 @@
+_package user
+$
+#remex(:c_sello_estandar_construccion)
+$
+def_slotted_exemplar(:c_sello_estandar_construccion,
+{
+	{:oTipoEmpresaRazonS,      _unset }, # catalogo para empresa
+	{:valorEmpresaRazonS ,     _unset } # Valor para empresa
+}, :c_sello_estandar_base)
+$
+c_sello_estandar_construccion.define_shared_constant(:allowed_on_menu?, _false   , :public)
+$
+_method c_sello_estandar_construccion.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add(layout_attribute_definition.new(:blanco_negro,  :string,
+		                                    :description,   "blanco_negro",
+						    :enum_method,   :enum_bool,
+						    :default_value, "NO"))
+
+	attribs.add(layout_attribute_definition.new(:emprerazon, :string,
+						    :description, "RAZON SOCIAL",	    
+                                                    :enum_method, :enum_tipo_razon_social))
+
+
+	attribs.add(layout_attribute_definition.new(:fecha, :string,
+						    :description, "fecha",
+						    :default_value, _unset ))    
+	
+	attribs.add(layout_attribute_definition.new(:colonia, :string,
+						    :description, "Colonia",
+						    :default_value, _unset ))    
+	
+	attribs.add(layout_attribute_definition.new(:municipio, :string,
+						    :description, "Delegación o Municipio",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:codigo_postal, :string,
+						    :description, "Codigo Postal",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:ruta, :string,
+						    :description, "Ruta",
+						    :default_value, _unset ))
+	
+	>> attribs
+	
+_endmethod
+$
+c_sello_estandar_construccion.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar_construccion.enum_tipo_razon_social
+	## 
+	## 
+	.oTipoEmpresaRazonS    << hash_table.new()
+	.oTipoEmpresaRazonS[3] <<  "TELEFONOS|DE MEXICO|S.A.B de C.V."
+	.oTipoEmpresaRazonS[1] <<  "RED NACIONAL|ÚLTIMA MILLA|S.A.P.I. DE C.V"     
+	.oTipoEmpresaRazonS[2] <<  "RED ÚLTIMA|MILLA DEL NOROESTE|S.A.P.I. DE C.V"  
+	_return .oTipoEmpresaRazonS
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_construccion.codigo_postal
+	## 
+	## 
+	_return ""
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_construccion.colonia
+	
+	_return ""
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_construccion.configura_tabla()
+
+	_super.configura_tabla()
+	
+	_local ln_desp_x
+	_local ln_desp_y
+
+	_local pl_ctl_dto << property_list.new()
+	_local pl_cp_nse_ruta << property_list.new()
+	_local pl_del_mpo << property_list.new()
+
+	pl_ctl_dto[:ren] << {7,8}
+	pl_ctl_dto[:col] << {70}
+	pl_cp_nse_ruta[:ren] << {5,10}
+	pl_cp_nse_ruta[:col] << {15,15,15}
+	pl_del_mpo[:ren] << {7.5,7.5}
+	pl_del_mpo[:col] << {45,45}
+
+	lo_tabla << .o_tablas.crea_tabla(2,1,:tbl_Ctl_Dto)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion, :tbl_compania, :tbl_FecDibRev,
+						       :tbl_Escala})
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_ubicacion})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y -150))
+	_self.asigna_medidas_tabla(lo_tabla, pl_ctl_dto)
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+
+	lo_tabla << .o_tablas.crea_tabla(2,3,:tbl_CP_Ruta_Nse)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion, :tbl_compania, :tbl_FecDibRev,
+						       :tbl_Escala,:tbl_Ctl_Dto})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y -150))
+	_self.asigna_medidas_tabla(lo_tabla, pl_cp_nse_ruta)
+
+
+	
+	lo_tabla << .o_tablas.crea_tabla(2,2,:tbl_del_mpo)
+
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion, :tbl_compania, :tbl_FecDibRev,
+						       :tbl_Escala, :tbl_Ctl_Dto, :tbl_CP_Ruta_Nse})
+
+	
+	LoDesplazamiento << 100
+	ln_desp_x +<< LoDesplazamiento
+
+	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	_self.asigna_medidas_tabla(lo_tabla, pl_del_mpo)
+	lo_tabla.bDibuja_bordes? << _false
+	lo_tabla.bDibuja_Columnas_Internas? << _false
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_construccion.etiqueta_celdas()
+
+	_super.etiqueta_celdas()
+	_self.asigna_texto_celda(:tbl_CP_Ruta_Nse,1,1,"C.P.",30)
+	_self.asigna_texto_celda(:tbl_CP_Ruta_Nse,1,2,"RUTA",30)
+	_self.asigna_texto_celda(:tbl_CP_Ruta_Nse,1,3,"NSE PRED",25)
+	_self.asigna_texto_celda(:tbl_del_mpo,1,1," COLONIA:",35,:top_left)
+	_self.asigna_texto_celda(:tbl_del_mpo,2,1," DELEGACION O MPO.:",35,:top_left)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_construccion.llena_datos_celdas()
+
+	_super.llena_datos_celdas()
+
+	_local ls_nombre_ctl << .pl_datos[:tipo_ctl] + " - " + .pl_datos[:nombre_ctl]
+
+
+	_local ls_distrito <<  .pl_datos[:distrito]
+
+	
+	_if .pl_datos[:nombre_ctl].size > 11
+	_then
+		_self.asigna_texto_celda(:tbl_Ctl_Dto,2,1,ls_nombre_ctl,30)
+	_else
+		_self.asigna_texto_celda(:tbl_Ctl_Dto,2,1,ls_nombre_ctl,60)
+	_endif
+
+	_self.asigna_texto_celda(:tbl_Ctl_Dto,1,1,ls_distrito,75)
+	_self.asigna_texto_celda(:tbl_CP_Ruta_Nse,2,1,.pl_datos[:cp],45)
+	_self.asigna_texto_celda(:tbl_CP_Ruta_Nse,2,2,.pl_datos[:ruta],45)
+	_self.asigna_texto_celda(:tbl_CP_Ruta_Nse,2,3,.pl_datos[:nse],45)
+	_self.asigna_texto_celda(:tbl_del_mpo,2,2,.pl_datos[:del_mpo],35,:top_left)
+	_self.asigna_texto_celda(:tbl_del_mpo,1,2,.pl_datos[:colonia],35,:top_left)
+
+	
+	_if ( _self.attributes[:emprerazon] _isnt _unset _andif
+	      _self.attributes[:emprerazon].value) _isnt  _unset _andif
+	      _self.attributes[:emprerazon].value.size > 0
+	_then		
+		.valorEmpresaRazonS <<   _self.attributes[:emprerazon].value.write_string.uppercase
+
+		_if .valorEmpresaRazonS.uppercase.matches?("*TELEFONOS*")
+		_then
+				
+			         txts << .valorEmpresaRazonS.split_by("|")
+				 
+				_self.asigna_texto_celda(:tbl_compania,1,1, txts[1],35)
+				_self.asigna_texto_celda(:tbl_compania,2,1, txts[2],35)
+				_self.asigna_texto_celda(:tbl_compania,3,1, txts[3],35)
+				
+				_self.asigna_texto_celda(:tbl_FecDibRev,3,2,"TELMEX",30)
+
+		_elif .valorEmpresaRazonS.uppercase.matches?("*NACIONAL*")
+		_then
+							
+			         txts << .valorEmpresaRazonS.split_by("|")
+				 
+				_self.asigna_texto_celda(:tbl_compania,1,1, txts[1],23)
+				_self.asigna_texto_celda(:tbl_compania,2,1, txts[2],23)
+				_self.asigna_texto_celda(:tbl_compania,3,1, txts[3],23)
+				
+				_self.asigna_texto_celda(:tbl_FecDibRev,3,2,"RNUM",30)
+
+				
+		_elif .valorEmpresaRazonS.uppercase.matches?("*NOROESTE*")
+		_then 
+			txts << .valorEmpresaRazonS.split_by("|")
+				 
+			_self.asigna_texto_celda(:tbl_compania,1,1, txts[1],23)
+			_self.asigna_texto_celda(:tbl_compania,2,1, txts[2],23)
+			_self.asigna_texto_celda(:tbl_compania,3,1, txts[3],23)
+
+			_self.asigna_texto_celda(:tbl_FecDibRev,3,2,"RUMN",30)
+				
+		_endif
+		
+	_endif
+
+	#
+	# END CHANGE
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_construccion.obten_registros()
+
+	.o_distrito.asigna_distrito(.o_proyecto.distrito)
+
+	 _super.obten_registros()
+
+
+	.pl_datos[:nombre_ctl] << .o_proyecto.nombre_central
+	.pl_datos[:tipo_ctl]   << .o_proyecto.tipo_central
+	.pl_datos[:cve_ctl]    <<   .o_proyecto.cve_central
+	.pl_datos[:distrito]   <<   .o_proyecto.distrito.user!_distrito
+
+
+	_if (_self.attributes[:ruta] _isnt _unset _andif
+	     _self.attributes[:ruta].value _isnt  _unset _andif
+	     _self.attributes[:ruta].value.write_string.size > 0)
+	_then
+		LoMunicipiouser? <<     _true
+		.pl_datos[:ruta]  << _self.attributes[:ruta].value.write_string.uppercase
+		
+	_else
+		LoMunicipiouser? <<     _false  
+		.pl_datos[:ruta]    << .o_distrito.numero_ruta
+	_endif
+	
+	
+	.pl_datos[:nse]        << .o_distrito.dto_nse_predominante
+
+
+	_if (_self.attributes[:municipio] _isnt _unset _andif
+	     _self.attributes[:municipio].value _isnt  _unset _andif
+	     _self.attributes[:municipio].value.write_string.size > 0)
+	_then
+		LoMunicipiouser? <<     _true
+		.pl_datos[:del_mpo]  << _self.attributes[:municipio].value.write_string.uppercase
+		
+	_else
+		LoMunicipiouser? <<     _false  
+		.pl_datos[:del_mpo]    << .o_distrito.nombre_delegacion_municipio
+	_endif
+	
+	_if (_self.attributes[:codigo_postal] _isnt _unset _andif
+	     _self.attributes[:codigo_postal].value _isnt  _unset _andif
+	     _self.attributes[:codigo_postal].value.write_string.size > 0)
+	_then
+		Locpuser? <<     _true
+		.pl_datos[:cp]  << _self.attributes[:codigo_postal].value.write_string.uppercase
+		
+	_else
+		Locpuser? <<     _false  
+		.pl_datos[:cp]    << .o_distrito.codigo_postal
+	_endif
+	
+	
+	_if (_self.attributes[:colonia] _isnt _unset _andif
+	     _self.attributes[:colonia].value _isnt  _unset _andif
+	     _self.attributes[:colonia].value.write_string.size > 0)
+	_then
+		Locoloniauser? <<     _true
+		.pl_datos[:colonia]  << _self.attributes[:colonia].value.write_string.uppercase
+		
+	_else
+		Locoloniauser? <<     _false  
+		.pl_datos[:colonia]  << .o_distrito.nombre_colonia
+	_endif
+
+
+	_if (_self.attributes[:fecha] _isnt _unset _andif
+	     _self.attributes[:fecha].value _isnt  _unset _andif
+	     _self.attributes[:fecha].value.write_string.size > 0)
+	_then
+		.pl_datos[:fecha]  << _self.attributes[:fecha].value.write_string.uppercase
+		
+	_endif
+
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_construccion.ruta
+	## 
+	## 
+	_return ""
+_endmethod
+$

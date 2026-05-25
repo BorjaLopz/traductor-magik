@@ -1,0 +1,2446 @@
+_package user
+$
+def_slotted_exemplar(:c_diagrama_unifilar_ruta,
+                     {
+			     {:oEmpalmes,         _unset, :writable, :public},
+			     {:oEmpAreas,         _unset, :writable, :public},
+			     {:odiagrama_creado?, _unset, :writable, :public},
+			     {:oubicacion_plano,  _unset, :writable, :public},
+			     {:oCableIn,          _unset, :writable, :public},
+			     {:oCableOut,         _unset, :writable, :public},
+			     {:oCentrales,        _unset, :writable, :public},
+			     {:oTipoDiagrama,     _unset, :writable, :public}
+
+		     },
+		     :layout_element)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:ExitenteByN, 1, :public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:ExitenteColor, 1, :public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:impresion_plano,(property_list.new_with(
+									 1, "Color",
+									 2, "Blanco y Negro"
+									       )
+								 ),:public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:LoTitulo, "DIAGRAMA UNIFILAR", :public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:LoTitulo2, "DIAGRAMA DE CONEXION", :public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:LoVariosClientes, "VARIOS", :public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:mueve_cliente,(property_list.new_with(
+									 1, "-10", 2, "-9", 3, "-8", 4, "-7", 5, "-6",
+									 6, "-5", 7, "-4", 8, "-3", 9, "-2", 10, "-1", 11, "0",
+									 12, "1", 13, "2", 14, "3", 15, "4", 16, "5",
+									 17, "6", 18, "7", 19, "8", 20, "9", 21, "10"
+									       )
+								 ),:public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:ProyectadaByN, 2, :public)
+$
+c_diagrama_unifilar_ruta.define_shared_constant(:ProyectadaColor, 2, :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.crea_area_empalmes()
+	## 
+	##
+	.oEmpAreas << rope.new()
+	_local Coymin
+	_local Coymax
+	_local NumFibras
+	LoTot << .oEmpalmes.size
+	EspX << _self.bounds.xmax - _self.bounds.xmin        # espacio en x
+	EspX << EspX - 1600     # los 1600 son los extremos que se usaran para los datos de Ctrales.
+	                        # 800 para cada lado. en la horizontal.
+	EspY << (_self.bounds.ymax - _self.bounds.ymin)/3    # espacio en y, queda igual
+	LoDesY << (_self.bounds.ymax - _self.bounds.ymin)/3
+	                       # 300 = 3 cm
+	                       # espacio que ocuparan los empalmes, suma de sus anchos.
+	EspE << LoTot*300      # 300 es el ancho que tendra el empalme, este dato sera dinamico
+	EspR << EspX - EspE    # Espacio real que permitiran separar los empalmes y distribuirlos
+	                       # en el eje X.
+	EspS << EspR/(LoTot+1) # Son los espacios que se suman a las x para separar
+
+	Xini << _self.bounds.xmin + 800
+	cont << 1
+	_for emp _over .oEmpalmes.fast_elements()
+	_loop
+		pl << property_list.new()
+		lobounds << bounding_box.new(Xini + EspS,
+					     _self.bounds.ymin + (((0.4)*LoDesY).as_float).truncated,
+					     Xini + EspS + 300,
+					     _self.bounds.ymax - (((0.4)*LoDesY).as_float).truncated)
+		
+		area << lobounds.buffer(1)
+		pl[:empalme] << emp
+		pl[:area]    << area
+		pl[:numEmp]  << cont
+		cont + << 1
+		.oEmpAreas.add(pl)
+		Xini << Xini + EspS + 300
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.crea_distribucion_clientes()
+	## 
+	##
+	_local SeparaCliente << 10
+	_local SigCont << 0 #contador de cables de clientes
+	_for emp _over .oEmpAreas.fast_elements()
+	_loop
+		
+		## Formula para determinar cuantos cables represento en la
+		## parte superior del empalme y cuantos cables represento en la
+		## parte inferior del empalme.
+		_if (Totsalida << emp[:cabscltes].size) = 0
+		_then
+			emp[:lineasClte]  << rope.new()
+			_return
+		_endif 
+		(Resultado, residuo)   <<  ((Totsalida/2).as_float).div_mod_1()
+		CbsParteSup << Totsalida - Resultado
+		CbsParteInf << Totsalida - CbsParteSup
+	
+		# (10/07/02 jtlelo) : coordenadas de arriba
+		X1up << emp[:area].bounds.xmin
+		Y1up << _self.bounds.ymax
+		X2up << emp[:area].bounds.xmax
+		Y2up << _self.bounds.ymax
+		Coord1 << coordinate.new(X1up, Y1up)
+		Coord2 << coordinate.new(X2up, Y2up)
+		lineaUp << pseudo_chain.new(sector.new_with(Coord1, Coord2))
+
+		# (10/07/02 jtlelo) : coordenadas de abajo
+		X1down << emp[:area].bounds.xmin
+		Y1down << _self.bounds.ymin
+		X2down << emp[:area].bounds.xmax
+		Y2down << _self.bounds.ymin
+		Coord1 << coordinate.new(X1down, Y1down)
+		Coord2 << coordinate.new(X2down, Y2down)
+		lineaDown << pseudo_chain.new(sector.new_with(Coord1, Coord2))
+		lineasCliente << rope.new()
+
+		
+
+		_for cont _over 1.upto(CbsParteSup)
+		_loop
+			cblclte << emp[:cabscltes][cont]
+			EdoConst << cblclte.construction_status
+			qColor << _self.obten_color(EdoConst)
+			ancho << _self.obten_ancho_linea(EdoConst)
+
+			longLinea << lineaUp.first_coord.distance_to(lineaUp.last_coord)
+			LongClte << longLinea / CbsParteSup
+			_if CbsParteSup = 1
+			_then
+				lineaCte << lineaUp
+				pl << property_list.new()
+				pl[:linea] << lineaCte
+				_if (mueve << _self.MueveClientesUp.as_number()) <> 0
+				_then
+					pl[:linea] << _self.tranforma_linea(lineaCte, mueve)
+				_endif
+				
+				pl[:color] << qcolor
+				pl[:ancho] << ancho
+				pl[:cable] << cblclte
+				pl[:ubicacion] << :arriba
+				lineasCliente.add(pl)
+			_elif cont = 1
+			_then
+				# (10/07/02 jtlelo) : restamos Xmax por el ser el cliente inicio
+				coor1 << lineaUp.first_coord
+				Xtmp  << lineaUp.first_coord.X + LongClte
+				X2    << Xtmp - SeparaCliente
+				Ytmp  << lineaUp.first_coord.Y
+				Y2    << Ytmp
+				coor2 << coordinate.new(X2, Y2)
+				lineaCte << pseudo_chain.new(sector.new_with(Coor1, Coor2))
+				pl << property_list.new()
+				pl[:linea] << lineaCte
+				_if (mueve << _self.MueveClientesUp.as_number()) <> 0
+				_then
+					pl[:linea] << _self.tranforma_linea(lineaCte, mueve)
+				_endif
+				pl[:color] << qcolor
+				pl[:ancho] << ancho
+				pl[:cable] << cblclte
+				pl[:ubicacion] << :arriba
+				lineasCliente.add(pl)
+			_elif cont = CbsParteSup
+			_then
+				# (10/07/02 jtlelo) : restamos Xmin por ser el cliente fin
+				X1 << Xtmp + SeparaCliente
+				Y1 << Ytmp
+				X2 << X1 + LongClte
+				Y2 << Y1
+				coor1 << coordinate.new(X1,Y1)
+				coor2 << coordinate.new(X2,Y2)
+				lineaCte << pseudo_chain.new(sector.new_with(Coor1, Coor2))
+								pl << property_list.new()
+				pl[:linea] << lineaCte
+				_if (mueve << _self.MueveClientesUp.as_number()) <> 0
+				_then
+					pl[:linea] << _self.tranforma_linea(lineaCte, mueve)
+				_endif
+				
+				pl[:color] << qcolor
+				pl[:ancho] << ancho
+				pl[:cable] << cblclte
+				pl[:ubicacion] << :arriba
+				lineasCliente.add(pl)
+			_else 
+			      # (10/07/02 jtlelo) :  Restamos Xmax y Xmin por ser cliente intermedio
+				X1   << Xtmp + SeparaCliente
+				Y1   << Ytmp
+				Xtmp << X1 + LongClte
+				X2   << Xtmp - SeparaCliente
+				Ytmp << Y1
+				Y2   << Ytmp
+				coor1 << coordinate.new(X1, Y1)
+				coor2 << coordinate.new(X2, Y2)
+				lineaCte << pseudo_chain.new(sector.new_with(Coor1, Coor2))
+				pl << property_list.new()
+				pl[:linea] << lineaCte
+				_if (mueve << _self.MueveClientesUp.as_number()) <> 0
+				_then
+					pl[:linea] << _self.tranforma_linea(lineaCte, mueve)
+				_endif
+				pl[:color] << qcolor
+				pl[:ancho] << ancho
+				pl[:cable] << cblclte
+				pl[:ubicacion] << :arriba
+				lineasCliente.add(pl)
+			_endif
+			SigCont << cont
+			emp[:lineasClte] << lineasCliente
+		_endloop
+
+		
+		_for cont _over SigCont.upto(CbsParteInf) 
+		_loop
+			cblclte << emp[:cabscltes][cont + SigCont]
+			EdoConst << cblclte.construction_status
+			qColor << _self.obten_color(EdoConst)
+			ancho << _self.obten_ancho_linea(EdoConst)
+
+			longLinea << lineaDown.first_coord.distance_to(lineaDown.last_coord)
+			LongClte  << longLinea / CbsParteInf
+			_if CbsParteInf = 1
+			_then
+				lineaCte << lineaDown
+				pl << property_list.new()
+				pl[:linea] << lineaCte
+				_if (mueve << _self.MueveClientesDown.as_number()) <> 0
+				_then
+					pl[:linea] << _self.tranforma_linea(lineaCte, mueve)
+				_endif
+				pl[:color] << qcolor
+				pl[:ancho] << ancho
+				pl[:cable] << cblclte
+				pl[:ubicacion] << :abajo
+				lineasCliente.add(pl)
+			_elif cont = SigCont
+			_then
+				# (10/07/02 jtlelo) : restamos Xmax por el ser el cliente inicio
+				coor1 << lineaDown.first_coord
+				Xtmp  << lineaDown.first_coord.X + LongClte
+				X2    << Xtmp - SeparaCliente
+				Ytmp  << lineaDown.first_coord.Y
+				Y2    << Ytmp
+				coor2 << coordinate.new(X2, Y2)
+				lineaCte << pseudo_chain.new(sector.new_with(Coor1, Coor2))
+				pl << property_list.new()
+				pl[:linea] << lineaCte
+				_if (mueve << _self.MueveClientesDown.as_number()) <> 0
+				_then
+					pl[:linea] << _self.tranforma_linea(lineaCte, mueve)
+				_endif
+				pl[:color] << qcolor
+				pl[:ancho] << ancho
+				pl[:cable] << cblclte
+				pl[:ubicacion] << :abajo
+				lineasCliente.add(pl)
+			_elif cont = CbsParteInf
+			_then
+				# (10/07/02 jtlelo) : Incrementamos Xmin por ser el cliente fin
+				X1 << Xtmp + SeparaCliente
+				Y1 << Ytmp
+				X2 << X1 + LongClte
+				Y2 << Y1
+				coor1 << coordinate.new(X1,Y1)
+				coor2 << coordinate.new(X2,Y2)
+				lineaCte << pseudo_chain.new(sector.new_with(Coor1, Coor2))
+				pl << property_list.new()
+				pl[:linea] << lineaCte
+				_if (mueve << _self.MueveClientesDown.as_number()) <> 0
+				_then
+					pl[:linea] << _self.tranforma_linea(lineaCte, mueve)
+				_endif
+				pl[:color] << qcolor
+				pl[:ancho] << ancho
+				pl[:cable] << cblclte
+				pl[:ubicacion] << :abajo
+				lineasCliente.add(pl)
+			_else 
+			      # (10/07/02 jtlelo) :  Restamos Xmax e incrementamos Xmin por
+			      # ser cliente intermedio
+				X1   << Xtmp + SeparaCliente
+				Y1   << Ytmp
+				Xtmp << X1 + LongClte
+				X2   << Xtmp - SeparaCliente
+				Ytmp << Y1
+				Y2   << Ytmp
+				coor1 << coordinate.new(X1, Y1)
+				coor2 << coordinate.new(X2, Y2)
+				lineaCte << pseudo_chain.new(sector.new_with(Coor1, Coor2))
+								pl << property_list.new()
+				pl[:linea] << lineaCte
+				_if (mueve << _self.MueveClientesDown.as_number()) <> 0
+				_then
+					pl[:linea] << _self.tranforma_linea(lineaCte, mueve)
+				_endif
+				pl[:color] << qcolor
+				pl[:ancho] << ancho
+				pl[:cable] << cblclte
+				pl[:ubicacion] << :abajo
+				lineasCliente.add(pl)
+			_endif
+			emp[:lineasClte] << lineasCliente
+		_endloop
+		
+	_endloop
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.crea_estructura_diagrama()
+	## 
+	##
+	## (10/06/29 jtlelo) : estos datos es para validar el
+	## seguimiento de la ruta del cable sobre los empalmes
+	_local EdoConstruccion << .oCableIn.construction_status
+	_local numFibras       << .oCableIn.spec_info.fiber_quantity
+	_local LoCableEntrada  << .oCableIn
+	
+	_for emp _over .oEmpAreas.fast_elements()
+	_loop
+		cent << _false
+		LoAreaEmp << emp[:area]
+		Xmed << LoAreaEmp.bounds.xmin + (LoAreaEmp.bounds.xmax - LoAreaEmp.bounds.xmin)/2
+		cablesIn  << emp[:empalme].get_upstream_cables() # cables de entrada del empalme
+		cablesOut << emp[:empalme].get_downstream_cables() # cables de salida del empalme
+		
+		_for cin _over cablesIn.fast_elements()
+		_loop
+			_if numFibras = cIn.spec_info.fiber_quantity _andif
+			    EdoConstruccion = cIn.construction_status
+			_then
+				LoCableEntrada << cin
+				cent << _true
+				_leave 
+			_endif
+		_endloop
+
+		cabruta << _false
+		LoCableSalida << _unset # cable de salida del empalme actual
+	
+		_for cOut _over cablesOut.fast_elements()
+		_loop
+			_if numFibras = cOut.spec_info.fiber_quantity _andif
+			    EdoConstruccion = cOut.construction_status
+			_then
+				LoCableSalida << cOut
+				cabruta << _true
+				_leave
+			_endif
+		_endloop
+
+		_if LoCableSalida _is _unset 
+		_then
+			LoCableSalida << .oCableOut
+			cabruta << _true
+		_endif
+
+		## Se calculan las coordenadas para la union de las Fibras en
+		## los Empalmes.
+		Lopines << LoCableEntrada.obtener_pines(LoCableEntrada.mit_sheath_pins.size)
+		# me permite seguir el numero de fibra para tomar del rope
+
+		# (10/06/30 jtlelo) : Guardamos sus cables de entrada y salida
+		# de cada empalme
+		emp[:cableIn]  << LoCableEntrada
+		emp[:cableOut] << LoCableSalida
+		# .oLineasGrupo la coordenda en Y.
+		# (10/06/30 jtlelo) : se crean las propiedades que tendran las lineas##############
+		LoLineas      << rope.new()
+
+		_for pin _over LoPines.fast_elements()
+		_loop
+			_if pin.is_kind_of?(mit_fiber_pin)
+			_then
+				_self.genera_atributos_linea(pin, _true, lolineas,  emp)
+			_else
+				_self.genera_atributos_linea(pin, _false, lolineas, emp) 
+			_endif
+			
+		_endloop
+
+	
+		emp[:lineas]    << LoLineas
+		########################################################################################
+		
+		LoDesTemp << (emp[:area].bounds.ymax - emp[:area].bounds.ymin) / (LoLineas.size + 1)
+		LoDestribucion << LoDestemp
+
+		# (10/06/30 jtlelo) : se crean las lineas pseudo_chain##########################
+		lineasGrupo << rope.new()
+		lineasMic   << rope.new()
+		_for linea _over LoLineas.fast_elements()
+		_loop
+			lineasGrupo.add(_self.crear_linea(LoDestribucion, linea, emp, linea[:Sinconexion]))
+			_if (linea[:derivacion] _is _false  _andif
+			    linea[:Sinconexion] _is _false )
+			_then
+				lineasMic.add(_self.crear_linea_mic(LoDestribucion, linea[:mic], Emp))
+				linea[:ubicacion] << LoDestribucion
+			_elif linea[:derivacion] _is _maybe
+			_then
+				lineasMic.add(_self.crear_linea_mic(LoDestribucion, linea[:mic], Emp))
+				linea[:ubicacion] << LoDestribucion
+			_else
+				# si hay derivacion
+				linea[:ubicacion] << LoDestribucion	
+			_endif
+			LoDestribucion + << LoDestemp
+		_endloop
+		
+		emp[:lineasGrupo] << lineasGrupo
+		emp[:lineasMic]   << lineasMic
+		
+		#######################################################################################
+
+		# (10/07/02 jtlelo) : buscamos las derivaciones y los clientes
+		# de la ruta 
+		CabsCltes << rope.new()
+		LoClientes << rope.new()
+		Roclientes << rope.new()
+		_for cbOut _over CablesOut.fast_elements()
+		_loop
+			_if cbOut.id <> emp[:cableOut].id
+			_then
+				LoRutaCliente << c_engine_ruta_cables.new()
+				LoRutaCliente.recorrer_ruta(cbOut)
+				LoClientes << LoRutaCliente.getclientes()
+				# (10/07/23 jtlelo) : buscamos el final del cable y 
+			
+				_if LoClientes.size > 0
+				_then
+					pl << property_list.new()
+					pl[:clientes] << LoClientes
+					pl[:cable] << cbOut
+					CabsCltes.add(cbOut)
+					Roclientes.add(pl)
+				_else
+					pl << property_list.new()
+					cliente << rope.new()
+					pl[:nombre] << _self.obtener_nombre_cable(cbOut)
+					cliente.add(pl)
+					pl << property_list.new()
+					pl[:clientes] << cliente 
+					pl[:cable] << cbOut
+					CabsCltes.add(cbOut)
+					Roclientes.add(pl)
+				_endif
+			_endif
+		_endloop
+		emp[:CabsCltes] << CabsCltes
+		emp[:clientes]  << Roclientes
+		###########################################################################################
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.crear_linea(PoDist, PoFormat, PoEmpalme, sinconexion?)
+	## Se forma la linea que debe tener en el slot oLineasGrupo
+	## Cadena con formato.
+	## La reprsentacion es lineal, punto salida - punto llegada
+	_local LoArea << PoEmpalme[:area]
+	_local empalme << PoEmpalme
+	_local TotalFibrasCabSalida << empalme[:cableOut].spec_info.fiber_quantity 
+	lolinea << rope.new()
+	LoColor1 << PoFormat[:color_1]
+	ancho << PoFormat[:ancholin]
+	est_line1 << line_style.new_with_properties(:foreground_colour, colour.called(LoColor1), :width, ancho)
+	
+	LoCoordIni << coordinate.new(_self.bounds.xmin, _self.bounds.ymax)
+	LoCoordFin << coordinate.new(_self.bounds.xmax, _self.bounds.ymax)
+	
+	LoDesY << _self.bounds.ymax - LoArea.bounds.ymax       # Distancia del punto Y del layout
+	LoY << LoCoordIni.y - LoDesY                           # el Y del Empalme.
+
+
+	Incre << 0
+	_if sinconexion? _is _true 
+	_then
+		Incre << 30
+	_endif	
+	
+	_if empalme[:cablein].id = .oCableIn.id _andif
+	    empalme[:cableOut].id = .oCableOut.id
+	_then	
+		new_coord  << coordinate.new(LoCoordIni.x + 350,         LoY - PoDist)
+		new_coord2 << coordinate.new( LoArea.bounds.xmin + Incre,      LoY - PoDist)
+		linea1 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+		linea1.style_info << est_line1
+		pl << property_list.new()
+		pl[:linea] << linea1 
+		pl[:anota] << PoFormat[:anota_1]
+		pl[:colorFib] << _self.obtiene_color(PoFormat[:colormic])
+		pl[:ubicacion] << :inicio
+		Lolinea.add(pl) 
+		
+		# (10/07/23 jtlelo) : validamos para el caso de que el cable de
+		# salida tenga menor fibras que el cable de entrada.. 		
+		#write("@PoFormat[:anota_1].as_number()  ", PoFormat[:anota_1].as_number())
+		#write("@TotalFibrasCabSalida --->> ", TotalFibrasCabSalida) 		
+		#_if PoFormat[:anota_1].as_number() <= TotalFibrasCabSalida
+		#_then
+		# (10/07/23 jtlelo) : dibujamos la linea hasta el numero de
+		# cables de salida.
+		
+		_if sinconexion?.not
+		_then			
+		     new_coord  << coordinate.new(LoArea.bounds.xmax - Incre, LoY - PoDist)
+		     new_coord2 << coordinate.new(LoCoordFin.x - 350, LoY - PoDist)
+		     linea2 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+		     linea2.style_info << est_line1
+		     pl << property_list.new() 
+		     pl[:linea] << linea2 
+
+		     # (15/11/20 rhernan) : se llama 		     
+		     (loNumero, loColor) << _self.ObtenNumeroyColorfibraconectada(PoFormat[:mic])		     
+		     pl[:anota]  << loNumero  #PoFormat[:anota_1]
+		     pl[:colorFib] <<  loColor  #_self.obtiene_color(PoFormat[:colormic])
+		     pl[:ubicacion] << :fin
+		     Lolinea.add(pl)
+		_endif 
+	
+	_elif empalme[:cablein].id = .oCableIn.id _andif
+	      empalme[:cableOut].id <> .oCableOut.id
+	_then
+		new_coord  << coordinate.new(LoCoordIni.x + 350,         LoY - PoDist)
+		new_coord2 << coordinate.new( LoArea.bounds.xmin + Incre,      LoY - PoDist)
+		linea1 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+		linea1.style_info << est_line1
+		pl << property_list.new()
+		pl[:linea] << linea1
+		pl[:anota] << PoFormat[:anota_1]
+		pl[:colorFib] << _self.obtiene_color(PoFormat[:colormic])
+		pl[:ubicacion] << :inicio
+		Lolinea.add(pl)
+		
+		_if sinconexion?
+		_then
+			new_coord << coordinate.new(LoArea.bounds.xmax - Incre, LoY - PoDist)
+			new_coord2 << coordinate.new(LoArea.bounds.xmax, LoY - PoDist)
+			linea2 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+			linea2.style_info << est_line1
+			pl << property_list.new()
+			pl[:linea] << linea2
+			Lolinea.add(pl)
+		_endif 
+	_elif empalme[:cablein].id <> .oCableIn.id _andif
+	      empalme[:cableOut].id <> .oCableOut.id
+	_then
+		PrevEmp    << .oEmpAreas[empalme[:numEmp]-1]
+		PrevArea   << PrevEmp[:area]
+		new_coord  << coordinate.new(PrevArea.bounds.xmax,         LoY - PoDist)
+		new_coord2 << coordinate.new(LoArea.bounds.xmin + Incre,      LoY - PoDist)
+		linea1 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+		linea1.style_info << est_line1
+		pl << property_list.new()
+		pl[:linea] << linea1
+		Lolinea.add(pl)
+		
+		_if sinconexion? 
+		_then
+			new_coord << coordinate.new(LoArea.bounds.xmax - Incre, LoY - PoDist)
+			new_coord2 << coordinate.new(LoArea.bounds.xmax, LoY - PoDist)
+			linea2 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+			linea2.style_info << est_line1
+			pl << property_list.new()
+			pl[:linea] << linea2
+			Lolinea.add(pl)
+		_endif 
+	_elif empalme[:cablein].id <> .oCableIn.id _andif
+	      empalme[:cableOut].id = .oCableOut.id
+	_then
+		PrevEmp    << .oEmpAreas[empalme[:numEmp]-1]
+		PrevArea   << PrevEmp[:area]
+		new_coord  << coordinate.new(PrevArea.bounds.xmax,         LoY - PoDist)
+		new_coord2 << coordinate.new(LoArea.bounds.xmin + Incre,      LoY - PoDist)
+		linea1 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+		linea1.style_info << est_line1
+		pl << property_list.new()
+		pl[:linea] << linea1
+		Lolinea.add(pl)
+		new_coord  << coordinate.new(LoArea.bounds.xmax - Incre, LoY - PoDist)
+		new_coord2 << coordinate.new(LoCoordFin.x - 350, LoY - PoDist)
+		linea2 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+		linea2.style_info << est_line1
+		
+		pl << property_list.new()
+		pl[:linea] << linea2
+		pl[:anota] << PoFormat[:anota_1] 
+		pl[:colorFib] <<  _self.obtiene_color(PoFormat[:colormic]) 
+		pl[:ubicacion] << :fin
+		Lolinea.add(pl)
+		
+	_endif
+	
+	_return Lolinea
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.crear_linea_mic(PoDist, PoMic, PoEmpalme)
+	## 
+	##
+
+	_local emp << PoEmpalme
+	_Local dist << PoDist
+	_local mic << PoMic
+	_local edoCont << mic.construction_status
+	_local conexion << mic.user!_tipo_conexion
+	_local LoCoordIni
+
+
+	LoArea << emp[:area]
+	LoCoordIni << coordinate.new(_self.bounds.xmin, _self.bounds.ymax)
+	LoDesY << _self.bounds.ymax - LoArea.bounds.ymax   
+	LoY << LoCoordIni.y - LoDesY
+	
+	LoColor << _self.obten_color(edoCont)
+	LoAncho << _self.obten_ancho_linea(edoCont)
+
+	est_line1 << line_style.new_with_properties(:foreground_colour, colour.called(LoColor), :width, LoAncho)
+
+	new_coord  << coordinate.new(LoArea.bounds.xmin, LoY - PoDist)
+	new_coord2 << coordinate.new(LoArea.bounds.xmax, LoY - PoDist)
+	linea1 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+	linea1.style_info << est_line1
+	pl << property_list.new()
+	pl[:linea] << linea1
+	pl[:conexion] << conexion
+	pl[:est_line] << est_line1
+	pl[:edoCont]  << edoCont
+	
+	_return pl
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.defined_attributes
+	## (10/06/28 jtlelo) : Definicion de atributos 
+	##  
+	attribs << rope.new_from (_super.defined_attributes)
+	
+	attribs.add ( layout_attribute_definition.new(:texto  ,                     :integer,
+						      :description,                 "Tamaño Texto",
+						      :default_value,               50,
+						      :allowed_on_properties_page?, _true,
+						      :editor,                      _unset))
+
+
+	attribs.add ( layout_attribute_definition.new(:TipoImpresion,               :string,
+						      :description,                 "Tipo de plano Color ó Negro",
+						      :default_value,               "Color",
+                                                      :enum_list,                   _self.impresion_plano,
+						      :allowed_on_properties_page?, _true,
+						      :editor,                      _unset))
+
+        attribs.add ( layout_attribute_definition.new(:MueveClientesUp,             :string,
+						      :description,                 "Desplazamiento de clientes",
+						      :default_value,               "0",
+                                                      :enum_list,                   _self.mueve_cliente,
+						      :allowed_on_properties_page?, _true,
+						      :editor,                      _unset))
+
+	attribs.add ( layout_attribute_definition.new(:MueveClientesDown,           :string,
+						      :description,                 "Desplazamiento de clientes",
+						      :default_value,               "0",
+                                                      :enum_list,                   _self.mueve_cliente,
+						      :allowed_on_properties_page?, _true,
+						      :editor,                      _unset))
+
+	
+	>> attribs
+_endmethod
+$
+c_diagrama_unifilar_ruta.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_anotacion_centrales(windows)
+	## 
+	##
+	_local tamTxt << _self.texto
+	_local LoDist << 10 #distancia de la central con el texto que contiene su nombre
+	_local LoLinea << _unset #pseudo linea de la central
+	_local CorteIn << .oEmpAreas[1][:corteIn]
+	_local CorteOut << .oEmpAreas[.oEmpAreas.size][:corteOut]
+	LoEdiCtal << c_cuentas_fo_plugin.ObtenerCentral()
+	_if LoEdiCtal _is _unset 
+	_then
+		LoCtlOrig << _self.obtener_nombre_cable(.ocableIn)
+	_else 
+		LoCtlOrig << "CTL - " + LoEdiCtal.user!_nom_nodo+" "+.ocableIn.name.default("")
+	_endif 
+	LoDisenoActual << c_cuentas_fo_plugin.ObtenerDiseno()
+	LoProyecto << LoDisenoActual.project
+
+	_if LoProyecto.user!_enlaces _is _unset 
+	_then
+		LoCtlDest  <<_self.obtener_nombre_cable(.ocableOut)
+	_else
+		# Se obtienen las siglas de la central destino, por lo tanto
+		# buscamos el nombre de la central.
+		LoSDestino << LoProyecto.user!_enlaces.user!_cent_destino	
+		nom_nodo << ""
+		_if LoSDestino _isnt _unset 
+		_then
+			dbv <<  mit_manager.modelit_dataset.collections
+			
+			LoPre << predicate.eq(:user!_siglas_central, LoSDestino)
+			LoSel << dbv[:user!_cat_centrales].select(LoPre)		
+			
+			_if LoSel.size > 0
+			_then
+				nom_nodo << LoSel.an_element().user!_nom_central
+			_endif
+		_endif
+		
+		LoCtlDest << "CTL - " +nom_nodo
+	_endif 
+
+	LoFuente << font.new_with_properties(:type,:logical,:name,:plain,:point_size,tamTxt)
+	tamTxt << tamTxt-30
+	_if tamTxt < 0 _then tamTxt << 2 _endif
+	LoFueCab << font.new_with_properties(:type,:logical,:name,:plain,:point_size,tamTxt)
+
+	
+	
+	_for Ctl _over .oCentrales.fast_elements()
+	_loop
+		LoLinea << Ctl[:linea]
+		coor << LoLinea.sectors.mid_point
+		qcolor <<  colour.called(Ctl[:color])
+		LoEstilo << text_style.new_with_properties(:font, LoFuente, :colour, qcolor)
+		LoEstCab << text_style.new_with_properties(:font, LoFueCab, :colour, qcolor, :underline?, _true)
+
+		# style de la linea de spec_id del cable
+		LoLineaSpec << line_style.new_with_properties(:foreground_colour, qcolor, :width, 1)
+		
+		_if Ctl[:ubica] _is :origen
+		_then
+			# Datos de la central
+			windows.draw_vtext_transform(LoEstilo, coor.x - LoDist, coor.y, 		  
+						     LoCtlOrig.default(""), _unset, _unset, 1, (90).degrees_to_radians, :base_centre)
+
+			# Especificacion del cable
+			coor << LoLinea.last_coord
+			spectxt << .OcableIn.spec_id
+			CoorTxt << windows.draw_vtext_transform(LoEstCab, coor.x + LoDist, coor.y, 		  
+								spectxt.default(""), _unset, _unset, 1, (0).degrees_to_radians, :base_left)
+
+			coor1 << CorteIn.sectors[1][45] #angulo de 45 grados 
+			coor2 << CoorTxt[2]
+			lineaAnot << pseudo_chain.new(sector.new_with(coor1, coor2))
+			windows.paint(_true, lineaAnot, LoLineaSpec)
+			
+		_else
+			windows.draw_vtext_transform(LoEstilo, coor.x + LoDist, coor.y, 		  
+						     LoCtlDest.default(""), _unset, _unset, 1, (270).degrees_to_radians, :base_centre)
+
+			coor << LoLinea.last_coord
+			spectxt << .OcableOut.spec_id
+
+			CoorTxt <<  windows.draw_vtext_transform(LoEstCab, coor.x - LoDist, coor.y, 		  			 spectxt.default(""), _unset, _unset, 1, (0).degrees_to_radians, :base_right )
+			
+
+			coor1 << CorteOut.sectors[1][45] #angulo de 45 grados 
+			coor2 << CoorTxt[1]
+			lineaAnot << pseudo_chain.new(sector.new_with(coor1, coor2))
+			windows.paint(_true, lineaAnot, LoLineaSpec) 			 
+		_endif		
+	_endloop
+
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_anotacion_numero_fibras_clientes(windows)
+	## 
+	##
+	_local Rotacion << 90
+	_for emp _over .oEmpAreas.fast_elements()
+	_loop
+		_for linCtl _over emp[:lineasclte].fast_elements()
+		_loop
+			_for dfib _over linCtl[:lineafib].fast_elements()
+			_loop
+				_if dfib[:origen] _is :cliente
+				_then
+					qColor   << linCtl[:color]
+					fib      << dfib[:fib]
+					fibnum   << dfib[:fibnum]
+					ColorFib <<  dfib[:ColorMic]
+
+					LoCoor << fib.first_coord
+					_if linCtl[:ubicacion] _is :arriba
+					_then
+						# empieza de arriba hacia abajo
+						LoCoorNew << LoCoor.copy_with_new_xy(LoCoor.x, LoCoor.y - 8)
+						txtJust << :bottom_left
+					_else
+						#empieza de abajo hacia arriba
+						LoCoorNew << LoCoor.copy_with_new_xy(LoCoor.x, LoCoor.y + 8)
+						txtJust << :bottom_right
+					_endif
+					
+					_self.escribe_fibra(windows, LoCoorNew, fibnum, Rotacion, qColor, linCtl, txtJust)
+
+					_if .oTipoDiagrama _is :derivacion
+					_then
+						ymed << fib.first_coord.y
+						Y << ymed - (ymed - Emp[:area].bounds.ymax)/5
+						X << fib.last_coord.x
+						txtJust << :bottom_left
+						_if linCtl[:ubicacion] _is :abajo
+						_then
+							Y << ymed + (Emp[:area].bounds.ymin - ymed)/5
+							txtJust << :bottom_right
+						_endif
+						LoCoorNew << LoCoor.copy_with_new_xy(X, Y)
+						_self.escribe_fibra(windows, LoCoorNew, ColorFib, Rotacion, qColor, linCtl, txtJust)
+					_endif
+				_endif
+			_endloop
+		_endloop
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_anotaciones_clientes(windows)
+	## 
+	##
+	#_local LoAnchoX << 150 #ancho del corte de cable.
+	
+	_local tamTxt << _self.texto
+	_local LoDist << 20 #distancia del cliente con el texto que contiene su nombre
+	tamTxt << tamTxt - 30
+	_if tamTxt < 0 _then tamTxt << 2 _endif
+	LoFuente << font.new_with_properties(:type,:logical,:name,:bold, :point_size,tamTxt)
+	tamTxt << _self.texto - 40
+	_if tamTxt < 0 _then tamTxt << 2 _endif
+	LoFuenCa << font.new_with_properties(:type,:logical,:name,:bold, :point_size,tamTxt)
+	
+	_local cont
+	_for emp _over .oempAreas.fast_elements()
+	_loop
+		cont << 1
+		_for clientes _over emp[:clientes].fast_elements() 
+		_loop
+			_for clte _over clientes[:clientes].fast_elements()
+			_loop
+				nomClte << clte[:nombre]
+				# (12/08/15 jtlelo) : Solucion rapida atendida a los simas generados
+				# en las pruebas de Armas no existe un cliente conectado
+				_if cont > emp[:lineasclte].size 
+				_then
+					_continue 
+				_endif
+				cliente << emp[:lineasclte][cont]
+				qcolor << cliente[:color]
+				spec_cable << cliente[:cable].spec_id
+				linea << cliente[:linea]
+				coor << linea.sectors.mid_point
+				ancho << cliente[:ancho]
+
+				LoEstilo << text_style.new_with_properties(:font, LoFuente, :colour, colour.called(qcolor))
+				LoEstCab << text_style.new_with_properties(:font, LoFuenCa, :colour, colour.called(qcolor),
+						                           :underline?, _true )
+
+				LolineaCrte << line_style.new_with_properties(:foreground_colour,
+									       colour.called(qcolor), :width, ancho)
+
+				LoLineaSpec << line_style.new_with_properties(:foreground_colour,
+									       colour.called(qcolor), :width, 1)
+				
+				Y1Up << (_self.bounds.ymax - emp[:area].bounds.ymax) / 2
+				Y1Down << (emp[:area].bounds.ymin - _self.bounds.ymin) / 2
+
+				_if cliente[:ubicacion] = :arriba
+				_then
+					# Nombre del Cliente
+					windows.draw_vtext_transform(LoEstilo, coor.x, coor.y + LoDist, nomClte.default(""), _unset,
+								     _unset, 1, 0.degrees_to_radians, :base_centre )
+
+					P1x << Linea.first_coord.x
+					P1y << Linea.first_coord.y - Y1Up/2
+					P2x << Linea.last_coord.x
+					P2y << Linea.last_coord.y - Y1Up/2
+					LoAnchoX << (P2x - P1x)/2 - 5
+					LoAnchoY << (P2y - P1y)/2 - 5
+					LoXC << P1x + (P2x - P1x)/2
+					LoYC << P1y + (P2y - P1y)/2
+					
+					LoElipseCable << sector.new()
+					_for ang _over 1.upto(360)
+					_loop		
+						angulo << (ang*2).degrees_to_radians
+						c << coordinate(LoXC + LoAnchoX*angulo.cos, LoYC + LoAnchoY*angulo.sin) 
+						LoElipseCable.add(c)		
+					_endloop
+					lineaN << pseudo_chain.new(LoElipseCable)	
+					windows.paint(_true, lineaN,   LolineaCrte)
+					
+					# spec_id cable
+					CoorTxt << windows.draw_vtext_transform(LoEstCab, coor.x, coor.y - Y1Up,
+								spec_cable.default(""), _unset,
+					 			_unset, 1, 0.degrees_to_radians, :base_centre)
+					# (10/07/07 jtlelo) : linea de indicacion cable anotacion
+					coor1 << lineaN.sectors[1][90]
+					coor2 << CoorTxt.first_coord
+					lineaAnot << pseudo_chain.new(sector.new_with(coor1, coor2))
+					windows.paint(_true, lineaAnot, LoLineaSpec) 
+					
+				_else
+					# cliente
+					windows.draw_vtext_transform(LoEstilo, coor.x, coor.y - LoDist, nomClte.default(""),  _unset,
+								     _unset, 1, _unset,  :base_centre)
+
+					P1x << Linea.first_coord.x
+					P1y << Linea.first_coord.y + Y1Down/2
+					P2x << Linea.last_coord.x
+					P2y << Linea.last_coord.y + Y1Down/2
+					LoAnchoX << (P2x - P1x)/2 - 10
+					LoAnchoY << (P2y - P1y)/2 - 5
+					LoXC << P1x + (P2x - P1x)/2
+					LoYC << P1y + (P2y - P1y)/2
+					
+					LoElipseCable << sector.new()
+					_for ang _over 1.upto(360)
+					_loop		
+						angulo << (ang*2).degrees_to_radians
+						c << coordinate(LoXC + LoAnchoX*angulo.cos, LoYC + LoAnchoY*angulo.sin) 
+						LoElipseCable.add(c)		
+					_endloop
+					lineaN << pseudo_chain.new(LoElipseCable)	
+					windows.paint(_true, lineaN,   LolineaCrte)
+
+					# (10/07/05 jtlelo) : spec_id del cable
+					CoorTxt << windows.draw_vtext_transform(LoEstCab, coor.x, coor.y + Y1Down, spec_cable.default(""), _unset,
+										_unset, 1, _unset, :base_centre)
+					
+					coor1 << lineaN.sectors[1][90] #angulo de 90 grados 
+					coor2 << CoorTxt.first_coord
+					lineaAnot << pseudo_chain.new(sector.new_with(coor1, coor2))
+					windows.paint(_true, lineaAnot, LoLineaSpec)
+		
+				_endif
+			_endloop
+			cont + << 1
+		_endloop
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_area_empalmes(windows)
+	## 
+	## 
+
+	_for arEmp _over .oEmpAreas.fast_elements()
+	_loop
+		edoCons << arEmp[:empalme].construction_status
+		
+		qColor << _self.obten_color(edoCons)
+		ancho << _self.obten_ancho_linea(edoCons)
+		est_linea << line_style.new_with_properties(
+				     :foreground_colour, colour.called(qColor), :width, ancho, :dash_pattern,
+				     dash_pattern.chain_dash )
+		
+		windows.paint(_true, arEmp[:area],   est_linea)  
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_cable_salida_continuo(PoWindows, pchain,  loColorCableSalida)
+	## # (15/11/20 rhernan) : 
+	##  Metodo que genera el cable de salida continuo pero que
+	## tiene diferente estado de construcción.
+
+	loBB << pchain.bounds	
+	loSector << sector.new() 	
+	loSR     << sector_rope.new()	
+
+	resultadoIntermedio << pchain.sectors[1][2].x - pchain.sectors[1][1].x
+	resultadoIntermedio << pchain.sectors[1][2].x - resultadoIntermedio 	
+	loSector.add(coordinate.new( resultadoIntermedio, loBB.ymin))
+	loSector.add(coordinate.new(pchain.sectors[1][2].x , loBB.ymax)) 
+	loSR.add(loSector) 		
+	#est_line1 << line_style.new_with_properties(:foreground_colour, colour.called(:white), :width, PoTam)	
+	#PoWindows.paint(_true, loSR, est_line1)
+	
+	est_line1 << line_style.new_with_properties(:foreground_colour, colour.called(loColorCableSalida), :width, 2)	
+	PoWindows.paint(_true, loSR, est_line1)
+	
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_corte_cable_In(windows, PoEmpalme, PoTotal, PoAnchoX)
+		## 
+	## 
+	_local emp << PoEmpalme
+	_local total << PoTotal
+	_local LoAnchoX << PoAnchoX
+
+	# (16/11/08 ahernan) : change in total.
+	_if (psline1 << emp[:lineasgrupo][1][1][:linea]) _isnt _unset _andif
+ 	    (psline2 << emp[:lineasgrupo][emp[:lineasgrupo].size][1][:linea]) _isnt _unset 
+	
+	_then
+		EdoConst << emp[:cableIn].construction_status
+		qColor << _self.obten_color(EdoConst)
+		ancho << _self.obten_ancho_linea(EdoConst)
+		
+		est_line1 << line_style.new_with_properties(:foreground_colour,
+							    colour.called(qcolor), :width, ancho)
+		P1x << psLine1.first_coord.x
+		P1y << psLine1.first_coord.y
+		P2x << emp[:area].bounds.xmin
+		P2y << psLine2.first_coord.y
+		
+		LoAnchoY << (P2y - P1y)/2 - 30
+		LoXC << P1x + (P2x - P1x)/2
+		LoYC << P1y + (P2y - P1y)/2
+		
+		LoElipseCable << sector.new()
+		_for ang _over 1.upto(360)
+		_loop		
+			angulo << (ang*2).degrees_to_radians
+			c << coordinate(LoXC + LoAnchoX*angulo.cos, LoYC + LoAnchoY*angulo.sin) 
+			LoElipseCable.add(c)		
+		_endloop
+		lineaN << pseudo_chain.new(LoElipseCable)
+		windows.paint(_true, lineaN,   est_line1)
+		emp[:corteIn] << lineaN
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_corte_cable_out(windows, PoEmpalme, PoTotal, PoAnchoX)
+    	## 
+	##
+	
+	_local emp << PoEmpalme
+	_local total << PoTotal
+	_local LoAnchoX << PoAnchoX
+	
+	contador << 0
+	
+	_for loelemento _over emp[:lineasgrupo].elements()
+	_loop
+		_if loelemento.size = 2 _andif
+		    contador = 0
+		_then
+			psline1 << loelemento[2][:linea]
+			contador << 1
+		_elif loelemento.size = 2 _andif
+		      contador > 0 
+		_then
+			psline2 << loelemento[2][:linea]
+		_endif    
+	_endloop         
+	
+	_if  psline1 _isnt _unset _andif
+	     psline2 _isnt _unset 
+	_then
+		EdoConst << emp[:cableOut].construction_status
+		qColor << _self.obten_color(EdoConst)
+		ancho << _self.obten_ancho_linea(EdoConst)
+		
+		est_line1 << line_style.new_with_properties(:foreground_colour,
+							    colour.called(qcolor), :width, ancho)
+		P1x << psLine1.last_coord.x
+		P1y << psLine1.last_coord.y 
+		P2x << emp[:area].bounds.xmax
+		P2y << psLine2.last_coord.y 
+		
+		LoAnchoY << (P2y - P1y)/2 - 30
+		LoXC << P1x + (P2x - P1x)/2
+		LoYC << P1y + (P2y - P1y)/2
+		
+		LoElipseCable << sector.new()
+		
+		_for ang _over 1.upto(360)
+		_loop        
+			angulo << (ang*2).degrees_to_radians
+			c << coordinate(LoXC + LoAnchoX * angulo.cos, LoYC + LoAnchoY * angulo.sin) 
+			LoElipseCable.add(c)        
+		_endloop
+		
+		lineaN << pseudo_chain.new(LoElipseCable)    
+		windows.paint(_true, lineaN,   est_line1)
+		emp[:corteOut] << lineaN
+		
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_corte_cables(windows)
+	## 
+	##
+	LoAnchoX << 20
+
+	_for emp _over .oEmpAreas.fast_elements()
+	_loop
+		#total << emp[:lineasgrupo].size
+		totalIn << emp[:cableIn].spec_info.fiber_quantity
+		totalOut << emp[:cableOut].spec_info.fiber_quantity
+		_if emp[:cableIn].id = .oCableIn.id _andif
+		    emp[:cableOut].id = .oCableOut.id
+		_then
+			_self.dibuja_corte_cable_In(windows, Emp, totalIn, LoAnchoX )
+			_self.dibuja_corte_cable_Out(windows, Emp, totalOut, LoAnchoX)
+		_elif emp[:cableIn].id = .oCableIn.id
+		_then
+			_self.dibuja_corte_cable_In(windows, Emp, totalIn, LoAnchoX)
+		_elif emp[:cableOut].id = .oCableOut.id
+		_then
+			_self.dibuja_corte_cable_Out(windows, Emp, totalOut, LoAnchoX)
+		_endif 
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_corte_centrales(windows)
+	## 
+	##
+	.oCentrales << rope.new()
+	_for emp _over .oEmpAreas.fast_elements()
+	_loop
+		_if emp[:cableIn].id = .oCableIn.id _andif
+		    emp[:cableOut].id = .oCableOut.id
+		_then
+			totalIn << emp[:cableIn].spec_info.fiber_quantity
+			totalOut << emp[:cableOut].spec_info.fiber_quantity
+			_self.dibuja_corte_In(windows, totalIn, emp)
+			_self.dibuja_corte_Out(windows, totalOut, emp)
+		_elif emp[:cableIn].id = .oCableIn.id
+		_then
+			totalIn << emp[:cableIn].spec_info.fiber_quantity
+			_self.dibuja_corte_In(windows, totalIn, emp)
+		_elif emp[:cableOut].id = .oCableOut.id
+		_then
+			totalOut << emp[:cableOut].spec_info.fiber_quantity
+			_self.dibuja_corte_Out(windows, totalOut, emp)
+		_endif 
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_corte_In(windows, PoTotal, PoEmpalme)
+		## 
+	##
+	Total << PoTotal
+	emp << PoEmpalme
+
+	# (16/11/08 ahernan) : modify. total x size of lineasgrrupo
+	_if (psline1 << emp[:lineasgrupo][1][1][:linea]) _isnt _unset _andif
+	    (psline2 << emp[:lineasgrupo][ emp[:lineasgrupo].size ][1][:linea]) _isnt _unset
+	_then
+		EdoConst << emp[:cableIn].construction_status
+		qColor << _self.obten_color(EdoConst)
+		ancho << _self.obten_ancho_linea(EdoConst)
+
+		est_line1 << line_style.new_with_properties(:foreground_colour,
+
+							    colour.called(qcolor), :width, ancho)
+		
+		P1x << psLine1.first_coord.x
+		P1y << psLine1.first_coord.y + 150
+		P2x << psline2.first_coord.x
+		P2y << psLine2.first_coord.y - 150
+		new1 << coordinate.new(P1x, P1y)
+		new2 << coordinate.new(P2x, P2y)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN,   est_line1)
+		pl << property_list.new()
+		pl[:linea] << lineaN
+		pl[:color] << qColor
+		pl[:ubica] << :origen
+		.oCentrales.add(pl)
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_corte_Out(windows, PoTotal, PoEmpalme)
+	## 
+	##
+	     
+       Total << PoTotal
+       emp  << PoEmpalme
+       contador << 0 
+       
+        _for loelemento _over emp[:lineasgrupo].elements()
+	_loop
+		_if loelemento.size = 2 _andif
+		    contador = 0
+		_then
+			psline1 << loelemento[2][:linea]
+			contador << 1
+		_elif loelemento.size = 2 _andif
+		      contador > 0 
+		_then
+			psline2 << loelemento[2][:linea]
+		_endif    
+	_endloop	
+
+	_if psline1 _isnt _unset  _andif
+	    psline2 _isnt _unset 
+	_then
+
+		EdoConst << emp[:cableOut].construction_status
+		qColor << _self.obten_color(EdoConst)
+		ancho << _self.obten_ancho_linea(EdoConst)
+
+		est_line1 << line_style.new_with_properties(:foreground_colour,
+							    colour.called(qcolor), :width, ancho)
+		P1x << psLine1.last_coord.x
+		P1y << psLine1.last_coord.y + 150
+		P2x << psline2.last_coord.x
+		P2y << psLine2.last_coord.y - 150
+		new1 << coordinate.new(P1x, P1y)
+		new2 << coordinate.new(P2x, P2y)
+	
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))
+	
+		windows.paint(_true, lineaN,   est_line1)
+	
+		pl << property_list.new()
+		pl[:linea] << lineaN
+		pl[:color] << qColor
+		pl[:ubica] << :destino
+	
+		.oCentrales.add(pl)
+		
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_derivaciones_clientes(windows)
+	## 
+	##
+	_for emp _over .oEmpAreas.fast_elements()
+	_loop
+		_for lineaClte _over emp[:lineasclte].fast_elements()
+		_loop
+			Edoconst << lineaClte[:edoco]
+			_for fib _over lineaClte[:lineafib].fast_elements()
+			_loop
+				est_line1 << line_style.new_with_properties(:foreground_colour,
+									    colour.called(lineaClte[:color]),
+									    :width, lineaClte[:ancho])
+
+				fib1 << fib[:fib]
+				_if fib[:edocon] <> _unset 
+				_then
+					EdoConst << fib[:edocon]
+					qColor << _self.obten_color(EdoConst)
+					ancho << _self.obten_ancho_linea(EdoConst)
+					
+					est_line1 << line_style.new_with_properties(:foreground_colour, colour.called(qcolor),
+										    :width, ancho)
+					_if  Edoconst = "DESMONTADO" _orif
+					     EdoConst = "DESMONTAJE" 
+					_then
+						_self.dibuja_desmontado(windows, fib1, _true)
+					_endif 
+				_endif
+				windows.paint(_true, fib1, est_line1)
+				
+				coord <<  fib1.last_coord
+				_if fib[:origen] _is :cliente 				   
+				_then
+					_if  emp[:area].bounds.includes_point?(coord)
+					_then
+						_self.dibuja_fusion(windows, lineaClte[:color], coord, emp[:lineasmic].size)
+					#_else
+					#write("dibujo desmontado")
+					_endif
+				_endif 
+			_endloop 
+		_endloop
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_desmontado(windows, PoChain, _optional derivacion?)
+	## 
+	##
+	_local LoLinea << PoChain
+	_local separa << 5  # Serparacion de las lineas 
+	_local largo  << 6  # largo de la linea indicador de desmontado 
+	_local iniFin << 12 # inicio de la linea indicador de desmontado
+
+	# (10/05/13 jtlelo) : Dibujamos el simbolo de cable
+	# desconectado ---||, dos lineas paralelas al finalizar el cable.
+	
+	RopeCoords << rope.new()
+	qcolor << :red
+	_if _self.tipoImpresion = "Blanco y Negro"
+	_then
+		qcolor << :black 
+	_endif
+	est_line1 << line_style.new_with_properties(:foreground_colour, colour.called(qcolor), :width, 2)
+	_if LoLinea.bounds.xmin = LoLinea.bounds.xmax
+	_then
+		# La linea es vertical, se juega con el eje Y
+		LoCoor1 << coordinate.new(LoLinea.first_coord.x, LoLinea.first_coord.y - iniFin)
+		
+		new1 << coordinate.new( LoCoor1.x - largo, LoCoor1.y)
+		new2 << coordinate.new( LoCoor1.x + largo, LoCoor1.y)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN,   est_line1)
+		new1 << coordinate.new( LoCoor1.x - largo, LoCoor1.y - separa)
+		new2 << coordinate.new( LoCoor1.x + largo, LoCoor1.y - separa)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN,   est_line1)
+
+		_if derivacion?	_isnt  _unset _then _return _endif
+		
+		LoCoor2 << coordinate.new(LoLinea.last_coord.x, LoLinea.last_coord.y + iniFin)
+		new1 << coordinate.new( LoCoor2.x - largo, LoCoor2.y)
+		new2 << coordinate.new( LoCoor2.x + largo, LoCoor2.y)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN,   est_line1)
+		new1 << coordinate.new( LoCoor2.x - largo, LoCoor2.y + separa)
+		new2 << coordinate.new( LoCoor2.x + largo, LoCoor2.y + separa)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN,   est_line1)
+	_else
+		# la linea es horizontal, se juega con el eje X
+		LoCoor1 << coordinate.new(LoLinea.first_coord.x + iniFin, LoLinea.first_coord.y)
+		new1 << coordinate.new( LoCoor1.x, LoCoor1.y + largo)
+		new2 << coordinate.new( LoCoor1.x, LoCoor1.y - largo)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN, est_line1)
+		new1 << coordinate.new( LoCoor1.x + separa, LoCoor1.y + largo)
+		new2 << coordinate.new( LoCoor1.x + separa, LoCoor1.y - largo)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN, est_line1)
+
+		_if derivacion?	_isnt _unset _then _return _endif
+		
+		LoCoor2 << coordinate.new(LoLinea.last_coord.x - iniFin, LoLinea.last_coord.y)
+		new1 << coordinate.new( LoCoor2.x, LoCoor2.y + largo)
+		new2 << coordinate.new( LoCoor2.x, LoCoor2.y - largo)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN, est_line1)
+		new1 << coordinate.new( LoCoor2.x - separa, LoCoor2.y + largo)
+		new2 << coordinate.new( LoCoor2.x - separa, LoCoor2.y - largo)
+		lineaN << pseudo_chain.new(sector.new_with(new1,new2))	
+		windows.paint(_true, lineaN, est_line1)
+	_endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_distribucion_clientes(windows)
+	## 
+	##
+	_for emp _over .oEmpAreas.fast_elements()
+	_loop
+		_for clte _over emp[:lineasclte].fast_elements()
+		_loop
+			est_line1 << line_style.new_with_properties(:foreground_colour,
+								    colour.called(clte[:color]),
+								    :width, clte[:ancho])
+			windows.paint(_true, clte[:linea], est_line1)
+		_endloop
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_fibras_continuas(windows)
+	## 
+	#
+	EdoConst << .ocablein.construction_status
+	qColor << _self.obten_color(EdoConst)
+	PoTam << _self.obten_ancho_linea(EdoConst)
+
+	# (15/11/19 rhernan) :
+	EdoConstSalida << .ocableout.construction_status
+
+#	_global oemp
+#	        oemp << .oEmpareas 
+	
+	est_line1 << line_style.new_with_properties(:foreground_colour, colour.called(qColor), :width, PoTam)
+
+	contadore << 1
+	
+	_for emp _over .oEmpareas.fast_elements()
+	_loop
+	
+		_for fibCont _over emp[:LineasGrupo].fast_elements()
+		_loop
+			
+			_for reg _over fibCont.fast_elements()
+			_loop
+					contadore +<< 1
+				_if reg.size = 1 # solo es una linea
+				_then
+					pchain << reg[:linea]
+					windows.paint(_true, pchain, est_line1)				
+					
+				_elif reg.size = 4
+				_then
+					pchain << reg[:linea]
+					panot  << reg[:anota]				
+					
+					windows.paint(_true, pchain, est_line1)					
+					Y << pchain.first_coord.y
+					_if reg[:ubicacion] _is :inicio
+					_then
+						Txtjustif << :base_left
+						X << pchain.first_coord.x + 5
+						coord << pchain.first_coord
+						
+					_else 
+						Txtjustif << :base_right
+						#X << pchain.last_coord.x - 5
+						coord << pchain.last_coord
+					_endif
+
+					coord << coordinate.new(X, Y)
+					
+					# (10/07/26 jtlelo) : creamos la anotaciones del color de los
+					# hilos de la fibra
+					_if .oTipoDiagrama _is :derivacion 
+					_then
+						panot << reg[:colorfib] 
+						Y << pchain.first_coord.y
+						X << Emp[:area].bounds.Xmin - 10
+						Txtjustif << :base_right 
+						
+						_if reg[:ubicacion] <> :inicio
+						_then 
+							# (15/11/19 rhernan) : se escribe de nuevo la anotacion numero
+							# de fibra
+							panot  << reg[:anota]
+							Txtjustif << :base_right
+							
+							Y << pchain.first_coord.y
+							X << pchain.last_coord.x - 5
+							coord << pchain.last_coord
+							
+							coord << coordinate.new(X, Y)
+							loColorCableSalida << _self.obten_color(EdoConstSalida)
+							_self.escribe_fibra(windows, coord, panot, 0, loColorCableSalida, _unset ,  Txtjustif)
+
+							############################## 
+							Txtjustif << :base_left
+							X << Emp[:area].bounds.Xmax + 10
+
+							# (15/11/19 rhernan) : 						
+							loColorCableSalida << _self.obten_color(EdoConstSalida) 
+							_self.dibuja_cable_salida_continuo(windows, pchain,  loColorCableSalida)
+							coord << coordinate.new(X, Y)
+							
+							panot << reg[:colorfib]
+							X << X + (pchain.last_coord.x - pchain.first_coord.x) - 150							
+							coord << coordinate.new(X, Y)							
+							_self.escribe_fibra(windows, coord, panot, 0, loColorCableSalida, _unset, txtJustif)						
+							
+							_continue
+							
+						_endif
+						
+						panot  << reg[:anota]							
+						Y << pchain.first_coord.y
+						
+						_if reg[:ubicacion] _is :inicio
+						_then
+							
+							Txtjustif << :base_left
+							X << pchain.first_coord.x + 5
+							coord << pchain.first_coord
+						_else
+
+							Txtjustif << :base_right
+							X << pchain.last_coord.x + 5
+							coord << pchain.last_coord
+						_endif
+						 
+						coord << coordinate.new(X, Y) 
+						_self.escribe_fibra(windows, coord, panot, 0, qColor, _unset ,  Txtjustif) 
+
+						#####################################
+						panot << reg[:colorfib] 
+
+						#X << (pchain.last_coord.x - pchain.first_coord.x )						
+						X << X + (pchain.last_coord.x - pchain.first_coord.x) - 150						
+						coord << coordinate.new(X, Y)						
+						_self.escribe_fibra(windows, coord, panot, 0, qColor, _unset, txtJustif)						
+					_endif 
+				_endif
+				
+			_endloop
+		
+		_endloop
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_fusion(windows, PoColor, PoCoord, PoTamaño)
+	## 
+	## 
+	_local LoColor << PoColor
+	_local totallineas << PoTamaño
+        _local LoCoord << PoCoord
+
+
+	sty_fill << fill_style.new_with_properties(:foreground_colour, colour.called(LoColor))
+	
+	# tamanno de punto de union fibra, depende de cuantas fibras
+	# tenga el diagrama, cuestion de estilo.
+	_if totallineas >= 97
+	_then
+		LoPunto << 3
+	_elif  totallineas >= 25 _and totallineas <= 96
+	_then
+		LoPunto << 3
+	_elif totallineas >= 12 _and totallineas <= 24
+	_then
+		LoPunto << 4
+	_elif totallineas >= 7 _andif totallineas <= 12
+	_then
+		LoPunto << 6
+	_elif totallineas >= 1 _and totallineas <= 6
+	_then
+		LoPunto << 8
+	_endif 
+	
+	LoCir << circle.new(LoCoord, LoPunto)
+	LoCir.fill_on(windows,sty_fill)
+			
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.dibuja_mit_internals(windows)
+	## 
+	## 
+	_for emp _over .oEmpareas.fast_elements()
+	_loop
+		_for atrib _over emp[:lineasmic].fast_elements()
+		_loop
+			pchain << atrib[:linea]
+			windows.paint(_true, pchain, atrib[:est_line])
+			_if atrib[:conexion] = "FUSION"
+			_then
+				edoconst << atrib[:edoCont]
+				LoColor << _self.obten_color(edoconst)
+				LoCoorCircle << pchain.sectors.mid_point
+				tamFusion << emp[:lineasmic].size
+				_self.dibuja_fusion(windows, LoColor, LoCoorCircle, tamFusion)
+			_elif atrib[:edoCont] = "DESMONTAJE"
+			_then 
+				_self.dibuja_desmontado(windows, pchain)		    
+			_endif
+		_endloop
+	_endloop
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.draw_content_on(windows) 
+	## 
+	##
+	#	lotitulo << "Generando Plano"
+	#	lolabel << "Dibujando el plano..."
+	#	loinfo  << "Generando conexion de empalme ."
+	#        LoLayoutPlugin    << smallworld_product.pni_application().plugin(:layout_plugin)
+	#        LoLayoutDesigner  << LoLayoutPlugin.start_layout_designer()
+	#	LoLayoutManager   << LoLayoutDesigner.plugin(:layout_manager)
+	#	barra << LoLayoutManager.progress_indicator_dialog(lotitulo,lolabel,loinfo)
+	#	barra.progress_changed(50, _true )
+	_if .odiagrama_creado?.default(_false) 
+	_then
+		_if (.oubicacion_plano <> _self.bounds)
+		_then
+			_self.genera_diagrama(windows)
+			.oubicacion_plano << _self.bounds
+			
+		_elif _self.layout_page.layout_document.short_filename _isnt _unset   # Proviene de archivo
+		_then
+			_self.genera_diagram(windows)
+		_endif	
+	# Se valida si viene de archivo XML	    
+	## Se crea por primera vez. (en la sesion y creado por primera
+	## vez, y cuando es leido desde archivo XML
+	_elif _self.layout_page.layout_document.short_filename _isnt _unset   # Proviene de archivo
+	_then
+		## Se lee de un archivo XML
+		## Leer el dato desde la propiedad del layout_element
+		_if ( _self.obtener_elementos_bd_gis() _isnt _unset _and
+		      _self.obtener_elementos_bd_gis().size > 0 )
+		_then 
+			.oEmpalmes << _self.obtener_elementos_bd_gis()
+			_self.genera_diagrama(windows)
+		_endif 
+	_else
+		_self.genera_diagrama(windows)	
+	_endif
+
+	_if _self.texto <= 0
+	_then
+		_self.show_message("El tamaño del texto es incorrecto", "Aceptar")
+	_endif
+
+	_super.draw_content_on(windows)
+# 	barra.progress_changed(100, _true )
+#	barra.close()
+#	.odiagrama_creado? << _true 
+#	_self.crea_area_empalmes()
+
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.escribe_fibra(windows, PoI, Texto, LoGrados, LoCol, PoCliente, LoJustificacion)
+	## Metodo que permite escribir el color asignado a la fibra o
+	## el numero de fibra en el layout_element activo.
+	## windows es el layout_element activo
+	## PoI es la coordenada donde se coloca el texto
+	## Texto es el texto que se escribe, o el numero de fibra.
+	## fhramire         
+
+	_if PoCliente _isnt _unset  
+	_then
+		tamano << Pocliente[:lineafib].size
+		_if tamano >= 1 _and  tamano <= 36
+		_then
+			LoTamanio << _self.texto - 44 #6
+		_elif tamano >= 25 _and tamano <= 72
+		_then
+			LoTamanio << _self.texto - 46 #4
+		_elif tamano > 73
+		_then 
+			LoTamanio << _self.texto - 48 #2
+		_endif
+	_else
+		tamano << .oEmpareas.an_element()[:lineasgrupo].size
+		_if  tamano >= 1 _and tamano <= 12
+		_then
+			LoTamanio << _self.texto -20 #30
+		_elif tamano >= 13 _and tamano <= 24
+		_then
+			LoTamanio << _self.texto - 24 #26
+		_elif tamano >= 25 _and tamano <= 35
+		_then
+			LoTamanio << _self.texto - 28 #22
+		_elif tamano >= 36 _and tamano <= 47
+		_then
+			LoTamanio << _self.texto - 32 #18
+		_elif tamano >= 48 _and tamano <= 61 
+		_then
+			LoTamanio << _self.texto - 38 #12
+		_elif tamano >= 62 _and tamano <= 72
+		_then
+			LoTamanio << _self.texto - 42 #8
+		_elif tamano > 72
+		_then
+			LoTamanio << _self.texto - 44 #6   
+		_endif
+	_endif
+
+	_if LoTamanio < 0 _then LoTamanio << 1 _endif
+	
+	## Determinar el tipo de fuente, mas gruesa para Proyectado y
+	## Delgada para Existente
+
+	_if LoCol _is :green
+	_then
+	    LoTipoF << :plain
+	_else
+	    LoTipoF << :bold	    
+	_endif
+	
+	LoFuente << font.new_with_properties(:type, :logical, :name, LoTipoF, :point_size, LoTamanio)
+	LoEstilo << text_style.new_with_properties(:font, LoFuente, :colour, colour.called(LoCol))
+
+	windows.draw_vtext_transform(LoEstilo, PoI.x, PoI.y, Texto, _unset, _unset, 1,
+				     (LoGrados).degrees_to_radians, LoJustificacion)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.formato_linea(PoPin, PoEmpalme, derivacion?, _optional PoMic)
+	## 
+	##
+	_local LoFormat << property_list.new()
+	_local emp << PoEmpalme
+	_local mic << PoMic
+	_local EdoConst << emp[:cableIn].construction_status
+	
+	LoColor << _self.obten_color(EdoConst)
+	ancho   << _self.obten_ancho_linea(EdoConst)
+
+	cveColor << PoPin.scheme_fiber_number.sys!slot(:owner).fiber_color
+	_if derivacion? _is _maybe 
+	_then
+		LoFormat[:anota_1] << " " + PoPin.fiber_number.write_string
+		LoFormat[:color_1] << LoColor
+		LoFormat[:ancholin] << ancho
+		LoFormat[:derivacion] << derivacion?
+		LoFormat[:SinConexion] << :doble
+		LoFormat[:mic] << mic
+		LoFormat[:ColorMic] << _self.obtiene_color(cveColor)
+	_endif
+
+	_if mic _is _unset
+	_then
+		LoFormat[:anota_1] << " " + PoPin.fiber_number.write_string
+		LoFormat[:color_1] << LoColor
+		LoFormat[:ancholin] << ancho
+		LoFormat[:derivacion] << derivacion?
+		LoFormat[:SinConexion] << _true
+		LoFormat[:mic] << mic
+		LoFormat[:ColorMic] << _self.obtiene_color(cveColor)
+	_else 
+		LoFormat[:anota_1] << " " + PoPin.fiber_number.write_string
+		LoFormat[:color_1] << LoColor
+		LoFormat[:ancholin] << ancho
+		LoFormat[:derivacion] << derivacion?
+		LoFormat[:SinConexion] << _false 
+		LoFormat[:mic] << mic
+		LoFormat[:ColorMic] << _self.obtiene_color(cveColor)
+	_endif	       
+
+
+	_return LoFormat
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.genera_atributos_linea(PoPin, fiber_pin?, lolineas, PoEmpalme)
+	## 
+	## 
+	_local pin << Popin
+	_local emp << PoEmpalme
+	_local LoMic
+	
+
+	_if fiber_pin? _is _true 
+	_then
+		_if (LoFibSigtes << _self.obtener_objetos_conectados_del_fiber_pin(Pin)).size > 0
+		_then
+			#_for mfp _over LoFibSigtes.fast_elements()
+			#_loop
+			_if LoFibSigtes.size = 1
+			_then
+				mfp << LoFibSigtes[1]
+				_if mfp.owner.id = emp[:cableout].id
+				_then
+					mic << _self.obten_mit_internal_connection(Pin, mfp)
+					LoLineas.add(_self.formato_linea(Pin, PoEmpalme, _false, mic))
+				_else
+					mic << _self.obten_mit_internal_connection(Pin, mfp)
+					LoLineas.add(_self.formato_linea(Pin, PoEmpalme, _true, mic))
+				_endif
+			_elif LoFibSigtes.size >= 2
+			_then
+				mfp << LoFibSigtes[1]
+				mfp2 << LoFibSigtes[2]
+				_if mfp.owner.id = emp[:cableout].id
+				_then
+					mic << _self.obten_mit_internal_connection(Pin, mfp)
+					LoLineas.add(_self.formato_linea(Pin, PoEmpalme, _maybe, mic))
+				_elif mfp2.owner.id = emp[:cableout].id
+				_then 
+					mic << _self.obten_mit_internal_connection(Pin, mfp2)
+					LoLineas.add(_self.formato_linea(Pin, PoEmpalme, _maybe, mic))
+				_endif 
+			_endif 
+			#_endloop
+		_else
+			# (10/07/01 jtlelo) : verificar que pasa si no hay conexion con
+			# otro pin
+			LoLineas.add(_self.formato_linea(Pin, PoEmpalme, _false))
+		_endif
+	_else 
+
+		LoLineas.add(_self.formato_linea(Pin, PoEmpalme, _false))
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.genera_cable_entrada()
+	## podemos obtener el cable que viene de la central
+	##
+	locable << .oEmpalmes[1].get_upstream_cables().an_element()
+	_if locable _isnt _unset 
+	_then
+		.oCableIn << locable
+		locable   << c_cable_fo.new(locable,_true)	
+	_endif
+	
+	_return locable	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.genera_cable_salida()
+	## podemos obtener el cable que viene de la central
+	## 
+	LoCablesSalida << .oEmpalmes[.oEmpalmes.size].get_downstream_cables()
+
+	_for cbs _over LoCablesSalida.fast_elements()
+	_loop
+		_if .oCableIn _isnt _unset _andif
+		    cbs.spec_info.fiber_quantity = .oCableIn.spec_info.fiber_quantity
+		_then
+			.oCableOut << cbs
+			_leave
+		_endif
+	_endloop
+	_if .oCableOut _is _unset 
+	_then
+		ContFib << 0
+		CabOut << _unset
+		# (10/07/23 jtlelo) : buscamos el cable de salida con mayor
+		# contidad de fibras
+		_for cbs _over LoCablesSalida.fast_elements()
+		_loop
+			_if cbs.spec_info.fiber_quantity > ContFib
+			_then
+				ContFib << cbs.spec_info.fiber_quantity
+				CabOut << cbs
+			_endif
+		_endloop
+		.oCableOut <<	CabOut
+	_endif
+
+	_return .oCableOut
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.genera_derivaciones_clientes()
+	## 
+	##
+	_for emp _over .oEmpAreas.fast_elements()
+	_loop
+		# (10/07/02 jtlelo) : obtengo la primera coordenada de los
+		# cables del cliente
+		_for cliente _over  emp[:lineasclte].fast_elements()
+		_loop
+			cable << cliente[:cable]
+			totalfib << cable.spec_info.fiber_quantity
+			total << totalfib + 1
+			lineaClte << cliente[:linea]
+			longLinea << lineaClte.first_coord.distance_to(lineaClte.last_coord)
+			LoDestribucion << longLinea/total
+			
+			Lopines << cable.obtener_pines()
+			Xtemp << _unset
+			lineaFib << rope.new()
+			_for pin _over Lopines.fast_elements()
+			_loop
+
+				
+				_if Xtemp _is _unset 
+				_then
+					Xtemp << lineaClte.first_coord.x
+				_endif
+				X1 << Xtemp + LoDestribucion
+				Xtemp << X1
+				Y1 << lineaClte.first_coord.y
+				coor1 << coordinate.new(X1, Y1)
+				# (10/07/02 jtlelo) : obtenemos la union con el empalme
+
+                             
+
+				# INICIO DEL CAMBIO
+				# (16/11/08 ahernan) : 
+				#
+				#cveColor << Pin.scheme_fiber_number.sys!slot(:owner).fiber_color
+
+				cveColor << Pin.color
+#                                 write(:cveColor, cveColor)
+				#
+				# FIN DEL CAMBIO
+
+				
+				# (12/08/15 jtlelo) : Solucion rapida atendida a los simas generados
+				# en las pruebas de Armas, no existe un cliente conectado
+				_if pin.is_kind_of?(mit_pseudo_fiber_pin)
+				_then
+					_continue
+					
+				_elif (PinConn << pin.connected_object()) _isnt _unset 
+				_then 
+					_if PinConn.responds_to?(:owner) _andif
+					    PinConn.owner.id = emp[:cableIn].id
+					_then
+						_if (linEmp << _self.obtener_union_empalme(X1, pin, emp, _true, PinConn)) _isnt _unset
+						_then
+							
+                                                    	
+							pl << property_list.new()
+							pl[:fib] << linEmp
+							pl[:EdoCon] << emp[:cableIn].construction_status 
+							pl[:fibNum] << _unset 
+							pl[:origen] << :empalme
+							lineaFib.add(pl)
+							linea1 << pseudo_chain.new(sector.new_with(coor1, linEmp.last_coord))
+							pl << property_list.new()
+							pl[:fib] << linea1
+							pl[:EdoCon] << _unset 
+							pl[:fibNum] << pin.fiber_number
+							pl[:origen] << :cliente
+							pl[:ColorMic] << _self.obtiene_color(cveColor)
+							lineaFib.add(pl)
+						_else
+							linea1 << pseudo_chain.new(sector.new_with(coor1, linEmp.last_coord))
+							pl << property_list.new()
+							pl[:fib] << linea1
+							pl[:EdoCon] << _unset 
+							pl[:fibNum] << pin.fiber_number
+							pl[:origen] << :cliente
+							pl[:ColorMic] << _self.obtiene_color(cveColor)
+							lineaFib.add(pl)
+						_endif
+					_elif PinConn.responds_to?(:owner) _andif
+					      PinConn.owner.id = emp[:cableOut].id
+					_then
+						_if (linEmp << _self.obtener_union_empalme(X1, pin, emp, _false, PinConn)) _isnt _unset
+						_then
+							pl << property_list.new()
+							pl[:fib] << linEmp
+							pl[:EdoCon] <<  emp[:cableOut].construction_status
+							pl[:fibNum] << _unset 
+							pl[:origen] << :empalme 
+							lineaFib.add(pl)
+							linea1 << pseudo_chain.new(sector.new_with(coor1, linEmp.first_coord))
+							pl << property_list.new()
+							pl[:fib] << linea1
+							pl[:EdoCon] << _unset 
+							pl[:fibNum] << pin.fiber_number
+							pl[:origen] << :cliente
+							pl[:ColorMic] << _self.obtiene_color(cveColor)
+							lineaFib.add(pl)
+						_endif
+					_endif
+				_else
+					Y1 << lineaClte.first_coord.y
+					_if cliente[:ubicacion] _is :arriba 
+					_then
+						Y2 << (lineaClte.bounds.ymin - emp[:area].bounds.ymax)/3
+						Y2 <<  (Y1 - Y2) 
+					_else
+						Y2 << (emp[:area].bounds.ymin - lineaClte.bounds.ymin) / 3
+						Y2 << Y1 + Y2
+					_endif
+					
+					coor1 << coordinate.new(X1, Y1)
+					coor2 << coordinate.new(X1, Y2)
+					linea1 << pseudo_chain.new(sector.new_with(coor1, coor2))
+					pl << property_list.new()
+					pl[:fib] << linea1
+					pl[:EdoCon] <<  cable.construction_status
+					pl[:fibNum] << pin.fiber_number
+					pl[:origen] << :cliente
+					pl[:ColorMic] << _self.obtiene_color(cveColor)
+					lineaFib.add(pl)
+				_endif 
+			_endloop
+			cliente[:lineaFib] << lineaFib
+		_endloop
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.genera_diagrama(windows)
+	# (10/06/29 jtlelo) : generamos los cables de entrada y salida
+	# que se estaran ocupando durante todo el proceso de creacion
+	# del diagrama
+#	lotitulo << "Generando Plano"
+#	lolabel << "Dibujando el plano..."
+#	loinfo  << "Generando conexion de empalme ."
+#        LoLayoutPlugin    << smallworld_product.pni_application().plugin(:layout_plugin)
+#        LoLayoutDesigner  << LoLayoutPlugin.start_layout_designer()
+#	LoLayoutManager   << LoLayoutDesigner.plugin(:layout_manager)
+#	barra << LoLayoutManager.progress_indicator_dialog(lotitulo,lolabel,loinfo)
+
+#	barra.progress_changed(5, _true )
+	_self.genera_cable_entrada()
+	
+#	barra.progress_changed(10, _true )
+	_self.genera_cable_salida()
+	
+#	barra.progress_changed(15, _true )
+	# (10/06/29 jtlelo) : Calculamos el area y la distribucion de
+	# los empalmes en el self.bounds
+	 _self.crea_area_empalmes()
+	 
+#	 barra.progress_changed(20, _true )
+	# (10/06/29 jtlelo) : pintamos la representacion de los
+	# empalmes (areas de estos)
+	_self.dibuja_area_empalmes(windows)
+	
+#	barra.progress_changed(25, _true )
+	# (10/06/29 jtlelo) : creamos las lineas que pasan de largo
+	# sobre los empalmes, los derivacions y los clientes
+	_self.crea_estructura_diagrama()
+	
+#	barra.progress_changed(30, _true )
+	# (10/07/01 jtlelo) : dibujamos las fibras que pasan de largo
+	_self.dibuja_fibras_continuas(windows)
+	
+#	barra.progress_changed(35, _true )
+	# (10/07/01 jtlelo) : dibujamos el mundo interno del empalme
+	_self.dibuja_mit_internals(windows)
+	
+#	barra.progress_changed(45, _true )
+	# (10/07/01 jtlelo) : dibujamos la representacion de la central (linea)
+	_self.dibuja_corte_centrales(windows)
+	
+#	barra.progress_changed(50, _true )
+	# (10/07/01 jtlelo) : dibujamos la representacion del cable (elipse)
+	_self.dibuja_corte_cables(windows)
+	
+#	barra.progress_changed(45, _true )
+	_self.dibuja_anotacion_centrales(windows)
+
+#	barra.progress_changed(55, _true )
+	# (10/07/01 jtlelo) : Creamos los clientes
+	_self.crea_distribucion_clientes()
+
+#	barra.progress_changed(68, _true )
+	# (10/07/02 jtlelo) : di1bujamos los cliente
+	_self.dibuja_distribucion_clientes(windows)
+
+#	barra.progress_changed(80, _true )
+	# (10/07/02 jtlelo) : generacion de las derivaciones
+	_self.genera_derivaciones_clientes()
+
+#	barra.progress_changed(85, _true )
+	# (10/07/02 jtlelo) : dibujamos las derivaciones
+	_self.dibuja_derivaciones_clientes(windows)
+
+#	barra.progress_changed(90, _true )
+	_self.dibuja_anotaciones_clientes(windows)
+
+#	barra.progress_changed(98, _true )
+	_self.dibuja_anotacion_numero_fibras_clientes(windows)
+
+#	barra.progress_changed(100, _true )
+#	barra.close()
+
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.initialise_for_page(a_layout_page)
+	## 
+	##  (10/06/28 jtlelo) : initialise_for_page
+	_self.outline_style << _unset
+	_self.titulo(a_layout_page)
+	.odiagrama_creado? << _false
+	.oubicacion_plano << _self.bounds
+	## Permite guardar los empalmes en el viewport para archivo XML
+	_self.guardar_elementos_bd_gis(.oEmpalmes )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.new_with(PoEmpalme, _gather args)
+## Objetivo: Inicializar valores para el objeto
+## Parametros de Entrada: PoEmpalme: es un rope con los
+##                                   empalmes rectos.
+##	                  args << argumentos para la super
+## Regresa: Ninguno.
+## (10/06/28 jtlelo) 
+
+    .oEmpalmes << PoEmpalme
+
+    .oTipoDiagrama << :unifilar
+    _if .oEmpalmes.size = 1
+    _then
+	    .oTipoDiagrama << :derivacion
+    _endif
+    
+
+    >> _super.new_with(property_list.new_from_gathered ( args ))
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.objetos_conectados_del_fiber_pin(PoPin)
+	## 
+	## 
+	LoEs << rope.new()
+
+	_for a_geom _over PoPin.location.connected_chains().fast_elements()
+	_loop
+		_if a_geom.rwo_type = :mit_internal_connection
+		_then
+			_for an_obj _over  a_geom.all_connected_geometry().elements()
+                        _loop
+                                _if an_obj.rwo_type = :mit_fiber_pin _andif
+				    an_obj.rwo.id <> PoPin.id
+				_then
+					pl << property_list.new()
+					pl[:mic] << a_geom.rwo
+					pl[:fiber] << an_obj.rwo
+					LoEs.add(pl)
+				_endif
+                        _endloop	
+		_endif
+	_endloop
+
+
+	_return LoEs
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.obten_ancho_linea(PoEdoConstruccion)
+	## 
+	##
+	_local EdoContruccion << PoEdoConstruccion
+	_if _self.TipoImpresion = "Blanco y Negro" _andif 
+	    EdoContruccion = "PROYECTADO"
+	_then
+		_return _self.ProyectadaByN
+	_elif _self.TipoImpresion = "Blanco y Negro"
+	_then
+		_return _self.ExitenteByN
+	_elif _self.TipoImpresion = "Color" _andif
+	      EdoContruccion = "PROYECTADO"
+	_then
+		_return _self.ProyectadaColor
+	_else
+		_return _self.ExitenteColor
+	_endif
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.obten_color(PoEdoConstruccion)
+	## 
+	##
+	_local EdoContruccion << PoEdoConstruccion
+	_if _self.TipoImpresion = "Blanco y Negro"
+	_then
+		_return :black
+	_elif _self.TipoImpresion = "Color" _andif
+	      EdoContruccion = "PROYECTADO"
+	_then
+		_return :red
+	_else
+		_return :green
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.obten_mit_internal_connection(PoPin1, PoPin2)
+	## 
+	## 
+	_local pin1 << PoPin1
+	_local pin2 << PoPin2
+
+	LoOk1 << _false
+	LoOk2 << _false 
+	_for geom _over pin1.location.connected_chains().fast_elements()
+	_loop
+		_for geo _over geom.all_connected_geometry().fast_elements()
+		_loop
+			_if geo.class_name _is :point
+			_then 
+				_if geo.rwo = pin1 _then LoOk1 << _true
+				_elif geo.rwo = pin2 _then LoOk2 << _true
+				_endif 
+				_if LoOk1 _andif LoOk2
+				_then
+					_return geom.rwo
+				_endif	
+			_endif
+		_endloop
+	_endloop
+
+	_return _unset
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.obtener_nombre_cable(PoCable)
+	## 
+	##
+
+	_local Cab << PoCable
+	_local cliente << _unset
+	_local tba << "TBA "
+	_for atrFib _over cab.fiber_attributes.fast_elements()
+	_loop
+		_if cliente _is _unset 
+		_then
+			cliente << atrFib.user!_distrito.write_string
+		_elif cliente <>  atrFib.user!_distrito
+		_then
+			_return _self.LoVariosClientes
+		_endif
+	_endloop
+	_if cliente _isnt _unset 
+	_then
+		cliente << tba + cliente
+	_endif
+	_return cliente
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.obtener_objetos_conectados_del_fiber_pin(PoPin)
+	## 
+	##
+
+	LoEs << rope.new()
+	_for a_geom _over PoPin.location.connected_chains().fast_elements()
+	_loop
+		_if a_geom.rwo_type = :mit_internal_connection
+		_then
+			_for an_obj _over  a_geom.all_connected_geometry().elements()
+                        _loop
+                                _if an_obj.rwo_type = :mit_fiber_pin _andif
+				    an_obj.rwo.id <> PoPin.id
+				_then
+					LoEs.add(an_obj.rwo)
+				_endif
+                        _endloop	
+		_endif
+	_endloop
+
+
+	_return LoEs
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.obtener_union_empalme(PoXfin, PoPin, emp, PoCableEntrada?, PoPinEmp)
+		## 
+	##
+	_local Pin << PoPin
+	_local XFin << PoXfin
+	_local LoArea << emp[:area]
+	_local CabOrigen? << PoCableEntrada?
+	_local PinEmp << PoPinEmp
+
+	LoCoordIni << coordinate.new(_self.bounds.xmin, _self.bounds.ymax)
+	LoDesY << _self.bounds.ymax - LoArea.bounds.ymax   
+	LoY << LoCoordIni.y - LoDesY
+
+
+	_for linea _over emp[:lineas].fast_elements()
+	_loop
+
+		new_coord  << coordinate.new(LoArea.bounds.xmax, LoY - linea[:ubicacion])
+		new_coord2 << coordinate.new(XFin, LoY - linea[:ubicacion])
+
+		
+		_if linea[:derivacion] _is _true
+		_then
+		
+			_if CabOrigen? _andif
+			    linea[:mic] = _self.obten_mit_internal_connection(Pin, PinEmp)
+			_then
+				
+				new_coord  << coordinate.new(LoArea.bounds.xmin, LoY - linea[:ubicacion])
+				linea1 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+				_return linea1
+				
+			_elif  linea[:anota_1].as_number() = PinEmp.fiber_number.as_number()
+			_then
+				
+				linea1 << pseudo_chain.new(sector.new_with(new_coord2,new_coord))
+				_return linea1
+				
+			_endif
+			
+		_elif linea[:derivacion] _is _maybe _andif
+		      linea[:anota_1].as_number() = PinEmp.fiber_number.as_number()
+		_then
+
+			linea1 << pseudo_chain.new(sector.new_with(new_coord2,new_coord2))
+			_return linea1
+			
+		_elif linea[:anota_1].as_number() = PinEmp.fiber_number.as_number()
+		_then
+			
+			linea1 << pseudo_chain.new(sector.new_with(new_coord2,new_coord))
+			_return linea1
+			
+		_endif
+	_endloop
+
+
+	linea1 << pseudo_chain.new(sector.new_with(new_coord,new_coord2))
+	_return linea1
+	#ESTO DEVUELVE
+	#_return _unset
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.ObtenNumeroyColorfibraconectada(poConexionFibra)
+	## 
+	##
+	
+	_for i _over poConexionFibra.connected_objects()
+	_loop
+	     loColor  << _self.obtiene_color(i.color)
+	     loNumero << " " + i.fiber_number
+	_endloop
+	
+	_return loNumero, loColor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.obtiene_color(PoCadena)
+	## Metodo que regresa una cadena con el color.
+	## PoCadena es el texto que contiene la clave de color
+	
+	_if PoCadena.includes_all?("NAT")
+	_then
+	    _return "NATURAL"
+	_elif PoCadena.includes_all?("AZU")
+	_then 
+	    _return "AZUL"
+	_elif PoCadena.includes_all?("AMA")
+	_then
+	    _return "AMARILLO"
+	_elif PoCadena.includes_all?("ROJ")
+	_then
+	    _return "ROJO"
+	_elif PoCadena.includes_all?("VER")
+	_then
+	    _return "VERDE"
+	_elif PoCadena.includes_all?("NAR")
+	_then
+	    _return "NARANJA"
+	_elif PoCadena.includes_all?("VIO")
+	_then
+	    _return "VIOLETA"
+	_elif PoCadena.includes_all?("CAF")
+	_then
+	    _return "CAFE"
+	_elif PoCadena.includes_all?("GRI")
+	_then
+	    _return "GRIS"
+	_elif PoCadena.includes_all?("NEG")
+	_then
+	    _return "NEGRO"
+	_elif PoCadena.includes_all?("ROS")
+	_then
+	    _return "ROSA"
+	_elif PoCadena.includes_all?("BLA")
+	_then
+	    _return "BLANCO"
+	_else
+	    _return ""
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.titulo(PoPage)
+	## Objetivo: Agregar el titulo al diagrama
+	## Parametros de salida: Ninguno
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:10/06/29
+	## Autor de la modificacion: jtlelo
+	## Descripcion de la modificacion: Metodo nuevo 
+
+	_local LoBounds << bounding_box.new(_self.bounds.xmin,
+					    _self.bounds.ymax + 150,
+					    _self.bounds.xmax ,
+					    _self.bounds.ymax + 250 )
+	
+	_local titulo
+	titulo << _self.LoTitulo
+	_if .oTipoDiagrama _is :derivacion
+	_then
+		titulo << _self.LoTitulo2
+	_endif
+	LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBounds,
+					       :font_name,        "bold",
+					       :font_size,        8,
+					       :fill_style,       _unset,
+					       :outline_style,    _unset,
+					       :text,             Titulo,
+					       :wrap,             _false,
+					       :align_horizontal, :centre,
+					       :align_vertical,   :centre,
+					       :orientation,      :centre_centre)
+	
+	PoPage.add_element(LoTitulo)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_diagrama_unifilar_ruta.tranforma_linea(Popseudolina, PoDesplaza)
+	## 
+	##
+	linea << Popseudolina
+	mueve << PoDesplaza
+	x1 << linea.first_coord.x + mueve
+	y1 << linea.first_coord.y
+	x2 << linea.last_coord.x + mueve
+	y2 << linea.last_coord.y
+
+	Coord1 << coordinate.new(x1, y1)
+	Coord2 << coordinate.new(x2, y2)
+	nlinea << pseudo_chain.new(sector.new_with(Coord1, Coord2))
+	
+	_return nlinea
+	
+_endmethod
+$

@@ -1,0 +1,327 @@
+_package user
+$
+def_slotted_exemplar(:c_elemento_grafico,
+		     {
+			     {:oVentana,    _unset}, #ventana donde se dibujaran los elementos
+			     {:oArea,       _unset}, #Superficie que cubre el layout
+			     {:nMargen_Sup,     0},  #Margen Supeior para el contenido de la celda
+     			     {:nMargen_Inf,     0},  #Margen Inferior para el contenido de la celda
+     			     {:nMargen_Izq,     0},  #Margen Izquierdo para el contenido de la celda 
+			     {:nMargen_Der,     0}   #Margen Derecho para el contenido de la celda			     
+		     }
+)
+$
+c_elemento_grafico.define_slot_access(:nMargen_Der, :writable, :private)
+$
+c_elemento_grafico.define_slot_access(:nMargen_Inf, :writable, :private)
+$
+c_elemento_grafico.define_slot_access(:nMargen_Izq, :writable, :private)
+$
+c_elemento_grafico.define_slot_access(:nMargen_Sup, :writable, :private)
+$
+c_elemento_grafico.define_slot_access(:oArea,       :writable, :private)
+$
+c_elemento_grafico.define_slot_access(:oVentana,    :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.Actualiza_Area_Elemento()
+## Objetivo: Metodo que permite Establecer el area del elemento
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+_Local LnXMin # Posicion X Min de la nueva área
+_Local LnYMin # Posicion Y Min de la nueva área
+_Local LnXMax # Posicion X Max de la nueva área
+_Local LnYMax # Posicion Y Max de la nueva área
+
+	# Se aplica el margen indicado por el usuario
+	LnXMin << _self.oArea.Xmin + _self.nMargen_Izq
+	LnYMin << _self.oArea.Ymin + _self.nMargen_Inf
+	LnXMax << _self.oArea.Xmax - _self.nMargen_Der
+	LnYMax << _self.oArea.Ymax - _self.nMargen_Sup	
+
+	# Se establece la nueva area
+	_self.oArea << bounding_box.new(LnXMin,LnYMin,LnXMax,LnYMax)	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.despliega()
+## Objetivo: Metodo que se debe sobreescribir en las clases que
+##           hereden de esta 
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 11 / Noviemnre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_elemento_grafico.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.new_from(RoObjeto)
+## Objetivo: Metodo que se debe sobreescribir en las clases que
+##           hereden de esta 
+##           Constructor de copia
+## Parámetros de entrada: NA
+## 	c_elemento_grafico - RoObjeto : Objeto apartir del cual se creara uno nuevo
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 11 / Noviemnre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_elemento_grafico.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.nMargen_Der 
+
+## Objetivo: Metodo que permite obtener del margen Derecho
+##           del slot nMargen_der	
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  Valor del margen derecho
+## Fecha de última modificación : 24 / 01 / 2005
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	>> .nMargen_Der 
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.nMargen_Der << RnValor
+
+## Objetivo: Metodo que permite establecer el margen Derecho
+##           y asignarlo al slot nMargen_der	
+## Parámetros de entrada: 
+## 	Entero - RnValor : Valor del margen derecho 
+## Parámetros de salida:  NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	.nMargen_Der << RnValor * 10
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.nMargen_Inf 
+
+## Objetivo: Metodo que permite obtener el margen Inferior
+##           del slot nMargen_inf	
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  El valor del margen inferior
+## Fecha de última modificación : 24 / 01 / 2005
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	>> .nMargen_Inf 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.nMargen_Inf << RnValor
+## Objetivo: Metodo que permite establecer el margen Inferior
+##	     y asignale el valor al slot nMargen_inf
+## Parámetros de entrada: 
+## 	Entero - RnValor : Valor del margen inferior 
+## Parámetros de salida:  NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	.nMargen_Inf << RnValor * 10
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.nMargen_Izq 
+
+## Objetivo: Metodo que permite obtener el margen Izquierdo
+##           del slot nMargen_izq	
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  El valor del slot nMargen_izq
+## Fecha de última modificación : 24 / 01 / 2005
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	>> .nMargen_Izq 
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.nMargen_Izq << RnValor
+## Objetivo: Metodo que permite establecer el margen Izquierdo
+##           y asignalo al slot nMargen_izq	
+## Parámetros de entrada: 
+## 	Entero - RnValor : Valor del margen izquierdo
+## Parámetros de salida:  NA
+## Regresa:  El valor del slot nMargen_izq
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	.nMargen_Izq << RnValor * 10
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.nMargen_Sup
+## Objetivo: Metodo que permite obtener el margen Superior
+##           del slot nMargen_Sup	
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  El valor del margen superior
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	>> .nMargen_Sup 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.nMargen_Sup << RnValor
+## Objetivo: Metodo que permite establecer el margen Superior
+##           y asignale el valor al slot nMargen_Sup	
+## Parámetros de entrada: 
+## 	Entero - RnValor : Valor del margen superior 
+## Parámetros de salida:  NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	.nMargen_Sup << RnValor * 10
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.oArea
+## Objetivo: Retorna el valor área
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  El valor del slot oArea
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	_return .oArea
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.oArea << RoValor
+## Objetivo: Metodo que se permite asignar el área
+##           al slot oArea	
+## Parámetros de entrada: 
+## 	bounding_box - RoValor : Area utilizada por el elemento	        
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+        .oArea << RoValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.oVentana
+## Objetivo: Metodo que se retorna el objeto ventana
+## Parámetros de entrada: NA
+## Parámetros de salida:  Objeto canvas
+## Regresa:  El valor del slot oVentana
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	_return .oVentana
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_grafico.oVentana << RoVentana
+## Objetivo: Metodo que permite recibir el canvas "ventana"
+##           y asignalo al slot oVentana	
+## Parámetros de entrada:
+## 	window - RoVentana : ventana donde se dibujara
+## Parámetros de salida:   NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+        .oVentana << RoVentana
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_elemento_grafico.serial_slots()
+
+	_local ln_margen_sup,ln_margen_inf,ln_margen_izq,ln_margen_der
+	
+	_try
+		ln_margen_sup << .nMargen_Sup/10
+		ln_margen_inf << .nMargen_Inf/10
+		ln_margen_izq << .nMargen_Izq/10
+		ln_margen_der << .nMargen_Der/10
+	_when does_not_understand
+		ln_margen_sup << 0
+		ln_margen_inf << 0
+		ln_margen_izq << 0
+		ln_margen_der << 0
+	_endtry
+		
+	keys << rope.new_with(:oArea,:nMargen_Sup,:nMargen_Inf,:nMargen_Izq,:nMargen_Der)
+	values << rope.new_with(.oArea,ln_margen_sup,ln_margen_inf,ln_margen_izq,ln_margen_der)
+
+	_return keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_elemento_grafico.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$

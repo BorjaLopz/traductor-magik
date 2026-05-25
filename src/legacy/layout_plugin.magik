@@ -1,0 +1,816 @@
+_package sw
+$
+layout_plugin.define_shared_constant(:meses, {"Enero", "Febrero",
+				              "Marzo", "Abril",
+				              "Mayo",  "Junio",
+				              "Julio", "Agosto",
+				              "Septiembre", "Octubre",
+				              "Noviembre", "Diciembre"},
+				     :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_plugin.fecha_med()
+	## Devuelve la fecha en formato "dd-mm-yyyy"
+	
+	# (1/03/2006 llruiz, SigmaTao)
+	
+	fecha << date_now()
+
+	dia << fecha.day_of_month_number
+	mes << _self.meses[fecha.month_number]
+	anio << fecha.year
+	
+	_return dia.write_string + "/" + mes + "/" + anio.write_string
+	
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_plugin.init_actions ()
+	## 
+	## 
+	_super.init_actions ()
+
+	_self.add_action ( sw_action.new ( :quick_preview,
+					   :engine, _self,
+					   :image, { :print, _self.module_name },
+					   :short_help_text, _self.message( :quick_preview_sh ),
+					   :action_message, :quick_preview|()| ) )
+					   
+	_self.add_action ( sw_action.new ( :layout_designer,
+					   :engine, _self,
+					   :image, { :new_layout, layout_plugin.module_name },
+					   :action_message, :start_layout_designer|()| ) )
+
+
+	# New actions for SWIFT - these would need some more work to
+	# enable them to work in swaf; specifically creating a
+	# gui_framework earlier e.g. in init() rather than in
+	# build_gui()
+	_self.add_action ( sw_action.new ( :quick_print,
+					   :engine, _self,
+					   :image, { :print, :swift_view_application },
+					   :action_message, :|quick_print()| ) )
+	
+	_self.add_action ( sw_action.new ( :quick_pdf,
+					   :engine, _self,
+					   :image, { :pdf, :swift_view_application },
+					   :action_message, :|quick_pdf()| ) )
+	
+	
+#	###### rraragon (23/02/2007) se agrega la accion para el plano
+#	## libre de coaxial
+#	_self.add_action ( sw_action.new (:plano_coaxial,
+#					   :engine, _self,
+#					   :image, { :new_layout, :layout_gui },
+#					   :action_message, :start_layout_designer|()| ) )
+	##########################################################################
+
+	_self.add_action ( sw_action.new ( :plano_de_captura,
+					   :engine, _self,
+					   :image, { :print, _self.module_name },
+					   :short_help_text, _self.message( :plano_de_captura),
+					   :action_message, :plano_de_captura|()| ) )
+
+	
+_endmethod
+$
+_method layout_plugin.layout_designer
+#
+# Devuelve la applicación del layout_designer
+# se está arrancada (pero no la arranca caso
+# que no).
+# Steve Hall (Ten Sails Consulting) 02/03/06
+#
+app_def << .applications[:layout_designer]
+_if app_def _isnt _unset
+_then 
+	_return app_def.application
+_else
+	_return _unset
+_endif 
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_plugin.plano_de_captura ()
+	## 
+	#  Objetivo: Escriba aquí el objetivo.
+	#  Parámetros de entrada:  Ninguno 
+	#  Parámetros de salida:     Ninguno.
+	#                                 	
+	paf << smallworld_product.pni_application()
+	mpg << paf.plugin(:map_plugin)
+	sch<< swg_dsn_admin_engine.active_scheme
+	
+	_if sch _isnt _unset 
+	_then
+		
+		LoProyecto<< sch.project
+		
+		existente_fibra? << LoProyecto  _isnt _unset _andif
+				    LoProyecto.job_type.lowercase = "existente"   _andif 
+				    sch.tipo_diseno = :secundaria _andif
+				    swg_dsn_admin_engine.active_design.id_dto_optico   _isnt _unset
+		
+		
+		_if existente_fibra?   	  
+		_then
+
+			LoPlanoConstr << user:c_plano_de_captura_fo.new()
+			LoDtoOptico << swg_dsn_admin_engine.active_scheme.distrito_optico
+			LoPlanoConstr.genera_plano(LoDtoOptico)
+			
+			_return _true
+		_endif
+		
+		lyd << paf.plugin(:layout_plugin).start_layout_designer()
+		lym                    << lyd.plugin(:layout_manager)
+		LoDoc                  << lym.current_document
+		LoDoc.user!_tipo_plano << :construccion
+		LoPage                 << LoDoc.current_page	
+		LoPage.layout_document.user!_tipo_plano <<"construccion"	
+		LoPage.layout_document.user!_proyecto <<swg_dsn_admin_engine.active_scheme.project
+		
+		## Agregar marco.
+		LoMarco << user:c_marco.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+		LoMarco.Largo << 4
+		LoMarco.Alto  << 2
+		LoMarco.set_fill_colour(_unset)
+		LoPage.add_element(LoMarco)
+		##agregar norte
+		LoNorte << user:c_norte.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+		LoNorte.limites << bounding_box.new(LoMarco.bounds.xmin + 50,
+						    LoMarco.bounds.ymin + 50,
+						    LoMarco.bounds.xmax - 50,
+						    LoMarco.bounds.ymax - 50)
+		
+		LoNorte.tamano<<"B"
+		LoPage.add_element(LoNorte)
+		
+		##agregar titulo
+		LoTitulo << user:c_titulo_de_plano.new_with(:bounds,      bounding_box.new(0, 0, 3000, 1400),
+						       :font_name,        "bold",
+						       :font_size,        12,
+						       :fill_style,       _unset,
+						       :outline_style,    _unset,
+						       :text,             "PLANO DE CAPTURA",
+						       :wrap,             _false,
+						       :align_horizontal, :centre,
+						       :align_vertical,   :centre,
+						       :orientation,      :left_right)
+		LoPage.add_element(LoTitulo)
+		
+		LoTitulo.oBoundContenedor << bounding_box.new(LoMarco.bounds.xmin + 50,
+							      LoMarco.bounds.ymin + 50,
+							      LoMarco.bounds.xmax,
+							      LoMarco.bounds.ymax)
+		
+		
+		##agregar sello estandar
+		LoSello << user:c_sello_estandar_construccion.new_with(:bounds, bounding_box.new(LoMarco.bounds.xmin+50,
+											    LoMarco.bounds.ymin+50,
+											    LoMarco.bounds.xmin+200+2950,
+											    LoMarco.bounds.ymin+50+2740))
+		LoPage.add_element(LoSello)
+		
+		LoTituloPlano << "PLANO DE CONSTRUCCIÓN" +%newline	
+		LoStrDit << sch.user!_distrito.user!_distrito.default("")
+		LoStrProg<< sch.project.user!_programa_tipo.default("" )
+		LoStrAnyo<< sch.project.user!_programa_anyo.default("" )
+		LoTituloPlano +<< LoStrDit + % +%/ + % + LoStrProg + %- + LoStrAnyo
+		
+		LoDibujaPlano << user:c_geom_set_layout_plano_captura.new_with(:bounds,bounding_box.new(10,10,100,100))	
+		LoDibujaPlano.oAppLayoutDesigner << lyd
+		LoDibujaPlano.oRegistro          << sch.user!_distrito
+		LoDibujaPlano.nIdRegistro        << sch.user!_distrito.id
+		LoDibujaPlano.sidproyecto        << sch.project.id
+		LoDibujaPlano.nMargenVp          << 800
+		LoDibujaPlano.sTipoPlano         << "CONSTRUCCION"
+		LoDibujaPlano.snombreplano       << "CONSTRUCCION"
+		LoDibujaPlano.modulos_ancho      << 4
+		LoDibujaPlano.modulos_alto       << 2		
+		LoPage.add_element(LoDibujaPlano)
+
+	_endif
+		
+_endmethod 
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_plugin.preview_layout ( a_layout, _optional activate_custom_properties?, title )
+
+	## 
+	## This will start the 'hidden' layout preview application.
+	## And put the document (a_layout) in a new layout_view
+	##
+
+	_if ( a_previewer << _self.gui_framework ) _is _unset
+	_then
+		_if _self.map_manager.responds_to?( :map_container )
+		_then
+			# SWIFT
+			# we never want the dialog so simply return if there is no embedded gui
+			_return
+		_else 
+			# SWAF
+			# We aren't using an embedded gui framework, so go from the app.
+			a_previewer << _self.activate_as_dialog ( :layout_preview )
+			
+			# Set the title again as layout_manager_plugin just changed it
+			a_previewer.top_frame.title << title.default(a_previewer.external_name)
+		_endif 
+	_endif
+
+	template_dir << _if (dir << _self.quick_template_directory) _isnt _unset
+			_then
+				>> dir
+			_else
+				>> _self.template_directory
+			_endif
+
+	a_previewer.set_current_layout( a_layout,
+					:template_directory, template_dir,
+					:measurement_unit, _self.options[:measurement_unit].default( :mm ),
+					:activate_custom_properties?, activate_custom_properties?,
+					:pdf_output_directory, _self.options[:pdf_output_directory] )
+	
+#_method layout_plugin.preview_layout ( a_layout, _optional activate_custom_properties?, preview_application )
+#	## 
+#	## This will start the 'hidden' layout preview application.
+#	## And put the document (a_layout) in a new layout_view
+#	##
+#
+#	#
+#	# Steve Hall (Tomar la aplicación a arrancar del 
+#	# argumento opcional 'preview_application' si
+#	# este se especifica.
+#	#
+#	preview_application <<
+#		preview_application.default ( :layout_preview )
+#	an_app << _self.start_application_copy ( preview_application )
+#	
+#	# Set the title again as layout_manager_plugin just changed it
+#	# (02/03/2006 llruiz SigmaTao) : se comenta esta linea, pues ya
+#	# en start_application_copy se ha cambiado en titulo de la
+#	# aplicacion que muestra la impresion de planos.
+#	#an_app.top_frame.title << an_app.external_name
+#
+#	a_layout_manager << an_app.plugin(:layout_manager)
+#	a_layout_manager.post_init_layout_handlers ( _self.map_manager, _self.gs_factory )
+#	a_layout_manager.check_update_flag? << _false 
+#
+#	# Ensure the Zoom In interaction mode is active by default
+#	doc_gui << a_layout_manager.current_document_gui
+#	act << doc_gui.action ( :interaction_mode_quick_layout )
+#	act.set_value ( :zoom_in, _true )
+#				 
+#	mmu << _self.options[:measurement_unit].default(:mm)
+#	a_layout_manager.set_preference(:measurement_unit, mmu )
+#	an_app.set_preference(:measurement_unit, mmu )
+#	
+#	# Preview Layout always uses the same layout_view, discarding
+#	# the document it currently has and just putting in a new one.
+#	create_new? << _false 
+#	_if ( existing_view << a_layout_manager.current_layout_view ) _is _unset
+#	_then
+#		create_new? << _true 
+#	_endif
+#
+#	_if create_new?
+#	_then 
+#		new_view << layout_view.new ( _unset, a_layout_manager )
+#		new_view.allow_element_move << _false 
+#		new_view.document << a_layout
+#		a_layout_manager.manage_layout ( new_view )
+#	_else
+#		existing_view.document << a_layout
+#		#
+#		# Steve Hall (Ten Sails Consulting) 11/05/06
+#		# La siguiente línea garantiza que para
+#		# la visualización de planos asociados a
+#		# proyectos se actualice el título.
+#		#
+#		a_layout_manager.current_document_gui.document << existing_view
+#		existing_view.allow_element_move << _false
+#		existing_view.start_render_page ()
+#	_endif
+#
+#	_if activate_custom_properties?.default ( _false )
+#	_then
+#		a_layout_manager.activate_custom_properties_dialog ( _false )
+#	_endif
+#
+#	# We assume that the first viewport has been mapped by the
+#	# automatic mapping mechanism. As a result we must post a
+#	# notification on the application's databus that the viewport
+#	# has changed, so that other plugin can act upon it.
+#	a_viewport << a_layout.get_first_element_of ( viewport_layout )
+#
+#	# This is the tricky part as we are now about to put some data
+#	# on another applications databus, but we'll have to do it this way.
+#	an_app.databus.make_data_available(:viewport, a_viewport)	
+_endmethod
+$
+# (22/02/09 des_aaron) : 5.2
+_pragma(classify_level=restricted)
+_method layout_plugin.quick_preview( _optional a_template_name )
+	## 
+	## Creates a new layout based on the Tools/Options/QuickPlot/PaperSize
+	## gets the current_map_view settings and figures the
+	## orientation of the plot (Landscape/Portrait) and creates a
+	## viewport as large as possible to fit on that piece of paper.
+	## 
+
+	# START CHANGE
+	# (22/02/09 des_aaron) : 
+	#
+	# (04/07/22 llruiz) : Modified.
+	_if system.getenv("SW_TEMPLATES_DB_DIR") _is _unset 
+	_then
+		_self.template_directory << system.getenv("SMALLWORLD_GIS") + "\..\sigp\templates_xml"
+		path << system.putenv("SW_TEMPLATES_DB_DIR", _self.template_directory )
+	_else
+		path <<  system.getenv("SW_TEMPLATES_DB_DIR")
+	_endif
+	
+	_if path _is _unset 
+	_then
+		path <<  system.getenv("SW_TEMPLATES_DB_DIR")
+	_endif
+	
+	
+	default_layout_name << path + "\p_libre_plot.xml"
+	a_template_name << path + "\p_libre_plot.xml"
+	
+	_self.options [ :default_landscape_layout] << default_layout_name
+	
+	#
+	# END CHANGE
+	
+	_if _self.options[:viewport_mapping] _is :manual
+	_then
+		# Do select the map you want to use
+		_self.click_on_map ()
+	_elif ( a_map_plugin << _self.get_service_provider( :map_plugin ) ) _isnt _unset 
+	_then
+		# SWIFT
+		_self.quick_preview_for_map ( a_map_plugin.map_container, a_template_name )
+	_elif ( a_map_view << _self.current_map_view ) _isnt _unset
+	_then
+		# SWAF
+		_self.quick_preview_for_map ( a_map_view, a_template_name )
+	_else 
+		condition.raise ( :warning, :string, _self.message( :no_map_available) )
+	_endif
+	
+	
+_endmethod
+$
+#_pragma(classify_level=restricted, topic={plugins})
+#_method layout_plugin.quick_preview ()
+#	## 
+#	## Creates a new layout based on the Tools/Options/QuickPlot/PaperSize
+#	## gets the current_map_view settings and figures the
+#	## orientation of the plot (Landscape/Portrait) and creates a
+#	## viewport as large as possible to fit on that piece of paper.
+#	##
+#	
+#	# (04/07/22 llruiz) : Modified.
+#	_if system.getenv("SW_TEMPLATES_DB_DIR") _is _unset 
+#	_then
+#		_self.template_directory << system.getenv("SMALLWORLD_GIS") + "\..\templates_xml"
+#		path << system.putenv("SW_TEMPLATES_DB_DIR", _self.template_directory )
+#	_else
+#		path <<  system.getenv("SW_TEMPLATES_DB_DIR")
+#	_endif
+#
+#	_if path _is _unset 
+#	_then
+#		path <<  system.getenv("SW_TEMPLATES_DB_DIR")
+#	_endif
+#
+#	
+#	default_layout_name << path + "\p_libre_plot.xml"
+#	a_template_name << path + "\p_libre_plot.xml"
+#	
+#	_self.options [ :default_landscape_layout] << default_layout_name
+#
+#
+#	# (22/02/09 des_aaron) : custom
+#	#
+#	_if _self.options[:viewport_mapping] _is :manual
+#	_then
+#		# Do select the map you want to use
+#		_self.click_on_map ()
+#	_elif ( a_map_plugin << _self.get_service_provider( :map_plugin ) ) _isnt _unset 
+#	_then
+#		# SWIFT
+#		_self.quick_preview_for_map ( a_map_plugin.map_container, a_template_name )
+#	_elif ( a_map_view << _self.current_map_view ) _isnt _unset
+#	_then
+#		# SWAF
+#		_self.quick_preview_for_map ( a_map_view, a_template_name )
+#	_else 
+#		condition.raise ( :warning, :string, _self.message( :no_map_available) )
+#	_endif
+#	
+#	_return 
+#		#	_endif 
+#		#
+#		#	w(33333333333)
+#		#	# Else get the current map and view that one.
+#		#	_if ( a_map_view << _self.current_map_view ) _is _unset 
+#		#	_then
+#		#		condition.raise ( :warning, :string, _self.message(:no_map_available) ) 
+#		#		_return 
+#		#	_endif
+#		#
+#		#	_self.quick_preview_for_map ( a_map_view ) 
+#		#	
+#_endmethod 
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_plugin.quick_preview_for_map ( a_map_view, _optional a_template_name )
+	## 
+	## Creates a new layout based on the Tools/Options/QuickPlot/PaperSize
+	## gets the current_map_view settings and figures the
+	## orientation of the plot (Landscape/Portrait) and creates a
+	## viewport as large as possible to fit on that piece of paper.
+	## 
+	# Always get the current view bounds 
+	bb << a_map_view.current_view_bounds
+	
+	#
+	# Check for existing layout 
+	#
+	a_layout << _unset 
+	preview_app << _self.get_dialog ( :layout_preview )
+	_if preview_app _isnt _unset
+	_then
+		lay_manager << preview_app.plugin ( :layout_manager )
+		_if lay_manager _isnt _unset _andif
+		    (cd << lay_manager.current_document) _isnt _unset 
+		_then
+			a_filename << cd.filename
+		_endif
+	_endif
+
+	_if a_layout _is _unset
+	_then
+		# Default to landscape
+		landscape? << _true 
+		_if _self.options [ :page_orientation ] _is :automatic
+		_then
+			landscape? << bb.width > bb.height
+		_elif _self.options [ :page_orientation ] _is :portrait
+		_then
+			landscape? << _false 
+		_endif
+
+		_if a_template_name _isnt _unset _andif
+		    (_self.quick_template_directory _isnt _unset _orif
+		     _self.template_directory _isnt _unset)
+		_then
+			_if _self.quick_template_directory _isnt _unset
+			_then
+				filename << write_string(_self.quick_template_directory, a_template_name)
+			_else
+				filename << write_string(_self.template_directory, a_template_name)
+			_endif
+		_else
+			filename << _if a_filename _isnt _unset
+				    _then
+					    >> a_filename
+				    _elif landscape?
+				    _then
+					    >> _self.options [ :default_landscape_layout ]
+				    _else
+					    >> _self.options [ :default_portrait_layout ]
+				    _endif
+		_endif
+		
+		a_layout << _unset 
+		_if filename _isnt _unset _andif
+		    system.file_exists? ( filename )
+		_then 
+			a_layout << layout_document.new_from_xml ( filename )
+		_endif
+		
+		_if a_layout _is _unset 
+		_then
+			# Create a default layout
+			a_layout << layout_document.new ( _self.default_page_size )
+			a_layout.current_page.landscape? << landscape?
+		_endif
+	_endif 
+	
+	a_layout.gs_factory << _self.gs_factory
+	a_layout.map_manager << _self.map_manager
+
+	viewports << rope.new()
+	_for i _over a_layout.all_elements_of( viewport_layout ).fast_elements()
+	_loop
+		_if i.parent_viewport _is _unset
+		_then
+			viewports.add(i)
+		_endif
+	_endloop
+	
+	_if viewports.empty?
+	_then
+		a_page << a_layout.current_page 
+		inside_bounds << a_page.bounds.new_enlarging ( 0.95 )
+		# relay the map_view for the new viewport to be created. This
+		# will be used later on, in the method 
+		# abstract_geometry_set_factory.get_geometry_set_for() to
+		# derive the worlds where the geometries to be displayed are.
+		a_viewport << viewport_layout.new_with ( :bounds, inside_bounds,
+							 :map_view, a_map_view ) 
+		a_layout.add_element ( a_viewport )
+		viewports.add(a_viewport)
+	_endif
+
+	_for a_viewpt _over viewports.fast_elements()
+	_loop
+		_self.map_viewport_on_map_view ( a_viewpt, a_map_view, bb )
+	_endloop
+
+	_self.preview_layout ( a_layout, _true )
+
+_endmethod
+$
+
+#_pragma(classify_level=restricted, topic={plugins})
+#_method layout_plugin.quick_preview_for_map ( a_map_view )
+#	## 
+#	## Creates a new layout based on the Tools/Options/QuickPlot/PaperSize
+#	## gets the current_map_view settings and figures the
+#	## orientation of the plot (Landscape/Portrait) and creates a
+#	## viewport as large as possible to fit on that piece of paper.
+#	## 
+#	# Always get the current view bounds 
+#	bb << a_map_view.current_view_bounds
+#	
+#	# Default to landscape
+#	landscape? << _true
+#	
+#	_if _self.options [ :page_orientation ] _is :automatic
+#	_then
+#		landscape? << bb.width > bb.height
+#	_elif _self.options [ :page_orientation ] _is :portrait
+#	_then
+#		landscape? << _false 
+#	_endif
+#
+#
+## START CHANGE
+## (05/03/15 ahernan) : Se cambia a asignacion directa el nombre
+## del archivo del template.
+##
+##	filename << _if landscape?    _then		   
+##			    >> _self.options [ :default_landscape_layout ]
+##		    _else
+##  
+##			    >> _self.options [ :default_portrait_layout ]
+##		    _endif
+#	
+#filename << 	_self.options [ :default_landscape_layout]
+##
+## END CHANGE
+#	
+#
+#
+#	a_layout << _unset 
+#	_if filename _isnt _unset _andif
+#	    system.file_exists? ( filename )
+#	_then 
+#		a_layout << layout_document.new_from_xml ( filename )
+#	_endif
+#	
+#	_if a_layout _is _unset 
+#	_then
+#		# Create a default layout
+#		a_layout << layout_document.new ( _self.default_page_size )
+#		a_layout.current_page.landscape? << landscape?
+#	_endif
+#	
+#	a_layout.gs_factory << _self.application.geometry_set_factory ()
+#	a_layout.map_manager << _self.map_manager
+#
+#	a_viewport << a_layout.get_first_element_of ( viewport_layout )
+#
+#	_if a_viewport _is _unset 
+#	_then
+#		a_page << a_layout.current_page 
+#		inside_bounds << a_page.bounds.new_enlarging ( 0.95 )
+#		a_viewport << viewport_layout.new_with ( :bounds, inside_bounds )
+#		a_layout.add_element ( a_viewport )
+#	_endif
+#	
+#	_self.map_viewport_on_map_view ( a_viewport, a_map_view, bb )
+#
+#	_self.preview_layout ( a_layout, _true )
+#
+#_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method layout_plugin.start_application_copy ( app_name )
+	## 
+	## Starts a copy of the requested application and owns it privately.
+	##
+
+	_if ( an_app_def << .applications [ app_name ] ) _is _unset 
+	_then
+		_if ( app_def << smallworld_product.application_definition ( app_name ) ) _is _unset
+		_then
+			condition.raise ( :warning, :string, _self.message(:functionality_not_available) )
+			_return 
+		_endif
+
+		an_app_def << .applications [ app_name ] << app_def.copy ()
+	_endif
+	
+	_if an_app_def.state _isnt :active 
+	_then
+		# Start the application removing any left overs by performing a
+		# stop first
+		an_app_def.int!restart ()
+
+		# And hook the Help system into the owning Application 
+		_if ( app << an_app_def.application ) _isnt _unset
+		_then 
+			app.html_help_file_name << _self.application.html_help_file_name
+			app.html_help_resource_module_name << _self.application.html_help_resource_module_name
+
+			# Actually should make self dependent on the
+			# application_definition and wait for a message
+			# where :state is :active
+			_proc ( app, app_name )
+				app.post_activation ()
+				#
+				# Steve Hall (Ten Sails Consulting) 10/03/06
+				# Se añade 'elif' para dejar sin cambiar
+				# el título del 'visualizador_planos'.
+				#
+				_if app_name _is :layout_preview
+				_then
+					#
+					# Modificación: Para el manejo de mensajes
+					# Autor: llruiz 
+					# Fecha: 11/05/2005
+					#app.top_frame.title << app.external_name
+					#
+					app.top_frame.title << app.message(:quick_preview_title)
+				_elif :app_name _is :layout_designer 
+				_then
+					_local title
+					title << app.top_frame.title
+					title << title.replace_substring(app.external_name.write_string,app.message(:layout_designer_title))
+					app.top_frame.title << title 
+				_endif
+				
+			_endproc.fork_at ( _thisthread.background_priority - 1, app, app_name )
+		_endif 
+	_else
+		# If the application is currently minimized then pop it up.
+		_if ( app << an_app_def.application ) _isnt _unset _andif
+		    ( tf << app.top_frame ) _isnt _unset _andif
+		    tf.minimized? _is _true
+		_then
+			tf.minimized? << _false
+		_endif 
+	_endif
+	
+	
+
+	>> an_app_def.application
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_plugin.start_layout_designer ()
+#	## 
+#	## This will start the 'hidden' layout designer application.
+#	## Will set the gs_factory and map_manager to the appropriate
+#	## values.
+#	## 
+#
+#	an_app << _self.start_application_copy ( :layout_designer )
+#	
+#	a_layout_manager << an_app.plugin ( :layout_manager )
+#	a_layout_manager.post_init_layout_handlers ( _self.map_manager, _self.gs_factory )
+##		
+## Steve Hall (Ten Sails Spain) 21/06/04
+## Devolver la applicación que se ha arrancado.
+##
+#	_return an_app
+
+# (22/02/09 des_aaron) : sw52
+## 
+	## Start the Layout Designer 
+	## 
+
+	a_layout_designer << _self.activate_as_dialog ( :layout_designer )
+	a_layout_manager  << a_layout_designer.layout_manager
+	a_layout_manager.post_init_layout_handlers ( _self.map_manager, _self.gs_factory )
+	
+	_if ( dir << _self.saved_layouts_directory ) _isnt _unset _andif
+	    ( a_layout_manager.get_preference( :saved_layouts_folder ) _is _unset _orif
+	      a_layout_manager.get_preference( :saved_layouts_folder)  = "" )
+	_then
+		a_layout_manager.set_preference( :saved_layouts_folder, dir )
+	_endif
+
+	_if ( dir << _self.template_directory ) _isnt _unset _andif
+	    ( a_layout_manager.get_preference( :templates_folder ) _is _unset _orif
+	      a_layout_manager.get_preference( :templates_folder)  = "" )
+	_then 
+		a_layout_manager.set_preference( :templates_folder, dir)
+	_endif
+
+	_if ( dir << _self.stencil_directory ) _isnt _unset _andif
+	    ( a_layout_manager.get_preference( :stencils_folder ) _is _unset _orif
+	      a_layout_manager.get_preference( :stencils_folder)  = "" )
+	_then 
+		a_layout_manager.set_preference( :stencils_folder, dir)
+	_endif
+
+	_if (l_reset? << _self.get_preference(:reset_viewport)) _isnt _unset
+	_then
+		a_layout_manager.set_preference(:reset_viewport, l_reset?)
+	_endif
+		
+_endmethod
+$
+_method layout_plugin.user!_visualizar_plano ( plano )
+#
+# Visualiza un plano.
+# El argumento 'plano' es un registro de la tabla
+# 'user!_planos'.
+# Steve Hall (Ten Sails Consulting) 10/03/06
+#
+# Obtener diseño del plano y posicionarse en ello.
+#
+proyecto << plano.swg_dsn_scheme
+diseno << plano.swg_dsn_scheme
+_if diseno _is _unset
+_then
+	#
+	# Diseno original ha sido borrado.
+	# Buscar diseño correspondiente al oei.
+	#
+	oei << plano.user!_oei
+	_if oei _isnt _unset
+	_then
+		diseno << _self.diseno_oei ( oei )
+		_if diseno _is _unset
+		_then
+			diseno << _self.diseno_combinado
+		_endif
+		_if diseno _is _unset
+		_then
+			condition.raise ( :user_error, :string,
+			"No se encuentra diseño correspondiente a este plano" )
+		_endif
+	_endif 
+_endif 	
+swg_dsn_admin_engine.activate_design ( diseno )
+#
+# Crear layout_document a raíz del archivo .xml.
+#
+archivo << plano.id_plano + ".xml"
+directorio << plano.directorio
+archivo << system.pathname_from_components ( archivo, directorio )
+ld << layout_document.new_from_xml ( archivo )
+#
+# Displayarlo.
+#
+_self.preview_layout ( ld, _unset, :visualizador_planos )
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_plugin.verifica_status()
+# Objetivo: Checa si la pantalla de edición de planos
+# se encuentra activa, si está activa pregunta al usuario si
+# desea continuar con la generación del plano, si es así el
+# pano se sobreescribe a lo que contenga el plano actual. 
+#
+#	
+# Parámetros de entrada:  ninguno.
+# Parámetros de salida:   ninguno  
+# Regresa: LBBandera bandera que indica si design layout esta abierto. 
+# Fecha  de última modificación: 18 febrero 2005
+# Autor de la modificación: hramirea
+# Descripción de la modificación: Método nuevo.
+#
+	_local LoAn_app           << _self.start_application_copy(:layout_designer )
+	_local LoA_layout_manager << LoAn_app.plugin (:layout_manager )
+	_local LBBandera          << _true
+	
+	_if     LoA_layout_manager.current_document.current_page.empty?.not  
+	_then	
+        LBBandera  <<  _self.show_question("Si", "No", "La pantalla de edición de planos se encuentra abierta. Se recomienda Salvar su plano actual antes de continuar. Desea Continuar? ")
+_endif
+     
+_return LBBandera	
+
+_endmethod
+$

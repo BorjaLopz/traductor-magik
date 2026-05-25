@@ -1,0 +1,8 @@
+c_elemento_entidad_g
+c_elemento_seccion_g
+c_elemento_empalme_g
+c_elemento_empalme_derivacion_g
+c_elemento_empalme_subterraneo_g
+c_elemento_nodo_g
+c_creador_elemento_tramo_g
+c_elementos_tramo_g

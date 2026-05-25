@@ -1,0 +1,86 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Proporcionar la clase que dibuje un círculo
+# Autor: fdiaz
+# Fecha de creacion: 09-Diciembre-2004
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#
+# Reviso.
+# fdiaz
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_circulo_grafico)
+
+$
+def_slotted_exemplar(:c_circulo_grafico,
+		     {
+			     {:sNombre_Grafico, _unset}, # Nombre del Grafico
+			     {:nRadio, 10}		 # Radio del círculo
+		     },
+		     :c_elemento_grafico
+)
+
+$
+c_circulo_grafico.define_slot_access(:sNombre_grafico,    :writable, :private)
+c_circulo_grafico.define_slot_access(:nRadio,             :writable, :private)
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_circulo_grafico.new()
+## Objetivo: Crear una instancia de celda
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_circulo_grafico - regresa un objeto círculo
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+	
+	_return _clone
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_circulo_grafico.Despliega()
+## Objetivo: Dibujar el grafico en una celda
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó	
+
+_local LnX          	# Posicion en X del centro del circulo
+_local LnY		# Posicion en Y del centro del círculo		
+_local LoEstiloLinea	# Objeto del tipo Line_Style, utilizada para dibujar.
+                     	
+	LnX << _self.oArea.Xmin + (_self.oArea.Xmax - _self.oArea.Xmin)/2
+	LnY << _self.oArea.Ymin + (_self.oArea.Ymax - _self.oArea.Ymin)/2
+
+	LoEstiloLinea << line_style.new_with_properties(:foreground_colour, colour.called("black"),:width, 2)
+	
+	_self.oVentana.draw_circle_transform(LoEstiloLinea, LnX , LnY  , _self.nRadio )
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_circulo_grafico.nRadio << RnValor
+## Objetivo: Asignar el valor del radio
+## Parámetros de entrada:  
+## 	Entero - RnValor : Valor del radio del círculo
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	.nRadio << RnValor * 10
+	
+_endmethod
+$

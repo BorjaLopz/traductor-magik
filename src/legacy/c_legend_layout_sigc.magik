@@ -1,0 +1,113 @@
+_package user
+$
+def_slotted_exemplar (:c_legend_layout_sigc,
+{
+	{:geometrias_leyenda,_unset},
+	{:entradas_leyenda,_unset}
+},
+{ :legend_layout} )
+$
+c_legend_layout_sigc.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+_pragma(classify_level=restricted)
+_method c_legend_layout_sigc.dynamic_entries ()
+	## 
+	## 
+
+	.entradas_leyenda << _unset 
+	_if .entradas_leyenda _is _unset _then
+		.entradas_leyenda << _super.dynamic_entries ()
+	_endif
+#	_return .entradas_leyenda
+	loelementos << rope.new()
+	_for e _over .entradas_leyenda.elements()
+	_loop
+		loele << e
+		locadena << loele.description
+		# (06/10/19 jtlelo) : Se verifica si la descripcion cuentas con
+		# estado de construcción, si cuenta se la agrega a la
+		# descripción del simbolo.
+		LoEdoConst << ""
+		_if locadena.matches?("*Existente*")		
+		_then
+			LoEdoConst << " Existente"
+		_elif locadena.matches?("*Desmontaje*")
+		_then 
+			LoEdoConst << " Desmontaje"
+		_elif locadena.matches?("*Proyectado*")
+		_then
+			LoEdoConst << " Proyectado"
+		_endif
+		LoDescripcion << locadena.split_by(%.)
+		Locadena << LoDescripcion.nth_element(1)+LoEdoConst
+		loestilo << loele.style
+		loele.init(loele.field,loele.style,locadena)
+		loban << _false
+		_for i _over loelementos.elements()
+		_loop
+			_if i.style _isnt _unset _andif loestilo _isnt _unset 
+			_then
+				_if i.style.get_gis_style_rec().external_name = :sw_gis!gis_point_style _andif
+				    loestilo.get_gis_style_rec().external_name = :sw_gis!gis_point_style
+				_then
+					_if i.style.get_gis_style_rec().symbol_name = loestilo.get_gis_style_rec().symbol_name
+					_then
+						loban << _true 
+					_endif
+				_endif
+				# (06/10/19 jtlelo) : se filtra el nodo/central con estilo de punto
+				_if loele.description = "Nodo/Central" _andif
+				    loele.field.name _is :connection_location
+				_then
+					loban << _true
+				# (06/10/19 jtlelo) : se filtra la el estilo de la tierra de la canalización
+				_elif loele.field.name _is :tierra 
+                                _then
+				       loban << _true
+			       # (06/10/19 jtlelo) : se filtra el estilo del encabezado de la canalización
+				_elif loele.description = "Canalización" _andif
+                                      loele.field.name _is :leader_ac
+                                _then
+					loban << _true
+				_endif
+			_endif
+		_endloop
+		_if _not loban
+		_then
+			loelementos.add(loele)
+		_endif
+	_endloop
+	_return loelementos
+_endmethod
+$
+_method c_legend_layout_sigc.geometry_set
+	##
+	## Redefinido: Elena Sainero (Ten Sails Consulting)
+	## Objetivo: Retorna el geometry_set de los elementos a mostrar
+	## en la leyenda
+	## Fecha: Diciembre 2005
+	## Modificado : Rogelio Reyes Aragón
+	## Fecha : 09/02/2007
+	## Objetivo: Forzar a la leyenda a tomar el grupo de estilos
+	## actual del viewport
+	## Patch : P10010_1
+	
+	.geometrias_leyenda << _unset 
+	_if .geometrias_leyenda _is _unset _then
+		.geometrias_leyenda << _super.geometry_set
+	_endif
+	_return .geometrias_leyenda
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_legend_layout_sigc.inicializa()
+	## 
+	## Inicializa el cuadro de leyenta
+	
+	_self.title << "Simbología"
+	_self.viewport_contents_only << _true
+	_self.display_full_bounds << _false
+	_self.include_text << _false
+	
+_endmethod
+$

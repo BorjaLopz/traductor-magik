@@ -1,0 +1,962 @@
+_package sw
+$
+viewport_layout.define_shared_variable(:data_vp_copy,_unset,:public )
+$
+viewport_layout.define_shared_variable(:geoms_symb_anotac, _unset , :public)
+$
+viewport_layout.define_shared_variable(:Lista_Objs_geoms_symb_anotac, _unset , :public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method viewport_layout.actualizar_geoms_symbols_size()
+## Objetivo: Actualizar los atributos,  con los valores de la variable
+## data_vp_copy, este metodo es invocado cuando copia-pega un
+## elemento de tipo viewport_layout en una pagina del layout_designer
+##	
+    _if  (datos << _self.data_vp_copy) _isnt _unset
+    _then
+	    _if (l_symbols_size << datos[:geoms_symbols_size]) _isnt _unset 
+	    _then
+		    _self.geoms_symbols_size << property_list.new_from_with_deep_copy(l_symbols_size)	    
+	    _endif
+	    _if (l_elementos_mod << datos[:elementos_modificados]) _isnt _unset 
+	    _then
+		    _self.elementos_modificados << property_list.new_from_with_deep_copy(l_elementos_mod)
+	    _endif
+	    _if (l_elementos_gis << datos[:elementos_bd_gis]) _isnt _unset 
+	    _then
+		    _self.elementos_bd_gis << property_list.new_from_with_deep_copy(l_elementos_gis)
+	    _endif
+	    _if (l_elementos_lb << datos[:elementos_bd_lb]) _isnt _unset 
+	    _then
+		    _self.elementos_bd_lb << property_list.new_from_with_deep_copy(l_elementos_lb)
+	    _endif
+    _endif	
+    
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.agrega_lista_elementos_falc()
+	## 
+	## 
+	## fhramire 08-Agosto-2011
+	## Se agregan los elementos FALC para la escalacion y
+	## movimientos de elementos. Version 11.7.2.1	
+	lista1 << property_list.new_with(:cedo_simbolo,1,            
+				          :cedo_anotacion,1,
+					  :cedo_rot,1,
+					  :cedo_hor,1,
+					  :cedo_ver,1,				       
+					  :reserva_fo_simbolo,1,			       
+					  :reserva_fo_anotacion,1,
+					  :reserva_fo_rot,1,
+					  :reserva_fo_hor,1,
+					  :reserva_fo_ver,1,				       
+					  :terminal_fo_simbolo,1,           
+					  :terminal_fo_anotacion,1,
+					  :terminal_fo_rot,1,
+					  :terminal_fo_hor,1,
+					  :terminal_fo_ver,1,				       			 
+					  :ont_anotacion,1,
+					  :ont_rot,1,
+					  :ont_hor,1,
+					  :ont_ver,1,				       	       
+					  :limite_opt_anotacion,1,     
+					  :limite_opt_rot,1,
+					  :limite_opt_hor,1,
+					  :limite_opt_ver,1
+				 )
+
+	## Se agregan los elementos FALC para el control de apagado y
+	## prendido de capas en el plano, quedan en la lista 8.
+	lista2 << property_list.new_with(		
+			  :cedo_simbolo_vista,_false,
+			  :cedo_anotacion_vista,_false,
+			  :reserva_fo_simbolo_vista, _false,
+			  :reserva_fo_anotacion_vista, _false,
+			  :terminal_fo_simbolo_vista, _false,
+			  :terminal_fo_anotacion_vista, _false,
+			  :ont_anotacion_vista, _false,
+			  :limite_opt_anotacion_vista, _false 
+				)
+	
+	_return lista1, lista2
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.asigna_lista_simbolos(LoLista_datos) 
+   ##  
+   ## Objetivo.- Se construye el property_list, desde un xml
+   ## donde se toman los valores tales como: caja_simbolo, central_anotacion,
+   ## :caja_simbolo,1  asingandole 1 que es la escala inicial.
+   ## Retorna un rope con las lista de nombres.
+	 
+  Lista_nombres_campos << property_list.new()
+  
+  _for elemento _over LoLista_datos.fast_elements()
+  _loop 
+    _for k,e _over elemento.fast_keys_and_elements()
+    _loop 
+       _for i,j _over e.fast_keys_and_elements()
+       _loop		
+	      Lista_nombres_campos[i] << j  
+       _endloop
+    _endloop
+  _endloop  
+  
+  _return Lista_nombres_campos
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.defined_attributes
+	## 
+	## 
+
+	attribs << rope.new_from ( _super.defined_attributes )
+
+	attribs.add ( layout_attribute_definition.new ( :name, :string,
+							:description, "Name",
+							:default_value, _unset ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :coordinate_system, :string,
+							:description, "Coordinate System of Centre",
+							:allowed_on_properties_page?, _false,
+							:default_value, _unset ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :centre_x, :coordinate,
+							:description, "Centre X",
+							:default_value, 0.0 ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :centre_y, :coordinate,
+							:description, "Centre Y",
+							:default_value, 0.0 ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :view_scale, :float,
+							:description, "Scale",
+							:value_mgr, scale_value_manager.new_with_properties(:value_required?,_true),
+							:enum_method, :enum_view_scales,
+							:editor, in_place_combo_editor,
+							:default_value, 1.0 ) )
+
+	attribs.add ( layout_attribute_definition.new ( :view_angle, :float,
+							:description, "Angle",
+							:enum_method, :enum_view_angles,
+							:value_mgr, unit_value_manager.new ( unit_manager.unit ( :degree ) ),
+							:editor, in_place_combo_editor,
+							:get_method, :view_angle_value,
+							:set_method, :|view_angle_value<<|,
+							:default_value, 0.0 ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :projection, :string,
+							:description, "View Projection",
+							:default_value, _unset,
+							:enum_method, :enum_projections ) )
+
+	attribs.add ( layout_attribute_definition.new ( :soc_name, :string,
+							:description, "SOC Name",
+							:default_value, _unset,
+							:allowed_on_properties_page?, _false ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :ace_name, :string,
+							:description, "Ace name",
+							:default_value, "Default",
+							:enum_method, :enum_ace_names ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :display_style, :string,
+							:description, "Display style",
+							:default_value, "Auto",
+							:enum_method, :enum_display_styles ) )
+
+	attribs.add ( layout_attribute_definition.new ( :draw_scale, :float,
+							:description, "Magnification draw scale",
+							:default_value, _unset,
+							:allowed_on_properties_page?, _false ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :style_system_category, :string,
+							:description, "Style Category",
+							:default_value, "default",
+							:enum_method, :enum_style_categories ) )
+
+	attribs.add ( layout_attribute_definition.new ( :universe_id, :integer,
+							:description, "Universe ID",
+							:default_value, -1,
+							:allowed_on_properties_page?, _false ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :world_id, :integer,
+							:description, "World ID",
+							:default_value, -1,
+							:allowed_on_properties_page?, _false ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :trail, :boolean,
+							:description, "Trail",
+							:default_value, _true ) )
+
+	attribs.add ( layout_attribute_definition.new ( :selection, :boolean,
+							:description, "Selection",
+							:default_value, _true ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :post_render, :boolean,
+							:description, "Post Render",
+							:default_value, _true ) )
+
+	attribs.add ( layout_attribute_definition.new ( :geoms_symbols_size, :unset,
+							:description, "Geometrias",
+							:default_value, _unset  ,
+							:allowed_on_properties_page?, _false ) )
+	
+		
+	>> attribs
+	
+_endmethod
+$
+viewport_layout.define_attributes ()
+$
+#_pragma(classify_level=restricted)
+#_method viewport_layout.draw_content_on ( window )
+#	## 
+#	## Render contents of SELF on WINDOW
+#	##
+#
+#	ace_name     << _self.ace_name
+#	# The rendering context should be passed a scale_id rather than
+#	# the display_style name
+#	display_style_name << _self.display_style
+#	
+#	display_scale << gis_program_manager.ace(ace_name).display_scale(display_style_name).scale_id
+#	
+#        rc << rendering_context.new( :geometry_set_factory,              _self.gs_factory,
+#                                     :ace_name,                          _self.ace_name,
+#                                     :vhs_context,                       _self.ace_control,
+#                                     :world,                             _self.world,
+#                                     :display_style_name,                display_scale,
+#                                     :style_category,                    _self.style_system_category,
+#				     :view_scale,                        _self.view_scale,
+#				     :application_rendering_context,     :sw_viewport_layout )
+#        
+#        _dynamic !current_rendering_context! << rc
+#
+#	_dynamic !current_coordinate_system!
+#
+#	_if ( geom_set << _self.geometry_set_for_render ) _is _unset 
+#	_then
+#		_self.draw_incomplete ( window, _self.message ( :viewport_mapping_incomplete ) )
+#		_return 
+#	_endif
+#
+#	# Make sure we're in the projected coordinate syetem,
+#	# otherwise we can't clip to the bounds we expect.
+#	!current_coordinate_system! << _self.projection
+#
+#	projected_bounds << _self.projection_bounds
+#
+#	angle   << _self.view_angle.degrees_to_radians
+#	draw_cs << _self.projection
+#
+#	_if window.responds_to?(:symbols_size)
+#	_then
+#		window.symbols_size << _self.geoms_symbols_size
+#	_endif
+#
+#	## Fhramire
+#	## Se agrega a la ventana
+#	_if window.responds_to?(:symbols_modificados)
+#	_then
+#		window.symbols_modificados << _self.elementos_modificados
+#	_endif
+#	
+#	window.draw_geometry_set ( geom_set, 
+#				   projected_bounds.bounds,
+#				   .boundary.bounds,
+#				   _true, angle, 1.0, draw_cs
+#	       )
+#	
+#
+#_endmethod
+#$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.es_plano_esquema?
+   ##  
+   ## Retorna true si el plano se trata de un esquema.
+   ## en otro caso retorna false
+  
+   _if _self.class_name = :c_pagrefs_viewport_layout
+   _then
+      _return _true
+   _else
+      _return _false 	   
+   _endif 
+
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.es_plano_estudio_poblacion?
+   ##  
+   ## Objetivo. Retorna true si se trata de un plano de estudio de
+   ## poblacion, en otro caso retorna false.
+   _if _self.class_name = :c_vp_radios_atencion_ftth _orif
+       _self.class_name = :c_vp_limites_nco_ftth _orif
+       _self.class_name = :c_vp_fibras_propuestas_ftth
+   _then 
+	_return _true
+   _endif 
+ _return _false 
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.geoms_symbolos_esquema_inicial
+# 
+# Se inicializa los elementos :geoms para el acomodo en los
+# planos de estos elementos.
+# (11/08/22 rhernan) : 
+  lista3 << property_list.new_with(
+		   :esq_central_simbolo,1,
+		   :esq_central_anotacion,1,
+		   :esq_central_rot,1,
+		   :esq_central_hor,1,
+		   :esq_central_ver,1,				       
+		   :esq_caja_simbolo,1,               
+		   :esq_caja_anotacion,1,
+		   :esq_caja_rot,1,
+		   :esq_caja_hor,1,
+		   :esq_caja_ver,1,
+		   :esq_pozo_simbolo,1,               
+		   :esq_pozo_anotacion,1,
+		   :esq_pozo_rot,1,
+		   :esq_pozo_hor,1,
+		   :esq_pozo_ver,1,			  
+		   :esq_empalme_fo_simbolo,1,
+		   :esq_empalme_fo_sim_rot,1,
+		   :esq_empalme_fo_sim_hor,1,
+		   :esq_empalme_fo_sim_ver,1,			  
+		   :esq_poste_simbolo,1,              
+		   :esq_poste_anotacion,1,
+		   :esq_poste_rot,1,
+		   :esq_poste_hor,1,
+		   :esq_poste_ver,1,
+		   :esq_canalizacion_anotacion,1,     
+		   :esq_canalizacion_rot,1,
+		   :esq_canalizacion_hor,1,
+		   :esq_canalizacion_ver,1,
+		   :esq_aerea_anotacion,1,            
+		   :esq_aerea_rot,1,
+		   :esq_aerea_hor,1,
+		   :esq_aerea_ver,1,			  
+		   :esq_cable_fo_anotacion,1,         
+		   :esq_cable_fo_rot,1,
+		   :esq_cable_fo_hor,1,
+		   :esq_cable_fo_ver,1,
+		   :esq_cable_fo_lon_anotacion,1,         
+		   :esq_cable_fo_lon_rot,1,
+		   :esq_cable_fo_lon_hor,1,
+		   :esq_cable_fo_lon_ver,1,
+		   :esq_punto_simbolo,1,               
+		   :esq_punto_anotacion,1,
+		   :esq_punto_rot,1,
+		   :esq_punto_hor,1,
+		   :esq_punto_ver,1)
+	
+ lista4 << property_list.new_with(
+		   :esq_cable_co_anotacion,1,         
+		   :esq_cable_co_rot,1,
+		   :esq_cable_co_hor,1,
+		   :esq_cable_co_ver,1,
+		   :esq_cable_co_lon_anotacion,1,         
+		   :esq_cable_co_lon_rot,1,
+		   :esq_cable_co_lon_hor,1,
+		   :esq_cable_co_lon_ver,1,
+		   :esq_empalme_co_simbolo,1,
+		   :esq_empalme_co_sim_rot,1,
+		   :esq_empalme_co_sim_hor,1,
+		   :esq_empalme_co_sim_ver,1,			  
+		   :esq_terminal_simbolo,1,               
+		   :esq_terminal_anotacion,1,
+		   :esq_terminal_rot,1,
+		   :esq_terminal_hor,1,
+		   :esq_terminal_ver,1,
+		   :esq_gaza_simbolo,1,
+		   :esq_gaza_sim_rot,1,
+		   :esq_gaza_sim_hor,1,
+		   :esq_gaza_sim_ver,1,
+		   :esq_gaza_anotacion,1,
+		   :esq_gaza_rot,1,
+		   :esq_gaza_hor,1,
+		   :esq_gaza_ver,1,
+		   :esq_eje_anotacion,1,
+		   :esq_eje_rot,1,
+		   :esq_eje_hor,1,
+		   :esq_eje_ver,1			  
+				)
+
+ lista7 << property_list.new_with(
+		   :caja_simbolo_can_vista,_false,
+		   :esq_central_simbolo_vista,_false,            
+		   :esq_central_anotacion_vista,_false,			  
+		   :esq_caja_simbolo_vista,_false,               
+		   :esq_caja_anotacion_vista,_false,			  
+		   :esq_pozo_simbolo_vista,_false,               
+		   :esq_pozo_anotacion_vista,_false,			
+		   :esq_empalme_fo_simbolo_vista,_false,			  
+		   :esq_poste_simbolo_vista,_false,              
+		   :esq_poste_anotacion_vista,_false,			  
+		   :esq_canalizacion_anotacion_vista,_false,     			 
+		   :esq_aerea_anotacion_vista,_false,            			  
+		   :esq_cable_fo_anotacion_vista,_false,         			  
+		   :esq_cable_fo_lon_anotacion_vista,_false,         			 
+		   :esq_punto_simbolo_vista,_false,               
+		   :esq_punto_anotacion_vista,_false
+			 )
+ 
+   lista8 << property_list.new_with(
+		   :esq_cable_co_anotacion_vista,_false,         			  
+		   :esq_cable_co_lon_anotacion_vista,_false,         			  
+		   :esq_empalme_co_simbolo_vista,_false,			  
+		   :esq_terminal_simbolo_vista,_false,               
+		   :esq_terminal_anotacion_vista,_false,			  
+		   :esq_gaza_simbolo_vista,_false,			  
+		   :esq_gaza_anotacion_vista,_false,			 
+		   :esq_eje_anotacion_vista,_false			
+			 )	
+
+   lista12 << property_list.new_with(:esq_cedo_simbolo,1,            
+		   :esq_cedo_anotacion,1,
+		   :esq_cedo_rot,1,
+		   :esq_cedo_hor,1,
+		   :esq_cedo_ver,1,			       
+		   :esq_reserva_fo_simbolo,1,
+		   :esq_reserva_fo_anotacion,1,
+		   :esq_reserva_fo_rot,1,
+		   :esq_reserva_fo_hor,1,
+		   :esq_reserva_fo_ver,1,
+		   :esq_terminal_fo_simbolo,1,           
+		   :esq_terminal_fo_anotacion,1,
+		   :esq_terminal_fo_rot,1,
+		   :esq_terminal_fo_hor,1,
+		   :esq_terminal_fo_ver,1
+			  )	
+	  
+ lista13 << property_list.new_with(		
+		   :esq_cedo_simbolo_vista,_false,
+		   :esq_cedo_anotacion_vista,_false,
+		   :esq_reserva_fo_simbolo_vista, _false,
+		   :esq_reserva_fo_anotacion_vista, _false,
+		   :esq_terminal_fo_simbolo_vista, _false,
+		   :esq_terminal_fo_anotacion_vista, _false
+			  )
+
+ 
+ _return property_list.new_with(:grupo3,  lista3,
+				:grupo4,  lista4,
+				:grupo7,  lista7,
+				:grupo8,  lista8,			
+				:grupo12, lista12,
+				:grupo13, lista13 )
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.geoms_symbolos_est_pob_inicial
+   ## 
+   ## Objetivo. Regresa un property_list donde se obtienen los
+   ## datos de un archivo .xml en el modulo de plugins_est_pob
+   ## (probable el nombre del modulo cambiará)
+	
+  Lista_campos << property_list.new()
+  LoLista_datos << property_list.new()
+  LoLista_datos_nombres << property_list.new() 
+  LoLista_datos << _self.llena_lista   
+  _self.Lista_Objs_geoms_symb_anotac << LoLista_datos
+  LoLista_datos1 << _self.asigna_lista_simbolos(LoLista_datos) 
+  
+  _return LoLista_datos1 
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.geoms_symbols_init()
+	# (09/10/06 rhernan) : Modified. se hace el filtro para
+   # identificar los planos de estudio de poblacion para obtener
+   # los simbolos mediante un xml.
+	
+	#_global vp
+	#vp << _self 
+	
+	_if _self.es_plano_estudio_poblacion?
+	_then 
+		LoLista_datos << _self.geoms_symbolos_est_pob_inicial
+		_self.geoms_symb_anotac << LoLista_datos
+		_return LoLista_datos      
+		# (11/08/22 rhernan) : 
+	_elif _self.es_plano_esquema?
+	_then 
+		LoLista_datos << _self.geoms_symbolos_esquema_inicial
+      _self.geoms_symb_anotac << LoLista_datos  
+      _return LoLista_datos      
+	_endif   
+	
+	lista1 << property_list.new_with(:central_simbolo,1,            
+					 :central_sim_rot,1,
+					 :central_sim_hor,1,
+					 :central_sim_ver,1,				       
+					 :central_anotacion,1,
+					 :central_rot,1,
+					 :central_hor,1,
+					 :central_ver,1,				       
+					 :caja_simbolo,1,
+					 :caja_sim_rot,1,
+					 :caja_sim_hor,1,
+					 :caja_sim_ver,1,				       
+					 :caja_anotacion,1,
+					 :caja_rot,1,
+					 :caja_hor,1,
+					 :caja_ver,1,				       
+					 :terminal_simbolo,1,           
+					 :terminal_anotacion,1,
+					 :terminal_rot,1,
+					 :terminal_hor,1,
+					 :terminal_ver,1,				       
+					 :pozo_simbolo,1,               
+					 :pozo_anotacion,1,
+					 :pozo_rot,1,
+					 :pozo_hor,1,
+					 :pozo_ver,1,				       
+					 :empalme_fo_simbolo,1,
+					 :empalme_fo_sim_rot,1,
+					 :empalme_fo_sim_hor,1,
+					 :empalme_fo_sim_ver,1,				       
+					 :poste_simbolo,1,              
+					 :poste_anotacion,1,
+					 :poste_rot,1,
+					 :poste_hor,1,
+					 :poste_ver,1,
+					 :tba_simbolo,1,                
+					 :tba_anotacion,1,
+					 :tba_rot,1,
+					 :tba_hor,1,
+					 :tba_ver,1,
+					 :perfil_simbolo,1,
+					 :perfil_rot,1,
+					 :perfil_hor,1,
+					 :perfil_ver,1,				       
+					 :canalizacion_anotacion,1,     
+					 :canalizacion_rot,1,
+					 :canalizacion_hor,1,
+					 :canalizacion_ver,1,
+					 :aerea_anotacion,1,            
+					 :aerea_rot,1,
+					 :aerea_hor,1,
+					 :aerea_ver,1,
+					 :empalme_co_simbolo,1,         			       
+					 :empalme_co_sim_rot,1,
+					 :empalme_co_sim_hor,1,
+					 :empalme_co_sim_ver,1
+				)
+	
+	lista2 << property_list.new_with(
+			  :gaza_simbolo,1,
+			  :gaza_sim_rot,1,
+			  :gaza_sim_hor,1,
+			  :gaza_sim_ver,1,				       
+			  :registro_simbolo,1,			  
+			  :registro_anotacion,1,
+			  :registro_rot,1,
+			  :registro_hor,1,
+			  :registro_ver,1,				       
+			  :cable_fo_anotacion,1,         
+			  :cable_fo_rot,1,
+			  :cable_fo_hor,1,
+			  :cable_fo_ver,1,
+			  :cable_co_anotacion,1,         
+			  :cable_co_rot,1,
+			  :cable_co_hor,1,
+			  :cable_co_ver,1,
+			  :punto_simbolo,1,              
+			  :punto_anotacion,1,
+			  :punto_rot,1,
+			  :punto_hor,1,
+			  :punto_ver,1,
+			  :edificio_simbolo,1,           
+			  :edificio_anotacion,1,
+			  :edificio_rot,1,
+			  :edificio_hor,1,
+			  :edificio_ver,1,
+			  :eje_anotacion,1,
+			  :eje_rot,1,
+			  :eje_hor,1,
+			  :eje_ver,1,
+			  :llave_anotacion,1,
+			  :llave_rot,1,
+			  :llave_hor,1,
+			  :llave_ver,1			  
+				)
+	
+	lista3 << property_list.new_with(
+			  :pozo_simbolo_can,1,           
+			  :miniposte_simbolo_can,1,
+			  :poste_simbolo_can,1,
+			  :caja_simbolo_can,1)
+
+        ## Bloque para controlor el prendido  y apagado de las capas en plano
+	
+	lista5 << property_list.new_with(:central_simbolo_vista,_false,            
+					 :central_anotacion_vista,_false,			       
+					 :caja_simbolo_vista,_false,			       
+					 :caja_anotacion_vista,_false,			       
+					 :terminal_simbolo_vista,_false,			       
+					 :terminal_anotacion_vista,_false,		       
+					 :pozo_simbolo_vista,_false,       
+					 :pozo_anotacion_vista,_false,
+					 :pozo_anotacion_vista_t,_false,
+					 :empalme_fo_simbolo_vista,_false,		       
+					 :poste_simbolo_vista,_false,              
+					 :poste_anotacion_vista,_false,			       
+					 :tba_simbolo_vista,_false,                
+					 :tba_anotacion_vista,_false, 			       
+					 :perfil_simbolo_vista,_false,			       
+					 :canalizacion_anotacion_vista,_false,	       
+					 :aerea_anotacion_vista,_false,	       
+					 :empalme_co_simbolo_vista,_false
+				)
+
+	lista6 << property_list.new_with(
+			  :gaza_simbolo_vista,_false,			  
+			  :registro_simbolo_vista,_false,			  
+			  :registro_anotacion_vista,_false,
+			  :cable_fo_anotacion_vista,_false,         			  
+			  :cable_co_anotacion_vista,_false,         			  
+			  :punto_simbolo_vista,_false,              
+			  :punto_anotacion_vista,_false,			  
+			  :edificio_simbolo_vista,_false,           
+			  :edificio_anotacion_vista,_false,			  
+			  :eje_anotacion_vista,_false,			 
+			  :llave_anotacion_vista,_false			  
+			)
+
+	lista7 << property_list.new_with(
+			  :pozo_simbolo_can_vista,_false,           
+			  :miniposte_simbolo_can_vista,_false,
+			  :poste_simbolo_can_vista,_false,
+			  :caja_simbolo_can_vista,_false)
+	
+	## fin de bloque visibilidad de capa en plano
+	## Se agregan mas elementos
+	## fhramire, estos elementos son para el Plano de Ruta,
+	## visualizar el Tipo de Pozo
+	lista9 << property_list.new_with(
+				       :pozo_anotacion_t,1,
+				       :pozo_rot_t,1,
+				       :pozo_hor_t,1,
+				       :pozo_ver_t,1				      
+				       )
+
+	## Se agregan los elementos FALC
+	(lista10, lista11 ) << _self.agrega_lista_elementos_falc()
+
+	# Elementos de Landbase
+	lista14 <<  property_list.new_with(
+			  :lote_limite_vista,_false,
+			  :manazana_limite_vista,_false,
+			  :lote_anotacion_vista,_false,
+			  :vivienda_anotacion_vista,_false,
+			  :manzana_anotacion_vista,_false)
+
+	## Para los planos Proyecto de Canalizacion y Esquematicos
+	_return property_list.new_with(:grupo1,  lista1,
+				       :grupo2,  lista2,
+			               :grupo3,  lista3,
+				       :grupo5,  lista5,
+				       :grupo6,  lista6,
+			               :grupo7,  lista7,
+			               :grupo9,  lista9,
+				       :grupo10, lista10,
+				       :grupo11, lista11,
+				       :grupo12, lista12,
+				       :grupo13, lista13,
+				       :grupo14, lista14
+			              )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method viewport_layout.guardar_visualizacion(elementos, llave)
+	## fhramire 
+	## Funcionalidad para mover simbolos en el plano
+
+	_if _self.elementos_modificados _is _unset 
+	_then
+	    ## elementos en este caso es ya un property_list
+	    datos << property_list.new()
+	    datos[llave] << elementos
+	    _self.elementos_modificados << datos
+	_else
+	    ## elementos en este caso es un rope con los datos.
+	    ## y solo lo agregamos, con la llave = "llave" 
+	    _self.elementos_modificados[llave] << elementos
+	_endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.llena_lista
+	## 
+	## Objetivo. llenar un property_list con los datos obtenidos
+	## desde un .xml file y retornarlo.
+	## Se recorre los elementos de la pagina del layout
+	
+	_if _self.es_plano_estudio_poblacion?  
+	_then 
+		_return _self.obtener_lista_desde_xml_file	 
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.obtener_lista_desde_xml_file
+	## 
+	## objetivo.-  leer un archivo en xml para retornar un property_list.
+	## En cas de que el property_list no sea llenado se llenará un
+	## property_list vacio. 
+	_if _self.es_plano_estudio_poblacion?
+	_then
+		# xml_planos << simple_xml.read_document_file("c:\mapeoplanos1.xml")
+		# (09/10/05 rhernan) : Modified.
+		# ruta << smallworld_product.get_data_file("mapeoplanos1.xml", :plugins_est_pob)
+		ruta << smallworld_product.get_data_file("mapeoplanos1.xml", :escala_simbolos_est_pob)
+		xml << simple_xml.new()
+		
+		xml_planos << xml.read_document_file(ruta).xml_done()   
+		
+		LoListapl << property_list.new() 
+		Lista1 << property_list.new()  
+		Loescala << 1
+		
+		_for elemento _over xml_planos.elements.fast_elements()
+		_loop
+			
+			_for elem _over elemento.elements.fast_elements()
+			_loop
+				_if elem.attributes[:|name|].write_string = _self.class_name.write_string
+				_then     
+					LoTag_ini << "objeto"
+					contador << 1
+					_for ele _over  elem.elements.fast_elements()
+					_loop	
+						_for eee _over ele.elements.fast_elements()
+						_loop
+							#Se obtiene el nombre de los objetos
+							# write("eee.type.write_string ============>>> ",eee.type.write_string) 
+							_if eee.type.write_string = LoTag_ini+ contador.write_string
+							_then  
+								_for ee _over eee.elements.fast_elements()
+								_loop		
+									_if ee.attributes[:campo1] _isnt _unset 
+									_then
+										valor1 << ee.attributes[:campo1].as_symbol() 
+										LoListapl[valor1] << Loescala				  
+									_endif 
+									_if ee.attributes[:campo2] _isnt _unset 			    
+									_then 				  
+										valor2 << ee.attributes[:campo2].as_symbol() 
+										LoListapl[valor2] << Loescala			 
+										#Lista1[nombre_objeto] << LoListapl
+									_endif		     
+								_endloop  
+								contador +<< 1
+								nombre_objeto << eee.attributes[:|nombre|].as_symbol()
+								Lista1[nombre_objeto] << LoListapl
+							_endif  		
+							# se llena el property list de listas				
+	  _endloop 
+					_endloop
+				_endif
+			_endloop		
+		_endloop 
+	_endif
+	
+	
+	Lista_final << _self.organiza_listas_datos(Lista1)
+
+	
+	_return Lista_final.default(property_list.new())
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.organiza_listas_datos(PoLista_property_list)
+	## Objetivo.- Llenar los property_list con las propiedades de
+	## cada objeto aqui mencionados.
+	##
+	_local ListaCentral1 << property_list.new()
+	_local    ListaCentral11 << property_list.new()
+	_local    ListaCaja1 << property_list.new()
+	_local    ListaCaja11 <<  property_list.new()    
+	_local    ListaEmpalmeftth1 << property_list.new() 
+	_local    ListaEmpalmeftth11 << property_list.new() 
+	_local    ListaGaza1 << property_list.new()
+	_local    ListaGaza11 << property_list.new()
+	_local    ListaReserva1 << property_list.new() 
+	_local    ListaReserva11 << property_list.new() 
+	_local    ListaPozoprop1 << property_list.new()
+	_local    ListaPozoprop11 << property_list.new() 
+	_local    ListaPozo1  << property_list.new()
+	_local    ListaPozo11  << property_list.new()
+	_local    ListaCDprop1  << property_list.new()
+	_local    ListaCDprop11  << property_list.new()
+	_local    ListaPoste1 << property_list.new() 
+	_local    ListaPoste11 << property_list.new()
+	
+	Larreglo_listas << rope.new() 
+	cont_llave << 1 
+	
+	_for k,e _over PoLista_property_list.fast_keys_and_elements()
+	_loop
+		_if k.write_string = "Nodo/Central"
+		_then
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop 
+				_if i.write_string.subseq(1,4) = "cent"
+				_then
+					ListaCentral1[i] << 1
+				_endif
+			_endloop
+			ListaCentral11[k] << ListaCentral1 
+			Larreglo_listas.add(ListaCentral11)
+			#cont_llave << 1
+			cont_llave +<< 1 
+			_continue 
+		_endif 
+		#LL.keys[cont_llave]
+		_if k.write_string = "Caja Distribucion"
+		_then
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop
+				_if i.write_string.subseq(1,5) = "caja_"
+				_then
+					ListaCaja1[i] << 1
+				_endif 
+			_endloop
+			ListaCaja11[k] << ListaCaja1
+			Larreglo_listas.add(ListaCaja11)
+			cont_llave +<< 1
+			_continue          
+		_elif k.write_string = "Empalme FO Propuesto"
+		_then
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop
+				#  write(" @ iiii ", i)
+				#  write(i.write_string.subseq(1,7)) 
+				_if i.write_string.subseq(1,7) = "empalme"
+				_then
+					ListaEmpalmeftth1[i] << 1
+				_endif  
+			_endloop 
+			ListaEmpalmeftth11[k] << ListaEmpalmeftth1
+			Larreglo_listas.add(ListaEmpalmeftth11) 
+			cont_llave +<< 1
+			_continue      
+		_elif k.write_string = "Reserva" 
+		_then 
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop
+				#write(" @ iiii ", i) 
+				_if i.write_string.subseq(1,7) = "reserva" 
+				_then
+					ListaReserva1[i] << 1
+				_endif
+			_endloop
+			ListaReserva11[k] << ListaReserva1
+			Larreglo_listas.add(ListaReserva11) 
+			cont_llave +<< 1  
+			_continue     
+		_elif k.write_string = "Gaza" 
+		_then
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop
+				_if i.write_string.subseq(1,4) = "gaza" 
+				_then
+					ListaGaza1[i] << 1
+				_endif  
+			_endloop
+			ListaGaza11[k] << ListaGaza1
+			Larreglo_listas.add(ListaGaza11) 
+			cont_llave +<< 1   
+			_continue
+			
+		_elif k.write_string = "Caja Dist. Propuesta"  
+		_then
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop
+				#write(i.write_string.subseq(1,8)) 
+				_if i.write_string.subseq(1,8) = "cajaprop" 
+				_then
+					ListaCDprop1[i] << 1
+				_endif  
+			_endloop
+			ListaCDprop11[k] << ListaCDprop1
+			Larreglo_listas.add(ListaCDprop11) 
+			cont_llave +<< 1   
+			_continue	 
+		_elif k.write_string = "Pozo_propuesto" 
+		_then 
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop
+				#  write(i.write_string.subseq(1,8)) 
+				_if i.write_string.subseq(1,8) = "pozoprop" 
+				_then
+					ListaPozoprop1[i] << 1
+				_endif  
+			_endloop
+			
+			ListaPozoprop11[k] << ListaPozoprop1
+			Larreglo_listas.add(ListaPozoprop11) 
+			cont_llave +<< 1  
+			_continue 
+		_elif k.write_string = "Pozo" 
+		_then  
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop
+				_if i.write_string.subseq(1,5) = "pozoe" 
+				_then
+					ListaPozo1[i] << 1
+				_endif
+			_endloop
+			ListaPozo11[k] << ListaPozo1 
+			Larreglo_listas.add(ListaPozo11) 
+			cont_llave +<< 1  
+			_continue
+			
+		_elif k.write_string = "Poste" 
+		_then
+			_for  i,j _over e.fast_keys_and_elements()
+			_loop
+		_if i.write_string.subseq(1,5) = "poste" 
+		_then
+			ListaPoste1[i] << 1
+		_endif
+			_endloop
+			
+			ListaPoste11[k] << ListaPoste1 
+			Larreglo_listas.add(ListaPoste11) 
+			cont_llave +<< 1  
+			_continue 	
+		_endif    
+	_endloop   
+	
+	
+	_return Larreglo_listas 
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method viewport_layout.post_initialisation()
+	## 
+	## 
+	_super.post_initialisation()
+	
+	_if _self.geoms_symbols_size _is _unset 
+	_then
+		_self.geoms_symbols_size << _self.geoms_symbols_init()
+	_endif
+	
+	
+_endmethod
+$

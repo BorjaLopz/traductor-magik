@@ -1,0 +1,214 @@
+#----------------------------------------------------------------
+# c_vp_ubicacion_cedo.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: fhramire
+#
+# Date: 27/05/2011
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+
+remex(:c_vp_ubicacion_cedo)
+$
+def_slotted_exemplar(:c_vp_ubicacion_cedo,
+		     {
+		       {:oElementos,     _unset, :writable, :public}
+		     },
+                      :viewport_layout)
+
+$
+c_vp_ubicacion_cedo.define_shared_constant(:titulo,"DETALLE DE CANALIZACION",:public)
+$
+c_vp_ubicacion_cedo.define_shared_constant(:tamanio,6,:public) # tamaño del titulo de vp
+$
+c_vp_ubicacion_cedo.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+c_vp_ubicacion_cedo.define_shared_constant(:LoGeomTxt,
+					      property_list.new_with(
+					      :user!_empalme_distribucion,:user!_anotacion),_false)
+$
+c_vp_ubicacion_cedo.define_shared_constant(:LoGeom,
+					      property_list.new_with(			      
+					      :ubb,:location,
+					      :splice_closure,:user!_posicion_interna,
+					      :figure_eight,:user!_detalle ),_false)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ubicacion_cedo.defined_attributes()
+##
+_local LcollAtributos
+	LcollAtributos << rope.new_from(_super.defined_attributes)	
+	>> LcollAtributos
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ubicacion_cedo.new_with(PoElementos, _gather args )
+## Objetivo: Crear un viewport para la ubicacion del TBA
+## Parametros de Entrada: args << argumentos para la super	
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+    .oElementos << PoElementos 	
+    # ejecutar la super
+    >> _super.new_with(property_list.new_from_gathered ( args ))
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ubicacion_cedo.init_with(properties)
+## 
+##
+	_super.init_with(properties)
+
+	>> _self 
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ubicacion_cedo.initialise_for_page(a_layout_page)
+## Objetivo: Agregar el titulo del viewport
+## Parametros de entrada: a_layout_page << layout_page.
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## FechaB de Ultima modificacion:20/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+
+	_self.agregar_titulo(a_layout_page)
+
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ubicacion_cedo.geometry_set_for_render
+## Objetivo: Obtener la geometrias de la ubicacion del TBA
+## Parametros de salida: Ninguno
+## Regresa: .oResulSet << composite_geometry_set
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+	
+        # Obtener los objetos correspondientes al viewport.
+        _dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset
+
+	LcollGeometrias << _super.geometry_set_for_render
+	LoStyle << LcollGeometrias.sys!slot(:sets).an_element().style_system
+
+	loElementos << _self.agregar_elementos()
+	loElementos.style_system << LoStyle
+
+	LoResultSet << LcollGeometrias.select(:collection,{:user!_manzana,
+							  :access_point,
+					                  :mit_terminal_enclosure,
+					                  :user!_eje_calle,
+					                  :pole,			                  
+					                  :mit_presentation_object,
+					                  :uub,:underground_route,
+					                  :aerial_route,:user!_registro_tablero,
+							  :mit_room,:mit_floor,:mdu_route})
+	
+	LoResultSet << composite_geometry_set.new_with( LoResultSet,loElementos)
+
+	>> LoResultSet
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ubicacion_cedo.agregar_elementos()
+## Objetivo: Agregar la anotacion del tba
+## Parametros de salida: Ninguno
+## Regresa: loest << geometry_set
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo 
+
+	
+	_local loest << geometry_set.new()
+	# START CHANGE
+	# (12/04/20 dvalenci) : 
+	# Valida el estado unset del slot oelementos
+	
+	_if .oElementos _is _unset 
+	_then
+		_return loest
+	_endif
+	#
+	# END CHANGE
+	_for el _over .oElementos.elements()
+	_loop
+		# Agregar geometrias extras
+		LoNombreGeo << _self.LoGeom[el.source_collection.name]
+		_if LoNombreGeo _isnt _unset _andif
+		    (LoGeo << el.perform(LoNombreGeo)) _isnt _unset 
+		_then
+			loest.add(LoGeo)
+		_endif	
+		
+		# Agregar anotacion
+		LoNombreGeo << _self.LoGeomTxt[el.source_collection.name]
+		_if LoNombreGeo _isnt _unset _andif
+		    (LoGeo << el.perform(LoNombreGeo)) _isnt _unset 
+		_then
+			loest.add(LoGeo)
+		_endif
+		
+	_endloop
+	
+	_return loest
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ubicacion_cedo.draw_content_on(windows)
+## Objetivo: Ejecutar la super
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo 
+
+	_super.draw_content_on(windows)
+		
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ubicacion_cedo.agregar_titulo(PoPage)
+## Objetivo: Agregar el titulo del viewport
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo 
+
+    _local LoBounds << bounding_box.new(_self.bounds.xmin,
+				  _self.bounds.ymin - 100,
+				  _self.bounds.xmax,
+				  _self.bounds.ymin )
+				  
+    LoTitulo << _self.titulo
+    LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBounds,
+					   :font_name,        "bold",
+					   :font_size,        _self.tamanio,
+					   :fill_style,       _unset,
+					   :outline_style,    _unset,
+					   :text,             LoTitulo,
+					   :wrap,             _false,
+					   :align_horizontal, :centre,
+					   :align_vertical,   :centre,
+					   :orientation,      :left_right)
+    PoPage.add_element(LoTitulo)
+	
+_endmethod
+$
+

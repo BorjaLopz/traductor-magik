@@ -1,0 +1,72 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Plano de construccion
+# Objetivo: Agregar el cuadro de literales y de simbología al
+# plano de construccion
+# Autor:    fmejia
+# Fecha de creacion: 22-mayo-2009
+#
+#----------------------------------------------------------------
+
+_package user
+$
+
+def_slotted_exemplar(:c_simbologia_plano_construccion, {}, :c_base_sello)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_simbologia_plano_construccion.configura_tabla()
+	## 
+	##
+	
+	_self.configura_tabla_fija()
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_simbologia_plano_construccion.configura_tabla_fija()
+	## 
+	##
+
+	# TABLA QUE CONTIENE LA SIMBOLOGIA y el titulo
+	lo_tabla << .o_tablas.crea_tabla(2,1,:tbl_simbologia)
+
+	lo_tabla.orenglones.elemento(1).nlongitud << 5
+	# longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 110
+	# longitud de los renglones de la tabla, dada en mm 
+	lo_tabla.orenglones.elemento(2).nlongitud << 120
+	# longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 110
+
+	lo_celda << lo_tabla.oceldas.celda(2,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Sup? << _false
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_simbologia_plano_construccion.asigna_simbolos()
+# Objetivo: Asignar  "Cuadro de simbologia" al plano de construccion
+# Parámetros de entrada:N/A
+# Parámetros de salida:N/A
+# Regresa:N/A
+# Fecha de última modificación : 28-Mayo-2009
+# Autor de la modificación: fmejia
+	
+      _self.asigna_texto_celda(:tbl_simbologia,1,1,"SIMBOLOGIA",30,_unset,_unset,_unset)
+      _self.asigna_simbolo_celda(:tbl_simbologia,2,1,"simbologia_plano_construccion")
+
+
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_simbologia_plano_construccion.etiqueta_celdas()
+	## 
+	##
+	_self.asigna_simbolos()
+	
+_endmethod
+$

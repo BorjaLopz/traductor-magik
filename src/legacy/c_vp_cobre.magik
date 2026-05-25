@@ -1,0 +1,190 @@
+#----------------------------------------------------------------
+# c_vp_plano_proy_can.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rbsaldan
+#
+# Date: 06/03/16
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+ 
+def_slotted_exemplar(:c_vp_cobre,
+		     {
+			     {:oWindows,_unset,:writable,:public}
+		     },:viewport_layout)
+$
+c_vp_cobre.define_shared_constant(:SANGRIA_VER,200,:public )
+$
+c_vp_cobre.define_shared_constant(:SANGRIA_HOR,200,:public )
+$
+c_vp_cobre.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_cobre.defined_attributes
+	## Objetivo: Definir los atributos de la clase self.
+	## Parametros de Entrada: Ninguno.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: LcollAtributos.
+	## Fechad de la ultima modificacion: 23/mayo/2006
+	## Autor de la modificacion: rbsaldan
+	## Descripcion de la modificacion: Metodo Nuevo.
+	##
+_local LcollAtributos
+	LcollAtributos << rope.new_from(_super.defined_attributes)
+	
+	## Propiedad que mantiene el valor del limite del estudio de poblacion.
+	LcollAtributos.add(layout_attribute_definition.new(:oLimite, :sector,
+							   :description, "Geometria Limite",
+							   :default_value, _unset,
+							   :allowed_on_properties_page?, _true,
+							   :editor, _unset))
+	
+	>> LcollAtributos
+_endmethod
+$
+c_vp_cobre.define_attributes()
+$
+_pragma(classify_level=restricted)
+_method c_vp_cobre.geometry_set_for_render
+	## 
+	## Returns the geometry set which is used in the rendering
+	## code. Based the the visibility attribute the geometry set
+	## needs to get its own TableControl from either the Ace, the
+	## CurrentObjectControl or it has one already.
+	##
+_local result_set
+
+        _dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset
+	result_set<<_super.geometry_set_for_render
+	
+        _if result_set _isnt _unset
+	_then
+		result_set<<_self.objetos_visibles(result_set)
+	_endif
+
+	>> result_set
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_cobre.objetos_visibles(PcollResultSet)
+	## Objetivo: Obtener todos los objetos que estan contenidos en
+	##           la zona del estudio de poblacion.
+	## Parametros de Entrada: PcollResultSet : Conjunto total de
+	##                        elementos que se muestran en el viwport.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: LcollResulSet.
+	## Fechad de la ultima modificacion: 23/mayo/2006
+	## Autor de la modificacion: rbsaldan
+	## Descripcion de la modificacion: Metodo Nuevo.
+	##
+	
+_local LcollResultSet       # Conjunto de elementos dentro del bound del viewport.
+_local LcollResulSet        # Conjunto de elementos dentro de la zona de estudio de pob.
+_local LoAreaEstPob         # Area que representa la zona de estudio de pblacion.
+
+        LcollResultSet<<PcollResultSet
+	# Si esta definida la zona de estudio de poblacion entonces ingnorar los
+	# elementos que estan fuera de la zona.
+	_if _self.oLimite _isnt _unset 
+	_then
+		_dynamic !current_coordinate_system! << _unset
+
+		# Elementos dentro de la zona de estudio de poblacion.
+		LoAreaEstPob  << pseudo_area.new_with_sectors(_self.oLimite.sectors)
+		LcollResulSet << LcollResultSet.select(:overlaying,LoAreaEstPob)
+	_else
+		LcollResulSet << PcollResultSet
+	_endif
+	>>LcollResulSet
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_cobre.draw_content_on(windows, _optional PbMarcoCompleto?)
+	## documentacion: ver metodo draw_content_on de la clase viewport_layout
+	##
+
+	.oWindows<<windows
+	
+	_super.draw_content_on(windows)
+#
+#	LoNorte<<_self.layout_page.all_elements_of(c_norte).an_element()
+#	_if LoNorte _isnt _unset 
+#	_then  
+#		LoNorte.limites<<bounding_box.new(0,_self.layout_page.ymax-1,
+#						  1,_self.layout_page.ymax)
+#	_endif
+	
+
+	#_self.DibujarMarcas(windows,200,_self.layout_page,PbMarcoCompleto?)
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_cobre.DibujarMarcas(PoWindow,PnAncho, _optional PoPage,PbMarcoCompleto?)
+
+	_local LcollEsquinas<<sector_rope.new()
+_local LcollEsquina
+_local LoBounds
+
+        LoBounds<<PoPage.default(_self).bounds
+	
+        LoBounds<<bounding_box.new(LoBounds.xmin+_self.SANGRIA_HOR,
+				   LoBounds.ymin+_self.SANGRIA_VER,
+				   LoBounds.xmax-_self.SANGRIA_HOR,
+				   LoBounds.ymax-_self.SANGRIA_VER)
+
+        # Esquina inferior izquierda.
+	LcollEsquina<<sector.new()
+	LcollEsquina.add(coordinate(LoBounds.xmin,LoBounds.ymin)+coordinate(0,PnAncho))
+	LcollEsquina.add(LcollEsquina.last_coord-coordinate(0,PnAncho))
+	LcollEsquina.add(LcollEsquina.last_coord+coordinate(PnAncho,0))
+	_if PbMarcoCompleto? _isnt _unset _andif PbMarcoCompleto? _is _true 
+	_then
+		LcollEsquina.add(coordinate(LoBounds.xmax,LoBounds.ymin)-coordinate(PnAncho,0))
+	_endif
+	LcollEsquinas.add(LcollEsquina)
+
+	# Esquina inferior derecha.
+	LcollEsquina<<sector.new()
+	LcollEsquina.add(coordinate(LoBounds.xmax,LoBounds.ymin)-coordinate(PnAncho,0))
+	LcollEsquina.add(LcollEsquina.last_coord+coordinate(PnAncho,0))
+	LcollEsquina.add(LcollEsquina.last_coord+coordinate(0,PnAncho))
+	_if PbMarcoCompleto? _isnt _unset _andif PbMarcoCompleto? _is _true 
+	_then
+		LcollEsquina.add(coordinate(LoBounds.xmax,LoBounds.ymax)-coordinate(0,PnAncho))
+	_endif
+	LcollEsquinas.add(LcollEsquina)
+
+	# Esquina superior derecha.
+	LcollEsquina<<sector.new()
+	LcollEsquina.add(coordinate(LoBounds.xmax,LoBounds.ymax)-coordinate(0,PnAncho))
+	LcollEsquina.add(LcollEsquina.last_coord+coordinate(0,PnAncho))
+	LcollEsquina.add(LcollEsquina.last_coord-coordinate(PnAncho,0))
+	_if PbMarcoCompleto? _isnt _unset _andif PbMarcoCompleto? _is _true 
+	_then
+		LcollEsquina.add(coordinate(LoBounds.xmin,LoBounds.ymax)+coordinate(PnAncho,0))
+	_endif
+	LcollEsquinas.add(LcollEsquina)
+
+	# Esquina superior izquierda.
+	LcollEsquina<<sector.new()
+	LcollEsquina.add(coordinate(LoBounds.xmin,LoBounds.ymax)+coordinate(PnAncho,0))
+	LcollEsquina.add(LcollEsquina.last_coord-coordinate(PnAncho,0))
+	LcollEsquina.add(LcollEsquina.last_coord-coordinate(0,PnAncho))
+	_if PbMarcoCompleto? _isnt _unset _andif PbMarcoCompleto? _is _true 
+	_then
+		LcollEsquina.add(coordinate(LoBounds.xmin,LoBounds.ymin)+coordinate(0,PnAncho))
+	_endif
+	LcollEsquinas.add(LcollEsquina)
+	
+	LcollEsquinas.draw_on(.oWindows,colour.called(:black))	
+
+_endmethod
+$

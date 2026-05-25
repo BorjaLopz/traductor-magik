@@ -1,0 +1,237 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza:               Planos
+# Objetivo:            Genera las notas para permisos de la SCT
+# Autor:               Viridiana Baltazar
+# Fecha de creacion:   03-Enero-2006
+
+_package user
+#remex(:c_sello_notas_sct)
+$
+
+def_slotted_exemplar(:c_sello_notas_sct, {
+	{:oTablas,          _unset }, # Almacena la coleccion de tablas que componen el sello
+	{:oCoordOrigen,     _unset }, # Coord donde inicia el sello	
+        {:oWindow,          _unset }, # Ventana o canvas en el que se desplegara en el sello
+	{:bTablas_creadas,  _unset }, # Indica si las tablas ya fueron creadas
+	{:oTipoCable,       _unset }, # Almacena los tipos de cable
+	{:oTipoProc,        _unset }, # Almacena los tipos de cable
+	{:s_estado,         _unset }, # Valor del attributo estado
+	{:s_tipo_cable,     _unset }, # Valor del attributo tipo cable
+	{:s_procedimiento,  _unset }, # Valor del attributo procedimiento
+	{:s_instalacion,    _unset }  # Valor del attributo instalacion
+}, :layout_element )
+$
+
+c_sello_notas_sct.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+
+c_sello_notas_sct.define_slot_access(:oTablas,             :writable, :public)
+c_sello_notas_sct.define_slot_access(:oCoordOrigen,        :writable, :public)
+c_sello_notas_sct.define_slot_access(:oWindow,             :writable, :public)
+c_sello_notas_sct.define_slot_access(:bTablas_creadas,     :writable, :public)
+c_sello_notas_sct.define_slot_access(:oTipoCable,          :writable, :public)
+c_sello_notas_sct.define_slot_access(:oTipoProc,           :writable, :public)
+c_sello_notas_sct.define_slot_access(:s_estado,            :writable, :public)
+c_sello_notas_sct.define_slot_access(:s_tipo_cable,        :writable, :public)
+c_sello_notas_sct.define_slot_access(:s_procedimiento,     :writable, :public)
+c_sello_notas_sct.define_slot_access(:s_instalacion,       :writable, :public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+	
+	_for attrib _over attribs.fast_elements()
+	_loop
+		attrib.allowed_on_properties_page? << _false
+	_endloop
+	
+	attribs.add(layout_attribute_definition.new(:estado, :string,
+						    :description, "estado"))
+	attribs.add(layout_attribute_definition.new(:tipo_cable, :string,
+						    :description, "tipo_cable",	    
+                                                    :enum_method, :enum_tipo_cable))
+	attribs.add(layout_attribute_definition.new(:procedimiento, :string,
+						    :description, "procedimiento",	    
+                                                    :enum_method, :enum_tipo_proc))
+	attribs.add(layout_attribute_definition.new(:instalacion, :string,
+						    :description, "instalacion",	    
+                                                    :enum_method, :enum_tipo_inst))	
+	>> attribs
+
+_endmethod
+$
+
+c_sello_notas_sct.define_attributes()
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.enum_tipo_inst
+
+	_local LoTipoInst
+	LoTipoInst << hash_table.new()
+	LoTipoInst[1] << "SUBTERRÁNEA"
+	LoTipoInst[2] << "CANALIZADA"
+	_return LoTipoInst
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.enum_tipo_cable
+
+	.oTipoCable << hash_table.new()
+	.oTipoCable[1] << "FIBRAS ÓPTICAS"
+	.oTipoCable[2] << "COBRE"
+	_return .oTipoCable
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.enum_tipo_proc
+
+	.oTipoProc << hash_table.new()
+	.oTipoProc[1] << "HINCADO"
+	.oTipoProc[2] << "TUBO DIRECCIONAL"
+	_return .oTipoProc
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.draw_content_on ( window )
+
+	_self.prvAsignaTexto()
+	_self.oWindow << window
+	
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << .oTablas.area_total()
+	
+        _self.oTablas.Despliega(window)
+
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_notas_sct.post_initialisation ()
+	
+        _self.Inicializa(coordinate.new(0,0))	
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.Agrega_LYM(RoLym)
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct.Inicializa(_optional RoCoord)
+
+	_local LoArea # Area que ocupan todas la tablas
+
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord	
+
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	# Crea y configura cada una de las tablas 
+	_self.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	# Se conoce el area de la tabla dibujada
+	LoArea << _self.oTablas.area_total()
+
+	# Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	# Crea a los objetos que tendra c/u de las tablas
+	_self.prvLlena_Celdas()
+	
+	# Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblTitulo # Tabla que almacena el título de la tabla
+
+	LoTblTitulo << _self.oTablas.crea_tabla(2,1,:tbl_notas_grales)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# Longitud de los renglones de la tabla, esta dada en mm
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 55
+
+	# Longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 155
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct.prvLlena_Celdas()
+
+	# Tamaño de la letra en cada una de los objetos
+        _local LoTitulo      << c_texto_grafico.new("NOTAS SCT")
+        _local LoDescripcion << c_texto_grafico.new("")
+
+	LoTitulo.nTamanio      << 50
+	LoDescripcion.nTamanio << 30
+	LoDescripcion.sALineacion << :top_left
+	
+	# Asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(1,1).oElemento << LoTitulo
+	_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento << LoDescripcion	
+
+	_self.prvAsignaTexto()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct.prvAsignaTexto()
+
+	.s_estado << _self.attributes[:estado].value.write_string.uppercase
+	.s_tipo_cable << _self.attributes[:tipo_cable].value.write_string
+	.s_procedimiento << _self.attributes[:procedimiento].value.write_string
+	.s_instalacion << _self.attributes[:instalacion].value.write_string
+	
+_local LsTexto <<  character.newLine
+     LsTexto +<<" 1.- TODAS LAS DIMENSIONES ESTÁN EN METROS, EXCEPTO LAS INDICADAS EN OTRA UNIDAD. "
+     LsTexto +<<character.newLine + character.newLine
+     LsTexto +<<" 2.- PARA CUALQUIER MODIFICACIÓN A ESTE PROYECTO, TELÉFONOS DE MÉXICO, S.A. DE C.V. DEBERÁ"
+     LsTexto +<<character.newLine
+     LsTexto +<<" COMUNICAR Y SOLICITAR A ESTA SECRETARIA LA REVISIÓN Y DICTAMEN CORRESPONDIENTE. "
+     LsTexto +<<character.newLine + character.newLine
+     LsTexto +<<" 3.- TELÉFONOS DE MÉXICO, S.A. DE C.V. INFORMARA POR ESCRITO A LA RESIDENCIA GENERAL DE "
+     LsTexto +<<character.newLine
+     LsTexto +<<" CONSERVACIÓN DE CARRETERAS EN EL ESTADO DE " + .s_estado + " LA FECHA DE "
+     LsTexto +<<character.newLine
+     LsTexto +<<" INICIACIÓN DE LOS TRABAJOS CON DIEZ DÍAS DE ANTICIPACIÓN, PREVIA SUPERVISIÓN DE LA ZONA. "
+     LsTexto +<<character.newLine + character.newLine
+     LsTexto +<<" 4.- LOS TRABAJOS DEBERÁN INICIARSE A MAS TARDAR 30 DÍAS NATURALES DESPUÉS DE OTORGADO EL "
+     LsTexto +<<character.newLine
+     LsTexto +<<" PERMISO POR LA SECRETARIA Y CONCLUIRSE EN UN PLAZO NO MAYOR DE 180 DÍAS NATURALES A "
+     LsTexto +<<character.newLine
+     LsTexto +<<" PARTIR DE SU INICIO. "
+     LsTexto +<<character.newLine
+
+_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto << LsTexto
+	
+_endmethod
+$

@@ -1,0 +1,31 @@
+_package sw
+$
+#
+# Date: 08/06/2010
+# Description: Se agregan atributos para escalar y mover.
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method polyline_layout.defined_attributes
+	## 
+	## 
+
+#	attribs<<_super.defined_attributes
+	attribs << rope.new ()
+	
+	attribs.add ( layout_attribute_definition.new ( :sectors, :sector_rope,
+							:description, "Coordinates",
+							:allowed_on_properties_page?, _false,
+							:default_value, sector_rope ) )
+
+	attribs.add ( layout_attribute_definition.new ( :line_style, :line_style,
+							:description, "Style",
+							:default_value, line_style ) )
+	
+
+	>> attribs
+	
+_endmethod
+$

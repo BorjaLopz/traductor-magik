@@ -1,0 +1,149 @@
+Clase Magik: c_fibras_por_distrito_falc
+Hereda de: c_base_sello_fibra
+Archivo fuente: src/legacy/c_fibras_por_distrito_falc.magik
+Archivo migrado: src/migration/CFibrasPorDistritoFalc.tsx
+
+=============================================================================
+PROPÓSITO
+=============================================================================
+Sello de layout para planos FALC (fibra local). Muestra información de
+fibras ópticas por distrito: CEDO (empalme_distribucion), viviendas del DOG,
+fibras asignadas, NCO, NIPP, distancias a NCO y OC.
+
+El sello es "editable": los datos se guardan en defined_attributes y pueden
+sobrescribirse sin recalcular desde GIS (llena_datos_celdas_properties).
+
+=============================================================================
+SLOTS → PROPIEDADES TS
+=============================================================================
+Hereda todos los slots de c_base_sello_fibra. No añade slots propios.
+Los datos del sello se almacenan en defined_attributes (ver abajo).
+
+=============================================================================
+ATRIBUTOS DE LAYOUT (defined_attributes)
+=============================================================================
+idcedo      string  '0'    ID del CEDO (empalme_distribucion)
+fibras      string  ''     fibras del CEDO
+nco         string  ''     siglas del NCO
+nipp        string  ''     NIPP del dog
+cve_dto     string  ''     clave del distrito (siglas_distrito)
+viv         string  ''     total viviendas del DOG
+no_fibras   string  ''     número de fibras requeridas (viv/64, min 2)
+dist_a_nco  string  ''     distancia al NCO en km
+distrito    string  ''     nombre del distrito óptico
+dist_a_oc   string  ''     distancia a la oficina central
+siglas_oc   string  ''     siglas de la oficina central
+cuentas     string  ''     fibras asignadas (cuentas TBA)
+recalcular  boolean true   flag para forzar recálculo desde GIS
+
+=============================================================================
+ESTRUCTURA DE TABLAS (configura_tabla)
+=============================================================================
+tbl_contenedora  1×1    25×24 mm  — tabla raíz sin bordes
+tbl_1            1×1    5×22 mm   — título: "FIBRAS(N)\nNCO_X\nNIPP Y" en rojo
+tbl_2            1×1    10×22 mm  — separador con color de línea rojo (1,0,0)
+tbl_2_1          5×3              — encabezados DTOS/VIV/FIBRAS en azul + valores
+  col1 width=9, col2 (sep)=1, col3 width=10
+  renglones 1,3,5: etiqueta | sep | valor
+  renglones 2,4: separadores sin bordes
+tbl_3            4×1    4×2 mm    — distancias y distrito
+  reng1: "X km A NCO_Y"  (#BBBB20)
+  reng2: "DISTRITO"      (#DAA520, size 16)
+  reng3: "X km A O.C. Y" (#BBBB20)
+  reng4: "F.O.N cuentas" (#4C9526, size 14)
+
+=============================================================================
+MÉTODOS → FUNCIONES TS
+=============================================================================
+
+configura_tabla()
+  → configuraTablaDef(): Map<TablaId, TablaLayout>
+  Crea las 5 tablas con dimensiones y ocultación de bordes correspondientes.
+
+asigna_texto_celda(ps_nom_tabla, pn_num_ren, pn_num_col, ps_texto,
+                   pn_tamanio, ps_alineacion?, pn_margen?, ps_color?, ps_color_hex?)
+  → asignaTextoCelda(...): void
+  Extensión del método base: añade ps_color_hex (formato "RRGGBB").
+  Si ps_color_hex no es null, sobreescribe ps_color.
+  colour.new_from_hex("RRGGBB") → hexToColor("#RRGGBB")
+
+etiqueta_celdas()
+  → etiquetaCeldas(): void
+  Pone "DTOS:", "VIV:", "FIBRAS:" en tbl_2_1 col 1, renglones 1/3/5, color azul.
+
+llena_datos_celdas()
+  → llenaDatosCeldas(datos: DatosFibrasDistrito): void
+  Asigna datos calculados desde GIS a las celdas de las tablas.
+  En Magik: primero llama obten_registros(). En TS: recibe datos ya resueltos.
+
+llena_datos_celdas_properties()
+  → llenaDatosCeldasProperties(): void
+  Modo editable: toma valores de this.attributes (ya guardados).
+  Llama llenaDatosCeldas con los datos almacenados.
+
+obten_registros()
+  → obtenRegistros(datos): DatosFibrasDistrito
+  En Magik: busca CEDO por idcedo en GIS, calcula from datos_dog.
+  calcularNumFibras(totalViviendas): max(floor(viv/64), 2)
+  En TS: recibe datos ya resueltos (mock/GIS service externo).
+
+obten_registros_caja(caja_distribucion_geoms)
+  → no migrado como método (alternativa para lookup desde caja_distribucion_geoms)
+  La lógica es idéntica a obten_registros() pero con campos distintos.
+
+draw_content_on(window)
+  → drawContentOn(datos?): Map<TablaId, TablaLayout>
+  1. configura_color_sello() (de c_base_sello_fibra, no migrado aquí)
+  2. llena_datos_celdas_properties()
+  3. super.draw_content_on (itera col_tablas y llama Despliega)
+  Retorna el estado de las tablas para renderizado React.
+
+siglas_nco
+  → no migrado (accede a swg_dsn_admin_engine.active_design).
+
+=============================================================================
+DECISIONES DE DISEÑO
+=============================================================================
+
+DatosFibrasDistrito como DTO:
+  En Magik los datos se calculan en obten_registros() accediendo a GIS.
+  En TS se inyectan como parámetro. Esto desacopla la lógica de presentación
+  del acceso a datos GIS.
+
+calcularNumFibras(totalViviendas):
+  Fórmula Magik: VIVIENDAS _div 64 (división entera), mínimo 2.
+  En TS: Math.floor(viv / 64), Math.max(..., 2).
+
+Colores como CSS strings:
+  rgbToColor([r,g,b] floats 0-1) → `rgb(R,G,B)` (0-255)
+  hexToColor("RRGGBB") → `#RRGGBB`
+  Los colores AZUL/ROJO son constantes de módulo.
+
+obten_registros_caja:
+  El Magik tiene una segunda ruta de lookup (desde caja_distribucion_geoms
+  en lugar de CEDO). No se migra como método separado: en TS,
+  el llamador resuelve la fuente y pasa un DatosFibrasDistrito.
+
+=============================================================================
+DEPENDENCIAS
+=============================================================================
+- React 18 (useState) — solo para el viewer
+- c_base_sello_fibra: configura_color_sello, col_tablas (super, no migrado aquí)
+- GIS real: gis_program_manager.cached_dataset(:gis), empalme_distribucion,
+  datos_dog, distancia_a_nco, distancia_mas_corta_a_OC
+
+=============================================================================
+ESTADO DE MIGRACIÓN
+=============================================================================
+[x] defined_attributes (13 atributos)
+[x] configura_tabla (5 tablas)
+[x] asigna_texto_celda (con hex extension)
+[x] etiqueta_celdas
+[x] llena_datos_celdas
+[x] llena_datos_celdas_properties
+[x] obten_registros (datos inyectados, calcularNumFibras incluido)
+[x] draw_content_on (lógica de negocio)
+[ ] obten_registros_caja (alternativa con caja_distribucion_geoms)
+[ ] siglas_nco (depende de swg_dsn_admin_engine)
+[ ] Integración con c_base_sello_fibra.configura_color_sello
+[ ] Lookup real desde GIS (gis_program_manager, empalme_distribucion)

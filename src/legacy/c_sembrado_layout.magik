@@ -1,0 +1,312 @@
+
+#  Nombre de la Empresa: Sigma Tao
+#  Traza: El presente código fuente procede de la realización
+# de caso de uso "Generacion de planos (Planos de detalle)"
+#          
+#  Objetivo: Generación de template de planos de detalle.
+#  Autor: hramirea
+#  Fecha de creación: Feb-2004
+#
+_package user
+$
+#remex(:c_sembrado_layout)
+$
+def_slotted_exemplar(:c_sembrado_layout,
+                     {  },:layout_element)
+$
+c_sembrado_layout.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_method c_sembrado_layout.defined_attributes
+#  Objetivo: Se definiewn atributos para el plano de sembrado.
+#  Parámetros de entrada:  Ninguno.                                    
+#  Parámetros de salida:   Ninguno.                                    
+#  Regresa:  vector  -  LoAtributos  - Atributos el layout element que se agregan a la definicion del elemento. 
+# Fecha de última modificación: 23 febrero 2005
+# Autor de la modificación hramirea
+# Descripción de la modificación: Nuevo.
+#
+_Local LvAtributos
+	
+LvAtributos << rope.new_from(_super.defined_attributes)	
+>> LvAtributos
+_endmethod
+$
+#------------------------------------------------------------
+# (05/02/23 ahernan) : Se definen los atributos del elemento.
+#------------------------------------------------------------
+c_sembrado_layout.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sembrado_layout.initialise_for_page(a_layout_page)	
+	##
+
+	(LbBandera, LoElemento) << c_larguillos_layout.busca_elemento(_self.layout_page,"marco_layout")
+
+         _if LbBandera 
+	 _then
+		 _self.bounds << LoElemento.bounds
+		 
+	 _endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sembrado_layout.draw_content_on ( window )
+
+	(LbBandera, LoElemento) << c_larguillos_layout.busca_elemento(_self.layout_page,"marco_layout")
+
+         _if LbBandera
+	 _then
+		_local LnAnchoSello   << 1800
+		_local LnAnchoCroquis << 0 # (05/03/03 ahernan) : No lleva croquis 
+		_local LnEspacio << 300
+		_local LnEspacioArrAbaIzqder << 100
+		_local LnewspaciodespuesSello << 50
+                   		 
+		 _self.bounds << LoElemento.bounds
+
+		 #--------------------------------------------------
+		 # (05/03/03 ahernan) : referencia al plano izquierda 
+		 #---------------------------------------------------
+		 LoDespx << _self.bounds.xmin 
+		 LoDespy << _self.bounds.ymin + 200		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x + 150,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 _self.datos_del_plano(window,"REFERENCIA AL PLANO NO. ", LoVpTemp,9)  
+		 #--------------------------------------------------
+		 # (05/03/03 ahernan) : referencia al plano derecha
+		 #---------------------------------------------------
+		 LoDespx << _self.bounds.xmax 
+		 LoDespy << _self.bounds.ymin + 200		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x - 150,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 _self.datos_del_plano(window,"REFERENCIA AL PLANO NO. ", LoVpTemp,9)  
+
+		 #--------------------------------------------------
+		 # (05/03/03 ahernan) : CopyRight
+		 #---------------------------------------------------
+		 LoDespx << _self.bounds.xmax 
+		 LoDespy << _self.bounds.ymin + 200		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x - 80,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 _self.datos_del_plano(window,"INFORMACION CONFIDENCIAL PROPIEDAD DE TELMEX, ", LoVpTemp,2)
+		  LoDespx << _self.bounds.xmax 
+		 LoDespy << _self.bounds.ymin + 200		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x - 20,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 _self.datos_del_plano(window,"PROHIBIDA SU REPRODUCCION  PARCIAL O TOTAL.", LoVpTemp,2)
+		 
+		 #----------------------
+		 #  Detalles de escala.
+		 #----------------------		
+		 LoDespx << _self.bounds.xmin + 150
+		 LoDespy << _self.bounds.ymin + 1920 + 280
+		 
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		LoP2 <<  coordinate.new( LoP1.x + 500,  LoP1.y + 250 )
+		
+		LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+				
+		#--------------------------------------------
+		# (05/03/01 ahernan) : detalles fibra optica.
+		#--------------------------------------------
+		LoDespx << _self.bounds.xmin + 150 + 500
+		LoDespy << _self.bounds.ymin + 1920 
+		
+		LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		LoP2 <<  coordinate.new( LoP1.x,  LoP1.y + 250 )
+		LoP3 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 250)
+		LoP4 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 150)
+		LoP5 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 100)
+		LoP6 <<  coordinate.new( LoP1.x + 200,  LoP1.y +50)
+		LoP7 <<  coordinate.new( LoP1.x + 200,  LoP1.y )
+		LoP8 <<  coordinate.new( LoP1.x + 600,  LoP1.y + 250)
+		LoP9 <<  coordinate.new( LoP1.x + 600,  LoP1.y + 150)
+		LoP10 << coordinate.new( LoP1.x + 600, LoP1.y + 100)
+		LoP11 << coordinate.new( LoP1.x + 600, LoP1.y + 50)
+		LoP12 << coordinate.new( LoP1.x + 600, LoP1.y )
+		
+		LoP13 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y +  150)
+		LoP14 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y +  100)
+		LoP15 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y + 50)
+		LoP16 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y)
+		
+		
+		# (05/03/02 ahernan) : se dibuja la zona de detalle de fibra optica.
+		
+		LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP3.x, LoP3.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP7.x, LoP7.y , LoP8.x, LoP8.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP5.x, LoP5.y , LoP13.x, LoP13.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP6.x, LoP6.y , LoP14.x, LoP14.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP7.x, LoP15.y , LoP15.x, LoP15.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP12.x, LoP12.y , LoP15.x, LoP15.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+	
+
+		#--------------------------------------------
+		# (05/03/01 ahernan) : detalles Obra civil.
+		#--------------------------------------------
+		LoDespx << _self.bounds.xmin + 150 + 500
+		LoDespy << _self.bounds.ymin + 1640 
+		
+		LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		LoP2 <<  coordinate.new( LoP1.x,  LoP1.y + 250 )
+		LoP3 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 250)
+		LoP4 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 150)
+		LoP5 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 100)
+		LoP6 <<  coordinate.new( LoP1.x + 200,  LoP1.y +50)
+		LoP7 <<  coordinate.new( LoP1.x + 200,  LoP1.y )
+
+		LoP8 <<  coordinate.new( LoP1.x + 600,  LoP1.y + 250)
+		LoP9 <<  coordinate.new( LoP1.x + 600,  LoP1.y + 150)
+		LoP10 << coordinate.new( LoP1.x + 600,  LoP1.y + 100)
+		LoP11 << coordinate.new( LoP1.x + 600,  LoP1.y + 50)
+		LoP12 << coordinate.new( LoP1.x + 600,  LoP1.y )
+
+		LoP13 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y +  250)
+		LoP14 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y +  150)
+		LoP15 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y + 100)
+		LoP16 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y + 50)
+		LoP17 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y)
+		
+				
+		LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP3.x, LoP3.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP7.x, LoP7.y , LoP8.x, LoP8.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP4.x, LoP4.y , LoP13.x, LoP13.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP5.x, LoP5.y , LoP14.x, LoP14.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP6.x, LoP6.y , LoP15.x, LoP15.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+		
+		LoVpTemp << bounding_box.new(LoP7.x, LoP7.y , LoP16.x, LoP16.y )
+		_self.traza_cuadro(window,LoVpTemp,:black)
+
+#		(LbMapa, Lomapa) << c_larguillos_layout.busca_elemento(_self.layout_page,"viewport_layout")
+#
+#		_if LbMapa
+#		_then
+#			_self.layout_page.remove_element(LoMapa) 
+#			
+#		_endif
+
+		# START CHANGE
+		# (05/05/02 ahernan) : Agrega viewport 
+		#
+		#---------------------------------
+		# (05/03/02 ahernan) : Viewport.
+		#---------------------------------
+		LoVpTemp << bounding_box.new( LoElemento.bounds.xmin + 150 + 550, LoElemento.bounds.ymin + 30 ,
+					      LoElemento.bounds.xmax, LoElemento.bounds.ymax  - 960 )
+		LoMvp << viewport_layout.new_with(:bounds, LoVpTemp)
+		LoMvp.trail << _false
+		LoMvp.selection << _false 
+		LoMvp.set_fill_colour( _unset  )
+		LoMvp.set_colour(_unset)
+		LoMvp.name << "Larguillo"
+
+		
+		#_self.layout_page.add_element(LoMvp)
+
+		#--------------------------------------------------------------
+		# (05/05/02 ahernan) : Se calcula el enlace como un solo cable.
+		#--------------------------------------------------------------		
+		LoCable  <<   c_larguillos_layout.genera_canalizacion_unica()
+		#--------------------------------------------------------------
+
+		#LoLydmp.map_viewport_on_map_view(LoMvp,LoCMV, LoCable.bounds,_true)		
+
+		LoMvp.view_angle <<  LoCable.last_coord.angle_to(LoCable.first_coord).radians_to_degrees 
+		LoMvp.view_scale << 50000
+		LoMvp.ace_name << "CENTRALES"		
+		#
+		# END CHANGE
+			
+	
+	 _endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sembrado_layout.traza_cuadro(PoWindow,PoBounds,color)
+# Objetivo: Traza una caja dadas las coordenadas del borde.
+# Parámetros de entrada:  Canvas - PoWindow  Canvas de layout_Designer.
+#	                  Vector - PoBounds  Borde de la caja que se pintara.
+# Parámetros de salida:   Vector - PoBounds  Borde de la caja que se pintara.
+# Regresa:                Ninguno
+# Fecha  de última modificación: 23-febrero-2005
+#	
+# Autor de la modificación: hramirea
+# Descripción de la modificación: Modificaciones por
+# adecuacion al estandar de magik.
+#	
+	LoP1 << coordinate( PoBounds.xmin ,  PoBounds.ymin )	
+	LoP2 << coordinate( PoBounds.xmin ,  PoBounds.ymax )
+	LoP3 << coordinate( PoBounds.xmax ,  PoBounds.ymin )	
+	LoP4 << coordinate( PoBounds.xmax ,  PoBounds.ymax )
+	
+	LvSec << sector.new_with ( LoP1, LoP2 )
+	lvSec.draw_on ( PoWindow, line_style.called(color))
+	lvSec << sector.new_with ( LoP1, LoP3 )
+	lvSec.draw_on ( PoWindow, line_style.called(color))
+	LvSec << sector.new_with ( LoP3, LoP4 )
+	LvSec.draw_on ( PoWindow, line_style.called(color))
+	lvSec << sector.new_with ( LoP2, LoP4 )
+	LvSec.draw_on ( PoWindow, line_style.called(color))
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sembrado_layout.datos_del_plano(PoWindow,PnsTitulo,PoBounds,PntamFont)
+# Objetivo: Escribe datos particulares de cada larguillo en el
+# sello como son:
+# mapea Larguillo actual	
+# escribe numero de plano de total de planos.
+# Escribe numero total de planos para el plano actual. 	
+# Construcción de canalización (datos de tipo de canalización)
+# Totales (Total en hoja, Total en ruta)
+#	
+# Parámetros de entrada:  Canvas   -  PoWindow     # Canvas de layout_Designer.
+#                         numerico -  PnPlano      # Numero de plano.
+#                         numerico -  PnPlano      # Numero de plano.	
+# Parámetros de salida:   ninguno  
+# Regresa:  Ninguno
+# Fecha  de última modificación: 23-feb-2004
+# Autor de la modificación: hramirea
+# Descripción de la modificación: Adecuacion al estandar.
+#
+	_local LvBb   << bounding_box.new(PoBounds.xmin,PoBounds.ymin, PoBounds.xmax , PoBounds.ymin)
+	_local LsText << vtext_style.new ( font.new_logical ( "Plain" ) )	
+			
+	_if PnsTitulo _isnt _unset 
+	_then
+		PoWindow.draw_vtext_transform( LsText,LvBb.xmin + 120,LvBb.ymin ,
+					       PnsTitulo.write_string  ,
+					       _unset, _unset,
+					       PntamFont, 90.degrees_to_radians ,  :center_center  )	
+	_endif
+		
+_endmethod
+$

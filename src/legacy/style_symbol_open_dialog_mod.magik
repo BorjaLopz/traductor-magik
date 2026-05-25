@@ -1,0 +1,36 @@
+_package sw
+$
+_pragma(classify_level=restricted)
+_private _method style_symbol_open_dialog.draw_preview( symbol_name )
+	##
+	## Draws a preview for SYMBOL_NAME
+	##
+
+	.preview_canvas.clear()
+
+	_local point_style_table
+	
+	_if symbol_name _isnt _unset 
+	_then
+		_if .owner.responds_to?(:sigc_style_view)
+		_then
+			point_style_table << .owner.sigc_style_view.collection(:sw_gis!gis_point_style)
+		_else
+			point_style_table << gis_program_manager.style_view.collection(:sw_gis!gis_point_style)
+		_endif
+				 
+		_local sym << point_style_table.new_detached_record()
+	
+		sym.symbol_name << symbol_name
+		sym.realise( _unset, _unset )
+
+		_if sym.actual_geoms _isnt _unset 
+		_then
+			sym.draw_sample ( .preview_canvas, _self.canvas_bounds,
+					  :rotate, 0.0,
+					  :flipped?, _true,
+					  :mirror?, _false )
+		_endif
+	_endif
+_endmethod
+$

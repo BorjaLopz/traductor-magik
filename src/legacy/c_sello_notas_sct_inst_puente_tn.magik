@@ -1,0 +1,85 @@
+_package user
+#remex(:c_sello_notas_sct_inst_puente_tn)
+$
+
+def_slotted_exemplar(:c_sello_notas_sct_inst_puente_tn, {}, :c_sello_notas_sct)
+$
+
+c_sello_notas_sct_inst_puente_tn.define_shared_constant(:allowed_on_menu?, _false  , :public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct_inst_puente_tn.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblTitulo # Tabla que almacena el título de la tabla
+
+	LoTblTitulo << _self.oTablas.crea_tabla(2,1,:tbl_notas_grales)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# Longitud de los renglones de la tabla, esta dada en mm
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 160
+
+	# Longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 170
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct_inst_puente_tn.prvAsignaTexto()
+
+	_super.prvAsignaTexto()
+
+_local LsTexto << character.newLine
+     LsTexto +<<" 5.- LA UBICACIÓN DE LA INSTALACIÓN LATERAL EN PUENTE CON TUBO NEGRO CON CABLE DE "
+     LsTexto +<< .s_tipo_cable + character.newLine
+     LsTexto +<<" INDICADA EN ESTE PROYECTO DEBERÁ SER VERIFICADA Y PRECISADA EN EL LUGAR POR LA RESIDENCIA"
+     LsTexto +<< character.newLine
+     LsTexto +<<" GENERAL DE CONSERVACIÓN DE CARRETERAS EN EL ESTADO DE "+ .s_estado + "."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 6.- LA INSTALACIÓN DEL TUBO NEGRO CON CABLE DE "+ .s_tipo_cable +" EN PUENTE, SE HARÁ "
+     LsTexto +<< character.newLine
+     LsTexto +<<" SIN INTERRUMPIR EL TRÁNSITO, PARA LO CUAL DEBERÁ ESTAR LA SUPERFICIE DE RODAMIENTO LIBRE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE OBSTÁCULOS COMO SON PIEDRAS, ARENA, BASURA, HERRAMIENTA, ETC. "
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 7.- LA INSTALACIÓN DEL TUBO NEGRO CON CABLE DE "+ .s_tipo_cable +" QUE SE INDICA EN,"
+     LsTexto +<< character.newLine
+     LsTexto +<<" ESTE PROYECTO, DEBERÁ FIJARSE EN LA SUBESTRUCTURA DEL PUENTE CON BARRENANCLAS AHOGADAS "
+     LsTexto +<< character.newLine
+     LsTexto +<<" EN RESINA EPOXICA, QUEDANDO ABSOLUTAMENTE PROHIBIDO EL USO DE PISTOLAS EXPLOSIVAS."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 8.- EN LA PROTECCION Y APARIENCIA DEL TUBO DEBERÁ USARSE PINTURA ANTICORROSIVA."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 9.- TODOS LOS TRABAJOS DEBERÁN HACERSE DE ACUERDO CON LAS ESPECIFICACIONES GENERALES "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE CONSTRUCCIÓN DE ESTA SECRETARÍA Y LAS INDICACIONES ADICIONALES DE LA RESIDENCIA GE-"
+     LsTexto +<< character.newLine
+     LsTexto +<<" NERAL DE CONSERVACIÓN DE CARRETERAS EN ESA ENTIDAD. "
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 10.- CUALQUIER DAÑO QUE SE OCASIONE AL PAVIMENTO, ACOTAMIENTO, CUNETA Y/O SEÑALAMIENTO "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DEBERÁ SER REPARADO DE INMEDIATO POR CUENTA DE TELÉFONOS DE MÉXICO, S.A. DE C.V. DE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" ACUERDO A LAS INDICACIONES DE LA RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS EN"
+     LsTexto +<< character.newLine
+     LsTexto +<<" ESA ENTIDAD."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 11.- PARA EVITAR ACCIDENTES DURANTE LA CONSTRUCCIÓN DE LA OBRA TELÉFONOS DE MÉXICO, S.A. "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE C.V. COLOCARA Y CONSERVARA PERMANENTEMENTE EN EL CAMINO LAS SEÑALES PREVENTIVAS, RES- "
+     LsTexto +<< character.newLine
+     LsTexto +<<" RESTRICTIVAS E INFORMATIVAS QUE INDIQUE LA RESIDENCIA GENERAL DE  CONSERVACIÓN DE CARRE- "
+     LsTexto +<< character.newLine
+     LsTexto +<<" TERAS, CON BASE A LO ESTABLECIDO EN EL 'MANUAL DE DISPOSITIVOS PARA EL CONTROL DEL TRAN- "
+     LsTexto +<< character.newLine	     
+     LsTexto +<<" EN CALLES Y CARRETERAS' EDITADO POR LA SCT EDICIÓN 1986."
+     LsTexto +<< character.newLine + character.newLine
+
+_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+	
+_endmethod
+$

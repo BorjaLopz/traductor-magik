@@ -1,0 +1,8 @@
+_package sw
+$
+condition.define_condition(:diseño_activo,:user_error,{:texto},"No hay un diseño activo.")
+$
+condition.define_condition(:proyecto_activo,:user_error,{:texto},"No hay un proyecto activo.")
+$
+condition.define_condition(:central,:user_error,{:texto},"El Proyecto seleccionado no esta relaccionado con una Central.")
+$

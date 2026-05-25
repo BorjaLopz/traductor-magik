@@ -1,0 +1,506 @@
+_package user
+$
+def_slotted_exemplar(:c_texto_grafico,
+		     {
+			{:sTexto,        _unset}, # Texto a desplegar
+			{:sOrientacion,  _unset}, # Orientacion del Texto
+			{:sAlineacion,   _unset}, # Alineacion del Texto
+			{:nTamanio,      _unset}, # Tamaño de letra
+			{:sEstilo,       _unset}, # Estilo
+			{:sColor,        _unset}, # Color
+			{:bSubrayado?,   _unset}, # Color
+			{:nGrados,       _unset} # Color
+			
+		     },
+		     :c_elemento_grafico
+)
+
+$
+c_texto_grafico.define_slot_access(:bSubrayado?,       :writable, :private)
+$
+c_texto_grafico.define_slot_access(:nGrados,           :writable, :private)
+$
+c_texto_grafico.define_slot_access(:nTamanio,          :writable, :private)
+$
+c_texto_grafico.define_slot_access(:sAlineacion,       :writable, :private)
+$
+c_texto_grafico.define_slot_access(:sColor,            :writable, :private)
+$
+c_texto_grafico.define_slot_access(:sEstilo,           :writable, :private)
+$
+c_texto_grafico.define_slot_access(:sOrientacion,      :writable, :private)
+$
+c_texto_grafico.define_slot_access(:sTexto,            :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.bSubrayado?
+## Objetivo: retornar en valor del slot sColor
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa:
+## 	Cadena - sColor : Color del Texto
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_return .bSubrayado?
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.bSubrayado? << RsValor
+## Objetivo: Asignar un valor permitido al slot sColor
+## Parámetros de entrada:
+## 	Cadena - RsValor - Color a utilizar para el Texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+        .bSubrayado? << RsValor
+        
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.Coordenada_Ubicacion_Texto()
+## Objetivo: Calcula la ubicacion del texto en la celda
+##           de acuerdo con la alineacion
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA 
+## Regresa:
+## 	coordinate - Nueva Coordenada
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+	
+_local LnPosX # Coordenada X superior izquierda de la celda en la pagina
+_local LnPosY # Coordenada Y superior izquierda de la celda en la pagina
+
+
+
+_local LsAlinVert
+_local LsAlinHor
+
+# Se obtiene la cadena a procesar
+LsCadena << _self.sAlineacion.write_string
+
+_for LnCont  _over range(1, LsCadena.size)
+_loop
+	_if LsCadena.subseq(LnCont,1) = "_"
+	_then
+		#Se obtiene la alineacion vertical y horizontal
+		LsAlinVert << LsCadena.subseq(1,LnCont-1)
+		LsAlinHor  << LsCadena.subseq(LnCont+1, LsCadena.size - LnCont )
+	_endif
+_endloop
+
+       LnPosX << _self.oArea.Xmin 
+       LnPosY << _self.oArea.Ymin
+
+       _if LsAlinVert = "centre"
+       _then
+	       # Coordenada superior izquierda de la celda en la pagina
+	       LnPosY << LnPosY + (_self.oArea.Ymax - _self.oArea.Ymin) /2	
+       _elif LsAlinVert = "top"
+       _then 
+       	       LnPosY << LnPosY + (_self.oArea.Ymax - _self.oArea.Ymin) 
+       _elif LsAlinVert = "bottom"
+       _then
+       	       LnPosY << LnPosY 
+       _endif
+
+	# Se utiliza el estilo para determinar las coordenadas			
+	_if LsAlinHor = "left" 
+	_then
+		
+	_elif LsAlinHor = "centre"
+	_then
+		LnPosX << LnPosX + (_self.oArea.Xmax - _self.oArea.Xmin) /2
+	_elif LsAlinHor = "right"
+	_then
+		LnPosX << LnPosX + (_self.oArea.Xmax - _self.oArea.Xmin) 
+	_endif
+
+	_return coordinate.new(LnPosX,LnPosY)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.Despliega()
+## Objetivo: Realizar el dibujo del los textos
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA 
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+	
+_local LnEscala # Escala utilizada para el dibujo
+_local LnGrados # Grados de giro utilizados para el dibujo
+_local LoFuente # Objeto Font utilizado para dibujar las letras
+_local LoEstilo # Objeto Text_Style utilizado para dibujar las letras
+
+        _if _self.sTexto _is _unset 
+	_then  _return 	_endif
+
+        LnEscala << 1
+	LnGrados << _self.nGrados
+
+	# genera la coordenada que sirve como referencia para desplegar
+	# el texto
+	LoCoord << _self.Coordenada_Ubicacion_Texto()
+	
+	LoFuente << font.new_with_properties(:type, :logical,
+		:name, _self.sEstilo,
+		:point_size, _self.nTamanio,
+		:orientation,_self.sOrientacion)
+	LoFuente.realise()
+	
+	LoEstilo << text_style.new_with_properties(:font, LoFuente, 
+				         :colour, _self.sColor, :multiline?, _true,
+			       :underline?, _self.bSubrayado? )
+
+	_self.oVentana.draw_vtext_transform(LoEstilo, LoCoord.x, LoCoord.y,
+ 		   _self.sTexto.write_string, _unset, _unset, LnEscala, LnGrados.degrees_to_radians, _self.sAlineacion)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_texto_grafico.init_with( props )
+
+	_super.init_with( props )
+
+	_self.bsubrayado? << props[:bSubrayado]
+
+	>> _self
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_texto_grafico.new(RsNombre, _optional sello?)
+## Objetivo: Crear una instancia de celda
+## Parámetros de entrada:
+## 	Cadena - RsNombre - Número del elemento grafico
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_texto_grafico - regresa un objeto c_texto_grafico
+## Fecha de última modificación: 19/11/14
+## Descripción de la modificación: Se agrega parametro opcional
+## sello? para identificar cuando el sello sea estudio de
+## transmision y alinear sus textos en la tabla de
+## observaciones y notas
+	
+        _self.sTexto << RsNombre.write_string
+
+	#valores por defecto de las celdas
+        _self.nGrados << 0
+	_self.sColor << colour.new_rgb(0.0, 0.0, 0.0)
+	_self.nTamanio << 50
+	_self.sOrientacion << :left_right
+
+	#(19/11/14 bautistaja):Se valida si sello es estudio de
+	# transmision para alinear sus textos en la tabla de
+	# observaciones y notas
+	_if sello? _is _true  
+	_then
+		_self.sAlineacion << :top_centre
+	_else
+		_self.sAlineacion << :centre_centre
+	_endif
+	#End
+	
+	_self.sEstilo << "Times_New_Roman"
+	_self.bSubrayado? << _false 
+	
+	_return _clone 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.new_from(RoObjeto, _optional RsNombre)
+##  Objetivo: Constructor de copia
+##  Parámetros de entrada: 
+##	c_texto_grafico - RoObjeto : Objeto a partir del cual se crea otro
+##	(Opcional) RsNombre : Texto a mostrar
+##  Parámetros de salida:  
+##  	c_texto_grafico - Nuevo objeto texto_grafico
+##  Regresa:  NA
+##  Fecha de última modificación : 11 / Noviemnre / 2004
+##  Autor de la modificación fdiaz
+##  Descripción de la modificación : Creación
+
+	_if RoObjeto.is_kind_of?(c_texto_grafico)
+	_then
+		_if RsNombre = _unset 
+		_then
+			_self.sTexto << RoObjeto.sTexto
+		_else
+			_self.sTexto << RsNombre
+		_endif
+
+		#valores por defecto de las celdas
+		_self.nGrados      << RoObjeto.nGrados 
+		_self.sColor       << RoObjeto.sColor
+		_self.nTamanio     << RoObjeto.nTamanio
+		_self.sOrientacion << RoObjeto.sOrientacion
+		_self.sAlineacion  << RoObjeto.sAlineacion
+		_self.sEstilo      << RoObjeto.sEstilo
+		_self.bSubrayado?  << RoObjeto.bSubrayado?
+	
+		_return _clone
+        _else
+ 	        condition.raise(:warning, :string, "El objeto que se proporciono, no es de tipo c_texto_grafico")	
+		
+	_endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.nGrados
+## Objetivo: Asignar un valor permitido al slot sColor
+## Parámetros de entrada:
+## 	Cadena - RsValor - Color a utilizar para el Texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+        _return .nGrados 
+        
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.nGrados << RnValor
+## Objetivo: Asignar un valor permitido al slot sColor
+## Parámetros de entrada:
+## 	Cadena - RsValor - Color a utilizar para el Texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+        .nGrados << RnValor
+        
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.nTamanio
+## Objetivo: retornar en valor del slot nTamanio
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Entero - nTamanio : Tamanio de letra del Texto
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_return .nTamanio
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.nTamanio << RnValor
+## Objetivo: Asignar un valor permitido al slot nTamanio
+## Parámetros de entrada:
+## 	Entero - RnValor : Tamanio de letra del texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_if RnValor > 0 
+	_then
+ 	   .nTamanio << RnValor
+	_else
+	   condition.raise(:warning, :string, "Debe ser un número positivo.")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sAlineacion
+## Objetivo: retornar en valor del slot sAlineacion
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Cadena - sAlineacion : Alineacion del texto
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_return .sAlineacion
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sAlineacion << RsValor
+## Objetivo: Asignar un valor permitido al slot sAlineacion
+## Parámetros de entrada:
+## 	simbolo - RsValor - Alineacion del texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_if RsValor = :centre_right _or RsValor = :centre_centre _or RsValor = :centre_left _or
+	    RsValor = :top_right    _or RsValor = :top_centre    _or RsValor = :top_left _or
+    	    RsValor = :bottom_right _or RsValor = :bottom_centre _or RsValor = :bottom_left 
+	_then
+ 	   .sAlineacion << RsValor
+	_else
+	   condition.raise(:warning, :string, "Error al asignar la alineación")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sColor
+## Objetivo: retornar en valor del slot sColor
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa:
+## 	Cadena - sColor : Color del Texto
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_return .sColor
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sColor << RsValor
+## Objetivo: Asignar un valor permitido al slot sColor
+## Parámetros de entrada:
+## 	Cadena - RsValor - Color en RGB a utilizar para el Texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 27/06/2006
+## Autor de la modificación : vbluna
+## Descripción de la modificación: Se modifico el valor de
+## entrada de cadena a lista de 3 valores
+	
+        .sColor << RsValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_texto_grafico.serial_slots()
+
+	( keys, values ) << _super.serial_slots()
+	
+	keys.add_all_last( rope.new_with(
+				  :sTexto,:sOrientacion,:sAlineacion,:nTamanio,
+				  :sEstilo,:sColor,:bSubrayado,:nGrados))
+	values.add_all_last( rope.new_with(
+				  .sTexto,.sOrientacion,.sAlineacion,.nTamanio,
+				  .sEstilo,.sColor,.bSubrayado?,.nGrados))
+
+	_return keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sEstilo
+## Objetivo: retornar en valor del slot sEstilo
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Cadena - sEstilo : Estilo del Texto
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_return .sEstilo
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sEstilo << RsValor
+## Objetivo: Asignar un valor permitido al slot sEstilo
+## Parámetros de entrada:
+## 	Cadena - RsValor - Estilo para el texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+        .sEstilo << RsValor
+        
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sOrientacion
+## Objetivo: retornar en valor del slot sOrientacion
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Cadena - sOrientacion : Orientacion del Texto
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+	_return .sOrientacion
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sOrientacion << RsValor
+## Objetivo: Asignar un valor permitido al slot sOrientacion
+## Parámetros de entrada:
+## 	Cadena - RsValor - Orientacion del texto
+##                         :left_right Horizontal
+##                         :top_bottom Vertical 
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+	_if RsValor = :left_right _or RsValor = :top_bottom _or RsValor = :vertical
+	_then
+ 	   .sOrientacion << RsValor
+	_else
+	   condition.raise(:warning, :string, "Error al asignar la Orientación")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sTexto
+## Objetivo: retornar en valor del slot sTexto
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Cadena - sTexto : Texto a desplegar
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+	_return .sTexto
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_grafico.sTexto << RsValor
+## Objetivo: Asignar el texto a desplegar, este se almacena en
+## el slot sTexto
+## Parámetros de entrada:
+## 	Cadena - RsValor - Texto a desplegar
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+        .sTexto << RsValor
+        
+_endmethod
+$

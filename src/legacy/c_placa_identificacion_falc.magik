@@ -1,0 +1,497 @@
+_package user
+$
+#remex(:c_placa_identificacion_falc)
+$
+def_slotted_exemplar(:c_placa_identificacion_falc,
+{
+	{:oTablas, _unset},
+	{:oCoordOrigen, _unset},
+	{:window, _unset},
+	{:bTablas_creadas, _unset},
+	{:s_cable,_unset},
+	{:s_calibre,_unset},
+	{:s_calibre2,_unset},
+	{:s_cuenta,_unset},
+	{:s_constructor,_unset},
+	{:oTipoEmpresaR,      _unset }, # catalogo para empresa que revisa
+	{:valor_empreviso,    _unset } # Valor para empresa que revisa
+	
+	
+}, :layout_element)  
+$
+
+c_placa_identificacion_falc.define_shared_constant(:allowed_on_menu?, _false    , :public)
+$
+c_placa_identificacion_falc.define_slot_access(:bTablas_creadas,     :writable, :public)
+$
+c_placa_identificacion_falc.define_slot_access(:oCoordOrigen,        :writable, :public)
+$
+c_placa_identificacion_falc.define_slot_access(:oTablas,             :writable, :public)
+$
+c_placa_identificacion_falc.define_slot_access(:window,             :writable, :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.Agrega_LYM(RoLym)
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from (_super.defined_attributes)
+
+	_for attrib _over attribs.fast_elements()
+	_loop
+		attrib.allowed_on_properties_page? << _false
+	_endloop
+
+	# START CHANGE
+	# (2020-04-21 AHERNAN, Hitss) : 
+	#
+	attribs.add(layout_attribute_definition.new(:empreviso, :string,
+						    :description, "Empresa que revisa",	    
+                                                    :enum_method, :enum_tipo_empresar))
+	
+	attribs.add(layout_attribute_definition.new(:central, :string,
+						    :description, "CENTRAL",
+						    :defalut_value, _unset))
+	attribs.add(layout_attribute_definition.new(:distrito, :string,
+						    :description, "DISTRITO",
+						    :defalut_value, _unset))
+	attribs.add(layout_attribute_definition.new(:cable, :string,
+						    :description, "CABLE",
+						    :default_value, _unset))
+	attribs.add(layout_attribute_definition.new(:calibre, :string,
+						    :description, "CALIBRE",
+						    :default_value, _unset))
+	attribs.add(layout_attribute_definition.new(:calibre2, :string,
+						    :description, "CALIBRE",
+						    :default_value, _unset))
+	attribs.add(layout_attribute_definition.new(:cuenta, :string,
+						    :description, "CUENTA",
+						    :default_value, _unset))
+	attribs.add(layout_attribute_definition.new(:fecha, :string,
+						    :description, "FECHA",
+						    :defalut_value, _unset))
+	attribs.add(layout_attribute_definition.new(:constructor, :string,
+						    :description, "CONSTRUCTOR",
+						    :default_value, _unset))
+
+	>> attribs
+	
+_endmethod
+$
+c_placa_identificacion_falc.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.enum_tipo_empresar
+
+	.oTipoEmpresaR    << hash_table.new()
+	.oTipoEmpresaR[1] << "TELMEX"
+	.oTipoEmpresaR[2] << "ULTIMA_MILLA"
+	.oTipoEmpresaR[3] << "ULTIMA_MILLA_N"	
+	_return .oTipoEmpresaR
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.draw_content_on(window)
+	## 
+	## 
+	_self.prvAsignaTexto()
+	_self.window << window
+	
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << .oTablas.area_total()
+	
+        _self.oTablas.Despliega(.window)
+	
+	#_self.prvLlena_Celdas()
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_placa_identificacion_falc.actualiza_datos()
+	#w(:llena_datos_celdas_en_c_placa_identificacion_falc)
+	_self.llena_datos_celdas()
+	_self.draw_content_on(_self.window)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.Inicializa(_optional RoCoord)
+
+	_local LoArea # Area que ocupan todas la tablas
+
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord	
+
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	# Crea y configura cada una de las tablas 
+	_self.prvCrea_Tablas(RoCoord)
+	# Se conoce el area de la tabla dibujada
+	LoArea << _self.oTablas.area_total()
+	# Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+	# Crea a los objetos que tendra c/u de las tablas
+	_self.prvLlena_Celdas()
+	# Datos de la placa
+	_self.llena_datos_celdas()
+	# Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.llena_datos_celdas()
+	## 
+	##
+	_local LoTamTxt << 30
+	_local central << ""
+	_local distrito << ""
+	_local cable << _unset
+	_local tipo_cable << ""
+	_local calibre << ""
+	_local cuenta << ""
+	_local fecha << ""
+	_local constructor << ""
+
+	_local LoPaf << smallworld_product.pni_application()
+	disenio << swg_dsn_admin_engine.active_design
+
+	_if swg_dsn_admin_engine.active_scheme _isnt _unset 
+	_then
+		central << swg_dsn_admin_engine.active_scheme.project.user!_central.user!_central
+	_endif
+
+	_if (distrito << disenio.distrito_optico) _isnt _unset 
+	_then
+		distrito << distrito.user!_distrito
+	_endif
+
+	_if _self.elementos_bd_gis _isnt _unset _andif
+	    _self.obtener_elementos_bd_gis() _isnt _unset _andif 
+	    _self.obtener_elementos_bd_gis().an_element()_isnt _unset  _andif 
+	    _self.elementos_bd_gis.size > 0 
+	_then
+		cable << _self.obtener_elementos_bd_gis().an_element()
+	_else
+		_if LoPaf.plugin(:gen_planos).cables_activados_fo _isnt _unset _andif
+		    LoPaf.plugin(:gen_planos).cables_activados_fo.an_element() _isnt _unset 
+		_then
+			cable << LoPaf.plugin(:gen_planos).cables_activados_fo.an_element()
+			l_elementos << rope.new_with(cable)
+			_self.guardar_elementos_bd_gis(l_elementos)
+		_endif
+	_endif
+
+	_if cable _isnt _unset 
+	_then
+		#(05/02/15 bautistaja):Datos del cable
+		tipo_cable << cable.get_spec_record_for_name(cable.spec_id)
+		tipo_cable << tipo_cable.user!_clase
+		edo_fibras << cable.calcula_estado_fibras()
+		muertas << edo_fibras[:muertas].size
+		calibre << cable.get_spec_record().fiber_quantity.write_string + " FO-"
+		calibre << calibre + muertas.write_string + "M"
+		cuenta << cable.user!_cuentas.default("")
+	_endif
+
+	#Datos del proyecto
+	fecha << disenio.project.planning_start.write_string
+	constructor << disenio.project.user!_empresa_proyecto
+
+	# Valores de la placa
+	_self.central << _self.valor_propiedad(:central, central)
+	_self.distrito << _self.valor_propiedad(:distrito, distrito)
+	_self.cable << _self.valor_propiedad(:cable, tipo_cable)
+	_self.calibre << _self.valor_propiedad(:calibre, calibre)
+	_self.cuenta << _self.valor_propiedad(:cuenta, cuenta)
+	_self.fecha << _self.valor_propiedad(:fecha, fecha)
+	_self.constructor << _self.valor_propiedad(:constructor, constructor)
+
+	# Textos para la placa
+	locentral << c_texto_grafico.new(_self.central)
+	locentral.nTamanio << 30
+	lodistrito <<  c_texto_grafico.new(_self.distrito)
+	lodistrito.nTamanio << 30
+	locable <<  c_texto_grafico.new(_self.cable)
+	locable.nTamanio << 30
+	localibre <<  c_texto_grafico.new(_self.calibre)
+	localibre.nTamanio << 30
+	locuenta <<  c_texto_grafico.new(_self.cuenta)
+	locuenta.nTamanio << 30
+	lofecha <<  c_texto_grafico.new(_self.fecha)
+	lofecha.nTamanio << 30
+	loconstructor <<  c_texto_grafico.new(_self.constructor)
+	loconstructor.nTamanio << 30
+
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,2).oElemento << locentral
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,4).oElemento << lodistrito
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,6).oElemento << locable
+
+	_self.oTablas.elemento(:tbl_5).oCeldas.Celda(1,2).oElemento << localibre
+	_self.oTablas.elemento(:tbl_5).oCeldas.Celda(1,6).oElemento << locuenta
+
+	_self.oTablas.elemento(:tbl_6).oCeldas.Celda(1,2).oElemento << lofecha
+	_self.oTablas.elemento(:tbl_6).oCeldas.Celda(1,4).oElemento << loconstructor
+
+
+	# START CHANGE
+	# (2020-04-21 AHERNAN, Hitss) : 
+	#
+	#_self.asigna_simbolo_celda(:tbl_3,1,1,"logo_sellos")
+	_if ( _self.attributes[:empreviso] _isnt _unset _andif
+	      _self.attributes[:empreviso].value) _isnt  _unset _andif
+	      _self.attributes[:empreviso].value.size > 0
+	_then		
+		.valor_empreviso << "logo_" +  _self.attributes[:empreviso].value.write_string.uppercase
+
+		_if .valor_empreviso.uppercase.matches?("*TELMEX*")
+		_then
+			.valor_empreviso << 	.valor_empreviso + "_EP"
+		_endif		
+		#write(:logo_por_propiedad)
+		#w(:llena_datos_celdas, "-------->",  .valor_empreviso.uppercase)
+		#_self.asigna_simbolo_celda(:tbl_3,1,1, .valor_empreviso)
+
+		simbolo << c_simbolo_grafico.new( .valor_empreviso)
+		simbolo.nMargen_izq << 1
+		simbolo.nMargen_der << 1
+		simbolo.nMargen_sup << 1
+		simbolo.nMargen_inf << 1
+		
+		_self.oTablas.elemento(:tbl_3).oCeldas.Celda(1,1).oElemento << simbolo
+		
+	_else
+		#write(:logo_por_default)
+		##_self.asigna_simbolo_celda(:tbl_3,1,1,"logo_telmex_ep")
+		simbolo << c_simbolo_grafico.new( "logo_telmex_ep")
+		simbolo.nMargen_izq << 1
+		simbolo.nMargen_der << 1
+		simbolo.nMargen_sup << 1
+		simbolo.nMargen_inf << 1
+		
+		_self.oTablas.elemento(:tbl_3).oCeldas.Celda(1,1).oElemento << simbolo	
+		
+	_endif		
+	#
+	# END CHANGE
+
+
+
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_placa_identificacion_falc.post_initialisation ()
+
+	_local LoPaf << smallworld_product.pni_application()
+	Locable << LoPaf.plugin(:gen_planos).cables_activados_fo
+	_if Locable _isnt _unset
+	_then
+		l_elementos << rope.new_with(LoCable)
+		_self.guardar_elementos_bd_gis(l_elementos)			
+	_endif
+        _self.Inicializa(coordinate.new(0,0))	
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.prvAsignaTexto()
+	## Se obtienen los valores de los atributos de la placa, se
+	## asignan a las celadas correspondientes
+	## 
+	locentral << c_texto_grafico.new(_self.attributes[:central].value)
+	locentral.nTamanio << 30
+	lodistrito <<  c_texto_grafico.new(_self.attributes[:distrito].value)
+	lodistrito.nTamanio << 30
+	locable <<  c_texto_grafico.new(_self.attributes[:cable].value)
+	locable.nTamanio << 30
+	localibre <<  c_texto_grafico.new(_self.attributes[:calibre].value)
+	localibre.nTamanio << 30
+	localibre2 <<  c_texto_grafico.new(_self.attributes[:calibre2].value)
+	localibre2.nTamanio << 30
+	locuenta <<  c_texto_grafico.new(_self.attributes[:cuenta].value)
+	locuenta.nTamanio << 30
+	lofecha <<  c_texto_grafico.new(_self.attributes[:fecha].value)
+	lofecha.nTamanio << 30
+	loconstructor <<  c_texto_grafico.new(_self.attributes[:constructor].value)
+	loconstructor.nTamanio << 30
+
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,2).oElemento << locentral
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,4).oElemento << lodistrito
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,6).oElemento << locable
+
+	_self.oTablas.elemento(:tbl_5).oCeldas.Celda(1,2).oElemento << localibre
+	_self.oTablas.elemento(:tbl_5).oCeldas.Celda(1,4).oElemento << localibre2
+	_self.oTablas.elemento(:tbl_5).oCeldas.Celda(1,6).oElemento << locuenta
+
+	_self.oTablas.elemento(:tbl_6).oCeldas.Celda(1,2).oElemento << lofecha
+	_self.oTablas.elemento(:tbl_6).oCeldas.Celda(1,4).oElemento << loconstructor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.prvCrea_Tablas(RoCoord)
+
+	#----------------------------------------------------------
+	# Tabla 1
+	#-----------------------------------------------------------
+        lo_tabla << _self.oTablas.crea_tabla(1,1, :tbl_1)
+	lo_tabla.ocoordenada_origen << RoCoord
+	lo_tabla.orenglones.elemento(1).nlongitud << 40
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 130
+	#----------------------------------------------------------
+	# Tabla 2
+	#-----------------------------------------------------------
+        lo_tabla << _self.oTablas.crea_tabla(1,1, :tbl_2)
+	lo_tabla.oCoordenada_Origen << coordinate.new(RoCoord.x + 50,
+						      RoCoord.y - 50)
+	lo_tabla.orenglones.elemento(1).nlongitud << 30
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 120
+	#-----------------------------------------------------------
+	#  Tabla 3
+	#-----------------------------------------------------------
+	lo_tabla << _self.oTablas.crea_tabla(2,1, :tbl_3)
+	lo_tabla.oCoordenada_Origen << coordinate.new(RoCoord.x + 50,
+						      RoCoord.y - 50)
+	lo_tabla.orenglones.elemento(1).nlongitud << 29
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 26
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Inf? << _false
+	#-----------------------------------------------------------
+	#  Tabla 4
+	#-----------------------------------------------------------
+	lo_tabla << _self.oTablas.crea_tabla(1,6, :tbl_4)
+	lo_tabla.oCoordenada_Origen << coordinate.new(RoCoord.x + 330,
+						      RoCoord.y - 70)
+	lo_tabla.orenglones.elemento(1).nlongitud << 7.5
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 12
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 18
+	lo_tabla.ocolumnas.elemento(3).nlongitud  << 12
+	lo_tabla.ocolumnas.elemento(4).nlongitud  << 18
+	lo_tabla.ocolumnas.elemento(5).nlongitud  << 12
+	lo_tabla.ocolumnas.elemento(6).nlongitud  << 18
+	ocultaBordes << rope.new_with({1,1},{1,3},{1,5})
+	_for elem _over ocultaBordes.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Sup? << _false
+		lo_celda.bBorde_Inf? << _false 
+	_endloop
+	#-----------------------------------------------------------
+	#  Tabla 5
+	#-----------------------------------------------------------
+	lo_tabla << _self.oTablas.crea_tabla(1,6, :tbl_5)
+	lo_tabla.oCoordenada_Origen << coordinate.new(RoCoord.x + 330,
+						      RoCoord.y - 165)
+	lo_tabla.orenglones.elemento(1).nlongitud << 7.5
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 12
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 18
+	lo_tabla.ocolumnas.elemento(3).nlongitud  << 12
+	lo_tabla.ocolumnas.elemento(4).nlongitud  << 18
+	lo_tabla.ocolumnas.elemento(5).nlongitud  << 12
+	lo_tabla.ocolumnas.elemento(6).nlongitud  << 18
+	ocultaBordes << rope.new_with({1,1},{1,3},{1,5})
+	_for elem _over ocultaBordes.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Sup? << _false
+		lo_celda.bBorde_Inf? << _false 
+	_endloop
+	#-----------------------------------------------------------
+	#  Tabla 6
+	#-----------------------------------------------------------
+	lo_tabla << _self.oTablas.crea_tabla(1,4, :tbl_6)
+	lo_tabla.oCoordenada_Origen << coordinate.new(RoCoord.x + 330,
+						      RoCoord.y - 260)
+	lo_tabla.orenglones.elemento(1).nlongitud << 7.5
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 14
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 28
+	lo_tabla.ocolumnas.elemento(3).nlongitud  << 20
+	lo_tabla.ocolumnas.elemento(4).nlongitud  << 28
+	ocultaBordes << rope.new_with({1,1},{1,3})
+	_for elem _over ocultaBordes.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Sup? << _false
+		lo_celda.bBorde_Inf? << _false 
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_placa_identificacion_falc.prvLlena_Celdas()
+
+	texto << "SIGLAS"+%newline
+	texto +<< "CENTRAL"
+
+	cadena1 << c_texto_grafico.new(texto)
+	cadena1.nTamanio << 22
+	cadena2 << c_texto_grafico.new("DISTRITO")
+	cadena2.nTamanio << 22
+	cadena3 << c_texto_grafico.new("CABLE")
+	cadena3.nTamanio << 22
+	cadena4 << c_texto_grafico.new("CALIBRE")
+	cadena4.nTamanio << 22
+	cadena5 << c_texto_grafico.new("CUENTA")
+	cadena5.nTamanio << 22
+	cadena6 << c_texto_grafico.new("FECHA")
+	cadena6.nTamanio << 22
+	cadena7 << c_texto_grafico.new("CONSTRUCTOR")
+	cadena7.nTamanio << 22
+	cadena8 << c_texto_grafico.new("CALIBRE")
+	cadena8.nTamanio << 22
+	simbolo << c_simbolo_grafico.new("logo_telmex_ep")
+	simbolo.nMargen_izq << 1
+	simbolo.nMargen_der << 1
+	simbolo.nMargen_sup << 1
+	simbolo.nMargen_inf << 1
+
+	
+	_self.oTablas.elemento(:tbl_3).oCeldas.Celda(1,1).oElemento << simbolo
+	
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,1).oElemento << cadena1
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,3).oElemento << cadena2
+	_self.oTablas.elemento(:tbl_4).oCeldas.Celda(1,5).oElemento << cadena3
+	_self.oTablas.elemento(:tbl_5).oCeldas.Celda(1,1).oElemento << cadena4
+	_self.oTablas.elemento(:tbl_5).oCeldas.Celda(1,3).oElemento << cadena8
+	_self.oTablas.elemento(:tbl_5).oCeldas.Celda(1,5).oElemento << cadena5
+	_self.oTablas.elemento(:tbl_6).oCeldas.Celda(1,1).oElemento << cadena6
+	_self.oTablas.elemento(:tbl_6).oCeldas.Celda(1,3).oElemento << cadena7
+	
+	_self.prvAsignaTexto()	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_placa_identificacion_falc.valor_propiedad(Propiedad, dato_actual)
+	## 
+	##
+	LoPropiedad << ""
+
+	_if _self.attributes[Propiedad] _isnt _unset _andif
+	    _self.attributes[Propiedad].value _isnt _unset _andif
+	    _self.attributes[Propiedad].value.size > 0
+	_then
+		LoPropiedad << _self.attributes[Propiedad].value.write_string
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+_endmethod
+$

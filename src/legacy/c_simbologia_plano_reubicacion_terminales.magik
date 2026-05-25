@@ -1,0 +1,137 @@
+_package user
+$
+def_slotted_exemplar(:c_simbologia_plano_reubicacion_terminales,
+		     {			 
+		     } , { :symbol_layout } )
+$
+c_simbologia_plano_reubicacion_terminales.define_shared_constant(:allowed_on_menu?, _false     ,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_simbologia_plano_reubicacion_terminales.defined_attributes
+## Objetivo: Define los atributos del simbolo
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno
+## Descripcion de la modificacion:  Se agregan propiedades al
+## simbolo 
+	
+	attribs << rope.new_from ( _super.defined_attributes )
+	
+	attribs.add ( layout_attribute_definition.new ( :name, :string,
+							:description, "Símbolo",
+							:default_value, "simbologia_reubicacion_term",
+							:enum_method, :symbol_names ) )
+
+	attribs.add ( layout_attribute_definition.new ( :colour, :colour,
+							:description, "Cambiar color para el símbolo",
+							:default_value, _unset ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :angle, :float,
+							:description, "Ángulo",
+							:default_value, 0.0 ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :flip, :boolean,
+							:description, "Girar",
+							:default_value, _false ) ) 
+	
+	attribs.add ( layout_attribute_definition.new ( :mirror, :boolean,
+							:description, "Espejo",
+							:default_value, _false ) ) 
+	>> attribs
+
+_endmethod
+$
+c_simbologia_plano_reubicacion_terminales.define_attributes()
+$
+_pragma(classify_level=restricted)
+_method c_simbologia_plano_reubicacion_terminales.draw_content_on(window)
+## Objetivo:  Metodo redefinido de su padre para poder agregar dibujado de
+## los atributos del simbolo, el simbolo se toma de la ba se
+## datos de simbolos de planos, sino existe lostoma del style_view.
+## Parametros de entrada: window .- canvas del area de dibujo.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno
+## Descripcion de la modificacion: Dibujar los textos del
+## simbolo tomados de sus propiedades.
+
+	## Render contents of SELF on WINDOW
+	##
+
+
+	_self.outline_style << line_style.new(colour.called(:white) )
+	
+	
+	_local LoGpm  << gis_program_manager
+	
+        _local LoDsSimbolos <<LoGpm.databases[:sigc_style_view].default( LoGpm.style_view)
+	
+	_if _self.name _is _unset _orif
+	    _self.name.size _is 0
+	_then
+		_self.draw_incomplete ( window, _self.message(:select_a_symbol) )
+		_return 
+	_endif
+	
+	# We fake a gis_point_style, by getting a detached_record and
+	# realising that with an appropriate symbol_name and colour.
+
+	sym << LoDsSimbolos.collections[:sw_gis!gis_point_style ].new_detached_record ()
+
+	# .color is a real RGB thing, we must supply a float_vec[3] to
+	# override the default colour, which is stupid cause we already
+	# have a colour object. But anyway, we'll just have to do it here
+	# (and the float_vec must contain value ranging 0-100)
+	
+	col_vec << _unset 
+	_if _self.colour _isnt _unset
+	_then
+		col_vec << _self.colour.scaled_rgb_vector ( 100.0 )
+	_endif
+	
+	sym.symbol_name << _self.name
+	
+	sym.realise ( _unset, col_vec )
+
+	_if sym.actual_geoms _is _unset 
+	_then
+		str << _self.message(:unknown_symbol, _self.name)
+		_self.draw_incomplete ( window, str )
+		_return 
+	_endif
+	
+	angle << - _self.angle.default ( 0.0 ).degrees_to_radians
+
+	sym.draw_sample ( window, _self.bounds,
+			  :rotate, angle,
+			  :flipped?, _self.flip.default ( _false ),
+			  :mirror?, _self.mirror.default ( _false ) )
+	
+
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_simbologia_plano_reubicacion_terminales.symbol_names
+## Objetivo: Obtiene un arreglo con los nombres de los simbolos
+## Parametros de Salida: Ninguno
+## Regresa: arreglo de nombres de simbolos
+## Descripcion de la modificacion:  se toman los nombres de los
+## simbolos de la base de datos de simbolos de planos, sino
+## existe la base de datos de simbolos se toma de style_view.
+
+	LoGpm << gis_program_manager
+	
+        LdsEstilosSigc    <<  LoGpm.databases[:sigc_style_view]
+
+	sym_table << symbol_bundle_table.open ( LdsEstilosSigc.default( LoGpm.style_view ) ).symbol_names
+	
+	names << sorted_collection.new ()
+	
+	_for sym_name _over sym_table.fast_elements ()
+	_loop
+		names.add ( sym_name.write_string )
+	_endloop
+
+	>> names.as_simple_vector ()
+
+_endmethod
+$

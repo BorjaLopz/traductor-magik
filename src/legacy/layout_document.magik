@@ -1,0 +1,1404 @@
+_package sw
+$ 
+layout_document.define_shared_constant (
+                                          :categorias_plano,
+					  { 
+                                           :cobre,
+					   :canalizacion,
+                                           :rda,             # Red digital de acceso
+                                           :rof,             # Red óptica flexible
+                                           :zr_fo,           # Zonal/Rural FO
+                                           :tr_fo            # Troncal FO
+					  }, 
+                                          :public )
+$
+layout_document.define_shared_constant (:planos_central,
+					rope.new_with (:fosa_cables_fo,
+					               :division_dto_fo,
+					               :topologico_fo,
+					               :ashurado_fo,
+					               :itinerario_fo,
+					               :estudio_conjunto_fo
+					              ),
+					:public )
+$
+layout_document.define_shared_constant ( :tipos_plano_central,
+	                                {
+						:fosa_cables,
+						:division_distritos,
+						:ashurado,
+						:itinerario,
+						:estudio_conjunto,
+						:inventario_canalizacion,
+						:principales,
+						:construccion,
+						:bajantes,
+						:desmontaje_cd,
+						:diagrama_empalmes,
+						:ruta_cables	
+					},
+					:public )
+$
+layout_document.define_shared_constant(:tipos_plano,
+				property_list.new_with(
+				:proyecto_canalizacion,   {:canalizacion,:central,_false,_false},
+				:microcanalizacion,       {:canalizacion,:central,_false,_false},
+				:inventario_canalizacion, {:canalizacion,:central,_false,_false},	 
+				:desmontaje_cd,           {:canalizacion,:central,_false,_false},		
+				:ashurado,                {:cobre,:central,_false,_false},
+				:obra_civil,              {:cobre,:central,_false,_false},	
+				:division_distritos,      {:cobre,:central,_false,_false},	
+				:estudio_conjunto,        {:cobre,:central,_false,_false},	
+				:fosa_cables,             {:cobre,:ruta,_false,_false},	
+				:itinerario,              {:cobre,:central,_false,_false},	
+				:principales,             {:cobre,:ruta,_false,_true},	
+				:ruta_cables,             {:cobre,:ruta,_false,_false},
+				:ruta_cables_compa,       {:cobre,:ruta_compa,_false,_false},
+				:diagrama_empalmes,       {:cobre,:distrito,_false,_false},				
+				:construccion,            {:cobre,:distrito,_false,_false},	  	
+				:bajantes,                {:cobre,:distrito,_false,_false},	  	
+				:esquema_principal,       {:cobre,:central, _false,_false},
+				:fosa_cables_fo,          {:fibra,:ruta,_false,_false},				
+				:ruta_cables_fo,          {:fibra,:ruta,_false,_false},				
+				:detalles_construccion,   {:fibra,:central,_false,_false},
+				:esquema_principales,     {:fibra,:central,_false,_false},
+				:esquema_tba,             {:fibra,:central,_false,_false},
+				:esquema_rda,             {:fibra,:central,_false,_false},
+				:esquema_rof,             {:fibra,:central,_false,_false},
+				:esquema_troncal,         {:fibra,:central,_false,_false},
+				:ruta_cables_fo_lar,      {:fibra,:central,_false,_false},
+				:ruta_cables_fo_lar_gral, {:fibra,:central,_false,_false},
+				:montaje_tba,             {:fibra,:distrito,_false,_false},
+				:construccion_fo,         {:fibra,:distrito,_false,_false},
+				:diagrama_empalmes_fo,    {:fibra,:distrito,_false,_false}),
+				_false )
+$
+layout_document.define_shared_constant(:codigo_1,
+	property_list.new_with (:rda,                              3,
+				:rof,                              4,
+				:troncal,                          6,
+				:trk,                              6,
+				"tkl carrier ethernet".as_symbol(),6,
+				:coaxial,                          6,
+				:troncal_suburbano,                6,
+				:tba,                              9,
+				:ba,                               9,
+				:fttb,                             9,
+				:falc,                             9),
+	:public )
+$
+##clasificados por tipo de plano.
+layout_document.define_shared_constant (:codigo_7_al_10,
+					property_list.new_with (:fosa_cables_fo,       "FOSA",
+						                :división_distritos,   "DIVI",
+                                                                :topologico,           "TOPO",
+					                        :ashurado,             "ASHU",
+					                        :itinerario,           "ITIN",
+					                        :estudio_conjunto,     "CONJ",
+								:esquema_principales,  "____",
+								:ruta_cables,          "____", #enlaces/tba/falc (R/T)
+								:ruta_cables_fo,       "____", #enlaces/tba/falc (R/T)
+								:detalles_central,     "____", #enlaces/tba/falc (R/T)
+								:detalles_construccion,"____", #enlaces/tba/falc (R/T)
+								:detalles_central_fo,  "____" #enlaces/tba/falc (R/T) 
+								),
+					:public )
+$
+##clasificados por tipo de plano.
+layout_document.define_shared_constant (:codigo_11,
+					property_list.new_with (:construccion,         "C",  #secundaria
+								:construccion_fo,      "C",  #secundaria
+								:bajantes,             "B",  #secundaria
+								:diagrama_empalmes_fo, "E",  #secundaria
+								:detalles_construccion,"D",  #secundaria
+								:división_distritos,   "S",  #central
+                                                                :topologico,           "L",  #central
+					                        :ashurado,             "R",  #central
+					                        :itinerario,           "E",  #central
+					                        :estudio_conjunto,     "U",  #central
+								:fosa_cables,          "C",  #central
+								:fosa_cables_fo,       "C",  #central
+								:ruta_cables,          "R",  #enlaces/tba/falc (R/T)
+								:ruta_cables_fo,       "R",  #enlaces/tba/falc (R/T) 
+								:detalles_central,     "D",  #enlaces/tba/falc (R/T) 
+								:esquema_principales,  "E"  #enlaces/tba/falc (R/T) 			
+						      ),
+					:public )
+$
+layout_document.define_shared_constant (:letra_alternativa,{"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T"},:public)
+$
+layout_document.define_shared_variable(:oe_lo, _unset , :public)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method layout_document.identificador_de_plano(diseno, _optional tipo_plano)
+	## 
+	##
+
+	_if  _self.tipos_plano[tipo_plano] _is _unset 
+	_then
+		_return "__"
+	_endif
+
+	
+	_if tipo_plano _is _unset 
+	_then
+		mh << message_handler.new (:layout_document)
+		tipo_plano << _self.get_attribute (mh.human_string (:user!_tipo_plano).as_symbol())	
+	_endif
+
+	tipo_plano << tipo_plano.default(:fibra).as_symbol()
+
+
+	##show(_self, :params,diseno, tipo_plano )
+	
+       _if tipo_plano _is  :ruta_cables_fo
+       _then
+	       tipo_plano << :ruta_cables
+       _endif
+       
+ 
+       _if _self.tipos_plano[tipo_plano][1] _is :cobre
+       _then
+	##       write(_self , :es_de_cobre)
+	       
+	       LoProyFTTByFALC? << _false
+	       
+	       _if diseno _isnt _unset 
+	       _then
+		       LoProyFTTByFALC? << (diseno.project.name.matches?("*FTTB*") _orif
+					    diseno.project.name.matches?("*FALC*"))
+	       _endif	
+
+	       _if LoProyFTTByFALC?
+	       _then
+		       id_plano << _self.user!_id_plano_fibra(tipo_plano,diseno)
+		       
+	       _else
+		       _if tipo_plano _is :ruta_cables_compa
+		       _then				
+			       id_plano << _self.user!_id_plano_compa(tipo_plano,diseno)
+		       _else
+			       id_plano << _self.user!_id_plano_cobre(tipo_plano,diseno)
+		       _endif		
+	       _endif
+	       
+       _elif _self.tipos_plano[tipo_plano][1] _is :canalizacion
+       _then
+	       id_plano << _self.user!_id_plano_canalizacion(tipo_plano,diseno)
+	       
+       _elif _self.tipos_plano[tipo_plano][1] _is :fibra
+       _then
+	  ##     write(_self , :es_fibra)
+	       
+	       _if diseno.tipo_proyecto.uppercase = "EXISTENTE"
+	       _then
+		       id_plano << _self.user!_id_plano_cobre(tipo_plano,diseno)		
+	       _else
+	##	       write(_self , :busca_id)
+		       id_plano << _self.user!_id_plano_fibra(tipo_plano,diseno)
+	       _endif
+	       
+       _elif _self.tipos_plano[tipo_plano][1] _is :ep
+       _then
+	       id_plano << _self.user!_id_plano_ep(tipo_plano,diseno)
+	       
+       _elif _self.tipos_plano[tipo_plano][1] _is :tba
+       _then
+	       id_plano << _self.user!_id_plano_ep(tipo_plano,diseno)
+       _endif
+       
+       _return id_plano
+       
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.user!_id_plano_fibra(tipo_plano,diseno)
+
+	##show(:params,_self , tipo_plano ,diseno)
+	
+	#ROF, RDA, BANDA ANCHA y LARGA DISTANCIA
+	#22 caracteres	
+	#9CCCCCTTTTtAAMMVHHHHPE     (CCCCC-->CTL o NCO) TTTT ->tipo
+	# plano  (DIVI,TOPO,ASHU,ITIN,CONJ,FOSA) t --> (S,L,R,E,U,C)
+	#
+	#El primer carácter debe ser el número 9, el cual significa que
+	# es un plano de Red de F.O. Banda Ancha 
+
+	#Los caracteres del 2 al 10 dependen del tipo de red
+	# 21=H -->	# central 21=J -->NCO
+	
+	#Los caracteres del 12 al 15 son la fecha de elaboración del
+	# plano,   siendo el 12 y 13 el año, y el 14 y 15 el mes
+	#La letra de la posición número 16 significa las diferentes
+	# versiones  del plano, y se pueden poner desde la A hasta la Z  (V)
+	
+	#Las posiciones 17 al 20 se refieren a la cantidad de hojas del
+	# plano;  siendo la 17 y 18 el número de hoja correspondiente
+	#y la 19 y 20 el total de hojas que forman el plano completo  (HHHH)
+
+	#La letra de la posición número 21 significa el Programa de
+	# Trabajo  al que pertenece el plano y,  obviamente, el proyecto
+
+        # La letra de la posición número 22 representa a la Empresa que
+        # elaboró el plano   (T- telmex,I-imtsa,K-kbtel,G-gsp, O-otros)
+
+	paf << smallworld_product.pni_application()
+	gen_planos<< paf.plugin(:gen_planos)	
+	
+        proyecto       << diseno.project
+        siglas_central << proyecto.user!_central.user!_central
+	#formatea nombre de central
+	nombre_ctl << _self.formatea_cadena_justifica(5 ,"_" , siglas_central, :izq)
+	anio           << date_now().year.write_string.slice(3,4)
+	mes            << _self.formatea_cadena_justifica(2,"0" ,  date_now().month_number.write_string, :der)
+	empresa        << gis_program_manager.authorisation_view.current_user.empresa
+	_if empresa.size > 0 
+	_then
+		empresa        << gis_program_manager.authorisation_view.current_user.empresa.slice(1,1).default("")	
+	_endif
+
+	tipo_plano_letra  <<   _self.codigo_11[tipo_plano]  #11
+	
+	programa       << diseno.project.user!_programa_tipo.slice(1,1).default("")
+
+	##show(nombre_ctl, anio, mes, empresa, tipo_plano_letra, programa)
+	
+        _if gen_planos.datos_ruta()  _isnt _unset _andif gen_planos.datos_ruta()[:oenlace] _isnt _unset 
+	_then
+		L_enlace << gen_planos.datos_ruta()[:oenlace]
+		tipo_enlace      <<  L_enlace.user!_tipo_de_enlace.lowercase.as_symbol()   
+		tipo_red         << _self.codigo_1[tipo_enlace].default(9).write_string            #1		
+	_endif 
+
+	_if diseno.tipo_diseno  _is :secundaria
+	_then
+		tipo_red         << _self.codigo_1[:otro].default(9).write_string                 #1
+		tipo_plano_dto    <<  diseno.user!_distrito_optico.user!_num_dto_optico           #7-10
+	_else
+		tipo_red         << _self.codigo_1[:otro].default(9).write_string                 #1
+		tipo_plano_dto   << _self.codigo_7_al_10[tipo_plano].default("____").write_string    #7-10		
+	_endif
+
+	nombre_plano << property_list.new() 
+	nombre_plano[:tipo_red]         <<  tipo_red               #1 
+	nombre_plano[:name_ctl_nco]     <<  nombre_ctl              #2-6
+	nombre_plano[:tipo_plano_dto]   <<  tipo_plano_dto         #7-10
+	nombre_plano[:tipo_plano_letra] <<  tipo_plano_letra       #11
+	nombre_plano[:mes_anio]         <<  anio + mes             #12,15
+	nombre_plano[:version]          <<  "A"                     #16 
+	nombre_plano[:hoja_actual]      <<  "01"                    #17,18
+	nombre_plano[:hoja_total]       <<  "01"                   #19,20
+	nombre_plano[:programa]         <<  programa               #21  j-> Fibra a la casa H -> planta externa
+        nombre_plano[:empresa]           << empresa                #22
+
+
+
+	print(nombre_plano)
+	
+	id << ""
+
+        id << id +
+	      nombre_plano[:tipo_red] +
+	      nombre_plano[:name_ctl_nco] + 	      
+	      nombre_plano[:tipo_plano_dto] +
+	      nombre_plano[:tipo_plano_letra] +
+ 	      nombre_plano[:mes_anio] +
+	      nombre_plano[:version] +
+	      nombre_plano[:hoja_actual] +
+	      nombre_plano[:hoja_total] +
+	      nombre_plano[:programa] +
+	      nombre_plano[:empresa]	      
+
+	_return id
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.user!_guardar_plano()
+        #
+        # Guardar un plano.
+        #
+	# Directorio raíz
+	dir_planos << system.getenv ( "DIRECTORIO_PLANOS" )
+        dir_local_planos << system.pathname_from_components ("planos_sigc11", "c:"+%\ )
+
+        _if dir_planos _is _unset _andif dir_local_planos _is _unset
+        _then
+		condition.raise ( :user_error,
+				  :string,
+				  "Falta variable de entorno del directorio de almacenamiento de planos DIRECTORIO_PLANOS" )
+	_endif
+	
+	# Verificar tipo de plano
+        mh << message_handler.new (:layout_document)
+        tipo_plano << _self.get_attribute (mh.human_string (:user!_tipo_plano).as_symbol())
+	tipo_plano << tipo_plano.as_symbol()
+
+	#write(:tipo, tipo_plano)
+	
+        _if _self.tipos_plano[tipo_plano] _isnt _unset
+        _then
+		# Guardar información sobre el plano en la tabla de planos.
+		dav << swg_dsn_admin_engine.get_admin_view()
+                plano_tab << dav.collections[:user!_plano]
+		plano << plano_tab.new_detached_record()		
+		# Verificar diseño activo
+		_if (diseno << swg_dsn_admin_engine.active_scheme) _isnt _unset
+		_then
+			id_plano << _self.identificador_de_plano(diseno,tipo_plano)
+
+			# phernan 14/07/2006 Se le agrega un parametro más al metodo
+			# user!_directorio_planos para que guarde el layout document
+			proyecto << diseno.project
+			dir_planos << proyecto.user!_directorio_planos ( dir_planos, _true, _self )
+                        dir_local_planos << proyecto.user!_directorio_planos ( dir_local_planos, _true, _self )
+
+			plano.swg_dsn_project << diseno.project
+			plano.swg_dsn_scheme  << diseno
+			plano.user!_distrito << diseno.user!_distrito
+			##oei                   << _self.user!_oei
+
+			
+		_else
+		        condition.raise ( :user_error, :string, "No se puede guardar el plano si no se encuentra en un trabajo activo")
+		_endif
+
+      	        plano.id_plano        << id_plano
+		plano.tipo_plano      << tipo_plano
+		plano.directorio      << dir_planos
+		plano.actualizado?  << _true
+
+	_else
+		condition.raise ( :user_error, :string, "Tipo de plano desconocido: " + tipo_plano )
+	_endif
+
+	# (06/11/15 ahernan) : validar que el registro aun no existe al efectuar la transaccion.
+	swg_dsn_admin_engine.perform_short_transaction(_unset, :|do_insert_or_update()|, { plano })
+
+	#Genera el XML en las ubicaciones 'dir_planos' y
+	#'dir_local_planos' con el nombre generado en 'id_plano'
+        arch_cache  << system.pathname_from_components(id_plano+".xml", dir_planos)
+	arch_local  << system.pathname_from_components(id_plano+".xml", dir_local_planos)
+	_self.save_as_xml(arch_cache)
+	_self.save_as_xml(arch_local)
+
+	#	lineacmd << cmd + " " + dir_planos + " " + dir_srvapl
+	#	system.do_command(lineacmd)
+
+	#rhernan 03/07/06 se agrego para enviar un mensaje al usuario y vea la
+	# ruta en la cual su archivo fue guardado
+	condition.raise ( :warning, :string, "La ubicación del archivo generado es: "+arch_cache)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.llena_del_11_al_21(diseno _optional EP)
+	## Generico del 12 al 22
+	id << ""
+        # Caracteres 12 al 15 (Año y mes)
+        fecha << date_time.now()
+        str << internal_text_output_stream.new()
+        fecha.format_to ( str, "#y#m" )
+        id +<< str.string
+	
+	_if diseno _isnt _unset 
+	_then
+		proyecto << diseno.project
+		
+		# Alternativa. Eliminar los '.'.
+		(nom_diseno,alt_diseno) << diseno.nombre_y_alternativo()
+
+		_if alt_diseno _isnt _unset
+		_then
+			# (16/05/30 bautistaja) : Modified. Obtenemos el ultimo numero
+			# del alternativo para contemplar el caso de que sea de 2
+			# digitos a la hora de asignar la letra para las diferentes  alternativas de cada diseño.
+			alter << alt_diseno.split_by(".").last
+
+			_loop
+				ind << alt_diseno.index_of ( %.)
+				_if ind _is _unset
+				_then
+					_leave
+				_else
+					alt_diseno <<
+						alt_diseno.slice ( 1, ind-1 ) +
+						alt_diseno.slice_to_end ( ind+1 )
+				_endif
+			_endloop 
+		_else
+			alt_diseno << ""
+		_endif
+
+		#Se le va a gregar una letra entre A  y Z para las diferentes
+	        # alternativas de cada diseño.
+		_if alt_diseno.write_string ~= ""
+		_then
+			_for indi, letra  _over _self.letra_alternativa.fast_keys_and_elements()
+			_loop
+				_if diseno.tipo_diseno _is:canalizacion
+				_then
+					alter << alt_diseno.write_string.first
+					_if indi.write_string = alter.write_string
+					_then
+						
+						alt_diseno << letra
+						_leave
+					_endif
+				_else
+					# (16/05/30 bautistaja) : Modified. Obtenemos alter antes de
+					# quitar los puntos al alternativo 1.1.10, para obtener el
+					# valor correcto (caso de que sean 2 digitos, solo se estaba
+					# obteniendo uno)
+					# alter << alt_diseno.write_string.last
+					_if indi.write_string = alter.write_string
+					_then
+					
+						alt_diseno << letra
+						_leave
+					_endif
+				_endif
+				
+			_endloop
+	       _endif
+
+               _if alt_diseno.as_number() _isnt _unset 
+	       _then
+		       
+		       _if _self.name = "Plano fosa de cables y distribuidor general"
+		       _then
+			       alt_diseno << "F"
+		       _endif
+	       _else
+		       # (12/03/22 jtlelo) : se asigna por default la letra A
+		       alt_diseno << "A"
+	       _endif
+
+               id +<< alt_diseno
+	       
+	       # Programa - se toma el primer caracter del atributo user!_programa.
+	       programa << proyecto.user!_programa
+	       _if programa _is _unset
+	       _then
+		      C21 <<  "_"		      
+		       #condition.raise ( :user_error, :string, "No está informado el programa de trabajo del proyecto" )
+               _else 
+               
+		       C21 << programa.slice(1,1)
+
+               _endif
+	       
+               # Empresa que creó el plano se toma del usuario que creó el proyecto.
+	       # (17/11/07 bernardoa) : El nombre del creador se toma del
+	       # diseno en lugar del proyecto
+	       #creador_proyecto << proyecto.erfasst_von
+	       creador_proyecto << diseno.owner
+	       # (17/11/07 bernardoa) : Se modifica la busqueda de la empresa
+	       # para considerar a los usuarios que han sido dados de baja
+               av           << gis_program_manager.authorisation_view
+	       LoTablaUsers << av.collection(:auth!user)
+	       utab         << av.collections[:user!_usuarios_baja]	       
+	       pred         << predicate.new( :name, :eq, creador_proyecto )
+	       datos_creador_proyecto << LoTablaUsers.select(pred).an_element()
+	              
+	       _if datos_creador_proyecto _isnt _unset
+	       _then
+		       empresa << datos_creador_proyecto.empresa
+	       _else
+		       # (17/11/07 bernardoa) : En el escenario que no se encuentre el
+		       # usuario activo, buscamos la empresa a traves de la tabla de
+		       # baja de usuarios
+		       #empresa << ""
+		       datos_creador_proyecto << utab.select(pred).an_element()
+		       _if datos_creador_proyecto _isnt _unset
+		       _then
+			       empresa << datos_creador_proyecto.user!_empresa
+		       _else
+			       # Si aun asi no se encuentra la empresa, la definimos como vacia
+			       empresa << ""
+		       _endif
+	       _endif
+	_else 
+		id +<< EP[2].user!_secuencia.write_string
+		C21 << "_"
+		empresa << EP[2].user!_empresa_q_genera.default("")
+	_endif
+
+        #Pagina Actual 
+	current_page << _self.page_number()
+  
+       _if current_page < 10 
+       _then
+	       page_number << "0" + current_page.write_string
+       _else
+	       page_number << current_page.write_string
+       _endif
+  
+       id +<<page_number
+
+        # Número de páginas
+        n_pag << _self.number_of_pages()
+        _if n_pag < 10
+        _then 
+        	id +<< "0" + n_pag.write_string
+        _else
+        	id +<< n_pag.write_string
+        _endif
+ 
+        id +<< C21
+ 
+        _if empresa = "TELMEX"
+        _then
+        	id +<< "T"
+        _elif empresa = "IMTSA"
+        _then
+        	id +<< "I"
+        _elif empresa = "KBTEL"
+        _then
+        	id +<< "K"
+        _elif empresa = "GSP"
+        _then
+        	id +<< "G"
+        _else
+        	id +<< "O"
+        _endif
+
+	_return id
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.llena_siglas_central(siglas_central)
+	## Llena de acuerdo ala norma los caracteres 2, 3, 4, 5 y 6 con las
+	## siglas de la central
+	## 
+
+        # Rellenar con '_' a la derecha.
+        l << siglas_central.size
+        _if l < 5
+        _then
+        	siglas_central +<< char16_vector.new(5-l).fill_with(%_)
+        _endif
+	
+	_return siglas_central
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.obten_caracter_16(id)
+
+	dir_planos << system.getenv ( "DIRECTORIO_PLANOS" )
+	
+	_if (diseno << swg_dsn_admin_engine.active_scheme) _isnt _unset
+	_then
+		proyecto << diseno.project
+		dir_planos << proyecto.user!_directorio_planos ( dir_planos, _true, _self )
+		nomPlano << dir_planos+%\+id+".xml"
+		_if system.file_exists?(nomPlano)
+		_then
+			
+			cad1 << id.split_long_line(16-1)[1]
+			cad2 << id.split_long_line(16)[2]
+			ltr << id[16]
+			_for lt _over _self.letra_alternativa.fast_elements()
+			_loop
+
+				_if ltr.write_string <> lt
+				_then
+					Nvoid << cad1+lt+cad2
+					nomPlano << dir_planos+%\+Nvoid+".xml"
+					_if _not system.file_exists?(nomPlano)
+					_then
+						_leave
+					_else
+						id << cad1+lt+cad2
+					_endif
+					
+				_endif
+			_endloop
+		_else
+			_return id
+		_endif
+
+		pregunta <<  "Actualmente existe un plano guardado con el nombre: "+id+".xml"+
+                                     " ¿Desea cambiar el nombre ó consevar el actual?"
+		resp << _self.map_manager.show_question("Cambiar", "Conservar",pregunta)
+                _if resp _is _false  
+	       _then
+		       _return id
+		_else
+			_return Nvoid
+	        _endif
+
+	_endif 
+	_return id
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.obtener_siglas_dto(LoDto)
+	## Obtiene las siglas de la central a la cual esta asociado el
+	## distrito
+	## 
+
+	_if LoDto.source_collection.name _is :user!_distrito_optico 
+	_then
+		SiglasCtl << LoDto.user!_siglas_central
+		SiglasCtl +<< "__"
+	_else
+		SiglasCtl << LoDto.central_txm.user!_central
+		SiglasCtl +<< "__"
+	_endif
+
+	_return SiglasCtl
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.tipo_enlace_fo(diseno)
+	## 
+	## 
+         paf <<  smallworld_product.pni_application()           
+         gen_planos<< paf.plugin(:gen_planos)
+	 L_enlaces << gen_planos.datos_ruta()[:oenlace]
+
+	 tipo_enlace << ""
+	enlace << _unset
+	
+	_if l_enlaces  _isnt _unset 
+	_then		
+		_if l_enlaces _isnt _unset
+		_then
+			tipo_enlace << l_enlaces.user!_tipo_de_enlace.default("").lowercase.as_symbol()
+		_endif
+
+		_if tipo_enlace = "troncal suburbano"
+		_then
+			tipo_enlace << :troncal_suburbano
+		_endif
+	
+	_elif diseno.project.name.matches?("FTTH*")
+	_then 
+		enlace << _unset 
+		tipo_enlace << :falc
+	_elif diseno.project.name.matches?("BA*")
+	_then
+		enlace << _unset 
+		tipo_enlace << :ba	
+	_endif
+	
+	_return tipo_enlace, enlace
+	
+_endmethod
+$
+_method layout_document.user!_directorio_planos(EstPob, directorio)
+
+#	directorio << system.getenv ( "DIRECTORIO_PLANOS" )
+#	_if directorio _is _unset
+#	_then
+#		condition.raise ( :user_error, :string,"Falta la variable de entorno DIRECTORIO_PLANOS")
+#	_endif		
+
+	directorio << system.pathname_from_components ("ESTUDIO DE POBLACION", directorio )
+
+	# crea carpeta poblacion
+	directorio << system.pathname_from_components (Estpob[1].user!_nombre_poblacion,
+						       directorio )
+	#crea carpeta año
+	directorio << system.pathname_from_components (Estpob[1].user!_anyo,
+						       directorio )
+
+        # crea carpeta nombre del estudio
+	directorio << system.pathname_from_components (Estpob[1].user!_nombre_estudio_pob,
+						       directorio )
+
+	system.user!_checa_directorio? (directorio,_true)
+	
+	_return directorio
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.user!_id_plano_canalizacion(tipo_plano,diseno)
+
+	## Generar el nombre de un plano de canalizacion
+	
+	# Primer Caracter. / Obtener tramo a partir de la OE (cobre) o OE_Local (FO)
+
+
+	rutasCTRL << _unset 
+	
+	Proyecto << diseno.project
+        LoTipoProy << Proyecto.job_type
+	
+#	LoProyectoFTTB? << LoProyecto.name.matches?("*FTTB*")
+	_if LoTipoProy = "Cobre"
+	_then
+		id << "1"
+		LoOE << _self.user!_oe 
+	_else
+		(tipo_enlace, enlace) << _self.tipo_enlace_fo(diseno)
+		id << _self.codigo_1_enlaces[tipo_enlace][1].write_string
+		LoOE << _self.oe_lo
+	_endif
+	 
+	_if  LoOE  _isnt _unset
+	_then
+  	   LoTramo << LoOE.user!_tramo_cobre		 
+	_endif 
+	
+	# Caracteres del 2 al 6 siglas de central
+	_if id <> "9" 
+	_then		
+		Ctrl << Proyecto.user!_central
+		
+		SiglasCentral << Ctrl.user!_central
+				
+		id +<< _self.llena_siglas_central(SiglasCentral)
+		
+	_elif LoTramo _isnt _unset
+	_then 
+		ColDists << gis_program_manager.cached_dataset(:landbase).collection(:user!_distrito)
+		Distrito << ColDists.select(predicate.eq(:user!_distrito,LoTramo.user!_det_t_can.distritos))
+		_if Distrito.size = 1
+		_then
+			SiglasCentral << Distrito.an_element().user!_central
+			ColCtrls << mit_manager.modelit_dataset.collection(:building)
+			Ctrl << ColCtrls.select(predicate.eq(:user!_siglas,SiglasCentral)) 
+			
+			_if Ctrl.size = 1
+			_then
+				SiglasCentral << Ctrl.an_element().user!_siglas
+								
+				id +<< _self.llena_siglas_central(SiglasCentral)
+			_else
+				id +<< "XXXXX"
+			_endif
+		_else
+			_if diseno.project.name.matches?("*FALC*")
+			_then
+				SiglasCentral << diseno.project.siglas_central
+				ColCtrls << mit_manager.modelit_dataset.collection(:building)
+				Ctrl << ColCtrls.select(predicate.eq(:user!_siglas,SiglasCentral))
+				id +<< _self.llena_siglas_central(SiglasCentral)
+				ColCtrls << mit_manager.modelit_dataset.collection(:building)
+				
+##				_if  Ctrl.an_element().responds_to?(:user!_ruta_cos)
+##				_then
+##				      rutasCTRL << Ctrl.an_element().user!_ruta_cos
+##				_endif			
+			_else
+				id +<< "XXXXX"
+			_endif			
+		_endif
+	_endif
+
+	
+	# Caracteres 7 y 8 Ruta de Canalización
+
+	_if rutasCTRL _isnt _unset _andif
+	    rutasCTRL.size <> 0
+	_then
+		geomTramo << LoTramo.user!_det_t_can.user!_ruta_geo
+		Ruta << rutasCTRL.select(predicate.interacts(:user!_limite,geomTramo))
+		_if Ruta.size = 1
+		_then
+			NumRuta << Ruta.an_element().user!_numero.default("").write_string
+		        id +<< _self.valida_2cifras(NumRuta)
+		_else
+			id +<< "XX"
+		_endif
+	_else
+		id +<< "XX"
+	_endif
+
+      _if LoTramo _isnt _unset 
+      _then    
+	# Caracteres 9 y 10 número de Tramo de Canalización
+	NumTramo << LoTramo.user!_numero_tramo.default("").write_string
+        id +<< _self.valida_2cifras(NumTramo)
+
+	# Caracter 11
+	_if tipo_plano _is :proyecto_canalizacion
+       	_then
+		id +<< "P"
+	_elif tipo_plano _is :desmontaje_cd
+        _then
+		id +<<"D"
+	_elif tipo_plano _is :inventario_canalizacion
+	_then
+		id +<< "V"
+	_endif 	
+      _endif         
+	
+      id +<< _self.llena_del_11_al_21(diseno)
+      _return id	   
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.user!_id_plano_cobre( tipo_plano, diseno )
+        # Generar el nombre de un plano de cobre.
+
+	# Primer Caracter.
+        id << "1"
+
+	# Caracteres del 2 al 6 siglas de central
+        proyecto << diseno.project
+        siglas_central << proyecto.user!_central.user!_central
+	id +<< _self.llena_siglas_central(siglas_central)
+
+	# Caracteres del 5/6 en adelante hast el 10/11
+	div_geo << _self.tipos_plano[tipo_plano][2]
+	
+        _if div_geo _is :central # Plano a nivel de central
+        _then
+        	_if tipo_plano _is :division_distritos
+        	_then
+        		id +<< "DIVIS"
+        	_elif tipo_plano _is :ashurado
+        	_then
+        		id +<< "ASHUR"
+        	_elif tipo_plano _is :itinerario
+        	_then
+        		id +<< "ITINE"
+        	_elif tipo_plano _is :estudio_conjunto
+        	_then
+        		id +<< "CONJU"
+		_elif tipo_plano _is :inventario_canalizacion
+        	_then
+        		id +<< "RC"
+        	_endif
+        _elif div_geo _is :distrito #Planos a nivel distrito
+        _then
+		#diseno << swg_dsn_admin_engine.active_scheme
+		#_if diseno _isnt _unset
+		#_then
+			NumDist << diseno.name.write_string.slice(4,7)
+		#_endif
+		
+        	_if tipo_plano _is :construccion
+        	_then	
+        		id +<< NumDist.write_string + "C"
+		_elif tipo_plano _is :bajantes
+        	_then
+			id +<< NumDist.write_string + "B"
+		_elif tipo_plano _is :diagrama_empalmes
+        	_then
+			id +<< NumDist.write_string + "E"
+        	_endif
+	_elif  div_geo _is :ruta #Obtener numero de ruta
+	_then
+		opb << smallworld_product.pni_application().plugin(:gen_planos).opb_seleccionada
+		_if opb _isnt _unset 
+		_then
+			LoNumRuta << opb.ruta.user!_numero
+			_if LoNumRuta < 10
+			_then
+				LoNumruta << "0" + LoNumRuta.write_string
+			_endif
+		_else
+			LoNumruta << ""
+		_endif
+		
+		#planos a nivel ruta (principales)
+		_if tipo_plano _is :ruta_cables
+        	_then
+			id +<<"RP"+LoNumruta+"R"
+			
+        	_elif tipo_plano _is :fosa_cables
+        	_then
+			id+<<"RP"+LoNumruta+"F"
+		_elif tipo_plano _is :principales
+		_then
+			id+<<"RP"+LoNumruta+"E"
+		_endif
+	_endif 
+
+	id +<< _self.llena_del_11_al_21(diseno)
+	# (12/03/22 jtlelo) : se verifica la version del plano con el
+	# caracter 16
+
+	id << _self.obten_caracter_16(id)
+        _return id
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.user!_id_plano_compa( tipo_plano, diseno )
+	# INICIO DEL CAMBIO
+	# (17/07/19 bernardoa) : 
+	# Este metodo pretende generar el nombre de archivo para el
+	# plano de comparticion centralizado
+	# FIN DEL CAMBIO
+	
+	_local LoModuloActivo? << _false
+	_local LoApp << smallworld_product.pni_application()
+	_local LoSolicitudActual << _unset
+	_local LoId << ""
+	_local LoIdDiseno
+	_local LoBitacoraDisenos
+	_local LoBitacoraDiseno
+	_local LoIdConcesionario
+	_local LoTipoSolicitud	
+	
+	# (17/07/11 bernardoa) : Validamos que el modulo de
+	# comparticion este activado
+	LoPlugin << LoApp.plugin(:admin_solicitud)
+	
+	# Identificamos la presencia del plugin admin_solicitud
+	_if LoPlugin _isnt _unset
+	_then
+		# Identificamos si el modulo esta activo
+		LoModuloActivo? << LoPlugin.dialogs[:admin_solicitud_gui] _isnt _unset
+		# Si el modulo esta activo 
+		_if LoModuloActivo?
+		_then
+			# Validamos la presencia del engine del plugin de comparticion
+			LoEngine << LoPlugin.engine
+			_if LoEngine _is _unset 
+			_then
+				condition.raise(:user_error, :string, LoPlugin.message(:ld_engine_compa_vacio))
+			_endif
+
+			# Validamos la funcionalidad de la base de datos
+			LoBD << LoEngine.dbcomp_infra
+			# Intentamos hacer un commit para validar la presencia de
+			# conexion MySQL
+			_try
+				LoBD.user.acp.commit()	
+			_when db_system_error
+				LoPlugin.reconectar_base_de_datos
+				LoApp.show_message("Se reanudara el proceso de centralizado, por favor, espera...")
+			_endtry			
+			
+			# Obtengo la informacion de la solicitud actual
+			LoSolicitudActual << LoPlugin.solicitud_actual
+			_if LoSolicitudActual _isnt _unset			    
+			_then
+				# Obtenemos el id de diseno
+				LoIdDiseno << LoSolicitudActual.scheme_id
+				_if LoIdDiseno _isnt _unset 
+				_then
+					# Convertimos a numero el id de diseno
+					LoIdDiseno        << LoIdDiseno.write_string.as_number()
+					# Obtenemos el registro de bitacora del diseno
+					LoBitacoraDisenos << gis_program_manager.cached_dataset(:design_admin).
+							     collection(:bitacora_disenios)
+					LoBitacoraDiseno  << LoBitacoraDisenos.at(LoIdDiseno)
+					# Si aun existe el registro de bitacora
+					_if LoBitacoraDiseno _isnt _unset 
+					_then
+						# Reformateamos el id de concesionario a 3 digitos con relleno
+						# de 0's
+						LoIdConcesionario << LoSolicitudActual.idconcesionario.write_string.
+								     space_pad(3, _true)
+						LoIdConcesionario << LoIdConcesionario.replace_all_instances_of(" ", "0")
+						# Identificamos el tipo de NIS, con base en sus elementos
+						LoStream          << LoBD.user.sql_select("select tipo_nis('" +
+											  LoSolicitudActual.num_solicitud_nis +
+											  "')")
+						LoTipoSolicitud   << LoStream.get()
+						LoTipoSolicitud   << LoTipoSolicitud.as_property_list.an_element()
+						LoStream.close()
+						# Construimos el nombre del archivo pdf
+						LoId << LoBitacoraDiseno.siglas_central     + %- +
+							LoSolicitudActual.num_solicitud_nis +
+							LoSolicitudActual.fase[1]           +
+							LoIdConcesionario                   +
+							LoTipoSolicitud							
+					_else
+						condition.raise(:user_error, :string, LoPlugin.message(:ld_bitacora_diseno_inexistente))
+					_endif
+				_else
+					condition.raise(:user_error, :string, LoPlugin.message(:ld_id_diseno_inexistente))
+				_endif
+			_else				
+				condition.raise(:user_error, :string, LoPlugin.message(:ld_solicitud_actual_inexistente))
+			_endif			
+		_else
+			condition.raise(:user_error, :string, LoPlugin.message(:ld_modulo_compa_inactivo))
+		_endif
+	_else
+		condition.raise(:user_error, :string, LoPlugin.message(:ld_no_existe_plugin_compa))
+	_endif
+	_return LoId
+	
+_endmethod
+$
+_method layout_document.user!_id_plano_ep(tipo_plano,ep)
+# Generar el nombre de un plano de estudio de población.
+#
+# En la cadena se concatena el nombre del plano, el usuario
+# creador, la fecha y la versión del EP (Letra asignada al alternativo).
+
+#	id << "plano_de_"
+#	id +<< _self.tipos_plano[tipo_plano][3] + "_"
+#	id +<< _self.tipos_plano[tipo_plano][2] + "_"
+#        id +<< ep[2].user!_generado_por + "_"
+#
+#	fecha << date_time.now()
+#        str << internal_text_output_stream.new()
+#        fecha.format_to(str,"#d#m#y")
+#
+#	id +<< str.string + "_"	
+#	id +<< ep[2].user!_secuencia.write_string
+#
+#	_return id.uppercase
+
+	# Primer Caracter.
+	id << "2"
+
+	# Caracteres del 2 al 9 nombre de la población
+        Poblacion << ep[1].user!_nombre_poblacion
+     
+        _if (long << Poblacion.size) < 8
+        _then
+        	Poblacion +<< char16_vector.new(8-long).fill_with(%_)
+	_elif long > 8
+	_then 
+		Poblacion << Poblacion.slice(1,8)
+        _endif
+	
+	id +<< Poblacion
+	
+	# Caracter 10 Tipo de plano de EP
+	id +<< _self.tipos_plano[tipo_plano][4]
+
+	# Caracteres del 11 al 21
+        id +<< _self.llena_del_11_al_21(_unset ,ep)
+
+        _return id
+	
+_endmethod 
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.formatea_cadena(longitud,caracter_inicial, valor_cadena )
+
+	
+	arreglo << simple_vector.new( longitud)
+	valor << ""
+	_for indice _over 1.upto(arreglo.size)
+	_loop
+		arreglo[indice] << caracter_inicial
+	_endloop
+	
+	cont <<  0
+	
+	_for indice _over (valor_cadena.size).downto(1)
+	_loop                                                  
+		arreglo[ arreglo.size - cont ] << valor_cadena[indice]
+		cont+<<1 
+	_endloop
+
+	_for  iterv  _over arreglo.fast_elements()
+	_loop
+		valor << valor + iterv
+	_endloop
+	
+	_return valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method layout_document.formatea_cadena_justifica(longitud,caracter_inicial, valor_cadena,justifica )
+
+	
+	arreglo << simple_vector.new( longitud)
+	valor << ""
+	_for indice _over 1.upto(arreglo.size)
+	_loop
+		arreglo[indice] << caracter_inicial
+	_endloop
+	
+	cont <<  0
+
+	_if justifica _is :der
+	_then
+		_for indice _over (valor_cadena.size).downto(1)
+		_loop                                                  
+			arreglo[ arreglo.size - cont ] << valor_cadena[indice]
+			cont+<<1 
+		_endloop
+		
+	_elif justifica _is :izq
+	_then
+		_for indice _over 1.upto( valor_cadena.size )
+		_loop
+			cont+<<1 
+			arreglo[cont] << valor_cadena[indice]
+			
+		_endloop
+	_endif
+	
+	
+	
+	
+	_for  iterv  _over arreglo.fast_elements()
+	_loop
+		valor << valor + iterv
+	_endloop
+	
+	_return valor
+	
+_endmethod
+$
+
+
+_method layout_document.user!_oe			    
+        #
+        # Obtener mi oe.
+        #
+        oei << _self.user!_oei
+        mh << message_handler ( :layout_document )
+        oe << _self.get_attribute (
+        	mh.human_string (:user!_oe).as_symbol() )
+        _if oe _is _unset
+        _then
+        	_return _unset
+        _endif 
+        pred << predicate.new ( :user!_valor_oe, :eq, oe )
+        oe << oei.user!_oes.select(pred).an_element()
+        _return oe
+_endmethod
+$
+_method layout_document.user!_oe << oe
+        #
+        # Asignar oe
+        # Steve Hall (Ten Sails Consulting) 15/03/06
+        #
+        _self.user!_oei << oe.user!_oei
+        mh << message_handler ( :layout_document )
+        _self.set_attribute (
+        	mh.human_string (:user!_oe).as_symbol(),
+        	oe.user!_valor_oe )
+_endmethod
+$
+_pragma(classify_level=basic)
+_method layout_document.user!_oe_local << oe
+        #
+        # Asignar oe_local
+        # colivera 27/07/09
+        #
+	_self.oe_lo << oe
+        _self.user!_oei_local << oe.user!_oei_local
+        mh << message_handler ( :layout_document )
+        _self.set_attribute (
+        	mh.human_string (:user!_oe).as_symbol(),
+        	oe.user!_num_oe)  #user!_valor_oe )
+_endmethod
+$
+_method layout_document.user!_oei			    
+        #
+        # Obtener mi oei.
+        #
+#        proyecto << _self.user!_proyecto
+#        mh << message_handler ( :layout_document )
+#        opb << _self.get_attribute (
+#        	mh.human_string (:user!_opb).as_symbol() )
+#        _if opb _is _unset
+#        _then
+#        	_return _unset
+#        _endif 
+#        pred << predicate.new ( :user!_valor_opb, :eq, opb )
+#        opb << proyecto.user!_opbs.select(pred).an_element()
+#        oei << _self.get_attribute (
+#        	mh.human_string (:user!_oei).as_symbol() )
+#        pred << predicate.new ( :user!_valor_oei, :eq, oei )
+#        oei << opb.user!_oeis.select(pred).an_element()
+	oei << swg_dsn_admin_engine.active_design.user!_oe_locals.an_element().user!_oei_local
+        _return oei
+_endmethod
+$
+_method layout_document.user!_oei << oei
+        #
+        # Asignar oei
+        # Steve Hall (Ten Sails Consulting) 13/03/06
+        #
+
+	_if oei _is _unset 
+	_then
+		_return
+	_endif 
+		
+        _self.user!_proyecto << oei.user!_opb.swg_dsn_project
+        #
+        # Asignar ruta, opb, y oei.
+        #
+        opb << oei.user!_opb
+        v << mit_manager.modelit_dataset 
+        ruta_tab << v.collections[:user!_ruta_co]
+        ruta << ruta_tab.at ( opb.id_ruta )
+        mh << message_handler.new ( :layout_document )
+        _self.set_attribute (
+        	mh.human_string (:user!_ruta).as_symbol(),
+        	ruta.user!_numero )
+        _self.set_attribute (
+        	mh.human_string (:user!_opb).as_symbol(),
+        	opb.user!_valor_opb )
+        _self.set_attribute (
+        	mh.human_string (:user!_oei).as_symbol(),
+        	oei.user!_valor_oei )
+
+
+_endmethod
+$
+_pragma(classify_level=basic)
+_method layout_document.user!_oei_local << oei
+        #
+        # Asignar oei_local
+        # colivera 27/07/09
+        #
+        _self.user!_proyecto << oei.user!_op_local.swg_dsn_project
+
+_endmethod
+$
+_method layout_document.user!_proyecto
+        #
+        # Obtener mi proyecto.
+        #
+        mh << message_handler ( :layout_document )
+        central << _self.get_attribute (
+        	mh.human_string (:user!_central).as_symbol() )
+        lv << gis_program_manager.cached_dataset(:landbase)
+        tab_lim_central << lv.collections[:user!_central]
+        pred << predicate.new ( :user!_central, :eq, central )
+        lim_central << tab_lim_central.select(pred).an_element()
+	
+        
+        pred << predicate.new ( :name, :eq, proyecto )
+	#VALIDA QUE EXISTA UN PROYECTO. (PHERNAN) 06/07/2006
+	
+	proyecto << _self.get_attribute (mh.human_string (:user!_proyecto).as_symbol() )
+
+	_if proyecto.size > 0
+	_then
+		proyecto << lim_central.swg_dsn_projects.select(pred).an_element()
+	_endif
+       
+        _return proyecto 
+_endmethod
+$
+_method layout_document.user!_proyecto << proyecto
+        #
+        # Asignar atributos de central y proyecto.
+        # Steve Hall (Ten Sails Consulting) 13/03/06
+        #
+        mh << message_handler.new ( :layout_document )
+        central << proyecto.user!_central.user!_central
+        _self.set_attribute (
+        	mh.human_string (:user!_central).as_symbol(),
+        	central )
+        _self.set_attribute (
+        	mh.human_string (:user!_proyecto).as_symbol(),
+        	proyecto.name )
+_endmethod 
+$
+_method layout_document.user!_tipo_plano
+        #
+        # Devolver tipo de plano.
+        #
+        mh << message_handler ( :layout_document )
+        _return _self.get_attribute ( mh.human_string (:user!_tipo_plano).as_symbol() )
+_endmethod
+$
+_method layout_document.user!_tipo_plano << tipo
+        #
+        # Asignar el tipo de plano al layout_document,
+        # checando que el tipo diseño es apropriado.
+        #
+        diseno << swg_dsn_admin_engine.active_scheme
+	datos_tipo << _self.tipos_plano[tipo.as_symbol()]
+        EstPob << smallworld_product.pni_application().databus.request_data(:estudio_poblacion)
+	
+        _if datos_tipo _is _unset
+        _then
+        	condition.raise ( :user_error, :string,
+		"Tipo de plano desconocido: " + tipo )
+        _endif
+	
+	ok? << _false
+
+	div_geo << datos_tipo[2]
+	
+        _if diseno _isnt _unset 
+        _then
+		
+		tipo_diseno << diseno.tipo_diseno	
+        
+		_if div_geo _is :central
+		_then
+			ok? << tipo_diseno _is :canalizacion _orif
+		       tipo_diseno _is :combinado _orif
+		       tipo_diseno _is :principales _orif		       
+		       tipo_diseno _is :captura_red_existente _orif
+		       tipo_diseno _is :inventario_red_existente _orif 
+		       tipo_diseno _is :enlace _orif 
+		       tipo_diseno _is :trabajo _orif			      
+			tipo_diseno _is :secundaria  
+			
+		_elif div_geo _is :ruta
+		_then 
+			ok? << tipo_diseno _is :principales _orif
+        	       tipo_diseno _is :combinado _orif
+        	       tipo_diseno _is :oei _orif
+		       tipo_diseno _is :captura_red_existente _orif
+		       tipo_diseno _is :inventario_red_existente _orif
+		       tipo_diseno _is :canalizacion
+
+		_elif div_geo _is :ruta_compa
+		_then 
+			ok? << tipo_diseno _is :principales _orif
+			       tipo_diseno _is :combinado _orif
+			       tipo_diseno _is :oei _orif
+			       tipo_diseno _is :captura_red_existente _orif
+			       tipo_diseno _is :inventario_red_existente _orif
+			       tipo_diseno _is :canalizacion		
+
+				
+		_elif div_geo _is :distrito
+		_then
+			ok? << tipo_diseno _is :secundaria _orif
+        	       tipo_diseno _is :combinado _orif
+        	       tipo_diseno _is :oei 		
+		_endif
+		
+        _elif (EstPob _isnt _unset) _andif
+	      EstPob.an_element() _isnt _unset 
+	_then
+		ok? << _true 
+	_else
+		_if div_geo _is :ruta_compa
+		_then
+			ok? << _true
+		_else
+			condition.raise ( :user_error, :string,"Ningún diseño está activo" )			
+		_endif
+        _endif
+
+        _if ok?
+        _then 
+        	mh << message_handler ( :layout_document )
+        	_self.set_attribute ( mh.human_string (:user!_tipo_plano).as_symbol(), tipo )
+        _else
+        	condition.raise ( :user_error, :string, "Tipo de diseño incorrecto para tipo de plano" )
+        _endif
+	
+_endmethod	
+$
+_method layout_document.valida_2cifras(LoNumero)			    
+        # Ceros a la izquierda para números de tramos y rutas de 1 cifra
+        # retornar el Número.
+
+	_if LoNumero <> "" _orif LoNumero.size > 2
+	_then
+		_if  LoNumero.size < 2
+		_then
+			LoNumero << "0" + LoNumero
+		_endif
+	_else 
+		LoNumero << "XX"
+	_endif
+	
+        _return LoNumero
+	
+_endmethod
+$

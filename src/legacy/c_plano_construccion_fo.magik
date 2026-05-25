@@ -1,0 +1,643 @@
+_package user
+$
+def_slotted_exemplar(:c_plano_construccion_fo,{
+			      {:oGpm,_unset,:writable},
+			      {:oPaf,_unset,:writable},
+			      {:oPam,_unset,:writable},
+                              {:oPage, _unset ,:writable , :private},
+		              {:oLayoutDesigner,_unset,:writable},
+			      {:oLayoutPlugin,_unset,:writable},
+			      {:oLayoutManager,_unset,:writable},
+			      {:oViewportMapper,_unset,:writable},
+			      {:oMarco,_unset,:writable},
+			      {:oDtoOptico,_unset,:writable},
+			      {:oEdificios,_unset,:writable}
+		     },
+		     {:c_geom_set_layout, :viewport_layout_mixin})
+$
+_method c_plano_construccion_fo.new()
+	_return _clone.init()
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_construccion_fo.init()
+	## 
+	##
+	.oPaf << smallworld_product.pni_application()
+	.oGpm << gis_program_manager
+	.oPam << .oPaf.manager 	 
+	.oEdificios << rwo_set.new()	
+	_return _self
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_construccion_fo.inicia_layout()
+	## 
+	##
+	.oLayoutPlugin   << .oPaf.plugin(:layout_plugin)
+	.oLayoutPlugin.start_layout_designer()
+	.oLayoutDesigner << .oLayoutPlugin.dialogs[:layout_designer]
+	.oLayoutManager  << .oLayoutDesigner.plugin(:layout_manager)    
+	.oViewportMapper << .oLayoutDesigner.plugin(:viewport_mapper)
+	LoDoc << .oLayoutManager.current_document
+	.oPage << .oLayoutManager.current_page
+	LoDoc.user!_tipo_plano << :construccion_fo
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_construccion_fo.genera_plano(PODtoOptico)
+	## 
+	##
+	_local LoPaf << smallworld_product.pni_application()
+	_local genp << LoPaf.plugin(:gen_planos)
+	
+	.oDtoOptico << PODtoOptico
+	_self.inicia_layout()
+	_self.add_marco()
+	_self.AddNorte()
+	_self.add_sellos()
+	_self.add_viewport_principal()
+	## agrega el viewport_detalle_canalizacion
+	_self.AddViewportDetalleCanal()
+	_self.busca_edificios()
+	#Regresa el mapa al gis
+	.oPam.goto_context(.oDtoOptico, .oDtoOptico.primary_spatial_context_name)
+
+	###############################
+        genp.publicalo( _unset )   
+	###############################
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_construccion_fo.add_marco()
+	.oMarco << c_marco.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+	.oMarco.Largo << 4
+	.oMarco.Alto  << 2
+	.oMarco.set_fill_colour(_unset)
+	.oPage.add_element( .oMarco )
+	_self.AddTitulo( .oMarco )
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_construccion_fo.add_sellos()
+
+	LoSello << c_sello_estandar_construccion.new_with(:bounds,bounding_box.new(.oMarco.bounds.xmin+50,
+										    .oMarco.bounds.ymin+50,
+										    .oMarco.bounds.xmin+50+2950,
+										    .oMarco.bounds.ymin+50+2740))
+	.opage.add_element(LoSello)
+		
+	LoSello << c_sello_red_secundaria_fo.new_with(:bounds,bounding_box.new    (.oMarco.bounds.xmin+250,
+										   .oMarco.bounds.ymin,
+										   .oMarco.bounds.xmin+250+2950,
+										   .oMarco.bounds.ymin+2200))
+	.opage.add_element(LoSello)
+	
+	bounds_simbologia << bounding_box.new(.oMarco.bounds.xmin+220,
+					      .oMarco.bounds.ymin+4230,
+					      .oMarco.bounds.xmin+1520,
+					      .oMarco.bounds.ymin+5500)
+	
+	_self.agrega_simbolo("simbologia_de_la_red_sec_fo" ,bounds_simbologia)
+	
+	bounds_ductos << bounding_box.new(.oMarco.bounds.xmin+1900,
+			 .oMarco.bounds.ymin+2500,
+			 .oMarco.bounds.xmin+2300,
+			 .oMarco.bounds.ymin+3000)
+	
+	_self.agrega_simbolo("ocupacion_de_ductos" ,bounds_ductos)
+	
+
+	LoSello << c_resumen_competencia_tvpaga_sigp.new_with(:bounds,bounding_box.new(.oMarco.bounds.xmin+1900,
+										  .oMarco.bounds.ymin+260,
+										  .oMarco.bounds.xmin+2400,
+										  .oMarco.bounds.ymin+1530))	
+	.opage.add_element(LoSello)
+
+
+	
+#	losello << c_sello_capacidad_cable.new_with(:bounds,bounding_box.new(.oMarco.bounds.xmin + 2600,
+#								             .oMarco.bounds.ymin + 700,
+#								             .oMarco.bounds.xmin + 3600,
+#								             .oMarco.bounds.ymin + 1800))
+#
+#	.opage.add_element(LoSello)
+	
+	
+#	LoSelloEncabezadoGeo << c_tabla_enc_georeferencia.new_with(:bounds,bounding_box.new( .oMarco.bounds.xmin + 220,
+#											     .oMarco.bounds.ymin + 3750,
+#											     .oMarco.bounds.xmin + 220,
+#											     .oMarco.bounds.ymin + 3750))
+#	.opage.add_element(LoSelloEncabezadoGeo)
+
+#	_self.addSelloGeoreferencia( .oMarco.bounds.xmin + 220,.oMarco.bounds.ymin + 3520)
+
+	_self.addSelloResumenOptico( .oMarco.bounds.xmin + 1720,.oMarco.bounds.ymin + 4300)
+
+	cuadro_firmas << c_sello_cuadro_firmas_compromiso_comercial.new_with(:bounds,bounding_box.new( .oMarco.bounds.xmin  + 2500,.oMarco.bounds.ymin + 2000,
+											                   .oMarco.bounds.xmin + 2500,.oMarco.bounds.ymin + 2700))
+	cuadro_firmas.set_distrito_optico(.oDtoOptico)															   
+	.opage.add_element(cuadro_firmas)
+	
+	# (22/07/20 des_aaron) : para que es esto?
+#	elementos << property_list.new()
+#	elementos[:oDtoOptico] << .oDtoOptico
+#	LoSello.guardar_elementos_bd_landbase(elementos)
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_construccion_fo.agrega_simbolo(pNombreSimbolo, pbounds)
+        
+	LoBound<< pbounds
+	#LoBound.centre<< .oPage.bounds.centre
+		
+	LoSimbolo<<symbol_layout.new_with(:bounds,Lobound)
+
+		_if (LoSimbolo<<symbol_layout.new_with(:bounds,LoBound,
+						       :name,pNombreSimbolo,
+						       :fill_style,_unset,
+						       :outline_style,_unset)) _isnt _unset 
+		_then
+			.oPage.add_element(LoSimbolo)
+		_endif 
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_plano_construccion_fo.add_viewport_principal()
+
+	LoMapPlugin << .oPaf.plugin(:map_plugin)
+	LoVpArea << bounding_box.new( .oMarco.bounds.xmin + 3000,
+				      .oMarco.bounds.ymin + 500,
+				      .oMarco.bounds.xmax - 750,
+				      .oMarco.bounds.ymax - 750)
+	
+	LoViewport << c_viewport_layout_sigc.new_with(:bounds, LoVpArea)
+	.oPage.add_element(LoViewport)
+	
+	LoMapView << LoMapPlugin.current_map_view	
+	LoBoundsMv << .oDtoOptico.user!_limite.bounds
+	.oViewportMapper.map_viewport_on_map_view(LoViewport,LoMapView, LoBoundsMv.new_enlarging(1.1),_true)
+
+	LoViewport.set_fill_colour(_unset)
+	LoViewport.outline_style << _unset
+	LoViewport.trail << _false
+	LoViewport.selection << _false
+	
+	#LoViewport.ace_name << "001 - P Construccion FTTH"
+	#LoViewport.view_scale << 2000
+	#LoViewport.display_style << "1 750 - 2 000"
+	#LoViewport.style_system_category << :|P Construccion FTTH|
+
+	LoViewport.ace_name << "CENTRALES"
+	LoViewport.view_scale << 2000
+	LoViewport.display_style << "1750 - 2000 P Construcción"
+	LoViewport.style_system_category << "Default"
+	
+	LoViewport.sTipoPlano << "CONSTRUCCION_FO"
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.AddNorte()
+
+        LoPage<< .oPage
+	
+	_if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	_then
+		Lobounds<<bounding_box.new(LoPage.bounds.xmin,LoPage.bounds.ymax-1500,
+					   LoPage.bounds.xmin+4000,LoPage.bounds.ymax)
+		LoNorte << c_norte.new_with(:bounds,Lobounds)
+		LoNorte.limites<<_unset
+		LoPage.add_element(LoNorte)
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.addSelloGeoreferencia(PoX,PoY)
+	## Objetivo: Calcula el numero de sellos de georeferencia y su
+	## numero de renglones
+	## Parametros de entrada: PoX, PoY coordenadas del sello
+	## Parametros de salida: Ninguno.
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:01/06/2011
+	## Autor de la modificacion: dvalenci
+	## Descripcion de la modificacion: Metodo nuevo
+
+	# Calcula el numero de sellos y renglones por sello para los
+	# bloques de georeferencia
+	loDespl << 0
+	_for cedo _over .oDtoOptico.cedos_fo.elements()
+	_loop
+		loContReng << 0
+		loTerminales << cedo.obten_terminales_atendidas()
+		_if loTerminales.size > 0
+		_then
+			loLiteral << loterminales.an_element().user!_nombre.numbers_and_strings[1].last
+			_for terminal _over LoTerminales.elements()
+			_loop
+				LiteralActual  << terminal.user!_nombre.numbers_and_strings[1].last
+				_if LiteralActual <> loLiteral
+				_then
+					sello << c_tabla_georeferencia.new_with(:bounds,
+									   bounding_box.new(PoX + loDespl,
+											    PoY,
+											    PoX + loDespl,
+											    PoY))
+					loDespl +<< 500
+					sello.attributes[:literalterminal].value << loLiteral
+					elementos << property_list.new()
+					elementos[:oDtoOptico] << .oDtoOptico
+					sello.guardar_elementos_bd_landbase(elementos)
+					elementos << property_list.new()
+					elementos[:oCedo] << cedo
+					sello.guardar_elementos_bd_gis(elementos)
+					sello.oRenglones << loContReng
+					sello.configura_tabla()
+					.opage.elements.add(sello)
+					loLiteral << LiteralActual
+					loContReng << 0
+				_endif
+				loContReng +<< 1
+			_endloop
+			sello << c_tabla_georeferencia.new_with(:bounds,
+								bounding_box.new(PoX + loDespl,
+										 PoY,
+										 PoX + loDespl,
+										 PoY))
+			loDespl +<< 500
+			sello.attributes[:literalterminal].value << LiteralActual
+			elementos << property_list.new()
+			elementos[:oDtoOptico] << .oDtoOptico
+			sello.guardar_elementos_bd_landbase(elementos)
+			elementos << property_list.new()
+			elementos[:oCedo] << cedo
+			sello.guardar_elementos_bd_gis(elementos)
+			sello.oRenglones << loContReng
+			sello.configura_tabla()				
+			.opage.elements.add(sello)
+		_endif
+	_endloop
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.addSelloResumenOptico(PoX,PoY)
+	## Objetivo: Calcula el numero de sellos de georeferencia y su
+	## numero de renglones
+	## Parametros de entrada: PoX, PoY coordenadas del sello
+	## Parametros de salida: Ninguno.
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:01/06/2011
+	## Autor de la modificacion: dvalenci
+	## Descripcion de la modificacion: Metodo nuevo
+	
+	_local loDespl << 0
+	
+	_for iterCedo _over .oDtoOptico.cedos_fo.elements()
+	_loop
+		# Para generar cada sello se tienen que dar dos condiciones, el cedo
+		# debe tener por lo menos una terminal conectada, la terminal
+		# debe contener por lo menos un divisor (Renglon).
+		_if (LoDivisores << iterCedo.obtener_divisores_conectados()).size > 0
+		_then
+			LoSelloResumen << c_resumen_optico.new_with(:bounds,
+								    bounding_box.new(PoX + loDespl,
+										     PoY,
+										     PoX + loDespl,
+										     PoY))
+			elementos << property_list.new()
+			elementos[:oCedo] << iterCedo
+			LoSelloResumen.guardar_elementos_bd_gis(elementos)
+			LoSelloResumen.oRenglones << LoDivisores.size
+			LoSelloResumen.configura_tabla()
+			LoSelloResumen.etiqueta_celdas()
+			.opage.add_element(LoSelloResumen)
+			loDespl +<< 620						
+		_endif
+	_endloop
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.AddTitulo(PoMarco)
+	## Objetivo: Agregar el titulo al plano
+	
+	LoTitulo << _self.crea_titulo
+	
+	LoBB << bounding_box.new(PoMarco.bounds.xmax-2800,PoMarco.bounds.ymin+200,
+				 PoMarco.bounds.xmax-200, PoMarco.bounds.ymin+800)
+    
+	LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBB,
+					       :font_name,        "bold",
+					       :font_size,        8,
+					       :fill_style,       _unset,
+					       :outline_style,    _unset,
+					       :text,             LoTitulo,
+					       :wrap,             _false,
+					       :align_horizontal, :centre,
+					       :align_vertical,   :centre,
+					       :orientation,      :left_right)
+	
+	.oPage.add_element(LoTitulo)	
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.AddViewportDetalleCanal()
+	## Objetivo: Metodo que agrega el viewport de ubicacion
+	
+	_if .oPage _isnt _unset _andif .oPage.is_kind_of?(layout_page)
+	_then
+		## Estructura del Cedo
+		_if .oDtoOptico.cedos_fo.size > 0
+		_then
+			LoEst << .oDtoOptico.cedos_fo.an_element().get_structure()
+			
+                        _if LoEst  _isnt _unset 
+			_then
+				
+				_loop
+					_if LoEst.perform(LoEst.primary_geometry).world.world_id = 0
+					_then
+						_leave
+					_else
+						_if LoEst.responds_to?(:get_structure|()|)
+						_then
+							LoEst << LoEst.get_structure()
+						_else
+							LoEst <<  Loest.perform(LoEst.primary_geometry).world.owner.user!_building
+							_leave 
+						_endif
+					_endif
+				_endloop
+				
+				_if (LoUbicacion << _self.ir_ubicacion_cedo()) _isnt _unset
+				_then
+					LPafManager << smallworld_product.pni_application().manager
+					LPafManager.goto_primary_context(LoEst)		
+					# Bounds para el viewport
+					LoBounds << bounding_box.new( .oPage.bounds.xmin+2600,   
+								      .oPage.bounds.ymax-300,    
+								      .oPage.bounds.xmin+4000,   
+								      .oPage.bounds.ymax-1100)	
+					
+					# Crear el viewport
+				LoViewport << c_vp_ubicacion_cedo.new_with( _self.agregar_elementos(),
+									    :trail, _false,
+									    :selection, _false,
+									    :post_render, _false,
+									    :bounds, LoBounds)
+				
+				.oPage.add_element(LoViewport)
+				
+				LoViewport.set_fill_colour(_unset)
+				LoViewport.outline_style << _unset
+				LoViewport.trail << _false
+				LoViewport.selection << _false
+				LoMapView << c_factory_planos.GetMapView(LoEst.perform(LoEst.primary_geometry).buffer(300).sectors.as_sector())
+				.oViewportMapper.map_viewport_on_map_view(LoViewport,LoMapView,LoMapView.current_view_bounds.new_enlarging(1.5),_true)
+				_if LoEst.perform(LoEst.primary_geometry).world.world_id <> 0
+				_then			
+					LoViewport.ace_name << "mit_floor_internal"		    
+				_else			
+					LoViewport.ace_name << "CENT_PLANOS"
+					LoViewport.style_system_category << :default
+					LoViewport.display_style << "250 - 1 000"
+					LoViewport.view_scale << 1250
+				_endif		
+				
+				_endif
+				
+				
+			_endif 
+			
+			
+			
+		_endif
+	_endif 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.agregar_elementos()
+	## Objetivo: Metodo que agrega los elementos necesarios para la
+## ubicaion del TBA
+    _local LoElementos << rope.new()
+    LoCedo << .oDtoOptico.cedos_fo.an_element()
+    
+    LoCable << LoCedo.get_upstream_cables().an_element()    
+    LoEst << LoCedo.get_structure()
+    LoElementos.add(LoEst)
+    LoElementos.add(LoCedo)
+    _return LoElementos
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_construccion_fo.busca_edificios()
+	## 
+	##	
+	_for iterTerminal _over .oDtoOptico.terminales_fo.elements()
+	_loop
+		LoEstructura << iterTerminal.get_structure()
+
+		_if LoEstructura _isnt _unset 
+		_then
+		    # Obtenemos el campo geometrico de la estructura
+		    LoGeom << LoEstructura.perform(LoEstructura.primary_geometry)
+		
+		    # Validamos el mundo de la estructura
+		    _if LoGeom.world.world_id  <> 0
+		    _then
+			LoPred << predicate.contains(:box,LoGeom)
+			LoTabla << .oGPM.cached_dataset(:gis).collection(:mit_building_structure)
+			LoSel << LoTabla.select(LoPred)
+
+			_if LoSel.size > 0 
+			_then
+				.oEdificios.add(LoSel.an_element())
+			_endif
+		    _endif
+		_endif
+	_endloop
+
+
+	## agrega edificio de  los edificios de las terminales
+	 LoDespl    << 0
+	 
+	_for iterEdif _over .oEdificios.elements()
+	_loop
+		_self.add_edificios(iterEdif,LoDespl)
+		LoDespl +<< 300 
+	_endloop
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.estructuras_cable_cedo()
+## Objetivo: Obtener la(s) estructura(s) que contiene al cable de
+## fibra que esta conectado al tba, deben ser de tipo mit_structure_route_mixin
+## Parametros de Entrada: Ninguno
+## Regresa: LoEstructuras << rope de estructuras
+## Fecha de Ultima modificacion:19/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo
+
+_local LoEstructuras << rope.new()
+
+     # Obtener el cable conectado
+    LoCedo << .oDtoOptico.cedos_fo.an_element()
+    LoCable << LoCedo.get_upstream_cables().an_element()
+    
+    _if LoCable _isnt _unset 
+    _then
+	    # Obtener las estructuras
+	    _for st _over LoCable.structures.elements()
+	    _loop
+		    _if st.is_kind_of?(mit_structure_route_mixin)
+		    _then
+			   LoEstructuras.add(st) 
+		    _endif
+	    _endloop
+    _endif
+
+    _return LoEstructuras
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.ir_ubicacion_cedo()
+## Objetivo: Obtener la ubicacion del cedo, tomando en cuenta las
+## geometrias de las estructuras por donde pasa el cable
+## conectado al cedo. Se hace un buffer para el area donde esta
+## ubicado.
+## Parametros de Entrada: Ninguno
+## Regresa: LoBuffer << pseudo_area
+## Fecha de Ultima modificacion:19/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo
+
+_local LoBuffer << _unset
+_local LoGeometrias << geometry_set.new()
+
+    # Obtener las geometrias por donde pasa el cable conectado
+    _if (LoGeometrias << _self.obtener_geometrias()).size >0    
+    _then
+	    LoBuffer << LoGeometrias.buffer(500)
+    _endif
+
+    _return LoBuffer
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.obtener_geometrias()
+## Objetivo: Obtener las geometrias de las estructuras por
+## donde  pasa el cable conectado al tba. Se hace un buffer
+## para el area donde esta ubicado.
+## Parametros de Entrada: Ninguno
+## Regresa: LoBuffer << pseudo_area
+## Fecha de Ultima modificacion:19/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo
+_local LoGeometrias << geometry_set.new()
+
+    _if (LoEstructuras << _self.estructuras_cable_cedo()).size >0 
+    _then
+	_for st _over LoEstructuras.fast_elements()
+	_loop
+		_if (LoGeo << st.structure_geometry()) _isnt _unset 
+		_then
+			 LoEst << .oDtoOptico.cedos_fo.an_element().get_structure()
+			 _if LoEst _isnt _unset _andif
+			     #LoEst.location.world.world_id = 0
+			     LoEst.perform(LoEst.primary_geometry).world.world_id = 0
+			 _then
+				LoGeometrias.add(LoGeo)
+			_elif LoGeo.world.world_id <> 0
+			_then 
+			       LoGeometrias.add(LoGeo)
+			_endif
+
+		_endif
+	_endloop
+    _endif
+    _return LoGeometrias	
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_construccion_fo.add_edificios(PoEdif,PoDespl)
+	## 
+	## 
+	LoBounds << bounding_box.new( .oPage.bounds.xmax-2100-PoDespl,
+				      .oPage.bounds.ymax-4800-PoDespl,
+				      .oPage.bounds.xmax-1100-PoDespl,
+				      .oPage.bounds.ymax-2800-PoDespl)
+	
+	.oPam.goto_context(PoEdif,:internal)
+	
+	LoMv << .oPaf.plugin(:map_plugin).current_map_view
+	LoMapa << .oPaf.plugin(:map_plugin)  
+	
+	
+	LoViewport << c_vp_detalle_interno_edificio.new_with(:trail, _false,
+							     :selection, _false,
+							     :post_render, _false,
+							     :name, "DETALLE DE EDIFICIO",
+							     :bounds, LoBounds)
+	# Agregar el viewport
+	_if (LoGeom << LoMv.get_selectable_geometry_set().select(:geometry_field,:mit_building_structure,:box)).size > 0
+	_then
+		LoEdificio << LoGeom.an_element().rwo
+		LoBounds << LoEdificio.bounds
+	_else
+		LoBounds << bounding_box.new(LoMv.current_view_bounds.xmin + 600,
+					     LoMv.current_view_bounds.ymin,
+					     LoMv.current_view_bounds.xmax - 600,
+					     LoMv.current_view_bounds.ymax)
+	_endif
+	.oViewportMapper.map_viewport_on_map_view(LoViewport,LoMv,LoBounds,_true)	
+	.oPage.add_element(LoViewport)		
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_construccion_fo.crea_titulo	
+	## Objetivo: Crear el titulo
+	
+        sch << swg_dsn_admin_engine.active_scheme
+	nodo << sch.project.user!_central.building
+	
+	LoNombreNCO << ""
+	LoNCOsiglas << ""
+	LoEstado    << ""
+	LoMun       << ""
+	ctlname     << ""
+	ctlsiglas   << ""
+	
+	_if nodo  _isnt _unset 
+	_then
+		(LoNombreNCO,LoNCOsiglas)  <<    nodo.datos_nco
+		ctlname   << sch.project.user!_central.user!_nombre
+		ctlsiglas << sch.project.user!_central.user!_central
+		LoEstado    << nodo.location.coordinate.estado_txt()
+		LoMun       << nodo.location.coordinate.municipio_txt()
+	_endif
+	
+	LoTitulo <<            "NCO - " +  LoNombreNCO +  "(" + LoNCOsiglas + ")" +
+			       %newline + "CTL - " + ctlname  + "(" + ctlsiglas + ")" +
+			       %newline + sch.distrito_optico.user!_distrito.default("") +
+			       %newline + LoMun + %space + LoEstado +
+			       %newline + "DISTRITO FTTH COMPLETO" 
+	
+	_return LoTitulo	
+	
+_endmethod
+$

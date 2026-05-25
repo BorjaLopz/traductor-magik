@@ -1,0 +1,220 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos - estudio de transmisison
+# Objetivo: 
+#           
+# Autor: dsanchez
+# Fecha de creacion: 31-03-2005
+#
+# ---------------- Revision History -----------------
+# Ult Mod.
+# Ult Mod.
+#  01/04/05 DSB - 22:00 Se creo
+#
+# Reviso.
+# dsb
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_elemento_empalme_subterraneo_g)
+
+$
+def_slotted_exemplar(:c_elemento_empalme_subterraneo_g,
+    {
+    }
+    ,:c_elemento_empalme_g
+)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_empalme_subterraneo_g.new(RoObjeto)
+
+## Objetivo: Crear una instancia de la clase c_elemento_entidad_g
+## Parámetros de entrada:
+##     Entidad - RoObjeto:  Objeto entidad que va a representar
+##                   graficamente
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+
+   _super.new(RoObjeto)
+
+   _self.sNombre_Simbolo << "empalme_subterraneo"
+   _self.sDescripcion    << _self.prvGenera_Nombre_Empalme()
+   _self.nLong_Grafica   << 100 
+
+   _return  _clone
+   
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_elemento_empalme_subterraneo_g.prvGenera_Nombre_Empalme()
+
+## Objetivo: Genera el nombre que se debe desplegar en el empalme
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+
+ _local LsTipoEmp
+ _local LsNombre
+
+
+   LsNombre  << _self.oEntidad.user!_num_empalme.write_string
+   LsTipoEmp << _self.oEntidad.user!_tipo_emp
+
+   LsNomEmp << "#" +  LsTipoEmp
+   
+   _if LsTipoEmp = "RECTO"
+   _then
+      LsNomEmp << "ER-" + LsNombre
+      
+   _elif LsTipoEmp = "DERIVACION" _then 
+      LsNomEmp << "ED-" + LsNombre
+      
+   _elif LsTipoEmp = "EN DISTRIBUIDOR" _then 
+      LsNomEmp << "DI-" + LsNombre
+      
+   _elif LsTipoEmp = "LINEA" _then
+      LsNomEmp << "LI-" + LsNombre
+
+   _elif LsTipoEmp = "NINGUNO" _then
+      LsNomEmp << "NN-" + LsNombre      
+      
+   _endif
+
+   _return LsNomEmp
+   
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_empalme_subterraneo_g.dfn_ubicacion_elementos_internos()
+
+## Objetivo: define la ubicacion dentro del area (bounding_box)
+## de los elementos graficos que lo componen
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se creo
+
+ _local LnNumRenDiv << 20 # Numero de renglones que se divide el area (bulding)
+	
+   # obtienen la latura en mm de la altura del area y la divide en
+   # 20 renglones
+   LnAltEnMM << (_self.oArea.YMax - _self.oArea.yMin) 
+   LnAltRen <<  LnAltEnMM / LnNumRenDiv
+	
+   #-- Etiqueta 1
+	
+   # Obtiene la pos de la etiqueta_1 para saber donde debe desplegarse
+   # calcula los numero de renglones que se debe de mover, la etiqueta
+   LnNumRenSup << _self.pos_etiqueta(:Etiqueta_1).as_integer()
+   LnNumrenInf << LnNumRenDiv - 2 -  _self.pos_etiqueta(:Etiqueta_1).as_integer()
+
+   # asigna el margen sup e inf de acuerdo a los num de ren que se
+   # debe desplazar la etiqueta
+   LoLbl << _self.oElementos.obten_elemento(:Etiqueta_1)
+   LoLbl.nMargen_Sup << LnAltRen * (LnNumRenSup / 10)
+   LoLbl.nMargen_Inf << LnAltRen * (LnNumRenInf / 10)
+
+   #-- Simbolo 1
+	
+   # Obtiene la pos de la etiqueta_1 para saber donde debe desplegarse
+   # calcula los numero de renglones que se debe de mover, la etiqueta
+
+#   # asigna el margen sup e inf de acuerdo a los num de ren que se
+#   # debe desplazar la etiqueta
+   LoSim << _self.oElementos.obten_elemento(:Simbolo_1)
+
+   # El 63 es la distancia de la punto de la flecha a la "Y" sup
+   # 300 es la escala con la que se probo
+   LV << (63 / 300 ) * _self.nLong_grafica
+   LoSim.nMargen_Sup << LV / 10
+   LoSim.nMargen_Inf << (LV * -1) /10
+
+   # 1/4 es la distancia a la que se encuentra el centro de la
+   # flecha del margen izq
+   LV << (1 / 4) * _self.nLong_grafica
+   LoSim.nMargen_Izq << (LV * -1) /10   
+   LoSim.nMargen_Der << LV / 10
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_elemento_empalme_subterraneo_g.Crea_elementos_internos()
+
+## Objetivo: Crea los elementos que conforman a la
+## seccion graficamente
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+## Notas:
+##  :Etiqueta_1 - Arriba - Longitud calculada de la fibra. calculated_fiber_length
+##  :Simbolo_1  - En medio - Linea
+
+	
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   # Creacion de los elementos internos Etiquetas
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -	
+
+   #-- Etiqueta que almacena el nombre del nodo
+   LoLbl1  << c_texto_grafico.new("ER")
+   LoLbl1.nTamanio << 30
+   LoLbl1.sAlineacion << :centre_centre
+   # Se agrega a la coleccion de etiquetas, esto se debe de hacer
+   # con las etiquetas 
+   _self.collEtiquetas[:Etiqueta_1] << 17
+   
+   _self.oElementos.Agregar_elemento(LoLbl1,:Etiqueta_1)
+
+
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   # Creacion de los elementos internos Simbolos
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   
+   LoSim  << c_simbolo_grafico.new(_self.sNombre_Simbolo)
+   _self.oElementos.Agregar_elemento(LoSim,:Simbolo_1)
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_empalme_subterraneo_g.reposicionar_Area(RoArea)
+	
+## Objetivo: Calcular la nueva posicion del area (bounding_box)
+##           de acuerdo al punto de contacto
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se creo
+
+
+   # Calcular las distancias del pto de contacto interior a las
+   # coordenadas inferior y a la superior
+
+   LnAlturaArea << ( RoArea.YMax - RoArea.YMin )
+
+	
+   LnDistEnXInf << 0
+   LnDistEnYInf << LnAlturaArea / 2
+
+   LnDistEnXSup << _self.nLong_grafica
+   LnDistEnYSup << LnAlturaArea / 2
+
+   _return  bounding_box.new( _self.oPto_Contacto.X + LnDistEnXInf,
+                              _self.oPto_Contacto.Y - _self.nLong_grafica / 2, 
+                              _self.oPto_Contacto.X + _self.nLong_grafica, 
+                              _self.oPto_Contacto.Y + _self.nLong_grafica / 2  )
+	
+_endmethod
+$

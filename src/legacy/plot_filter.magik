@@ -1,0 +1,158 @@
+_package sw
+$
+_pragma(classify_level=restricted, topic={plotting}, usage={internal})
+_method plot_filter.configura_impresora_para_centralizar_plano(dlg, opts_stream, impresora, ancho, alto)
+	## 
+	##
+	_for name _over dlg.value_names.fast_elements()
+	_loop
+		
+		_if name.matches?("dm*")
+		_then
+			# dmDeviceName is limited to 32 chars, so we pass
+			# wDevice instead, which contains the full string.
+			_if name = "dmDeviceName"
+			_then
+				# (12/09/19 Jtlelo) :  Si dmDeviceName es unset le asignamos el
+				# PDFCreator por defult
+				v << impresora
+			_elif name = "dmOrientation"
+			_then
+				v << 2
+			_elif name = "dmPaperSize"
+			_then
+				v << 161
+			_elif name = "dmPaperLength"
+			_then
+				v << ancho
+			_elif name = "dmPaperWidth"
+			_then
+				v << alto 
+			_elif name = "dmScale"
+			_then
+				v << 100
+			_elif name = "dmCopies"
+			_then
+				v << 1
+			_elif name = "dmPrintQuality"
+			_then
+				v << 600
+			_elif name = "dmColor"
+			_then
+				v << 2
+			_elif name = "dmYResolution"
+			_then
+				v << 600
+			#_elif name = "dmFormName"
+			#_then
+				#v << "PostScript"
+				#v << "PostScript Custom Page Size"
+			_else
+				v << dlg.get_value(name)
+			_endif
+			_if v _isnt _unset
+			_then
+				opts_stream.write(" -f ", name, "=")
+				# Ensure e.g. printer names with spaces in are quoted
+				_if v.class_name _is :char16_vector
+				_then
+					opts_stream.write(%", v, %")
+				_else
+					opts_stream.write(v)
+				_endif
+			_endif
+		_endif
+	_endloop
+	
+	_return opts_stream
+	
+_endmethod
+$
+_method plot_filter.default_windcplot_options
+
+	## Return the options used for windcplot as the default printer.
+	##
+	## When plot_filter.default_printer_via_windcplot? is _true,
+	## we print to the default printer (i.e. Selected Windows Printer
+	## in the Plot Menu) using windcplot. Since there is no associated
+	## plot filter, command line options for windcplot are specified
+	## by redefining this method.
+
+	>> "-k win32 -d 1"
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plotting}, usage={internal})
+_method plot_filter.devmode_settings( _optional saved_settings? )
+	##
+	##
+	## Returns devmode command line options for windcplot
+	##
+	## When SAVED_SETTINGS is true, any previously saved settings
+	## will be returneed. Defaults to TRUE 
+	##
+
+	_if saved_settings?.default ( _true ) _andif 
+	    ( saved_settings << .properties [ :saved_devmode_settings ] ) _isnt _unset
+	_then
+		_return saved_settings
+	_endif
+	# Get properties from current dialog instead
+	dlg << win32_window.std_dialogs[:STDDLG_PRINTSETUP]
+
+	# typical set of devmode flags is about 500-600 bytes
+	opts_stream << internal_text_output_stream.new_for(800)
+
+	# (12/09/27 JTLELO) : la impresora PDF de cache, nunca se debe
+	# usar como predefinida por eso validamos que se imprima
+	# conforme a los parametros del centralizado de planos...
+	cp << user:c_centraliza_planos.new()
+
+	_if cp.servidor_cache.uppercase = system.host_name.uppercase _andif
+	    cp.impresorapdf.uppercase = _self.printer.write_string.uppercase
+	_then
+		# (12/09/27 Jtlelo) : se configura la impresora del pdfcreator
+		# dependiendo de las medidas de viewport para imprimir el plano
+		# en pdf y de ahi centralizar el plano
+		(ancho, alto) << cp.tamano_papel
+		#impresora << win32_printer.new(_self.printer.write_string)
+		opts_stream << _self.configura_impresora_para_centralizar_plano(dlg, opts_stream, _self.printer, ancho, alto)
+	_elif _self.printer.write_string.uppercase = cp.impresora.uppercase
+	_then
+		# (12/09/27 Jtlelo) : se configura la impresora del pdfcreator
+		# dependiendo de las medidas de viewport para imprimir el plano
+		# en pdf y de ahi centralizar el plano
+		(ancho, alto) << cp.tamano_papel
+		#impresora << win32_printer.new(_self.printer.write_string)
+		opts_stream << _self.configura_impresora_para_centralizar_plano(dlg, opts_stream, _self.printer, ancho, alto)
+	_else 
+		_for name _over dlg.value_names.fast_elements()
+		_loop 
+			_if name.matches?("dm*")
+			_then
+				# dmDeviceName is limited to 32 chars, so we pass
+				# wDevice instead, which contains the full string.
+				_if name = "dmDeviceName"
+				_then
+					v << dlg.get_value(:|wDevice|)
+				_else
+					v << dlg.get_value(name)
+				_endif
+				_if v _isnt _unset
+				_then
+					opts_stream.write(" -f ", name, "=")
+					# Ensure e.g. printer names with spaces in are quoted
+					_if v.class_name _is :char16_vector
+					_then
+						opts_stream.write(%", v, %")
+					_else
+						opts_stream.write(v)
+					_endif
+				_endif
+			_endif
+		_endloop
+	_endif
+	w(opts_stream.string)
+	>> opts_stream.string
+
+_endmethod
+$

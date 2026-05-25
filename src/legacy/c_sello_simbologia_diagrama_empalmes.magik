@@ -1,0 +1,62 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Plano diagrama de emplames
+# Objetivo: Generar el cuadro de simbología para
+#           los planos de diagramas de empalmes
+# Autor:    aalarcon
+# Fecha de creacion: 11/Mayo/2011
+#
+#----------------------------------------------------------------
+
+_package user
+$
+remex(:c_sello_simbologia_diagrama_empalmes)
+$
+def_slotted_exemplar(:c_sello_simbologia_diagrama_empalmes,
+{
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_simbologia_diagrama_empalmes.configura_tabla()
+
+
+_local LoTblTitulo
+_local LoTblContenido
+_local LoTbl
+_local LfDesplazaY
+
+       # Titulo1
+       LoTblTitulo<<property_list.new_with_properties(:ren,{8},
+						      :col,{65})
+       LoTbl<< .o_tablas.crea_tabla(1,1,:tbl_titulo)
+       LoTbl.ocoordenada_origen << .o_coord_inicio
+       _self.asigna_medidas_tabla(LoTbl, LoTblTitulo)
+
+       
+       # Contenido
+       LoTblContenido << property_list.new_with_properties(:ren,{110},
+							   :col,{65})
+       LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo})
+       
+       LfDesplazaY << LfDesplazaY+ .o_tablas.longitud_total_renglones({:tbl_titulo})
+       
+       LoTbl << .o_tablas.crea_tabla(1,1, :tbl_contenido)
+       LoTbl.oCoordenada_Origen<<coordinate.new( .o_coord_inicio.x,
+						 .o_coord_inicio.y - LfDesplazaY)
+						 
+       _self.asigna_medidas_tabla(LoTbl, LoTblContenido)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_simbologia_diagrama_empalmes.etiqueta_celdas()
+
+
+	_self.asigna_texto_celda(:tbl_titulo,1,1,"SIMBOLOGIA",
+				 30, :centre_centre,0,{0.0,0.2993,0.0})
+	
+	_self.asigna_simbolo_celda(:tbl_contenido,1,1,"simbologia_diagrama_emp",3)
+_endmethod
+$
+

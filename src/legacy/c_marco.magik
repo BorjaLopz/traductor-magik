@@ -1,0 +1,498 @@
+_package user
+$
+#remex(:c_marco)
+$
+def_slotted_exemplar (:c_marco, {}, :layout_element )
+$
+c_marco.define_shared_constant(:allowed_on_menu?,  _true   ,:public)
+$
+c_marco.define_shared_constant(:CARTA_ALTO,2790.00,:public )
+$
+c_marco.define_shared_constant(:CARTA_LARGO,2160.00,:public )
+$
+c_marco.define_shared_constant(:SANGRIA_HOR,200,:public )
+$
+c_marco.define_shared_constant(:SANGRIA_VER,200,:public )
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.calcula_rollo(PoLargo,PoAlto)
+	## 
+	##
+	_if PoLargo>=0 _and PoAlto>0
+	_then
+		_return PoLargo*(_self.CARTA_Largo/100).rounded,PoAlto*(_self.CARTA_ALTO/100).rounded
+	_else
+		_return 0,0
+	_endif 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.defined_attributes
+	## 
+	##
+	attribs << rope.new_from (_super.defined_attributes)
+
+
+	attribs.add ( layout_attribute_definition.new(:Largo, :integer,
+						      :description, "Numero de Modulos",
+						      :allowed_on_properties_page?, _true,
+						      :default_value, 1 ) )
+	
+	attribs.add ( layout_attribute_definition.new(:Alto, :integer,
+						      :description, "Num pags",
+						      :allowed_on_properties_page?, _true,
+						      :default_value, 1 ) )
+
+	attribs.add ( layout_attribute_definition.new(:marco, :string,
+						      :description, "Tipo de Plano",
+						      :default_value, "",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method, :nombre_plano,
+						      :editor, _unset))
+	
+       #print(attribs)
+	
+	>> attribs
+	
+_endmethod
+$
+c_marco.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.dibuja_marco(window)
+	## 
+	## 
+	#dibuja los marcos de los demas planos que no sean larguillos
+	_local LcollSectorRope  # Trazos del marco.
+	_local LcollSector      # Un trazo para el marco.
+	_local LoBound          # Bound del la pagina.
+	
+	_if _self.marco.size>0
+	_then
+		_if _self.marco="T1" _then _self.Largo<<5 _endif
+		_if _self.marco="T2" _then _self.Largo<<6 _endif
+		_if _self.marco="T3" _then _self.Largo<<7 _endif
+		_self.Alto<<3
+		_if _self.marco="2 X 4 Módulos"
+		_then
+			_self.Largo<<4
+			_self.Alto<<2
+		_endif
+        _endif
+       _self.layout_page.set_paper_size(_self.SANGRIA_HOR*2 + _self.CARTA_LARGO*_self.Largo,
+					_self.SANGRIA_VER*2 + _self.CARTA_ALTO*_self.Alto)
+       LoBound<<_self.layout_page.bounds
+       
+       _self.bounds<< bounding_box.new(LoBound.xmin + _self.SANGRIA_HOR,
+				       LoBound.ymin + _self.SANGRIA_VER,
+				       LoBound.xmax - _self.SANGRIA_HOR,
+				       LoBound.ymax - _self.SANGRIA_VER)
+	
+       LcollSectorRope<<sector_rope.new()
+       
+       # Esquina inf. izq.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin) + coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord - coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord + coordinate(100,0))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina inf. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymin) - coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,100))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina sup. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymax) - coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord - coordinate(100,0))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina sup. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymax) + coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord - coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord - coordinate(0,100))
+       LcollSectorRope.add(LcollSector)
+
+       # Seccion libre
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin)+coordinate(50,50))
+       LcollSector.add(LcollSector.last_coord + coordinate(150,0))
+#--------------------------------
+# Autor: vnguzman
+# ID:    Plano de desmontaje de caja de distribución
+# Fecha: Lunes 14 de Agosto de 2006
+# Descripción: modifico la altura de la sección libre para un módulo
+#--------------------------------
+       _if _self.alto = 1
+       _then
+              LcollSector.add(LcollSector.last_coord + coordinate(0,_self.CARTA_ALTO-100))
+       _else
+              LcollSector.add(LcollSector.last_coord + coordinate(0,_self.CARTA_ALTO-50))
+       _endif
+# Fin de la modificación del Lunes 14 de Agosto de 2006       
+       LcollSector.add(LcollSector.last_coord - coordinate(150,0))
+       LcollSector.add(LcollSector.first_coord)
+       LcollSectorRope.add(LcollSector)
+
+       # Marco
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin) + coordinate(50,50))
+       LcollSector.add(LcollSector.last_coord + coordinate(_self.bounds.width-100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,_self.bounds.height-100))
+       LcollSector.add(LcollSector.last_coord + coordinate(-_self.bounds.width+100,0))
+       LcollSector.add(LcollSector.first_coord)
+       
+       LcollSectorRope.add(LcollSector)
+
+ 
+       ## Poner las marcas ALTO
+       _for LnMod _over 1.upto(_self.Alto-1)
+       _loop
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin+LnMod*_self.CARTA_ALTO) + coordinate(50,0))
+	       LcollSector.add(LcollSector.last_coord + coordinate(50,0))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymin+LnMod*_self.CARTA_ALTO) - coordinate(50,0))
+	       LcollSector.add(LcollSector.last_coord - coordinate(50,0))
+	       LcollSectorRope.add(LcollSector)
+       _endloop
+
+       ## Poner las marcas Largo
+       _for LnMod _over 1.upto(_self.Largo-1)
+       _loop   
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin+LnMod*_self.CARTA_LARGO,_self.bounds.ymin) + coordinate(0,50))
+	       LcollSector.add(LcollSector.last_coord + coordinate(0,50))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin+LnMod*_self.CARTA_LARGO,_self.bounds.ymax) - coordinate(0,50))
+	       LcollSector.add(LcollSector.last_coord - coordinate(0,50))
+	       LcollSectorRope.add(LcollSector)
+       _endloop
+		
+       # Dibujar el Marco.
+       LcollSectorRope.draw_on(window,line_style.new(colour.called(:black),2))			
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.dibuja_marco_larguillo_1(window)
+	## 
+	##
+	_local LcollSectorRope  # Trazos del marco.
+	_local LcollSector      # Un trazo para el marco.
+	_local LoBound          # Bound del la pagina.
+
+	LoBound<<bounding_box.new(_self.SANGRIA_VER,_self.SANGRIA_HOR,_self.SANGRIA_HOR*2 + _self.CARTA_LARGO*_self.Largo,
+				_self.SANGRIA_VER*2 + _self.CARTA_ALTO)
+
+	_self.bounds<< bounding_box.new(LoBound.xmin ,
+					LoBound.ymin + 5850,
+					LoBound.xmax ,
+					LoBound.ymax + 5850)
+	LcollSectorRope<<sector_rope.new()
+
+	# Esquina inf. izq.
+	LcollSector<<sector.new()
+	LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin) + coordinate(0,100))
+	LcollSector.add(LcollSector.last_coord - coordinate(0,100))
+	LcollSector.add(LcollSector.last_coord + coordinate(100,0))
+	LcollSectorRope.add(LcollSector)		
+
+       # Esquina inf. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymin) - coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,100))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina sup. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymax) - coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord - coordinate(100,0))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina sup. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymax) + coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord - coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord - coordinate(0,100))
+       LcollSectorRope.add(LcollSector)
+
+
+       # Marco
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin) + coordinate(50,50))
+       LcollSector.add(LcollSector.last_coord + coordinate(_self.bounds.width-100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,_self.bounds.height-100))
+       LcollSector.add(LcollSector.last_coord + coordinate(-_self.bounds.width+100,0))
+       LcollSector.add(LcollSector.first_coord)
+       
+       LcollSectorRope.add(LcollSector)
+
+ 
+       ## Poner las marcas Largo
+       _for LnMod _over 1.upto(_self.Largo-1)
+       _loop   
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin+LnMod*_self.CARTA_LARGO,_self.bounds.ymin) + coordinate(0,50))
+	       LcollSector.add(LcollSector.last_coord + coordinate(0,50))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin+LnMod*_self.CARTA_LARGO,_self.bounds.ymax) - coordinate(0,50))
+	       LcollSector.add(LcollSector.last_coord - coordinate(0,50))
+	       LcollSectorRope.add(LcollSector)
+       _endloop
+		
+       # Dibujar el Marco.
+       LcollSectorRope.draw_on(window,line_style.new(colour.called(:black),2))
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.dibuja_marco_larguillo_2(window)
+	## 
+	##
+	
+	_local LcollSectorRope  # Trazos del marco.
+	_local LcollSector      # Un trazo para el marco.
+	_local LoBound          # Bound del la pagina.
+
+	LoBound<<bounding_box.new(_self.SANGRIA_VER,_self.SANGRIA_HOR,_self.SANGRIA_HOR*2 + _self.CARTA_LARGO*_self.Largo,
+				_self.SANGRIA_VER*2 + _self.CARTA_ALTO)
+	
+
+	_self.bounds<< bounding_box.new(LoBound.xmin,
+					LoBound.ymin+2850,
+					LoBound.xmax,
+					LoBound.ymax+2850)	
+	LcollSectorRope<<sector_rope.new()
+
+	# Esquina inf. izq.
+	LcollSector<<sector.new()
+	LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin) + coordinate(0,100))
+	LcollSector.add(LcollSector.last_coord - coordinate(0,100))
+	LcollSector.add(LcollSector.last_coord + coordinate(100,0))
+	LcollSectorRope.add(LcollSector)		
+
+       # Esquina inf. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymin) - coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,100))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina sup. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymax) - coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord - coordinate(100,0))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina sup. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymax) + coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord - coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord - coordinate(0,100))
+       LcollSectorRope.add(LcollSector)
+
+       # Marco
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin) + coordinate(50,50))
+       LcollSector.add(LcollSector.last_coord + coordinate(_self.bounds.width-100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,_self.bounds.height-100))
+       LcollSector.add(LcollSector.last_coord + coordinate(-_self.bounds.width+100,0))
+       LcollSector.add(LcollSector.first_coord)
+       
+       LcollSectorRope.add(LcollSector)
+
+       ## Poner las marcas Largo
+       _for LnMod _over 1.upto(_self.Largo-1)
+       _loop   
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin+LnMod*_self.CARTA_LARGO,_self.bounds.ymin) + coordinate(0,50))
+	       LcollSector.add(LcollSector.last_coord + coordinate(0,50))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin+LnMod*_self.CARTA_LARGO,_self.bounds.ymax) - coordinate(0,50))
+	       LcollSector.add(LcollSector.last_coord - coordinate(0,50))
+	       LcollSectorRope.add(LcollSector)
+       _endloop
+		
+       # Dibujar el Marco.
+       LcollSectorRope.draw_on(window,line_style.new(colour.called(:black),2))
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.dibuja_marco_larguillo_3(window)
+	## 
+	##
+	
+	_local LcollSectorRope  # Trazos del marco.
+	_local LcollSector      # Un trazo para el marco.
+	_local LoBound          # Bound del la pagina.
+
+	LoBound<<bounding_box.new(_self.SANGRIA_VER,_self.SANGRIA_HOR,_self.SANGRIA_HOR*2 + _self.CARTA_LARGO*_self.Largo,
+				_self.SANGRIA_VER*2 + _self.CARTA_ALTO)
+	
+	_self.bounds<< bounding_box.new(LoBound.xmin,
+					LoBound.ymin-150,
+					LoBound.xmax,
+					LoBound.ymax-150)	
+	LcollSectorRope<<sector_rope.new()
+
+	# Esquina inf. izq.
+	LcollSector<<sector.new()
+	LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin) + coordinate(0,100))
+	LcollSector.add(LcollSector.last_coord - coordinate(0,100))
+	LcollSector.add(LcollSector.last_coord + coordinate(100,0))
+	LcollSectorRope.add(LcollSector)		
+
+       # Esquina inf. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymin) - coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,100))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina sup. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmax,_self.bounds.ymax) - coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,100))
+       LcollSector.add(LcollSector.last_coord - coordinate(100,0))
+       LcollSectorRope.add(LcollSector)
+
+       # Esquina sup. der.
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymax) + coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord - coordinate(100,0))
+       LcollSector.add(LcollSector.last_coord - coordinate(0,100))
+       LcollSectorRope.add(LcollSector)
+
+       # Marco
+       LcollSector<<sector.new()
+       LcollSector.add(coordinate(_self.bounds.xmin,_self.bounds.ymin) + coordinate(50,50))
+       LcollSector.add(LcollSector.last_coord + coordinate(_self.bounds.width-100,0))
+       LcollSector.add(LcollSector.last_coord + coordinate(0,_self.bounds.height-100))
+       LcollSector.add(LcollSector.last_coord + coordinate(-_self.bounds.width+100,0))
+       LcollSector.add(LcollSector.first_coord)
+       
+       LcollSectorRope.add(LcollSector)
+
+       ## Poner las marcas Largo
+       _for LnMod _over 1.upto(_self.Largo-1)
+       _loop   
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin+LnMod*_self.CARTA_LARGO,_self.bounds.ymin) + coordinate(0,50))
+	       LcollSector.add(LcollSector.last_coord + coordinate(0,50))
+	       LcollSectorRope.add(LcollSector)
+
+	       LcollSector<<sector.new()
+	       LcollSector.add(coordinate(_self.bounds.xmin+LnMod*_self.CARTA_LARGO,_self.bounds.ymax) - coordinate(0,50))
+	       LcollSector.add(LcollSector.last_coord - coordinate(0,50))
+	       LcollSectorRope.add(LcollSector)
+       _endloop
+		
+       # Dibujar el Marco.
+       LcollSectorRope.draw_on(window,line_style.new(colour.called(:black),2))
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.draw_content_on ( window )
+	## 
+	##
+	_if _self.marco="Larguillo"
+	_then
+		_if _self.Alto = 1
+		_then
+			_self.dibuja_marco_larguillo_1(window)
+		_elif _self.Alto = 2
+		_then 
+			_self.dibuja_marco_larguillo_2(window)
+		_else
+			_self.dibuja_marco_larguillo_3(window)
+		_endif
+
+	_else
+		_self.dibuja_marco(window)
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.initialise_for_page(a_layout_page)
+##	
+##
+## Objetivo: Formatea la pagina de acuerdo al numero de modulos especificados.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 17/mayo/2005
+## Autor de la modificacion: hramirea
+## Descripcion de la modificacion: Metodo nuevo
+##
+	_local LoBound
+
+	_if _self.marco="Larguillo"
+	_then
+		a_layout_page.set_paper_size(_self.SANGRIA_HOR*3 + _self.CARTA_LARGO*_self.Largo,
+						 _self.SANGRIA_VER*4 + _self.CARTA_ALTO*_self.Alto)
+	_else
+		a_layout_page.set_paper_size(_self.SANGRIA_HOR*2+_self.CARTA_LARGO*_self.Largo,
+				     _self.SANGRIA_VER*2+_self.CARTA_ALTO*_self.Alto)		
+	_endif
+	
+	LoBound<<a_layout_page.bounds
+
+	_self.bounds<< bounding_box.new(LoBound.xmin+_self.SANGRIA_HOR,
+					LoBound.ymin+_self.SANGRIA_VER,
+					LoBound.xmax-_self.SANGRIA_HOR,
+					LoBound.ymax-_self.SANGRIA_VER)
+	
+	_self.outline_style<<_unset
+	_self.set_fill_colour(_unset)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_marco.nombre_plano
+## 
+## 
+## Objetivo: Regresar un arreglo con los nombres de los planos.
+## Parametros de Salida: Ninguno
+## Regresa: LasTipoPlano
+## Fecha de ultima modificacion: 12/4/2005
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasTipoPlano    # Arreglo con los valores para los diferentes marcos.
+
+	LasTipoPlano<<rope.new()
+
+	## Agrega valores para identificar los marcos.
+	LasTipoPlano.add("")
+	LasTipoPlano.add("T1")
+	LasTipoPlano.add("T2")
+	LasTipoPlano.add("T3")
+	LasTipoPlano.add("2 X 4 Módulos")
+        LasTipoPlano.add("Larguillo")
+	#LasTipoPlano.add("Itinerario1")
+	#LasTipoPlano.add("Itinerario2")
+	#LasTipoPlano.add("Itinerario3")
+	#LasTipoPlano.add("Construccion1")
+	#LasTipoPlano.add("Construccion2")
+	#LasTipoPlano.add("Empalmes")
+	#LasTipoPlano.add("Topologico1")
+	#LasTipoPlano.add("Topologico2")
+	#LasTipoPlano.add("Topologico3")
+
+	>> LasTipoPlano
+_endmethod
+$

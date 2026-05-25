@@ -1,0 +1,459 @@
+#----------------------------------------------------------------
+# c_style_y_viewport_layout.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rbsaldan
+#
+# Date: 04/10/27
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+#
+#remex(:c_style_y_viewport_layout)
+$
+def_slotted_exemplar (:c_style_y_viewport_layout,
+		      {
+			      {:LoObjRel,_unset},
+			      {:oVp,_unset}
+		      }, {:layout_element,
+			  :style_element_mixin,
+			  :viewport_layout_mixin} )
+$
+## Permitir que el cuadro de dialogo de propiedades no se
+## active al insertar un objeto que hereda de layout_element.
+c_style_y_viewport_layout.define_shared_constant(:activate_properties_dialog_on_insert?,
+						 _false,
+						 :public)
+$
+c_style_y_viewport_layout.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_style_y_viewport_layout.defined_attributes
+## Objetivo: Definir los atributos de la clase que seran
+##           visualizados en el cuadro de dialogo de las propiedades de
+##           la clase.
+## Parametros de Entrada: Ninguno.
+## Parametros de Salida: Ninguno
+## Regresa: La definicio de los atributos.
+##   attribs: Definicion de los atributos.
+## Fecha de ultima modificacion: 16/Dic./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Documentacion.
+
+	## Atributos basicos de la clase.
+	attribs << rope.new_from( _super.defined_attributes)
+
+	## Atributos basicos de la clase correspondientes a un viewport.
+	attribs.add ( _self.viewport_attribute_definition )
+
+	## Propiedad que define el nombre del estilo.
+	attribs.add ( layout_attribute_definition.new(:figure_name, :string,
+						      :description, "Nombre de la figura",
+						      :default_value, "",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method, :nombre_estilos))
+	## Propiedad que define el color del simbolo.
+	attribs.add ( layout_attribute_definition.new(:symbol_colour, :colour,
+						      :description, "Color del Simbolo",
+						      :default_value, _unset,
+						      :allowed_on_properties_page?, _true,
+						      :editor, _unset))
+	## Propiedad que define el angulo del estilo.
+	attribs.add ( layout_attribute_definition.new(:angulo, :integer,
+						      :description, "Angulo del objeto",
+						      :default_value, 0,
+						      :allowed_on_properties_page?, _true,
+						      :editor, _unset))
+	## Propiedad que define si usa los limites del viewport para
+	## hacer un pliegue sobre la linea que apunta hacia un punto.
+	attribs.add ( layout_attribute_definition.new(:usa_viewport, :string,
+						      :description, "Usar las coordenadas del viewport",
+						      :default_value, "No",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method, :val_falso_verdadero,
+						      :editor, _unset))
+	## Propiedad que indica si el estilo debe dibujar un linea
+	## hacia un punto.
+	attribs.add ( layout_attribute_definition.new(:con_linea, :string,
+						      :description, "Dibuja linea de senalamiento.",
+						      :default_value, "No",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method, :val_falso_verdadero,
+						      :editor, _unset))
+	## Propiedad que indica si la linea debe llevar un apuntador
+	## (media flecha) en un extremo de la linea.
+	attribs.add ( layout_attribute_definition.new(:con_punta, :string,
+						      :description, "Dibuja punta de la linea.",
+						      :default_value, "No",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method, :val_falso_verdadero,
+						      :editor, _unset))
+	## Propiedad que Indica si el estilo se dibuja a la derecha del
+	## centro del estilo o hacia la izquierda.
+	attribs.add ( layout_attribute_definition.new(:derecho, :string,
+						      :description, "Dibujar a la derecha?",
+						      :default_value, "Si",
+						      :allowed_on_properties_page?, _false,
+						      :enum_method, :val_falso_verdadero,
+						      :editor, _unset))
+	
+	attribs.add ( layout_attribute_definition.new(:nIdObjRel, :integer,
+						      :description, "Id del objeto al que apunta.",
+						      :default_value, 0,
+						      :allowed_on_properties_page?, _false,
+						      :editor, _unset))
+
+	attribs.add ( layout_attribute_definition.new(:LyCampoGeoObjRel, :string,
+						      :description, "Campo geometrico del objeto a que apunta.",
+						      :default_value, "",
+						      :allowed_on_properties_page?, _false,
+						      :editor, _unset))
+	
+	>> attribs
+_endmethod
+$
+c_style_y_viewport_layout.define_attributes ()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_style_y_viewport_layout.val_falso_verdadero
+## Objetivo: Regresar un arreglo con los  valores "Si, "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasSiNo
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasSiNo    ##Arreglo con los valores "Si", "No"
+	LasSiNo<<rope.new()
+
+	## Agrega los valores "Si", "No"
+	LasSiNo.add("Si")
+	LasSiNo.add("No")
+
+	>> LasSiNo
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_style_y_viewport_layout.depends_on?(another)
+## Objetivo: Indica si hay dependencia entre el simbolo y another.
+## Parametros de Entrada:
+##     another: 
+## Parametros de Salida: Ninguno
+## Regresa: _false o _true
+## Fecha de ultima modificacion: 16/Dic./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Documentacion.
+	>> _super(viewport_layout_mixin).depends_on?(another)
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_style_y_viewport_layout.initialise_for_page ( a_layout_page )
+## Objetivo: Checa si ya existe un viewport sobre la pagina en
+## caso de que si lo haya, se conecta a a el directamente.
+## Parametros de Entrada:
+##     a_layout_page: Referencia a la pagina activa del documento.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 16/Dic./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Documentacion.
+	
+	## Checks if there already is a viewport on the page and if so
+	## connects to it directly.
+	_self.connect_to_viewport_on_page ( a_layout_page,_self.oVp )
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_style_y_viewport_layout.update_references ( reference_table )
+## Objetivo: Actualizar las referecias con el viewport.
+## Parametros de Entrada:
+##     reference_table: Tabla de referencias.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 16/Dic./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Documentacion.
+	## 
+	## Conflict resolver method calls viewport_layout_mixin
+	## 
+	_super(viewport_layout_mixin).update_references ( reference_table )
+_endmethod
+$
+
+
+_pragma(classify_level=restricted)
+_method c_style_y_viewport_layout.draw_content_on ( window )
+## Objetivo: Dibujar el estilo en una pagina
+##           de un documento en el Layout Designer.
+## Parametros de Entrada:
+##    window: Area dende se lleva a cabo el dibujo.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 16/Dic./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Documentacion.
+	
+#angle << 0.0
+	
+_local LoEstilo  ## Estilo que se va a dibujar.
+_local LfAngulo  ## Angulo del estilo.
+
+
+        ## Obtener el angulo del estilo.
+        LfAngulo<<_self.angulo.default(0.0).degrees_to_radians
+	_if ( a_viewport <<  _self.viewport ) _isnt _unset 
+	_then
+		LfAngulo << LfAngulo+a_viewport.view_angle.degrees_to_radians
+	_endif
+
+	## Dibujar el estilo.
+	_if (figure_name << _self.figure_name) _isnt _unset _andif
+	    (LoEstilo << _self.ESTILOS[figure_name.as_symbol()]) _isnt _unset
+	_then
+		
+		_if _self.LoObjRel _is _unset
+		_then
+			LoAppPni<<smallworld_product.pni_application()
+			LoPred<<predicate.eq(:id,_self.nIdObjRel)
+			_self.LoObjRel<<LoAppPni.database.collection(:gis,:uub).select(LoPred).an_element()
+			_if _self.LoObjRel _is _unset
+			_then
+				_return 
+			_endif
+		_endif
+		_self.draw_style(window,LoEstilo, LfAngulo,_self.LoObjRel,_self.LyCampoGeoObjRel.as_symbol(),
+				 _self.viewport,_self.usa_viewport,_self.con_linea,_self.con_punta)
+		_if a_viewport _is _unset 
+		_then
+			_self.draw_incomplete ( window, _self.message(:unattached_northarrow) )
+		_endif 
+	_else
+		# Should normally not occure
+		_self.draw_incomplete ( window, _self.message(:select_a_symbol) )
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_style_y_viewport_layout.crea_figura(PsEstilo,PsNombre_para_estilo, _optional
+					    LsDato1,LsDato2,LsDato3,LsDato4,LsDato5,LsDato6,
+					    LsDato7,LsDato8,LsDato9,LsDato10,LsDato11)
+## Objetivo: Crear un estilo (con un dise/o definido) en tiempo
+##           de ejecucion.
+## Parametros de Entrada:
+##     PsEstilo: Nombre del dise/o de estilo.
+##     PsNombre_para_estilo: Nombre que se le dara al estilo.
+##     LsDato1 -> LsDato 11:      Valores que deben mostrarse en el estilo.
+## Parametros de Salida: Ninguno
+## Regresa: Ningulo.
+## Fecha de ultima modificacion: 16/Nov./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+
+	## Dise/o de estilos.
+	_if PsEstilo="fig_uno"
+	_then
+		_self.ESTILOS[PsNombre_para_estilo.as_symbol()] <<
+			{
+				{:area,_unset,_unset,coords_rope.new_with_xy(0,-4,0,0,0,-4)},
+				{:area,:white,:black,coords_rope.new_with_xy(0,0,2,2,2,5,2,2,0,0,0,0)},
+				{:area,:white,:black,coords_rope.new_with_xy(0,0,-2,2,-2,5,-2,2,0,0)},
+				{:text, :plain,0,2, LsDato1.default("")},
+				{:text, :plain,0,3, LsDato2.default("")},
+				{:text, :plain,0,4, LsDato3.default("")},
+				{:text, :plain,0,5, LsDato4.default("")}
+			}
+	_elif PsEstilo="fig_dos_a"
+	_then
+		_self.ESTILOS[PsNombre_para_estilo.as_symbol()] <<
+			{
+				{:area,_unset,_unset,coords_rope.new_with_xy(0,0,0,-13,0,0)},
+				{:area,:white,:black,coords_rope.new_with_xy(0,0,3,2,3,10,3,2,0,0,0)},
+				{:area,:white,:black,coords_rope.new_with_xy(0,0,-3,2,-3,10,-3,2,0,0)},
+				{:area,:white,:black,coords_rope.new_with_xy(-3,6,3,6,-3,6)},
+				{:area,:white,:black,coords_rope.new_with_xy(-3,10,3,10,-3,10)},
+				{:circle, :black, 0, 10, 3},
+				{:text, :plain,0,2, LsDato1.default("No dato1")},
+				{:text, :plain,0,3, LsDato2.default("No dato2")},
+				{:text, :plain,0,4, LsDato3.default("No dato3")},
+				{:text, :plain,0,5, LsDato4.default("No dato4")},
+				{:text, :plain,0,9.5, LsDato5.default("No dato5")},
+				{:text, :plain,0,11, LsDato6.default("No dato6")}
+			}
+	_elif PsEstilo="fig_dos_b"
+	_then
+		_self.ESTILOS[PsNombre_para_estilo.as_symbol()] <<
+			{
+				{:area,_unset,_unset,coords_rope.new_with_xy(0,0,0,-18,0,0)},
+				{:area,:white,:black,coords_rope.new_with_xy(0,0,3,4,3,15,3,4,0,0)},
+				{:area,:white,:black,coords_rope.new_with_xy(0,0,-3,4,-3,15,-3,4,0,0)},
+				{:area,:white,:black,coords_rope.new_with_xy(-3,15,3,15,-3,15)},
+				{:circle, :black, 0, 15, 3},
+				{:text, :plain,0,15.9, LsDato1.default("No dato1")},
+				{:text, :plain,0,13.9, LsDato2.default("No dato2")},
+				{:text, :plain,0,11, LsDato3.default("PROY")}
+			}
+	_elif PsEstilo="fig_tres"
+	_then
+		_self.ESTILOS[PsNombre_para_estilo.as_symbol()] <<
+			{
+				{:area,:white,:black,coords_rope.new_with_xy(0,2.5,0,-2.5,0,2.5)},
+				{:circle, :black, 0.5, 0, 0.3},
+				{:circle, :black, 0.5, -1, 0.3},
+				{:circle, :black, 0.5, -2, 0.3},
+				{:circle, :black, 1.5, 0,0.5},
+				{:circle, :black, 1.5, -1,0.5},
+				{:circle, :black, 1.5, -2,0.5},
+				{:circle, :black, -0.5, 0, 0.3},
+				{:circle, :black, -0.5, -1, 0.3},
+				{:circle, :black, -0.5, -2, 0.3},
+				{:circle, :black, -1.5, 0, 0.5},
+				{:circle, :black, -1.5, -1, 0.5},
+				{:circle, :black, -1.5, -2, 0.5}
+			}
+	_elif PsEstilo="fig_cuatro"
+	_then
+		_self.ESTILOS[PsNombre_para_estilo.as_symbol()] <<
+			{
+				{:text, :plain,-3,15,"DTO.: "},
+				{:area,:white,:black,coords_rope.new_with_xy(6,14.3,-1,14.3,6,14.3)},
+				{:text, :plain,-3,13,"D. a O.C.: "},
+				{:area,:white,:black,coords_rope.new_with_xy(6,12.3,-1,12.3,6,12.3)},
+				{:area,:white,:black,coords_rope.new_with_xy(6,12,-6,12,-6,0,6,0,6,12)},
+				{:area,:white,:black,coords_rope.new_with_xy(6,10,-6,10,6,10)},
+				{:area,:white,:black,coords_rope.new_with_xy(6,8,-6,8,6,8)},
+				{:area,:white,:black,coords_rope.new_with_xy(6,6,-6,6,6,6)},
+				{:area,:white,:black,coords_rope.new_with_xy(6,4,-6,4,6,4)},
+				{:area,:white,:black,coords_rope.new_with_xy(6,2,-6,2,6,2)},
+				{:area,:white,:black,coords_rope.new_with_xy(2,6,2,0,2,6)},
+				{:area,:white,:black,coords_rope.new_with_xy(-2,6,-2,0,-2,6)},
+				{:text, :plain,2.5,15,LsDato1.default("No dato1")},
+				{:text, :plain,2.5,13,LsDato2.default("No dato2")},
+				{:text, :plain,-3,11,"P.PRINC."},
+				{:text, :plain,3,11,LsDato3.default("---+--- mts")},
+				{:text, :plain,-3,9,"P.SEC."},
+				{:text, :plain,3,9,LsDato4.default("---+--- mts")},
+				{:text, :plain,-3,7,"Abns.Exist."},
+				{:text, :plain,3,7,LsDato5.default("---+--- mts")},
+				{:text, :plain,-4,5,"N"},
+				{:text, :plain,0,5,LsDato6.default("---6")},
+				{:text, :plain,4,5,LsDato7.default("7")},
+				{:text, :plain,-4,3,"N + 1"},
+				{:text, :plain,0,3,LsDato8.default("---8")},
+				{:text, :plain,4,3,LsDato9.default("9")},
+				{:text, :plain,-4,1,"S A T"},
+				{:text, :plain,0,1,LsDato10.default("---10")},
+				{:text, :plain,4,1,LsDato11.default("11")}
+			}
+	_elif PsEstilo="fig_cinco"
+	_then
+		_if _self.derecho="Si"
+		_then
+			_self.ESTILOS[PsNombre_para_estilo.as_symbol()] <<
+				{
+					{:area,:white,:black,coords_rope.new_with_xy(0,0,3,0,4,3,5,-3,6,0,9,0,
+										     6,0,5,-3,4,3,3,0,0,0)},
+					{:text, :plain,7.5,1,LsDato1.default("No dato1")+" ps"}
+				}
+		_else 
+			_self.ESTILOS[PsNombre_para_estilo.as_symbol()] <<
+				{
+					{:area,:white,:black,coords_rope.new_with_xy(0,0,-3,0,-4,3,-5,-3,-6,0,-9,0,
+										     -6,0,-5,-3,-4,3,-3,0,0,0)},
+					{:text, :plain,-7.5,1,LsDato1.default("No dato1")+" ps"}
+				}
+			
+		_endif
+	_elif PsEstilo="fig_seis"
+	_then 
+		_self.ESTILOS[PsNombre_para_estilo.as_symbol()] <<{{:text, :plain,0,0,LsDato1.default("No dato1")}}	
+	_endif
+	_self.figure_name<<PsNombre_para_estilo.write_string
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_style_y_viewport_layout.LoObjRel<<PoObjeto
+## Objetivo: Asignar un valor al slot LoObjRel
+## Parametros de Entrada:
+##   PoObjeto: El objeto que se le asignara al slot LoObjRel.
+## Parametros de Salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 16/Nov./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+	.LoObjRel<<PoObjeto
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_style_y_viewport_layout.LoObjRel
+## Objetivo: Regresar el valor del slot LoObjRel.
+## Parametros de Entrada: Ninguno.
+## Parametros de Salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 16/Nov./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+	>>.LoObjRel
+_endmethod
+$
+#_pragma(classify_level=restricted)
+#_method c_style_y_viewport_layout.LyCampoGeoObjRel<<PyValor
+### Objetivo: Asignar un valor al slot LyCampoGeoObjRel.
+### Parametros de Entrada:
+###   PyValor: Valor que se le asignara al slot LyCampoGeoObjRel.
+### Parametros de Salida: Ninguno.
+### Regresa: Ninguno.
+### Fecha de ultima modificacion: 16/Nov./2004.
+### Autor de la modificacion: rbsaldan.
+### Descripcion de la modificacion: Metodo nuevo.
+#	.LyCampoGeoObjRel<<PyValor
+#	
+#_endmethod
+#$
+#_pragma(classify_level=restricted)
+#_method c_style_y_viewport_layout.LyCampoGeoObjRel
+### Objetivo: Regresar el valor del slot LyCampoGeoObjRel.
+### Parametros de Entrada: Ninguno.
+### Parametros de Salida: Ninguno.
+### Regresa: Ninguno.
+### Fecha de ultima modificacion: 16/Nov./2004.
+### Autor de la modificacion: rbsaldan.
+### Descripcion de la modificacion: Metodo nuevo.
+#	>>.LyCampoGeoObjRel
+#_endmethod
+#$
+_pragma(classify_level=restricted)
+_method c_style_y_viewport_layout.oVp<<PoDato
+## Objetivo: Asignar un valor al slot oVp.
+## Parametros de Entrada:
+##   PoDato: Dato que se le asignara al slot oVp.
+## Parametros de Salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 7/Feb./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+	.oVp<<PoDato
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_style_y_viewport_layout.oVp
+## Objetivo: Regresar el valor del slot oVp.
+## Parametros de Entrada: Ninguno.
+## Parametros de Salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 7/Feb./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+	>>.oVp
+_endmethod
+$
+
+

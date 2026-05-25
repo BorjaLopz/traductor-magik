@@ -1,0 +1,74 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Planos - FO
+# Objetivo: Generar el cuadro de simbología para
+#           los planos de FO
+# Autor:    lgranados
+# Fecha de creacion: 18-agosto-2008
+#
+#----------------------------------------------------------------
+
+_package user
+$
+remex(:c_sello_simbologia_red_sec)
+$
+def_slotted_exemplar(:c_sello_simbologia_red_sec,
+{
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_simbologia_red_sec.configura_tabla()
+
+
+_local LoTblTitulo
+_local LoTblContenido
+_local LoTbl
+_local LfDesplazaY
+
+       # Titulo1
+       LoTblTitulo<<property_list.new_with_properties(:ren,{8},
+						      :col,{130})
+       LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_titulo)
+       LoTbl.ocoordenada_origen << .o_coord_inicio
+       _self.asigna_medidas_tabla(LoTbl, LoTblTitulo)
+
+       # Titulo2
+       LoTblTitulo2<<property_list.new_with_properties(:ren,{8},
+						       :col,{60,35,35})
+       LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo})
+       LoTbl2<<.o_tablas.crea_tabla(1,3,:tbl_titulo2)
+       LoTbl2.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,
+						    .o_coord_inicio.y - LfDesplazaY)
+       _self.asigna_medidas_tabla(LoTbl2, LoTblTitulo2)
+       
+       # Contenido
+       LoTblContenido << property_list.new_with_properties(:ren,{110},
+							   :col,{130})
+       LfDesplazaY << LfDesplazaY+.o_tablas.longitud_total_renglones({:tbl_titulo2})
+       
+       LoTbl <<.o_tablas.crea_tabla(1,1, :tbl_contenido)
+       LoTbl.oCoordenada_Origen<<coordinate.new( .o_coord_inicio.x,
+						 .o_coord_inicio.y - LfDesplazaY)
+       _self.asigna_medidas_tabla(LoTbl, LoTblContenido)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_simbologia_red_sec.etiqueta_celdas()
+
+
+	_self.asigna_texto_celda(:tbl_titulo,1,1,"SIMBOLOGIA DE LA RED SECUNDARIA",
+				 30, :centre_centre,0,{0.0,0.2993,0.0})
+	
+	_self.asigna_texto_celda(:tbl_titulo2,1,1,"DESCRIPCION",
+				 20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_titulo2,1,2,"RED EXISTENTE",
+				 20,:centre_centre,0,{0.0,0.2993,0.0})
+	_self.asigna_texto_celda(:tbl_titulo2,1,3,"RED PROYECTADA",
+				 20,:centre_centre,0,{0.0,0.2993,0.0})
+	
+	_self.asigna_simbolo_celda(:tbl_contenido,1,1,"simbologia_de_la_red_sec",3)
+_endmethod
+$
+

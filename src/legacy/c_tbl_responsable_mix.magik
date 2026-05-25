@@ -1,0 +1,122 @@
+ 
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.crea_y_cfg_tbl_responsable(pCoordInicio)
+	#---------------------------------------------------
+	## <Req. #> : principal_tbl_responsable
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	#----------------------------------------------------------
+	# Tabla Título de responsable
+	#-----------------------------------------------------------
+	_local despTblResumen 
+	despTblResumen << 0
+	adicional << 0
+	ren << 3
+	col << 5
+	plLongRensCols << property_list.new()
+	plLongRensCols[:ren] << {1, 4, 1}
+	plLongRensCols[:col] << {2, 2,  64, 2, 2}
+        tbl << .o_tablas.crea_tabla(ren, col, :tbl_responsable_tit)
+	tbl.oCoordenada_Origen << pCoordInicio
+	_self.asigna_medidas_tabla(tbl, plLongRensCols)
+	_self.cfg_tbl_titulo(tbl)
+
+	#----------------------------------------------------------
+	# Tabla Detalle de responsable
+	#-----------------------------------------------------------
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_responsable_tit})
+	ren << 5
+	col << 8
+	plLongRensCols << property_list.new()
+	plLongRensCols[:ren] << {4,  4,  4,  4,  2}
+	plLongRensCols[:col] << {2,  2,  2, 35, 25,  2, 2, 2}
+
+        loTbl << .o_tablas.crea_tabla(ren, col, :tbl_responsable_det)
+	loTbl.oCoordenada_Origen << coordinate.new( pCoordInicio.x, pCoordInicio.y - (LfDesplazaY))
+	_self.asigna_medidas_tabla(loTbl, plLongRensCols)
+	_self.cfg_tbl_detalle(loTbl)
+
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_responsable_tit, :tbl_responsable_det})
+	_return LfDesplazaY
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.asigna_etiquetas_a_celdas_tbl_responsable()
+	#---------------------------------------------------
+	## <Req. #> : Asigna las etiquetas constantes a las celdas de la tbl
+	## responsable 
+	## etiqueta_celda_tbl_responsable()
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	_local ren, col, tamFuente, alineacion
+
+	ren << 2; col << 3; tamFuente << 25; alineacion << :centre_centre
+	_self.asigna_texto_celda(:tbl_responsable_tit, ren, col, "RESPONSABLES", tamFuente, alineacion)
+
+	ren << 1; col << 5; tamFuente << 25; alineacion << :centre_left
+	_self.asigna_texto_celda(:tbl_responsable_det, ren, col, "NOMBRE/FIRMA", tamFuente, alineacion)
+	ren << 2; col << 4; tamFuente << 25; alineacion << :centre_left
+	_self.asigna_texto_celda(:tbl_responsable_det, ren, col, "INGENIERIA", tamFuente, alineacion)
+	ren << 3; col << 4; 
+	_self.asigna_texto_celda(:tbl_responsable_det, ren, col, "RESPONSABLE COMERCIAL", tamFuente, alineacion)
+	ren << 4; col << 4;
+	_self.asigna_texto_celda(:tbl_responsable_det, ren, col, "RESPONSABLE PROYECTO", tamFuente, alineacion)
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.defined_attributes_tbl_responsable(pAttribs)
+	#---------------------------------------------------
+	## <Req. #> : define los atributos que permiten la captura de
+	## los datos al usuario en la tabla de responsable
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	pAttribs.add(layout_attribute_definition.new(:ingenieria, :string, :description, "asignar valores",:default_value, "Ingenieria"))
+	pAttribs.add(layout_attribute_definition.new(:respComercial, :string, :description, "asignar valores",:default_value, "Responsable Comercial"))
+	pAttribs.add(layout_attribute_definition.new(:respProyecto, :string, :description, "asignar valores",:default_value, "Responsable proyecto"))	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.asigna_atribs_a_celdas_editables_tbl_responsable()
+	#---------------------------------------------------
+	## <Req. #> : Asigna los valores de los atributos a las celdas
+	## editables de la tbl responsable.
+	## asigna_val_a_celda_responsable()
+	## asigna_atribs_a_celdas_editables_tbl_responsable
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	val << _self.attributes[:ingenieria].value
+	ren<< 2; col << 5; tamFuente << 25;  alineacion << :centre_left
+	_self.asigna_texto_celda(:tbl_responsable_det, ren, col, val, tamFuente, alineacion)
+	ren<< 3; col << 5;
+	val << _self.attributes[:respComercial].value
+	_self.asigna_texto_celda(:tbl_responsable_det, ren, col, val, tamFuente, alineacion)
+	ren<< 4; col << 5;	
+	val << _self.attributes[:respProyecto].value
+	_self.asigna_texto_celda(:tbl_responsable_det, ren, col, val, tamFuente, alineacion)
+_endmethod
+$

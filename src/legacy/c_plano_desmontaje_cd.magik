@@ -1,0 +1,198 @@
+# Nombre de la empresa:           SIGTAO SOFTWARE S.A. DE C.V.
+# Traza:                          SIGC 11, PLANO DE DESMONTAJE
+#                                 DE CAJA DE DISTRIBUCIÓN
+# Objetivo principal del archivo: GENERAR EL PLANO DE
+#                                 DESMONTAJE DE CAJA DE DISTRIBUCIÓN
+# Autor:                          vnguzman
+# Fecha de creación:              Lúnes 10 de Abril de 2006
+$
+_package user
+$
+#remex(:c_plano_desmontaje_cd)
+$
+def_slotted_exemplar (:c_plano_desmontaje_cd
+                     ,{
+                       {:app,       smallworld_product.pni_application(), :writable, :public}
+#                    ,{:origen,    coordinate.new(200,200),              :writable, :public}
+#                    ,{:vp_nombre, _unset,                               :writable, :public}
+#                    ,{:marco,     _unset,                               :writable, :public}
+#                    ,{:rutas,     _unset,                               :writable, :private}
+		      }
+		     ,{:layout_element, :viewport_layout_mixin}
+                     )
+$
+c_plano_desmontaje_cd.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_desmontaje_cd.defined_attributes
+        ##  Objetivo:              Este método define atirbutos de este plano.
+        ##  Parámetros de entrada: N/A.
+        ##  Parámetros de salida:  sw:rope:[1-4] - _super.defined_attributes -
+	##                         atributos de viewport_layout_mixin.
+        ##                         sw:layout_attribute_definition -
+	##                         _self.viewport_attribute_definition - .
+        ##  Regresa:               sw:rope:[1-5] - attribs - Regresa Los atributos de este plano.
+	
+        attribs                    << rope.new_from(_super.defined_attributes)
+
+#	attribs.add ( layout_attribute_definition.new(:Largo, :integer,
+#						      :description, "Numero de Modulos",
+#						      :allowed_on_properties_page?, _true,
+#						      :set_method, :modulos|()|,
+#						      :default_value, 3 ) )
+	
+        attribs.add (_self.viewport_attribute_definition)
+        >> attribs
+_endmethod
+$
+c_plano_desmontaje_cd.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_desmontaje_cd.new()
+	## Objetivo:              Este método genera una nueva instancia
+	##                        del plano de fosa de cables y
+	##                        distribuidor general
+	## Parámetros de entrada: N/A.
+	## Parámetros de salida:  
+	## Regresa:               Una nueva instancia del plano fosa de
+	##                        cables y distribuidor general
+	
+        >> _clone.init()
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_desmontaje_cd.init()
+	## Objetivo:              Este método inicializa una nueva instancia
+	##                        del plano de fosa de cables y
+	##                        distribuidor general
+	## Parámetros de entrada: N/A
+	## Parámetros de salida:  N/A
+	## Regresa:               Esta instancia
+	
+	.app                      << smallworld_product.pni_application()
+	>> _self
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_desmontaje_cd.genera_plano()
+        ##  Objetivo:              Este método genera el plano Fosa de cables y distribuidor
+	##                         general.
+        ##  Parámetros de entrada: N/A.
+        ##  Parámetros de salida:  a sw:layout_page - LoPagina - Página actual del Layout Designer.
+        ##  Regresa:               N/A
+
+	_local LoLayoutDesigner << .app.plugin(:layout_plugin).start_layout_designer()
+	_local LoPagina << _unset
+	_if LoLayoutDesigner _isnt _unset 
+	_then
+		_local LoLayoutManager    << LoLayoutDesigner.plugin(:layout_manager)
+		LoDoc  << LoLayoutManager.current_document
+		LoPagina << LoDoc.current_page
+		_if LoPagina.elements.size>0
+		_then
+			LoPagina.elements.empty()
+		_endif
+	_else
+		_return
+	_endif
+
+	_self.marco(LoPagina)
+	_self.sello(LoPagina)
+	_self.mapa(LoPagina)
+#	_local LoEtiqueta << c_texto_grafico.new("DESMONTAJE")
+#	LoEtiqueta.n
+#	LoPagina.add_element(LoEtiqueta)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_desmontaje_cd.marco(LoPagina)
+        ##  Objetivo:              Este método genera el marco del plano Fosa de cables y
+	##                         distribuidor general.
+        ##  Parámetros de entrada: a sw_layout_page - LoPagina - Página actual del Layout Designer.
+        ##  Parámetros de salida:  .
+        ##  Regresa:               N/A
+
+        _local LoMarco << c_marco.new_with(:bounds,bounding_box.new(0,0,1,1))
+#	LoMarco.Largo << _self.Largo
+	LoMarco.Largo << 3
+	LoMarco.Alto << 1
+	LoMarco.set_fill_colour(_unset)
+	LoPagina.add_element(LoMarco)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_desmontaje_cd.sello(LoPagina)
+	## Este método genera el sello del plano de desmontaje de caja
+	## de distribución
+	## Parámetros de entrada: a sw_layout_page - LoPagina - Página
+	##                        actual del Layout Designer.
+	LoSello << c_sello_proyecto_canalizacion.new_with(:bounds, bounding_box.new(420, 0, 3600, 2920))
+        LoSello.Inicializa()
+        LoPagina.add_element(LoSello)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_desmontaje_cd.mapa(LoPagina)
+	## Este método genera el mapa del plano de desmontaje de caja
+	## de distribución
+	## Parámetros de entrada: a sw_layout_page - LoPagina - Página
+	##                        actual del Layout Designer
+	
+	_local LoViewportLayout << viewport_layout.new_with(:bounds, bounding_box.new(2540, 270, 6600, 2920))
+
+	_if LoViewportLayout.mapped? _is false
+	_then
+
+        	_local LoMapManager << .app.plugin(:map_plugin)
+        	_local LoMapView << LoMapManager.current_map_view
+		_local LoViewBounds << LoMapView.current_view_bounds
+                _local LoViewportBounds << LoViewportLayout.bounds.new_enlarging ( 0.10 )
+		_local LoViewScale << _unset
+
+		LoViewAngle << LoMapView.viewing_angle.radians_to_degrees
+	
+		_if LoViewAngle.abs > 0.1
+		_then
+			LoViewScale << LoMapView.view_scale
+		_else
+			LoViewScale << ( LoViewBounds.width / LoViewportBounds.width ).min ( LoViewBounds.height / LoViewportBounds.height )
+
+			_if ( app_cs << LoMapView.application.coordinate_system ) _isnt _unset
+			_then
+				LoViewScale << LoViewScale * app_cs.unit_factor 
+			_endif 
+		_endif
+
+		LoViewportLayout.soc_name   << LoMapManager.application.spatial_object_controller.name
+		LoViewportLayout.centre     << LoViewBounds.centre
+		LoViewportLayout.view_scale << LoViewScale
+		LoViewportLayout.view_angle << LoViewAngle
+	
+		LoViewportLayout.ace_name   << LoMapView.ace_name
+		LoViewportLayout.draw_scale << 1.0   # ????
+		LoViewportLayout.world      << LoMapView.world
+	
+		display_styles << .app.get_display_styles_for ( LoMapView.ace_name )
+		display_style_name << LoMapView.current_display_style_name.write_string.as_symbol ()
+		_for item _over display_styles.fast_elements ()
+		_loop 
+			_if display_style_name _is item.scale_id
+			_then
+				display_style << item.name
+			_endif 
+		_endloop 
+
+		LoViewportLayout.display_style     << display_style.default ( display_styles.first.name )
+
+		LoViewportLayout.projection        << LoMapView.current_view_parameters ().coordinate_system
+		LoViewportLayout.coordinate_system << LoMapView.application.coordinate_system
+
+	_endif
+
+	LoPagina.add_element(LoViewportLayout)
+
+_endmethod
+$

@@ -1,0 +1,314 @@
+_package user
+$
+def_slotted_exemplar(:c_tablas,
+                     {
+			     {:nTotalTablas, _unset }, # Numero total de tablas que contiene
+			     {:collTablas,   _unset }, # Coleccion de tablas 
+			     {:oLayout,      _unset }  # Layout al que pertnece el objeto 
+		     }
+)
+$
+c_tablas.define_slot_access(:collTablas,   :writable, :private)
+$
+c_tablas.define_slot_access(:nTotalTablas, :writable, :private)
+$
+c_tablas.define_slot_access(:oLayout,      :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.Agrega_LYM(RoLYM)
+## Objetivo:  
+## Parámetros de entrada: 
+##    Layout Element Manager - RoLYM - Objeto Layout Element Manager 
+## Parámetros de salida:  NA
+## Regresa: 
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+
+
+	_for LoTabla  _over _self.collTablas.fast_elements()
+	_loop
+		LoTabla.Agrega_LYM(RoLYM)
+	_endloop
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.area_total()
+## Objetivo: calcula el área total de todas las tablas que estan contenidas
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	bounds - LoSuperTotal - Superficie total de las tablas
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+_local LoSuperTotal # Bound de la superficie total
+_local LoSuperficie # Area de la tabla
+_local LoPuntos     # Almacena las coordenadas de un area
+	
+	LoPuntos << coords_rope.new()
+	LoPuntos.empty()
+	
+	_for LoTabla  _over _self.collTablas.fast_elements()
+	_loop
+		LoSuperficie << LoTabla.Calcula_area_tabla(_self.oLayout)
+
+		#Se crea el objeto area para esa celda
+		LoPuntos.add(coordinate(LoSuperficie.xmin,LoSuperficie.ymin))
+		LoPuntos.add(coordinate(LoSuperficie.xmax,LoSuperficie.ymax))
+	_endloop
+
+        LoSuperTotal << LoPuntos.bounds
+	
+	_return LoSuperTotal
+	
+_endmethod
+$
+_method c_tablas.AsignaLayout << PoLayout
+	## 
+	## 
+
+	.oLayout << PoLayout
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tablas.collTablas << valor
+
+	.collTablas << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.crea_tabla(RnNumRen, RnNumCol, RsNombre, _optional PsColorLinea)
+## Objetivo: Crear una instancia de c_tabla y la agrega a la coleccion 
+## Parámetros de entrada:
+## 	Entero - RnNumRen - Numero de renglones que tendra la tabla que se esa creando
+## 	Entero - RnNumCol - Numero de columnas que tendra la tabla que se esta creabdo
+## 	String - RsNombre - Nombre de la tabla que se esta creando
+## 	String - PsColorLinea - Color de la linea de la tabla
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_tabla - regresa un objeto c_tabla
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+## Fecha de última modificación: 27/06/2006
+## Autor de la modificación : vbluna
+## Descripción de la modificación: Se agrega el parámetro
+## opcional PsColorLinea
+
+	_self.collTablas[RsNombre] << c_tabla.new(RnNumRen,RnNumCol,PsColorLinea)
+	_self.collTablas[RsNombre].nombre << RsNombre
+	_self.nTotalTablas <<  _self.nTotalTablas + 1
+	
+	>> _self.collTablas[RsNombre]
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.Despliega(RoVentana)
+## Objetivo: calcula el area total de todas las tablas que estan contenidas
+## Parámetros de entrada: 
+##    cancvas - RoVentana - Canvas en la que se desplegaran las tablas
+## Parámetros de salida:  NA
+## Regresa:  NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+	
+	_for LoTabla  _over _self.collTablas.fast_elements()
+	_loop
+		LoTabla.oLayout << _self.oLayout 
+		LoTabla.Despliega(RoVentana)
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.Elemento(RsNombre)
+## Objetivo: obtner una c_tabla de acuerdo al nombre
+## Parámetros de entrada:
+## 	String - RsNombre - Nombre de la tabla que se esta solicitando
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_tabla - regresa un objeto c_tabla
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+
+	>> _self.collTablas[RsNombre]
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tablas.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.Longitud_total_Columnas(RcollIndice)
+## Objetivo: calcular la longitud (columnas) de total de las tablas que esten listadas en la coleccion 
+## Parámetros de entrada: 
+##    coleccion - RcollIndice - Contiene el nombre de las tablas de las cuales se 
+##                              desea conocer su longitud
+## Parámetros de salida:  NA
+## Regresa: 
+## 	Entero - LnLongitud - (Numero depixeles) Longitud de las tablas que se 
+##                            solicitaron en el indice
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+
+_local LnLongitud # Longitud total de las columnas de las tablas
+
+	LnLongitud << 0
+	
+	_for LsSimbolo  _over  RcollIndice.fast_elements()
+	_loop
+ 	   LnLongitud <<  _self.collTablas[LsSimbolo.as_symbol()].oColumnas.Longitud_total() + LnLongitud
+	_endloop
+
+	>> LnLongitud
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.Longitud_total_Renglones(RcollIndice)
+## Objetivo: calcular la longitud (renglones) de total de las tablas que esten listadas en la coleccion 
+## Parámetros de entrada: 
+##    coleccion - RcollIndice - Contiene el nombre de las tablas de las cuales se 
+##                              desea conocer su longitud
+## Parámetros de salida:  NA
+## Regresa: 
+## 	Entero - LnLongitud - (Numero depixeles) Longitud de las tablas que se 
+##                            solicitaron en el indice
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento	
+
+_local LnLongitud # Longitud total de los renglones de las tablas
+
+	LnLongitud << 0
+	
+	_for LsSimbolo  _over  RcollIndice.fast_elements()
+	_loop
+ 	   LnLongitud <<  _self.collTablas[LsSimbolo.as_symbol()].oRenglones.Longitud_total() + LnLongitud
+	_endloop
+
+	>> LnLongitud
+	
+_endmethod
+$
+_method c_tablas.new(RoLayout)
+## Objetivo: Crear una instancia de c_tablas
+## Parametros de entrada:
+## 	Layout - RoLayout - Layout al que pertenece el objeto
+## Parametros de salida:   NA
+## Regresa: 
+## 	c_tablas - regresa un objeto c_tablas
+## Fecha de ultima modificacion: 28/10/2004
+## Autor de la modificacion : dsanchez
+## Descripcion de la modificacion: Se documento	
+
+	_self.oLayout << RoLayout
+	_self.nTotalTablas << 0
+	_self.collTablas << hash_table.new()
+
+	# elimina el borde de layout
+	_if _self.oLayout _isnt _unset 
+	_then
+		_self.oLayout.outline_style<<_unset
+	_endif
+	
+	_return _clone 
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tablas.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tablas.nTotalTablas << valor
+
+	.nTotalTablas << valor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.o_layout
+
+	>> .oLayout
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.o_layout << layout
+
+	.oLayout << layout
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tablas.serial_slots()
+
+	keys << rope.new_with(:nTotalTablas,:collTablas)
+	values << rope.new_with(.nTotalTablas,.collTablas)
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tablas.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_tablas.tablas
+
+	>> .collTablas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tablas.Total_elementos()
+## Objetivo: regresa el número de tablas que tiene c_tablas
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+## 	entero - numero de tablas
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	>> _self.nTotalTablas 
+	
+_endmethod
+$

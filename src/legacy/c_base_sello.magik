@@ -1,0 +1,309 @@
+_package user
+$
+def_slotted_exemplar(:c_base_sello,
+{
+    {:o_tablas,       _unset, :writable}, # Tablas que componen el sello
+    {:window,         _unset, :writable}, # Canvas en donde se despliega el sello
+    {:o_coord_inicio, _unset, :writable}, # Coord donde inicia el sello
+    {:o_color_linea,  _unset, :writable}  # RGB que define el color de linea
+},  :layout_element)
+$
+c_base_sello.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+c_base_sello.define_pseudo_slot(:b_origen_xml, _false, :writable, :private)
+$
+c_base_sello.define_pseudo_slot(:viewport_principal, _unset, :writable, :private)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.actualiza_datos()
+	_self.llena_datos_celdas()
+	_self.draw_content_on(.window)
+_endmethod
+$
+_method c_base_sello.asigna_medidas_tabla(po_tabla, pcol_medidas, _optional factor)
+
+	_if factor _is _unset
+	_then
+		factor << 1.0
+	_endif
+	
+	_for n_ren, med_ren _over pcol_medidas[:ren].fast_keys_and_elements()
+	_loop
+		po_tabla.oRenglones.elemento(n_ren).nLongitud << med_ren * factor
+	_endloop
+
+	_for n_col, med_col _over pcol_medidas[:col].fast_keys_and_elements()
+	_loop
+		po_tabla.oColumnas.elemento(n_col).nLongitud << med_col * factor
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.asigna_simbolo_celda(ps_nom_tabla, pn_num_ren, pn_num_col, ps_nom_symbol
+		                          _optional pn_margen)
+
+	o_symbol << c_simbolo_grafico.new(ps_nom_symbol)
+	o_symbol.nMargen_izq << 1
+	o_symbol.nMargen_der << 1
+	o_symbol.nMargen_sup << 1
+	o_symbol.nMargen_inf << 1
+
+	_if pn_margen _isnt _unset 
+	_then
+		o_symbol.nMargen_izq << pn_margen
+		o_symbol.nMargen_der << pn_margen
+		o_symbol.nMargen_sup << pn_margen
+		o_symbol.nMargen_inf << pn_margen
+	_endif
+
+	lo_tabla << .o_tablas.elemento(ps_nom_tabla)
+	lo_celda << lo_tabla.oceldas.celda(pn_num_ren,pn_num_col)
+	
+	lo_celda.oelemento << o_symbol
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.asigna_texto_celda(ps_nom_tabla, pn_num_ren, pn_num_col, ps_texto,
+		                           pn_tamanio, _optional ps_alineacion, pn_margen, ps_color)
+
+	#(19/11/14 bautistaja): Se valida si el sello es estudio de
+	# transmision para ajustar sus textos
+	_if _self.class_name _is :c_sello_estudio_transmision
+	_then
+		o_texto << c_texto_grafico.new(ps_texto, _true)
+	_else
+		o_texto << c_texto_grafico.new(ps_texto)
+	_endif
+	#End
+
+	o_texto.nTamanio    << pn_tamanio
+
+	_if ps_alineacion _isnt _unset 
+	_then
+		o_texto.sAlineacion << ps_alineacion		
+	_endif
+
+	_if pn_margen _isnt _unset 
+	_then
+		o_texto.nMargen_Izq << pn_margen
+	_endif
+
+	_if ps_color _isnt _unset 
+	_then
+		o_texto.sColor << colour.new_rgb(ps_color[1],ps_color[2],ps_color[3])
+	_endif
+	
+	# (12/08/06 hramosr, llruiz): validamos la prop. o_tablas no
+	# sea unset
+	_if .o_tablas _isnt _unset 
+	_then		       
+	    lo_tabla << .o_tablas.elemento(ps_nom_tabla)
+	    
+	    _if lo_tabla _isnt _unset
+	    _then
+		    lo_celda << lo_tabla.oceldas.celda(pn_num_ren,pn_num_col)
+		    _if lo_celda _isnt _unset 
+		    _then
+			    lo_celda.oelemento << o_texto
+		    _endif			       
+	    _endif
+	_endif	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.configura_tabla()
+
+	_local lo_tabla
+
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tabla)
+
+	# Coordenada donde iniciara la tabla
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+
+	# Longitud de los renglones de la tabla, dada en mm 
+	lo_tabla.oRenglones.elemento(1).nLongitud << 10
+
+	# Longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.oColumnas.elemento(1).nLongitud  << 10		
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	_for attrib _over attribs.fast_elements()
+	_loop
+		attrib.allowed_on_properties_page? << _false
+	_endloop
+	
+	>> attribs
+	
+_endmethod
+$
+c_base_sello.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello.draw_content_on(window)
+
+	.window << window
+
+	_self.bounds << .o_tablas.area_total()
+
+	_self.llena_datos_dinamicos()
+
+	.o_tablas.despliega(window)	
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.etiqueta_celdas()
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello.inicializa( properties )
+
+	# vbluna(23-feb-07)
+	# - Se agrega el parámetro: properties como resultado de las
+	#   modificaciones para almacenar los valores del sello
+	#   en archivo .xml
+	# - Se valida el tamaño de properties:
+	#    - cuando properties.size = 1 : el origen del sello no es
+	#      un .xml, por lo tanto se configura el sello.
+	#    - cuando properties.size > 1 : el origen del sello es un
+	#      .xml y se asigna la bandera _true al slot .b_origen_xml
+	
+	_if properties.size = 1
+	_then
+		#Asigna la coordenada
+		.o_coord_inicio << coordinate.new(0,0)
+
+		# Crea el objeto que contiene todas las tablas del sello estandar
+		.o_tablas << c_tablas.new(_self)
+
+		# Layout transparente
+		_self.set_fill_colour(_unset)
+
+		# Crea y configura cada una de las tablas 
+		_self.configura_tabla()
+
+		# Crea y asigna las etiquetas de las celdas
+		_self.etiqueta_celdas()
+
+	_else
+		.o_tablas.o_layout << _self
+		
+		_for tabla _over .o_tablas.tablas.fast_elements()
+		_loop
+			tabla.oLayout << _self
+		_endloop
+		
+		_self.origen_xml? << _true
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.init_with( properties )
+
+	_super.init_with( properties )
+        _self.inicializa(properties)
+
+	>> _self
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.llena_datos_celdas()
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.llena_datos_dinamicos()
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.oculta_bordes_celdas(po_tabla, pcol_celdas)
+
+	_if pcol_celdas[:borde_der_izq] _isnt _unset
+	_then
+		_for celdas _over pcol_celdas[:borde_der_izq].fast_elements()
+		_loop
+			lo_num_ren << celdas[1]
+			lo_num_col << celdas[2]
+
+			lo_celda << po_tabla.oCeldas.Celda(lo_num_ren,lo_num_col).oElementos
+			lo_bordes << lo_celda.obten_elemento(:bordes_celda)
+			lo_bordes.bBorde_der? << _false
+			lo_bordes.bBorde_izq? << _false
+		_endloop
+	_endif
+
+	_if pcol_celdas[:borde_der] _isnt _unset 
+	_then
+		_for celdas _over pcol_celdas[:borde_der].fast_elements()
+		_loop
+			lo_num_ren << celdas[1]
+			lo_num_col << celdas[2]
+			
+			lo_celda << po_tabla.oCeldas.Celda(lo_num_ren,lo_num_col).oElementos
+			lo_bordes << lo_celda.obten_elemento(:bordes_celda)
+			lo_bordes.bBorde_der? << _false
+		_endloop
+	_endif
+
+	_if pcol_celdas[:borde_izq] _isnt _unset 
+	_then
+		_for celdas _over pcol_celdas[:borde_izq].fast_elements()
+		_loop
+			lo_num_ren << celdas[1]
+			lo_num_col << celdas[2]
+			
+			lo_celda << po_tabla.oCeldas.Celda(lo_num_ren,lo_num_col).oElementos
+			lo_bordes << lo_celda.obten_elemento(:bordes_celda)
+			lo_bordes.bBorde_izq? << _false
+		_endloop
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello.origen_xml?
+	
+	>> .b_origen_xml
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_base_sello.origen_xml? << valor
+
+	.b_origen_xml << valor
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_base_sello.post_initialisation()
+
+	# vbluna(23-feb-07)
+	# - La llamada al método inicializa(), se pasa al método
+	#   init_with(), debido a que necesita el parámetro: properties.
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_base_sello.serial_slots()
+
+	(keys,values) << _super.serial_slots()
+
+	keys.add_all_last( rope.new_with( :o_tablas, :o_coord_inicio, :o_color_linea))
+	values.add_all_last( rope.new_with( .o_tablas, .o_coord_inicio, .o_color_linea))
+
+	>> keys, values
+	
+_endmethod
+$

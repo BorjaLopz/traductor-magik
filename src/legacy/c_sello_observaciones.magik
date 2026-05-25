@@ -1,0 +1,2508 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Genera el sello de observaciones
+# Autor: dsanchez
+# Fecha de creacion: 02-marzo-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#   12/04/05 DSB se modifico el metodo
+#                draw_content_on(RoWindow)
+#   11/03/05 18:45 DSB Se modificaron los atributos para que
+#                  por defecto unset.
+#                  Ya pone imagenes bmp
+#   02/03/05 18:45 DSB 
+# Reviso.
+#    DSB
+# Notas:
+# El sello se descompone en secciones
+#  Seccion     Tablas que lo componen
+#     1        Titulo
+#              Encabezado
+#     2        Tipo_Inventario
+#              Resultados
+#     3        Totales
+#              Aumentos
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_sello_observaciones)
+$
+def_slotted_exemplar(:c_sello_observaciones,
+                     {
+			    {:oTablas,         _unset}, # almacena las tablas que compoenen el sello
+			    {:oCoordOrigen ,   _unset}, # Coord donde inicia el sello
+	    		    {:oWindow,         _unset}, # Ventana o canvas en el que se desplegara el sello
+	     		    {:bTablas_Creadas, _false}, # Indica si las tablas ya fueron creadas
+			    {:nAncho_Sello,     180 },  # ancho en mm del sello
+			    {:sTipo_Sello,      "A" }  # Sello que se debe desplegar
+
+		     },
+		      :layout_element 
+)
+$
+c_sello_observaciones.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+c_sello_observaciones.define_slot_access(:oCoordOrigen,    :writable, :public)
+c_sello_observaciones.define_slot_access(:oTablas,         :writable, :public)
+c_sello_observaciones.define_slot_access(:bTablas_creadas, :writable, :public)
+c_sello_observaciones.define_slot_access(:oWindow,         :writable, :public)
+c_sello_observaciones.define_slot_access(:nAncho_Sello,    :writable, :private)
+c_sello_observaciones.define_slot_access(:sTipo_Sello,    :writable, :private)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.defined_attributes
+
+## Objetivo: Define los atributos del sello
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add ( layout_attribute_definition.new (	:Num_Ductos, :string,
+                   	      	 			:description, "Numero de ductos",
+							:allowed_on_properties_page?, _true,
+							:default_value, _unset 
+						  )
+		)
+
+	attribs.add ( layout_attribute_definition.new (	:Colores, :string,
+                   	      	 			:description, "Colores",
+							:allowed_on_properties_page?, _true,
+							:default_value, _unset 
+						  )
+		)
+
+	attribs.add ( layout_attribute_definition.new (	:Fec_inicio, :string,
+                   	      	 			:description, "fecha de inicio",
+							:allowed_on_properties_page?, _true,
+							:default_value, _unset 
+						  )
+		)
+
+	attribs.add ( layout_attribute_definition.new (	:Fec_final, :string,
+                   	      	 			:description, "fecha final",
+							:allowed_on_properties_page?, _true,
+							:default_value, _unset 
+						  )
+		)
+
+	attribs.add ( layout_attribute_definition.new (	:Anio, :string,
+                   	      	 			:description, "Anio",
+							:allowed_on_properties_page?, _true,
+							:default_value, _unset 
+						  )
+		)
+
+	attribs.add ( layout_attribute_definition.new (	:Ruta, :string,
+                   	      	 			:description, "Ruta donde se encuentra el arc bmp",
+							:allowed_on_properties_page?, _false,
+							:default_value, path << system.getenv("SMALLWORLD_GIS") + "\..\Logos_y_perfiles"
+						  )
+		)
+
+	attribs.add ( layout_attribute_definition.new (	:sCve_Ruta, :string,
+                   	      	 			:description, "Clave de la ruta",
+							:allowed_on_properties_page?, _false,
+							:default_value, _unset 
+						  )
+		)
+
+	attribs.add ( layout_attribute_definition.new (	:sCve_tramo, :string,
+                   	      	 			:description, "Clave del tramo",
+							:allowed_on_properties_page?, _false,
+							:default_value, _unset 
+						  )
+		)
+
+
+	>> attribs
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+c_sello_observaciones.define_attributes()
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.draw_content_on(RoWindow)
+	
+## Objetivo: Manda llamar todos los metodos necesarios para
+## dibujar el sello
+## Parámetros de entrada:
+##   RoWindow - Canvas sobre el cual se dibujara el sello
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+##  12/04/05 DSB Se valido que no se mande llamar el
+##               asigna_enlace cuando el sello sea A	
+
+	_self.oWindow << RoWindow
+
+
+        # Se crea un objeto de tipo c_proyecto_red para
+        # obtener la informacion que se mostrara
+        _local LoProy_Red
+	_local LoTramo
+	
+	LoProy_Red << c_proyecto_red.new()
+	LoProy_Red.identificador_proyecto("1")
+	
+	_self.prvAsigna_Direccion_divisional <<  LoProy_Red.Direccion_divisional
+	_self.prvAsigna_Domicilio << LoProy_Red.Direccion
+	_self.prvAsigna_Responsable << LoProy_Red.Responsable
+	_self.prvAsigna_Telefono << LoProy_Red.Tel_Responsable
+	_self.prvAsigna_SubDireccion_Divisional << LoProy_Red.SubDireccion
+	_self.prvAsigna_Gerencia << LoProy_Red.Gerencia
+	_self.prvAsigna_Proyecto << LoProy_Red.empresa_proyecto		
+	_self.prvAsigna_Reviso << LoProy_Red.empresa_constructora
+	_self.prvAsigna_Superviso << LoProy_Red.supervisor
+	_self.prvAsigna_Aprobo << LoProy_Red.aprobo	
+
+	LoTramo << LoProy_Red.obten_tramo(_self.sCve_tramo, _self.sCve_ruta)
+	
+	_self.prvAsigna_Ruta << LoTramo.sNum_Ruta
+	_if _self.sTipo_Sello <> "A"
+        _then
+	   _self.prvAsigna_Enlace << LoTramo.nombre_ruta
+	_endif    
+	_self.prvAsigna_Tramo<< LoTramo.nombre
+
+	
+	
+        _self.prvAsigna_txt_Ren2()
+	_self.prvAsigna_txt_Ren8()
+	
+#	_self.prvAsigna_Direccion_Divisional 	<< "D_D"
+#	_self.prvAsigna_SubDireccion_Divisional << "S_D"
+#	_self.prvAsigna_Gerencia 		<< "GE"
+#	_self.prvAsigna_Responsable 		<< "RES"
+#	_self.prvAsigna_Domicilio 		<< "DO"
+#	_self.prvAsigna_Telefono 		<< "TE"
+#	
+#	_self.prvAsigna_Ruta 			<< "RU"
+#	_self.prvAsigna_Tramo 			<< "TR"
+#	_self.prvAsigna_Enlace 			<< "EN"
+#	
+#	_self.prvAsigna_Proyecto 		<< "PR"
+#	_self.prvAsigna_Reviso 			<< "REV"
+#	_self.prvAsigna_Superviso 		<< "SUP"
+#	_self.prvAsigna_Aprobo 			<< "AP"
+
+	
+
+	 _self.oTablas.Despliega(RoWindow)
+	 
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_observaciones.post_initialisation ()
+
+## Objetivo: Acciones que se realizan despues de crear la
+## instancia 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 04/02/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+
+        _self.inicializa(coordinate.new(0,0))
+
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.inicializa(_optional RoCoord)
+
+## Objetivo: Manda llamar todos los metodos necesarios para
+## crear el sello 
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	# Configuracion del sello transparente
+	_self.set_fill_colour(_unset )
+	
+	#-----------------------------------------------------------
+	#Se Inicializa la coordenada de origen
+	#-----------------------------------------------------------
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord
+	
+	# se pasa como parametro el layout
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	#Crea y configura cada una de las tablas 
+	_self.prvCreaCfgTablas(RoCoord)
+
+	#Se conoce el area de la tabla dibujada
+        LoArea << _self.oTablas.area_total()
+
+	#Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	#Crea a los objetos que tendra c/u de las tablas
+	_self.prvCrea_Asigna_Obj_A_Celdas()
+
+	#Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvCreaCfgTablas(RoCoord)
+
+## Objetivo: Manda llamar lso metodos que crean y configuran
+## las tablas que compoenen el sello
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	_local LnDesY # Desplazamiento en y de cada una de las secciones
+	
+	LnDesY << _self.prvCreaCfgTbl_Seccion1(RoCoord)
+
+        LoCoord << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+	LnDesY << LnDesY + _self.prvCreaCfgTbl_Seccion2(LoCoord)
+
+        LoCoord << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+	LnDesY << _self.prvCreaCfgTbl_Seccion3(LoCoord)
+
+        LoCoord << coordinate.new(LoCoord.x , LoCoord.y - LnDesY)
+	_self.prvCreaCfgTbl_Seccion4(LoCoord)
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.PrvCreaCfgTbl_Seccion1(RoCoord)
+
+## Objetivo: Crea y configura las tablas que componen la
+## seccion 1
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	_local LoTabla     # Almacena la tabla con la que se esta trabajado
+	_local LnRenglones # Numero de renglones que contendra la tabla 
+	_local LnColumnas  # Numero de columnas que contendra la tabla
+	_local LnDesX      # Desplazamineto en X de la tabla 
+	_local LnDesY      # desplazamiento en Y de la tabla
+
+	
+	#-----------------------------------------------------------
+	#Tabla Observaciones
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas  << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Observaciones)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	LoTabla.bDibuja_bordes? << _true
+	LoTabla.bDibuja_Columnas_Internas?  << _true
+	LoTabla.bDibuja_Renglones_Internos? << _true
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<  11
+	LoTabla.oRenglones.elemento(2).nLongitud <<   5 	
+	LoTabla.oColumnas.elemento(1).nLongitud  << _self.nAncho_sello
+
+
+	LoCelda << LoTabla.oCeldas.Celda(2,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _false
+
+	#-----------------------------------------------------------
+	#Tabla Ren 1
+	#-----------------------------------------------------------
+	LnRenglones << 1
+	lnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ren1)
+
+
+        LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Observaciones})
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   3
+	LoTabla.oColumnas.elemento(1).nLongitud  <<   9
+	LoTabla.oColumnas.elemento(2).nLongitud  << _self.nAncho_Sello - 9
+
+
+	LoCelda << LoTabla.oCeldas.Celda(1,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _true
+
+	LoCelda << LoTabla.oCeldas.Celda(1,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_der? << _true
+
+	#-----------------------------------------------------------
+	#Tabla Ren 2
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ren2)
+
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_ren1})
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+
+	_self.prvCfgRenglon(LoTabla, LnRenglones)
+	
+	#-----------------------------------------------------------
+	#Tabla Ren 3
+	#-----------------------------------------------------------
+	LnRenglones << 4
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ren3)
+
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_ren2})
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+
+	_self.prvCfgRenglon(LoTabla, LnRenglones)
+
+	#-----------------------------------------------------------
+	#Tabla Ren 4
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ren4)
+
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_ren3})
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+
+	_self.prvCfgRenglon(LoTabla, LnRenglones)
+
+	#-----------------------------------------------------------
+	#Tabla Ren 5
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ren5)
+
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_ren4})
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+
+	_self.prvCfgRenglon(LoTabla, LnRenglones)
+
+	#-----------------------------------------------------------
+	#Tabla Ren 6
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ren6)
+
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_ren5})
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+
+	_self.prvCfgRenglon(LoTabla, LnRenglones)
+
+	
+	#-----------------------------------------------------------
+	#Tabla Ren 7
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ren7)
+
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_ren6})
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	_self.prvCfgRenglon(LoTabla, LnRenglones)
+
+
+	#-----------------------------------------------------------
+	#Tabla Ren 8
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ren8)
+
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_ren7})
+	
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	_self.prvCfgRenglon(LoTabla, LnRenglones)
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_ren8})
+
+	_return  LnDesY
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.PrvCreaCfgTbl_Seccion2(RoCoord)
+
+## Objetivo: Crea y configura las tablas que componen la
+## seccion 2
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	_local LoTabla     # Almacena la tabla con la que se esta trabajado
+	_local LnRenglones # Numero de renglones que contendra la tabla 
+	_local LnColumnas  # Numero de columnas que contendra la tabla
+	_local LnDesX      # Desplazamineto en X de la tabla 
+	_local LnDesY      # desplazamiento en Y de la tabla
+
+	#-----------------------------------------------------------
+	#Tabla Informacion confidencial
+	#-----------------------------------------------------------
+	LnRenglones << 3
+	lnColumnas  << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_infor_confidencial)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	LoTabla.bDibuja_bordes? << _false   
+	LoTabla.bDibuja_Columnas_Internas?  << _false
+	LoTabla.bDibuja_Renglones_Internos? << _false
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<  27 #25
+	LoTabla.oRenglones.elemento(2).nLongitud <<  12 #10
+	LoTabla.oRenglones.elemento(3).nLongitud <<  25 #24		
+	LoTabla.oColumnas.elemento(1).nLongitud  << _self.nAncho_sello
+
+
+	LoCelda << LoTabla.oCeldas.Celda(1,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _true
+	LoCelda.bBorde_der? << _true
+
+	LoCelda << LoTabla.oCeldas.Celda(2,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _true
+	LoCelda.bBorde_der? << _true
+	
+	LoCelda << LoTabla.oCeldas.Celda(3,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _true
+	LoCelda.bBorde_der? << _true
+
+	#-----------------------------------------------------------
+	#Tabla Ruta
+	#-----------------------------------------------------------
+
+        LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_infor_confidencial})
+        LoCoord << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	_if _self.sTipo_sello = "A"
+	_then
+ 	   _self.prvCreaCfgTabla_RutaA(LoCoord)
+	   
+           LnDesY << LnDesY +  _self.oTablas.Longitud_total_Renglones({:tbl_ruta})
+           LoCoord << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+	   
+	   _self.prvCreaCfgTabla_DireccionA(LoCoord)
+	_else
+	   _self.prvCreaCfgTabla_RutaB(LoCoord)
+
+           LnDesY << LnDesY +  _self.oTablas.Longitud_total_Renglones({:tbl_ruta})
+           LoCoord << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+	   
+	   _self.prvCreaCfgTabla_DireccionB(LoCoord)	   
+	_endif
+
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_Direccion})
+
+	_return  LnDesY
+	
+_endmethod 
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.PrvCreaCfgTbl_Seccion3(RoCoord)
+
+## Objetivo: Crea y configura las tablas que componen la
+## seccion 3
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	_local LoTabla     # Almacena la tabla con la que se esta trabajado
+	_local LnRenglones # Numero de renglones que contendra la tabla 
+	_local LnColumnas  # Numero de columnas que contendra la tabla
+	_local LnDesX      # Desplazamineto en X de la tabla 
+	_local LnDesY      # desplazamiento en Y de la tabla
+
+	#-----------------------------------------------------------
+	#Tabla Autorizo
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas  << 4
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Autorizo)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _true 
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<  18
+	LoTabla.oRenglones.elemento(2).nLongitud <<   5
+
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  40
+	LoTabla.oColumnas.elemento(2).nLongitud  << _self.nAncho_sello - (40 + 26 + 24)
+	LoTabla.oColumnas.elemento(3).nLongitud  <<  26
+	LoTabla.oColumnas.elemento(4).nLongitud  <<  24
+
+
+	#-----------------------------------------------------------
+	#Tabla Simbolo izq
+	#-----------------------------------------------------------
+
+        LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_autorizo})
+        LoCoord << coordinate.new(RoCoord.x , RoCoord.y - LnDesY)
+
+	LnRenglones << 1
+	LnColumnas  << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Simbolo_Izq)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << LoCoord
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _true 
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<  41
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  40
+
+	#-----------------------------------------------------------
+	#Tabla Tramo
+	#-----------------------------------------------------------
+
+        LnDesX << _self.oTablas.Longitud_total_Columnas({:tbl_Simbolo_izq})
+        LoCoord << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+	
+	LnRenglones << 2
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Tramo)	
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << LoCoord
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _false   
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<  11
+	LoTabla.oRenglones.elemento(2).nLongitud <<  11
+	
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  15
+	# los dos 40 son por las figuras (izq, der)
+	LoTabla.oColumnas.elemento(2).nLongitud  <<  _self.nAncho_sello - (15 + 40 + 50)
+	
+
+	#-----------------------------------------------------------
+	#Tabla Kilometros
+	#-----------------------------------------------------------
+
+	# el desplazamineto en X debe serel mismo que la tabla anterior
+	
+	LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_Tramo})
+        LoCoord << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+	
+	LnRenglones << 3
+	LnColumnas  << 4
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Kilometros)	
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << LoCoord
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _false   
+	LoTabla.bDibuja_Renglones_Internos? << _false  
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<  4
+	LoTabla.oRenglones.elemento(2).nLongitud <<  4
+	LoTabla.oRenglones.elemento(3).nLongitud <<  4	
+	
+	LoTabla.oColumnas.elemento(1).nLongitud  << 20
+	LoTabla.oColumnas.elemento(2).nLongitud  << 30
+	LoTabla.oColumnas.elemento(3).nLongitud  <<  5
+	LoTabla.oColumnas.elemento(4).nLongitud  << _self.nAncho_sello - (40 + 20 + 30 + 5 + 50)
+
+	LoCelda << LoTabla.oCeldas.Celda(1,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true
+	LoCelda << LoTabla.oCeldas.Celda(2,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true
+
+	LoCelda << LoTabla.oCeldas.Celda(1,4).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true
+	LoCelda << LoTabla.oCeldas.Celda(2,4).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_inf? << _true
+	
+	#-----------------------------------------------------------
+	#Tabla DEF_PEP
+	#-----------------------------------------------------------
+
+	# el desplazamineto en X debe serel mismo que la tabla anterior
+	
+	LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_Kilometros})
+        LoCoord << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+	
+	LnRenglones << 1
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_DEF_PEP)	
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << LoCoord
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _false  
+	LoTabla.bDibuja_Renglones_Internos? << _false  
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud << 7
+	
+	LoTabla.oColumnas.elemento(1).nLongitud  << 15
+	LoTabla.oColumnas.elemento(2).nLongitud  << _self.nAncho_sello - (40 + 15 + 50)
+	
+	#-----------------------------------------------------------
+	#Tabla Simbolo der
+	#-----------------------------------------------------------
+
+        LnDesX << LnDesX + _self.oTablas.Longitud_total_Columnas({:tbl_Tramo})
+        LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_autorizo})
+
+	write("tramo")
+	write(LnDesY)
+	
+        LoCoord << coordinate.new(RoCoord.x + LnDesX , RoCoord.y - LnDesY)
+
+	LnRenglones << 1
+	LnColumnas  << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Simbolo_Der)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << LoCoord
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _true 
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<  41
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  50
+
+	
+        LnDesY << LnDesY + _self.oTablas.Longitud_total_Renglones({:tbl_Simbolo_Der})
+	write("Sim der")
+	write(LnDesY)
+	
+	_return  LnDesY
+	
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.PrvCreaCfgTbl_Seccion4(RoCoord)
+
+## Objetivo: Crea y configura las tablas que componen la
+## seccion 3
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 03/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	_local LoTabla     # Almacena la tabla con la que se esta trabajado
+	_local LnRenglones # Numero de renglones que contendra la tabla 
+	_local LnColumnas  # Numero de columnas que contendra la tabla
+	_local LnDesX      # Desplazamineto en X de la tabla 
+	_local LnDesY      # desplazamiento en Y de la tabla
+
+	#-----------------------------------------------------------
+	#Tabla Proyecto
+	#-----------------------------------------------------------
+	LnRenglones << 4
+	lnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_proyecto)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _true 
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   4
+	LoTabla.oRenglones.elemento(2).nLongitud <<   5
+	LoTabla.oRenglones.elemento(3).nLongitud <<   5
+	LoTabla.oRenglones.elemento(4).nLongitud <<   7	
+
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  20
+	LoTabla.oColumnas.elemento(2).nLongitud  <<  20
+
+	#-----------------------------------------------------------
+	#Tabla fecha
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas  << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_fecha)
+
+	#Coordenada donde iniciara la tabla
+        LnDesX << _self.oTablas.Longitud_total_Columnas({:tbl_proyecto})
+#        LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_autorizo})
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y)
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _true 
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   4
+	LoTabla.oRenglones.elemento(2).nLongitud <<   5
+
+
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  40
+
+	#-----------------------------------------------------------
+	#Tabla Escala
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Escala)
+
+	#Coordenada donde iniciara la tabla
+        LnDesX << _self.oTablas.Longitud_total_Columnas({:tbl_proyecto})
+        LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_fecha})
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _true 
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   5
+	LoTabla.oRenglones.elemento(2).nLongitud <<   7
+
+
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  20
+	LoTabla.oColumnas.elemento(2).nLongitud  <<  20
+
+
+	#-----------------------------------------------------------
+	#Tabla Revision
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Revision)
+
+	#Coordenada donde iniciara la tabla
+        LnDesX << LnDesX + _self.oTablas.Longitud_total_Columnas({:tbl_fecha})
+#        LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_fecha})
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y )
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _true 
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   4
+	LoTabla.oRenglones.elemento(2).nLongitud <<   5
+
+
+	LoTabla.oColumnas.elemento(1).nLongitud <<  25
+	LoTabla.oColumnas.elemento(2).nLongitud << _self.nAncho_sello - (40 + 40 + 25 + 50)
+
+
+	#-----------------------------------------------------------
+	#Tabla Plano
+	#-----------------------------------------------------------
+	LnRenglones << 2
+	lnColumnas  << 3
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Plano)
+
+	#Coordenada donde iniciara la tabla
+	#        LnDesX << LnDesX + _self.oTablas.Longitud_total_Columnas({:tbl_fecha})
+        LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_fecha})
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _false  
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   5
+	LoTabla.oRenglones.elemento(2).nLongitud <<   7
+
+
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  20
+	LoTabla.oColumnas.elemento(2).nLongitud  <<  _self.nAncho_sello - (40 + 40 + 20 + 20 + 50)
+#	LoTabla.oColumnas.elemento(2).nLongitud  <<  15
+#	LoTabla.oColumnas.elemento(3).nLongitud  <<  _self.nAncho_sello - (40 + 40 + 20 + 15 + 50)
+	LoTabla.oColumnas.elemento(3).nLongitud  <<  20
+
+	#-----------------------------------------------------------
+	#Tabla Aprobacion
+	#-----------------------------------------------------------
+	LnRenglones << 3
+	lnColumnas  << 3
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Aprobacion)
+
+	#Coordenada donde iniciara la tabla
+	LnDesX << LnDesX + _self.oTablas.Longitud_total_Columnas({:tbl_revision})
+        #LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_fecha})
+
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y )
+
+	LoTabla.bDibuja_bordes? << _true 
+	LoTabla.bDibuja_Columnas_Internas?  << _true 
+	LoTabla.bDibuja_Renglones_Internos? << _true 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   4
+	LoTabla.oRenglones.elemento(2).nLongitud <<   5
+	LoTabla.oRenglones.elemento(3).nLongitud <<  12 	
+
+
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  17
+	LoTabla.oColumnas.elemento(2).nLongitud  <<  17
+	LoTabla.oColumnas.elemento(3).nLongitud  <<  16
+
+	LoCelda << LoTabla.oCeldas.Celda(1,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_der? << _false
+	LoCelda << LoTabla.oCeldas.Celda(1,2).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _false
+	LoCelda.bBorde_der? << _false		
+	LoCelda << LoTabla.oCeldas.Celda(1,3).oElementos.obten_elemento(:bordes_celda)	
+	LoCelda.bBorde_izq? << _false	
+
+	
+_endmethod 
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvCreaCfgTabla_RutaA(PoCoord)
+
+## Objetivo: Crea y configura las tabla ruta para cuando el
+## tipo de sello es A
+## seccion 1
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	LnRenglones << 2
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ruta)
+
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << PoCoord
+
+	LoTabla.bDibuja_bordes? << _false 
+	LoTabla.bDibuja_Columnas_Internas?  << _false 
+	LoTabla.bDibuja_Renglones_Internos? << _false 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   7
+	LoTabla.oRenglones.elemento(2).nLongitud <<   8
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  40
+	LoTabla.oColumnas.elemento(2).nLongitud  << _self.nAncho_Sello - 40
+
+
+	# activa los bordes exteriores de la celda para formar el marco
+	# del sello
+	LoCelda << LoTabla.oCeldas.Celda(1,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _true
+	LoCelda << LoTabla.oCeldas.Celda(2,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Izq? << _true
+	
+	LoCelda << LoTabla.oCeldas.Celda(1,LnColumnas).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Der? << _true
+	LoCelda << LoTabla.oCeldas.Celda(2,LnColumnas).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_Der? << _true	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvCreaCfgTabla_DireccionA(RoCoord)
+
+## Objetivo: Crea y configura las tabla ruta para cuando el
+## tipo de sello es A
+## seccion 1
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	LnRenglones << 6
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Direccion)
+
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	LoTabla.bDibuja_bordes? << _true
+	LoTabla.bDibuja_Columnas_Internas?  << _false 
+	LoTabla.bDibuja_Renglones_Internos? << _false 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm
+	_for LnNumRen  _over  range(1,LnRenglones)
+	_loop
+	   LoTabla.oRenglones.elemento(LnNumRen).nLongitud <<  5
+	_endloop
+
+
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  40
+	LoTabla.oColumnas.elemento(2).nLongitud  << _self.nAncho_Sello - 40
+
+
+	# activa los bordes exteriores de la celda para formar el marco
+	# del sello
+	_for LnNumRen  _over  range(1,LnRenglones)
+	_loop
+	   LoCelda << LoTabla.oCeldas.Celda(LnNumRen,1).oElementos.obten_elemento(:bordes_celda)
+	   LoCelda.bBorde_izq? << _true
+
+   	   LoCelda << LoTabla.oCeldas.Celda(LnNumRen,LnColumnas).oElementos.obten_elemento(:bordes_celda)
+	   LoCelda.bBorde_Der? << _true
+	   LoCelda.bBorde_Inf? << _true	   
+
+	_endloop
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvCreaCfgTabla_RutaB(PoCoord)
+
+## Objetivo: Crea y configura las tabla ruta para cuando el
+## tipo de sello es B
+## seccion 1
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	LnRenglones << 3
+	LnColumnas  << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Ruta)
+
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << PoCoord
+
+	LoTabla.bDibuja_bordes? << _false  
+	LoTabla.bDibuja_Columnas_Internas?  << _false  
+	LoTabla.bDibuja_Renglones_Internos? << _false 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	LoTabla.oRenglones.elemento(1).nLongitud <<   5
+	LoTabla.oRenglones.elemento(2).nLongitud <<   5
+	LoTabla.oRenglones.elemento(3).nLongitud <<   5	
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  40
+	LoTabla.oColumnas.elemento(2).nLongitud  << _self.nAncho_Sello - 40
+
+
+	# activa los bordes exteriores de la celda para formar el marco
+	# del sello
+	LoCelda << LoTabla.oCeldas.Celda(1,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _true
+	LoCelda << LoTabla.oCeldas.Celda(2,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _true
+	LoCelda << LoTabla.oCeldas.Celda(3,1).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_izq? << _true	
+	
+	LoCelda << LoTabla.oCeldas.Celda(1,LnColumnas).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_der? << _true
+	LoCelda << LoTabla.oCeldas.Celda(2,LnColumnas).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_der? << _true
+	LoCelda << LoTabla.oCeldas.Celda(3,LnColumnas).oElementos.obten_elemento(:bordes_celda)
+	LoCelda.bBorde_der? << _true		
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvCreaCfgTabla_DireccionB(RoCoord)
+
+## Objetivo: Crea y configura las tabla ruta para cuando el
+## tipo de sello es A
+## seccion 1
+## Parámetros de entrada:
+##   RoCoord - Coordenada donde debe iniciar a dibujar la tabla	
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+	
+	LnRenglones << 6
+	LnColumnas  << 4
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Direccion)
+
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	LoTabla.bDibuja_bordes? << _true
+	LoTabla.bDibuja_Columnas_Internas?  << _false 
+	LoTabla.bDibuja_Renglones_Internos? << _false 
+
+	
+	#longitudes de los renglones de la tabla, esta dada en mm
+	_for LnNumRen  _over  range(1,LnRenglones)
+	_loop
+	   LoTabla.oRenglones.elemento(LnNumRen).nLongitud <<  5
+	_endloop
+
+
+	LoTabla.oColumnas.elemento(1).nLongitud  <<  24
+	LoTabla.oColumnas.elemento(2).nLongitud  <<  30
+	LoTabla.oColumnas.elemento(3).nLongitud  <<  _self.nAncho_Sello - (24 + 24 +30)
+	LoTabla.oColumnas.elemento(4).nLongitud  <<  24	
+
+
+	# activa los bordes exteriores de la celda para formar el marco
+	# del sello
+	_for LnNumRen  _over  range(1,LnRenglones)
+	_loop
+	   LoCelda << LoTabla.oCeldas.Celda(LnNumRen,1).oElementos.obten_elemento(:bordes_celda)
+	   LoCelda.bBorde_izq? << _true
+
+   	   LoCelda << LoTabla.oCeldas.Celda(LnNumRen,LnColumnas).oElementos.obten_elemento(:bordes_celda)
+	   LoCelda.bBorde_Der? << _true
+	_endloop
+
+
+	# activa los bordes de las celdas interiores para formar la
+	# tabla interior
+	_for LnNumRen  _over  range(2,LnRenglones-1)
+	_loop
+	   LoCelda << LoTabla.oCeldas.Celda(LnNumRen,2).oElementos.obten_elemento(:bordes_celda)
+	   LoCelda.bBorde_izq? << _true
+   	   LoCelda.bBorde_Sup? << _true
+   	   LoCelda.bBorde_Inf? << _true	   
+
+   	   LoCelda << LoTabla.oCeldas.Celda(LnNumRen,3).oElementos.obten_elemento(:bordes_celda)
+	   LoCelda.bBorde_Der? << _true
+   	   LoCelda.bBorde_Sup? << _true
+   	   LoCelda.bBorde_Inf? << _true	   	   
+	_endloop
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas()
+
+## Objetivo: Manda llamar los metodos que crean y asignan los objetos
+##	a las celdas de las secciones
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_self.prvCrea_Asigna_Obj_A_Celdas_Seccion1()
+	_self.prvCrea_Asigna_Obj_A_Celdas_Seccion2()
+	_self.prvCrea_Asigna_Obj_A_Celdas_Seccion3()		
+	_self.prvCrea_Asigna_Obj_A_Celdas_Seccion4()
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas_Seccion1()
+
+## Objetivo: Crea y asigna los objetos a las celdas de las
+## tablas de la seccion 1
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_local LoNum # Numero de renglon
+	_local LoTxt # texto del renglon
+	_local LoTxt2 # texto del renglon
+	_local LoTxt3 # texto del renglon		
+	_local LsCad # almacena el texto que desplegara el renglon
+	_local LcollCadenas # Almacena las cadenas que debera desplegar el ren 4 y ren 8
+	
+
+	#-----------------------------------------------------------
+	#Tabla Observaciones
+	#-----------------------------------------------------------
+
+	_local LoObservaciones # Almacena la etiqueta de observaciones 
+	_local LoNotas         # Almacena la etiqueta de notas 
+	
+	#se crean los objetos que almacenara la tabla
+	LoObservaciones  << c_texto_grafico.new("OBSERVACIONES")
+	LoObservaciones.nTamanio << 35
+	LoObservaciones.sAlineacion << :centre_left
+	LoObservaciones.sEstilo << "fixed"
+
+	#se crean los objetos que almacenara la tabla
+	LoNotas  << c_texto_grafico.new_from(LoObservaciones, "NOTAS.-")
+	LoNotas.nTamanio << 25
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Observaciones).oCeldas.Celda(1,1).oElemento << LoObservaciones
+	_self.oTablas.elemento(:tbl_Observaciones).oCeldas.Celda(2,1).oElemento << LoNotas
+
+
+	#-----------------------------------------------------------
+	#Tabla Ren 1
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	LoNum  << c_texto_grafico.new("1.-")
+	LoNum.nTamanio << 25
+	LoNum.sAlineacion << :centre_right
+        LoNum.sEstilo << "fixed"	
+
+	#se crean los objetos que almacenara la tabla
+	LoTxt  << c_texto_grafico.new_from(LoNum,"TODAS LAS ACOTACIONES ESTAN DADAS EN METROS.")
+	LoTxt.sAlineacion << :centre_left
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ren1).oCeldas.Celda(1,1).oElemento << LoNum
+	_self.oTablas.elemento(:tbl_Ren1).oCeldas.Celda(1,2).oElemento << LoTxt
+
+	#-----------------------------------------------------------
+	#Tabla Ren 2
+	#-----------------------------------------------------------
+
+	#se crean los objetos que almacenara la tabla
+	LoNum  << c_texto_grafico.new("2.-")
+	LoNum.nTamanio << 25
+	LoNum.sAlineacion << :centre_right
+        LoNum.sEstilo << "fixed"	
+	
+	# se crean los objetos que almacenara la tabla. La cadena queda
+	# vacia ya que esta se asigna en el metodo asigna txt a R2
+	LoTxt  << c_texto_grafico.new(" ")
+	LoTxt.nTamanio << 25
+	LoTxt.sAlineacion << :centre_left
+        LoTxt.sEstilo << "fixed"	
+
+	LoTxt2  << c_texto_grafico.new_from(LoTxt, " ")
+	
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ren2).oCeldas.Celda(1,1).oElemento << LoNum
+	_self.oTablas.elemento(:tbl_Ren2).oCeldas.Celda(1,2).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Ren2).oCeldas.Celda(2,2).oElemento << LoTxt2
+	
+	_self.prvAsigna_txt_Ren2()
+	
+	#-----------------------------------------------------------
+	#Tabla Ren 3
+	#-----------------------------------------------------------
+
+	#se crean los objetos que almacenara la tabla
+	LoNum  << c_texto_grafico.new("3.-")
+	LoNum.nTamanio << 25
+	LoNum.sAlineacion << :centre_right
+        LoNum.sEstilo << "fixed"
+	
+	# se crean los objetos que almacenara la tabla.
+
+	LsCad <<         "EL CONTRATISTA ANTES DE INICIAR LA CONSTRUCCION DEBERA REALIZAR UNA "
+	LsCad << LsCad + "PLANIFICACION PARA VERIFICAR  "
+	
+	LoTxt  << c_texto_grafico.new_from(LoNUm, LsCad)
+	LoTxt.sAlineacion << :centre_left
+
+	LsCad <<         "EN EL SITIO DE LA OBRA CHECANDO A DETALLE LOS OBSTACULOS QUE INTERFIERAN "
+	LsCad << LsCad + " EN LA EJECUCION DEL PROYECTO,  "
+	LoTxt2  << c_texto_grafico.new_from(LoTxt, LsCad)
+
+	LsCad <<         "PARA LO CUAL DEBERAN DE REALIZAR CHECANDO A DETALLE LOS OBSTACULOS QUE  "
+	LsCad << LsCad + "INTERFIERAN EN LA EJECUCION "
+	
+	LoTxt3  << c_texto_grafico.new_from(LoTxt, LsCad)
+
+	LsCad <<         "DEL PROYECTO, PARA LO CUAL DEBERAN DE REALIZAR LAS ACTIVIDADES "
+	LsCad << LsCad + "ADMINISTRATIVAS Y TECNICAS QUE SE REQUIERAN "
+	
+	LoTxt4  << c_texto_grafico.new_from(LoTxt, LsCad)	
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ren3).oCeldas.Celda(1,1).oElemento << LoNum
+	_self.oTablas.elemento(:tbl_Ren3).oCeldas.Celda(1,2).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Ren3).oCeldas.Celda(2,2).oElemento << LoTxt2
+	_self.oTablas.elemento(:tbl_Ren3).oCeldas.Celda(3,2).oElemento << LoTxt3
+	_self.oTablas.elemento(:tbl_Ren3).oCeldas.Celda(4,2).oElemento << LoTxt4		
+
+
+	#-----------------------------------------------------------
+	#Tabla Ren 4
+	#-----------------------------------------------------------
+
+	#se crean los objetos que almacenara la tabla
+	LoNum  << c_texto_grafico.new("4.-")
+	LoNum.nTamanio << 25
+	LoNum.sAlineacion << :centre_right
+        LoNum.sEstilo << "fixed"
+	
+	# se crean los objetos que almacenara la tabla.
+
+	LcollCadenas << _self.prvObten_txt_Ren4()
+	
+	LoTxt  << c_texto_grafico.new_from(LoNum, LcollCadenas[1])
+	LoTxt.sAlineacion << :centre_left
+
+	LoTxt2  << c_texto_grafico.new_from(LoTxt, LcollCadenas[2])
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ren4).oCeldas.Celda(1,1).oElemento << LoNum
+	_self.oTablas.elemento(:tbl_Ren4).oCeldas.Celda(1,2).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Ren4).oCeldas.Celda(2,2).oElemento << LoTxt2
+
+	#-----------------------------------------------------------
+	#Tabla Ren 5
+	#-----------------------------------------------------------
+
+	#se crean los objetos que almacenara la tabla
+	LoNum  << c_texto_grafico.new("5.-")
+	LoNum.nTamanio << 25
+	LoNum.sAlineacion << :centre_right
+        LoNum.sEstilo << "fixed"
+	
+	# se crean los objetos que almacenara la tabla.
+
+	LsCad <<         "SUPERVISION DE CONSTRUCCION RECTIFICARA O RATIFICARA QUE EL JALADO DEL "
+	LsCad << LsCad + "CABLE SE EFECTUE POR LA VIA   "
+	
+	LoTxt  << c_texto_grafico.new_from(LoNUm, LsCad)
+	LoTxt.sAlineacion << :centre_left
+
+	LsCad <<         "ASIGNADA, Y EL SEMBRADO DEL DUCTO DE POLIETILENO ESTE A LA DISTENCIA QUE "
+	LsCad << LsCad + "INDICA EL PROYECTO  "
+	LoTxt2  << c_texto_grafico.new_from(LoTxt, LsCad)
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ren5).oCeldas.Celda(1,1).oElemento << LoNum
+	_self.oTablas.elemento(:tbl_Ren5).oCeldas.Celda(1,2).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Ren5).oCeldas.Celda(2,2).oElemento << LoTxt2
+
+	#-----------------------------------------------------------
+	#Tabla Ren 6
+	#-----------------------------------------------------------
+
+	#se crean los objetos que almacenara la tabla
+	LoNum  << c_texto_grafico.new("6.-")
+	LoNum.nTamanio << 25
+	LoNum.sAlineacion << :centre_right
+        LoNum.sEstilo << "fixed"
+	
+	# se crean los objetos que almacenara la tabla.
+
+	LcollCadenas << _self.prvObten_txt_Ren6()
+	
+	LoTxt  << c_texto_grafico.new_from(LoNum, LcollCadenas[1])
+	LoTxt.sAlineacion << :centre_left
+
+	LoTxt2  << c_texto_grafico.new_from(LoTxt, LcollCadenas[2])
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ren6).oCeldas.Celda(1,1).oElemento << LoNum
+	_self.oTablas.elemento(:tbl_Ren6).oCeldas.Celda(1,2).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Ren6).oCeldas.Celda(2,2).oElemento << LoTxt2
+	
+
+	#-----------------------------------------------------------
+	#Tabla Ren 7
+	#-----------------------------------------------------------
+
+	#se crean los objetos que almacenara la tabla
+	LoNum  << c_texto_grafico.new("7.-")
+	LoNum.nTamanio << 25
+	LoNum.sAlineacion << :centre_right
+        LoNum.sEstilo << "fixed"
+	
+	# se crean los objetos que almacenara la tabla.
+
+	LsCad <<         "EN CASO DE ALGUNA MODIFICACION A ESTE PROYECTO FAVOR DE AVISAR AL "
+	LsCad << LsCad + "RESPONSABLE DEL PROYECTO "
+	
+	LoTxt  << c_texto_grafico.new_from(LoNUm, LsCad)
+	LoTxt.sAlineacion << :centre_left
+
+	LsCad <<         "INDICADO EN ESTA CARATULA. "
+	LoTxt2  << c_texto_grafico.new_from(LoTxt, LsCad)
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ren7).oCeldas.Celda(1,1).oElemento << LoNum
+	_self.oTablas.elemento(:tbl_Ren7).oCeldas.Celda(1,2).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Ren7).oCeldas.Celda(2,2).oElemento << LoTxt2
+
+
+	#-----------------------------------------------------------
+	#Tabla Ren 8
+	#-----------------------------------------------------------
+
+	#se crean los objetos que almacenara la tabla
+	LoNum  << c_texto_grafico.new("8.-")
+	LoNum.nTamanio << 25
+	LoNum.sAlineacion << :centre_right
+        LoNum.sEstilo << "fixed"	
+	
+	# se crean los objetos que almacenara la tabla. La cadena queda
+	# vacia ya que esta se asigna en el metodo asigna txt a R2
+	LoTxt  << c_texto_grafico.new(" ")
+	LoTxt.nTamanio << 25
+	LoTxt.sAlineacion << :centre_left
+        LoTxt.sEstilo << "fixed"	
+
+	LoTxt2  << c_texto_grafico.new_from(LoTxt, " ")
+	
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ren8).oCeldas.Celda(1,1).oElemento << LoNum
+	_self.oTablas.elemento(:tbl_Ren8).oCeldas.Celda(1,2).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Ren8).oCeldas.Celda(2,2).oElemento << LoTxt2
+	
+	_self.prvAsigna_txt_Ren8()
+	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas_Seccion2()
+
+## Objetivo: Crea y asigna los objetos a las celdas de las
+## tablas de la seccion 1
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_local LoNum # Numero de renglon
+	_local LoTxt # texto del renglon
+	_local LoTxt2 # texto del renglon
+	_local LoTxt3 # texto del renglon		
+	_local LsCad # almacena el texto que desplegara el renglon
+	_local LcollCadenas # Almacena las cadenas que debera desplegar el ren 4 y ren 8
+	
+
+	#-----------------------------------------------------------
+	#Tabla Informacion confidencial
+	#-----------------------------------------------------------
+
+	#se crean los objetos que almacenara la tabla
+
+	LsCad <<  "INFORMACION CONFIDENCIAL PROPIEDAD DE TELMEX" + character.newline +
+	          "PROHIBIDA SU REPRODUCCION PARCIAL O TOTAL"
+	
+	LoTxt  << c_texto_grafico.new(LsCad)
+	LoTxt.nTamanio << 35
+	LoTxt.sAlineacion << :top_centre
+	LoTxt.sEstilo << "fixed"
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Infor_confidencial).oCeldas.Celda(2,1).oElemento << LoTxt
+
+	#-----------------------------------------------------------
+	#Tabla Ruta
+	#-----------------------------------------------------------
+
+	_if _self.sTipo_sello = "A"
+	_then
+		_self.prvCrea_Asigna_Obj_A_Celdas_RutaA()
+		_self.prvCrea_Asigna_Obj_A_Celdas_DireccionA()		
+	_else
+		_self.prvCrea_Asigna_Obj_A_Celdas_RutaB()
+		_self.prvCrea_Asigna_Obj_A_Celdas_DireccionB()				
+	_endif
+
+
+_endmethod 
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas_Seccion3()
+
+## Objetivo: Crea y asigna los objetos a las celdas de las
+## tablas de la seccion 1
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_local LoNum # Numero de renglon
+	_local LoTxt # texto del renglon
+	_local LoTxt2 # texto del renglon
+	_local LoTxt3 # texto del renglon		
+	_local LsCad # almacena el texto que desplegara el renglon
+	_local LcollCadenas # Almacena las cadenas que debera desplegar el ren 4 y ren 8
+	
+
+	#-----------------------------------------------------------
+	#Tabla Autorizo
+	#-----------------------------------------------------------
+
+	_local LoLblAutorizo     # Almacena la etiqueta de Autorizo
+	_local LoLblModificacion # Almacena la etiqueta de Modificacion
+	_local LoLblFecha        # Almacena la etiqueta de Fecha
+	_local LoLblPor          # Almacena la etiqueta de por
+
+	_local LoTxtAutorizo     # Almacena el texto de Autorizo
+	_local LoTxtModificacion # Almacena el texto de Modificacion
+	_local LoTxtFecha        # Almacena el texto de Fecha
+	_local LoTxtPor          # Almacena el texto de por
+	
+	#se crean los objetos que almacenara la tabla
+	LoLblAutorizo  << c_texto_grafico.new("AUTORIZO")
+	LoLblAutorizo.nTamanio << 25
+	LoLblAutorizo.sAlineacion << :centre_centre
+	LoLblAutorizo.sEstilo << "fixed"
+
+	#se crean los objetos que almacenara la tabla
+	LoLblModificacion << c_texto_grafico.new_from(LoLblAutorizo, "MODIFICACION")
+	LoLblFecha        << c_texto_grafico.new_from(LoLblAutorizo, "FECHA")
+	LoLblPor          << c_texto_grafico.new_from(LoLblAutorizo, "POR")
+
+
+	#se crean los objetos que almacenara la tabla
+	LoTxtAutorizo  << c_texto_grafico.new_from(LoLblAutorizo," ")
+
+	#se crean los objetos que almacenara la tabla
+	LoTxtModificacion << c_texto_grafico.new_from(LoTxtAutorizo, " ")
+	LoTxtFecha        << c_texto_grafico.new_from(LoTxtAutorizo, " ")
+	LoTxtPor          << c_texto_grafico.new_from(LoTxtAutorizo, " ")	
+	
+
+	
+	#asigna los objetos creados a su correspondiente celda
+
+	_self.oTablas.elemento(:tbl_autorizo).oCeldas.Celda(1,1).oElemento << LoTxtAutorizo
+	_self.oTablas.elemento(:tbl_autorizo).oCeldas.Celda(1,2).oElemento << LoTxtModificacion
+	_self.oTablas.elemento(:tbl_autorizo).oCeldas.Celda(1,3).oElemento << LoTxtFecha
+	_self.oTablas.elemento(:tbl_autorizo).oCeldas.Celda(1,4).oElemento << LoTxtPor
+	
+	_self.oTablas.elemento(:tbl_autorizo).oCeldas.Celda(2,1).oElemento << LoLblAutorizo
+	_self.oTablas.elemento(:tbl_autorizo).oCeldas.Celda(2,2).oElemento << LoLblModificacion
+	_self.oTablas.elemento(:tbl_autorizo).oCeldas.Celda(2,3).oElemento << LoLblFecha
+	_self.oTablas.elemento(:tbl_autorizo).oCeldas.Celda(2,4).oElemento << LoLblPor
+
+
+	
+	#-----------------------------------------------------------
+	#Tabla Simbolo izq
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	#	LoSim << c_simbolo_grafico.new("Granja")
+	#	LoSim << c_imagen_bmp.new("C:\Imagen_bmp\Logo_IMTSA.bmp")
+        #	LoSim << c_imagen_bmp.new(_self.ruta + "\Logo_IMTSA.bmp")
+        
+        _Local LsNombre_Imagen_BMP
+        
+       	LsNombre_Imagen_BMP << _self.ruta + "\Logo_" + _self.prvObten_Proyecto + ".bmp"
+
+	_if system.file_exists?(LsNombre_Imagen_BMP) = _false
+	_then
+
+		LsNombre_Imagen_BMP << _self.ruta + "\Logo_Sin_imagen.bmp"		
+
+	_endif
+
+	LoSim << c_imagen_bmp.new(LsNombre_Imagen_BMP.write_string)
+	
+	LoSim.nMargen_izq << 1
+	LoSim.nMargen_der << 1
+	LoSim.nMargen_sup << 1
+	LoSim.nMargen_inf << 1	
+		
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Simbolo_izq).oCeldas.Celda(1,1).oElemento << LoSim
+	
+
+	#-----------------------------------------------------------
+	#Tabla Tramo
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	LoLbl << c_texto_grafico.new("TRAMO")
+	LoLbl.nTamanio << 25
+	LoLbl.sAlineacion << :centre_centre
+	LoLbl.sEstilo << "fixed"
+
+	#se crean los objetos que almacenara la tabla
+	LoLblTit << c_texto_grafico.new_from(LoLbl, "TITULO")	
+
+
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Tramo).oCeldas.Celda(1,1).oElemento << LoLbl
+	_self.oTablas.elemento(:tbl_Tramo).oCeldas.Celda(2,1).oElemento << LoLblTit	
+
+
+	#-----------------------------------------------------------
+	#Tabla Kilometros
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	LoLbl << c_texto_grafico.new("KM.F.O.=")
+	LoLbl.nTamanio << 25
+	LoLbl.sAlineacion << :centre_centre
+	LoLbl.sEstilo << "fixed"
+
+	#se crean los objetos que almacenara la tabla
+	LoLbl2 << c_texto_grafico.new_from(LoLbl, "KM.REAL=")
+	LoLbl3 << c_texto_grafico.new_from(LoLbl, "KM.SCT=")
+	LoLbl4 << c_texto_grafico.new_from(LoLbl, "AL")
+	LoLbl5 << c_texto_grafico.new_from(LoLbl, "AL")
+	LoLbl6 << c_texto_grafico.new_from(LoLbl, "AL")				
+
+
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Kilometros).oCeldas.Celda(1,1).oElemento << LoLbl
+	_self.oTablas.elemento(:tbl_Kilometros).oCeldas.Celda(2,1).oElemento << LoLbl2
+	_self.oTablas.elemento(:tbl_Kilometros).oCeldas.Celda(3,1).oElemento << LoLbl3		
+
+	_self.oTablas.elemento(:tbl_Kilometros).oCeldas.Celda(1,3).oElemento << LoLbl4
+	_self.oTablas.elemento(:tbl_Kilometros).oCeldas.Celda(2,3).oElemento << LoLbl5
+	_self.oTablas.elemento(:tbl_Kilometros).oCeldas.Celda(3,3).oElemento << LoLbl6		
+	
+	#-----------------------------------------------------------
+	#Tabla Simbolo der
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	#	LoSim << c_simbolo_grafico.new("Granja")
+	#	LoSim << c_imagen_bmp.new("C:\Imagen_bmp\Logo_Telmex.bmp")
+
+       	LsNombre_Imagen_BMP << _self.ruta + "\Logo_" + _self.prvObten_Reviso + ".bmp"	
+	
+#	LoSim << c_imagen_bmp.new(_self.ruta + "\Logo_Telmex.bmp")	
+
+	_if system.file_exists?(LsNombre_Imagen_BMP) = _false
+	_then
+
+		LsNombre_Imagen_BMP << _self.ruta + "\Logo_Sin_imagen.bmp"		
+
+	_endif
+
+	LoSim << c_imagen_bmp.new(LsNombre_Imagen_BMP)	
+
+	LoSim.nMargen_izq << 1
+	LoSim.nMargen_der << 1
+	LoSim.nMargen_sup << 1
+	LoSim.nMargen_inf << 1	
+
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Simbolo_der).oCeldas.Celda(1,1).oElemento << LoSim		
+
+	
+	
+_endmethod 
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas_Seccion4()
+
+## Objetivo: Crea y asigna los objetos a las celdas de las
+## tablas de la seccion 1
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	_local LoNum # Numero de renglon
+	_local LoTxt # texto del renglon
+	_local LoLbl  # Almacena la etiqueta de Autorizo	
+	_local LoTxt2 # texto del renglon
+	_local LoTxt3 # texto del renglon		
+	_local LsCad # almacena el texto que desplegara el renglon
+	_local LcollCadenas # Almacena las cadenas que debera desplegar el ren 4 y ren 8
+	
+
+	#-----------------------------------------------------------
+	#Tabla Proyecto
+	#-----------------------------------------------------------
+
+	_local LoLblRev     # Almacena la etiqueta de Modificacion
+	_local LoLblSup     # Almacena la etiqueta de Fecha
+	_local LoLblAprobo  # Almacena la etiqueta de por
+
+	_local LoTxtRev     # Almacena el texto de Modificacion
+	_local LoTxtSup     # Almacena el texto de Fecha
+	_local LoTxtAprobo  # Almacena el texto de por
+	
+	#se crean los objetos que almacenara la tabla
+	LoLbl  << c_texto_grafico.new("PROYECTO")
+	LoLbl.nTamanio << 25
+	LoLbl.sAlineacion << :centre_centre
+	LoLbl.sEstilo << "fixed"
+
+	#se crean los objetos que almacenara la tabla
+	LoLblRev     << c_texto_grafico.new_from(LoLbl, "REVISO")
+	LoLblSup     << c_texto_grafico.new_from(LoLbl, "SUPERVISO")
+	LoLblAprobo  << c_texto_grafico.new_from(LoLbl, "APROBO")
+
+
+	#se crean los objetos que almacenara la tabla
+	LoTxt  << c_texto_grafico.new_from(LoLbl," ")
+
+	#se crean los objetos que almacenara la tabla
+	LoTxtRev    << c_texto_grafico.new_from(LoTxt, " ")
+	LoTxtSup    << c_texto_grafico.new_from(LoTxt, " ")
+	LoTxtAprobo << c_texto_grafico.new_from(LoTxt, " ")	
+	
+	
+	#asigna los objetos creados a su correspondiente celda
+
+	_self.oTablas.elemento(:tbl_proyecto).oCeldas.Celda(1,1).oElemento << LoLbl
+	_self.oTablas.elemento(:tbl_proyecto).oCeldas.Celda(1,2).oElemento << LoLblRev
+	_self.oTablas.elemento(:tbl_proyecto).oCeldas.Celda(3,1).oElemento << LoLblSup
+	_self.oTablas.elemento(:tbl_proyecto).oCeldas.Celda(3,2).oElemento << LoLblAprobo
+	
+	_self.oTablas.elemento(:tbl_proyecto).oCeldas.Celda(2,1).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_proyecto).oCeldas.Celda(2,2).oElemento << LoTxtRev
+	_self.oTablas.elemento(:tbl_proyecto).oCeldas.Celda(4,1).oElemento << LoTxtSup
+	_self.oTablas.elemento(:tbl_proyecto).oCeldas.Celda(4,2).oElemento << LoTxtAprobo
+
+	#-----------------------------------------------------------
+	#Tabla Fecha
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	LoLbl  << c_texto_grafico.new("FECHA")
+	LoLbl.nTamanio << 25
+	LoLbl.sAlineacion << :centre_centre
+	LoLbl.sEstilo << "fixed"
+
+	#se crean los objetos que almacenara la tabla
+	LoTxt  << c_texto_grafico.new_from(LoLbl," ")
+
+	#asigna los objetos creados a su correspondiente celda
+
+	_self.oTablas.elemento(:tbl_fecha).oCeldas.Celda(1,1).oElemento << LoLbl
+	_self.oTablas.elemento(:tbl_fecha).oCeldas.Celda(2,1).oElemento << LoTxt
+
+
+	#-----------------------------------------------------------
+	#Tabla Escala
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	LoLbl  << c_texto_grafico.new("ESCALA")
+	LoLbl.nTamanio << 25
+	LoLbl.sAlineacion << :centre_centre
+	LoLbl.sEstilo << "fixed"
+
+	LoLblAcot << c_texto_grafico.new_from(LoLbl, "ACOT")
+	
+	#se crean los objetos que almacenara la tabla
+	LoTxt  << c_texto_grafico.new_from(LoLbl,"F/E")
+
+	LoTxtAcot  << c_texto_grafico.new_from(LoTxt,"MTS")
+
+	#asigna los objetos creados a su correspondiente celda
+
+	_self.oTablas.elemento(:tbl_Escala).oCeldas.Celda(1,1).oElemento << LoLbl
+	_self.oTablas.elemento(:tbl_Escala).oCeldas.Celda(1,2).oElemento << LoLblAcot
+	
+	_self.oTablas.elemento(:tbl_Escala).oCeldas.Celda(2,1).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Escala).oCeldas.Celda(2,2).oElemento << LoTxtAcot
+
+	#-----------------------------------------------------------
+	#Tabla REVISION
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	LoLbl  << c_texto_grafico.new("REVISION")
+	LoLbl.nTamanio << 25
+	LoLbl.sAlineacion << :centre_centre
+	LoLbl.sEstilo << "fixed"
+
+	LoLblEdicion << c_texto_grafico.new_from(LoLbl, "EDICION")
+	
+	#se crean los objetos que almacenara la tabla
+	LoTxt  << c_texto_grafico.new_from(LoLbl," ")
+
+	LoTxtEdicion  << c_texto_grafico.new_from(LoTxt," ")
+
+	#asigna los objetos creados a su correspondiente celda
+
+	_self.oTablas.elemento(:tbl_Revision).oCeldas.Celda(1,1).oElemento << LoLbl
+	_self.oTablas.elemento(:tbl_Revision).oCeldas.Celda(1,2).oElemento << LoLblEdicion
+	
+	_self.oTablas.elemento(:tbl_Revision).oCeldas.Celda(2,1).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Revision).oCeldas.Celda(2,2).oElemento << LoTxtEdicion
+
+	#-----------------------------------------------------------
+	#Tabla Plano
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	LoLbl  << c_texto_grafico.new("PLANO NO.")
+	LoLbl.nTamanio << 25
+	LoLbl.sAlineacion << :centre_centre
+	LoLbl.sEstilo << "fixed"
+
+	LoLblDe << c_texto_grafico.new_from(LoLbl, "DE")
+	
+	#se crean los objetos que almacenara la tabla
+	LoTxt  << c_texto_grafico.new_from(LoLbl," ")
+
+	LoTxt2  << c_texto_grafico.new_from(LoTxt," ")
+
+	#asigna los objetos creados a su correspondiente celda
+
+	_self.oTablas.elemento(:tbl_Plano).oCeldas.Celda(1,2).oElemento << LoLbl
+	_self.oTablas.elemento(:tbl_Plano).oCeldas.Celda(2,2).oElemento << LoLblDe
+	
+	_self.oTablas.elemento(:tbl_Plano).oCeldas.Celda(2,1).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Plano).oCeldas.Celda(2,3).oElemento << LoTxt2
+
+
+	#-----------------------------------------------------------
+	#Tabla Aprobacion
+	#-----------------------------------------------------------
+	
+	#se crean los objetos que almacenara la tabla
+	LoLbl  << c_texto_grafico.new("APROBACION")
+	LoLbl.nTamanio << 25
+	LoLbl.sAlineacion << :centre_centre
+	LoLbl.sEstilo << "fixed"
+
+	LoLblNombre << c_texto_grafico.new_from(LoLbl, "NOMBRE")
+	LoLblFirma  << c_texto_grafico.new_from(LoLbl, "FIRMA")
+	LoLblFecha  << c_texto_grafico.new_from(LoLbl, "FECHA")	
+	
+	#se crean los objetos que almacenara la tabla
+	LoTxt  << c_texto_grafico.new_from(LoLbl," ")
+
+	LoTxt2  << c_texto_grafico.new_from(LoTxt," ")
+	LoTxt3  << c_texto_grafico.new_from(LoTxt," ")
+
+	#asigna los objetos creados a su correspondiente celda
+
+	_self.oTablas.elemento(:tbl_Aprobacion).oCeldas.Celda(1,2).oElemento << LoLbl
+	_self.oTablas.elemento(:tbl_Aprobacion).oCeldas.Celda(2,1).oElemento << LoLblNombre
+	_self.oTablas.elemento(:tbl_Aprobacion).oCeldas.Celda(2,2).oElemento << LoLblFirma
+	_self.oTablas.elemento(:tbl_Aprobacion).oCeldas.Celda(2,3).oElemento << LoLblFecha	
+	
+	_self.oTablas.elemento(:tbl_Aprobacion).oCeldas.Celda(3,1).oElemento << LoTxt
+	_self.oTablas.elemento(:tbl_Aprobacion).oCeldas.Celda(3,2).oElemento << LoTxt2
+	_self.oTablas.elemento(:tbl_Aprobacion).oCeldas.Celda(3,2).oElemento << LoTxt3	
+
+_endmethod 
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas_RutaA()
+
+## Objetivo: Crea y asigna los objetos de la tabla ruta del
+## sello A
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	#se crean los objetos que almacenara la tabla
+	LoEtiquetaRuta  << c_texto_grafico.new("RUTA.-")
+	LoEtiquetaRuta.nTamanio << 45
+	LoEtiquetaRuta.sAlineacion << :centre_left
+        LoEtiquetaRuta.sEstilo << "fixed"	
+
+	LoEtiquetaTramo  << c_texto_grafico.new_from(LoEtiquetaRuta,"TRAMO.-")
+
+	
+	#se crean los objetos que almacenara la tabla
+	LoTxtRuta  << c_texto_grafico.new_from(LoEtiquetaRuta," ")
+	LoTxtRuta.sAlineacion << :centre_left
+
+	LoTxtTramo  << c_texto_grafico.new_from(LoEtiquetaRuta," ")
+	LoTxtTramo.sAlineacion << :centre_left
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(1,1).oElemento << LoEtiquetaRuta
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(1,2).oElemento << LoTxtRuta
+
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(2,1).oElemento << LoEtiquetaTramo
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(2,2).oElemento << LoTxtTramo
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas_DireccionA()
+
+## Objetivo: Crea y asigna los objetos de la tabla direccion del
+## sello A
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	#se crean los objetos que almacenara la tabla
+	LoEtiquetaDir  << c_texto_grafico.new("DIRECCION.-")
+	LoEtiquetaDir.nTamanio << 35
+	LoEtiquetaDir.sAlineacion << :centre_left
+        LoEtiquetaDir.sEstilo << "fixed"	
+
+	LoEtiquetaSub  << c_texto_grafico.new_from(LoEtiquetaDir,"SUBDIRECCION.-")
+	LoEtiquetaGer  << c_texto_grafico.new_from(LoEtiquetaDir,"GERENCIA.-")
+	LoEtiquetaRes  << c_texto_grafico.new_from(LoEtiquetaDir,"RESPONSABLE.-")
+	LoEtiquetaDom  << c_texto_grafico.new_from(LoEtiquetaDir,"DOMICILIO.-")
+	LoEtiquetaTel  << c_texto_grafico.new_from(LoEtiquetaDir,"TELEFONO.-")	
+
+	
+	#se crean los objetos que almacenara la tabla
+	LoTxtDir  << c_texto_grafico.new_from(LoEtiquetaDir," ")
+	LoTxtDir.sAlineacion << :centre_left
+
+	LoTxtSub  << c_texto_grafico.new_from(LoTxtDir," ")
+	LoTxtGer  << c_texto_grafico.new_from(LoTxtDir," ")
+	LoTxtRes  << c_texto_grafico.new_from(LoTxtDir," ")
+	LoTxtDom  << c_texto_grafico.new_from(LoTxtDir," ")
+	LoTxtTel  << c_texto_grafico.new_from(LoTxtDir," ")	
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(1,1).oElemento << LoEtiquetaDir
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(2,1).oElemento << LoEtiquetaSub
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(3,1).oElemento << LoEtiquetaGer
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(4,1).oElemento << LoEtiquetaRes
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(5,1).oElemento << LoEtiquetaDom
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(6,1).oElemento << LoEtiquetaTel	
+
+
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(1,2).oElemento << LoTxtDir
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(2,2).oElemento << LoTxtSub
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(3,2).oElemento << LoTxtGer
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(4,2).oElemento << LoTxtRes
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(5,2).oElemento << LoTxtDom
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(6,2).oElemento << LoTxtTel	
+
+_endmethod
+$
+
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas_RutaB()
+
+## Objetivo: Crea y asigna los objetos de la tabla ruta del
+## sello A
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	#se crean los objetos que almacenara la tabla
+	LoEtiquetaRuta  << c_texto_grafico.new("RUTA.-")
+	LoEtiquetaRuta.nTamanio << 45
+	LoEtiquetaRuta.sAlineacion << :centre_left
+        LoEtiquetaRuta.sEstilo << "fixed"	
+
+	LoEtiquetaEnlace  << c_texto_grafico.new_from(LoEtiquetaRuta,"ENLACE.-")
+	LoEtiquetaTramo  << c_texto_grafico.new_from(LoEtiquetaRuta,"TRAMO.-")
+
+	
+	#se crean los objetos que almacenara la tabla
+	LoTxtRuta  << c_texto_grafico.new_from(LoEtiquetaRuta," ")
+	LoTxtRuta.sAlineacion << :centre_left
+
+	LoTxtEnlace  << c_texto_grafico.new_from(LoTxtRuta," ")
+	
+	LoTxtTramo  << c_texto_grafico.new_from(LoTxtRuta," ")
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(1,1).oElemento << LoEtiquetaRuta
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(2,1).oElemento << LoEtiquetaEnlace
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(3,1).oElemento << LoEtiquetaTramo
+
+
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(1,2).oElemento << LoTxtRuta
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(2,2).oElemento << LoTxtEnlace
+	_self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(3,2).oElemento << LoTxtTramo
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCrea_Asigna_Obj_A_Celdas_DireccionB()
+
+## Objetivo: Crea y asigna los objetos de la tabla direccion del
+## sello A
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó		
+
+	#se crean los objetos que almacenara la tabla
+	LoEtiquetaDir  << c_texto_grafico.new("SOT.-")
+	LoEtiquetaDir.nTamanio << 35
+	LoEtiquetaDir.sAlineacion << :centre_left
+        LoEtiquetaDir.sEstilo << "fixed"	
+
+	LoEtiquetaDom  << c_texto_grafico.new_from(LoEtiquetaDir,"DOMICILIO.")
+	LoEtiquetaRes  << c_texto_grafico.new_from(LoEtiquetaDir,"RESP.")
+	LoEtiquetaTel  << c_texto_grafico.new_from(LoEtiquetaDir,"TELEFONO.-")		
+
+	#se crean los objetos que almacenara la tabla
+	LoTxtDir  << c_texto_grafico.new_from(LoEtiquetaDir," ")
+	LoTxtDir.sAlineacion << :centre_left
+
+	LoTxtDom  << c_texto_grafico.new_from(LoTxtDir," ")
+	LoTxtRes  << c_texto_grafico.new_from(LoTxtDir," ")
+	LoTxtTel  << c_texto_grafico.new_from(LoTxtDir," ")	
+	
+	
+	#asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(2,2).oElemento << LoEtiquetaDir
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(3,2).oElemento << LoEtiquetaDom
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(4,2).oElemento << LoEtiquetaRes
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(5,2).oElemento << LoEtiquetaTel	
+
+	
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(2,3).oElemento << LoTxtDir
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(3,3).oElemento << LoTxtDom
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(4,3).oElemento << LoTxtRes
+	_self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(5,3).oElemento << LoTxtTel	
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvObten_txt_Ren4()
+
+## Objetivo: determinar que mensaje va en el renglon 4 de
+## acuerdo al sello que se solicite
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 02/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	
+	_local LcollCadenas # Coleccione de cadenas que tendra el ren 4
+
+	LcollCadenas << hash_table.new()
+
+	_if _self.sTipo_Sello = "A"
+	_then
+	   LsCad1 <<          "ES RESPONSABILIDAD DEL CONSTRUCTOR VERIFICAR Y DETECTAR LA UBICACION "
+	   LsCad1 << LsCad1 + "DE LA FIBRA OPTICA EXISTENTE, "
+
+	   LsCad2 <<          "A LO LARGO DE LA TRAYECTORIA DEL PROYECTO ANTES DE INICIAR LA CONSTRUCCION"
+	_else
+	   LsCad1 <<          "INSTALAR CANALETA EN TODOS LOS POZOS DE LA RUTA, CONFORME NORMATIVIDAD"
+	   LsCad1 << LsCad1 + "VIGENTE COMO PROTECCION "
+
+	   LsCad2 <<         "AL CABLE DE FIBRA OPTICA"
+		
+	_endif
+
+	LcollCadenas[1] << LsCad1
+	LcollCadenas[2] << LsCad2
+	
+	_return LcollCadenas
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvObten_txt_Ren6()
+
+## Objetivo: determinar que mensaje va en el renglon 6 de
+## acuerdo al sello que se solicite
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 02/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	
+	_local LcollCadenas # Coleccione de cadenas que tendra el ren 6
+
+	LcollCadenas << hash_table.new()
+
+	_if _self.sTipo_Sello = "A"
+	_then
+	   LsCad1 <<          "INSTALAR TIERRAS FISICAS EN LOS POZOS DE EMPALME QUE SE INDICA COLOCANDO "
+	   LsCad1 << LsCad1 + "EL DISPOSITIVO NORSCAN "
+
+	   LsCad2 <<          "2701 O 2730 EL QUE SE REQUIERA EN CADA CASO"
+	_else
+	   LsCad1 <<          "INSTALAR TIERRAS FISICAS EN LOS POZOS DE EMPALME QUE SE INDICA"
+
+	   LsCad2 <<         " "
+		
+	_endif
+
+	LcollCadenas[1] << LsCad1
+	LcollCadenas[2] << LsCad2
+	
+	_return LcollCadenas
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_txt_Ren2()
+
+## Objetivo: Asignar el texto que debe llevar el renglon 2
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 02/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	
+     _Local LsTxt # texto que debe tener la cadena
+
+     LsTxt << "EN TODO EL TRAMO DIRECTAMENTE ENTERRADO SE INSTALARAN " + _self.num_ductos.default("___")
+     LsTxt << LsTxt + " DUCTOS DE POLIETILENO DE ALTA DENSIDAD "
+      _self.oTablas.elemento(:tbl_Ren2).oCeldas.Celda(1,2).oElemento.sTexto << LsTxt
+
+     LsTxt << "DE 48.3 mm DE DIAMETRO ( " + _self.Colores.default("__") + " ) Y DOS CINTAS DE ADVERTENCIA"
+      _self.oTablas.elemento(:tbl_Ren2).oCeldas.Celda(2,2).oElemento.sTexto << LsTxt
+
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_txt_Ren8()
+
+## Objetivo: Asignar el texto que debe llevar el renglon 8
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 02/03/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó	
+
+	
+     _Local LsTxt # texto que debe tener la cadena
+
+     LsTxt << "PERIODO DE LEVANTAMIENTO EN CAMPO. "
+      _self.oTablas.elemento(:tbl_Ren8).oCeldas.Celda(1,2).oElemento.sTexto << LsTxt
+
+     LsTxt << "DEL " +  _self.fec_inicio.default("____") + " AL " +
+              _self.fec_final.default("___") + " DEL " +  _self.Anio.default("____")
+      _self.oTablas.elemento(:tbl_Ren8).oCeldas.Celda(2,2).oElemento.sTexto << LsTxt
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.prvCfgRenglon(RoTabla, RnRenglones)
+
+
+	RoTabla.bDibuja_bordes? << _false
+	RoTabla.bDibuja_Columnas_Internas?  << _false
+	RoTabla.bDibuja_Renglones_Internos? << _false
+	
+	#Asigna la longitud c cada uno de los renglones que componen a REN2
+	_for LnNumRen  _over range(1,RnRenglones)
+	_loop
+	   RoTabla.oRenglones.elemento(LnNumRen).nLongitud <<   3		
+	_endloop
+
+	RoTabla.oColumnas.elemento(1).nLongitud  <<   9 
+	RoTabla.oColumnas.elemento(2).nLongitud  <<  _self.nAncho_Sello - 9
+
+
+	_for LnNumRen  _over range(1,RnRenglones)
+	_loop
+	   LoCelda << RoTabla.oCeldas.Celda(LnNumRen,1).oElementos.obten_elemento(:bordes_celda)
+ 	   LoCelda.bBorde_izq? << _true
+
+	   LoCelda << RoTabla.oCeldas.Celda(LnNumRen,2).oElementos.obten_elemento(:bordes_celda)
+	   LoCelda.bBorde_der? << _true	
+	_endloop
+
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.Agrega_LYM(RoLym)
+
+## Objetivo: Permite agregar todos los elementos Layout a la pagina
+## Parámetros de entrada:  
+##    :layout_manager - RoLym : Referencia al LayoutManager
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.version()
+	
+	_return "version 1.0 06/04/05 14:00 "
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Direccion_Divisional << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(1,2).oElemento.stexto << PsValor
+   _else
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(2,3).oElemento.stexto << PsValor
+   _endif
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_SubDireccion_Divisional << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(2,2).oElemento.stexto << PsValor
+   _else
+      # Mensaje de error : Campo no disponible
+      _local LsMsj << "El campo SubDireccion_Divisional, no esta disponible para este tipo sello"
+      condition.rise(:warning, :string, LsMsj)
+   _endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Gerencia << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(3,2).oElemento.stexto << PsValor
+   _else
+      # Mensaje de error : Campo no disponible
+      _local LsMsj << "El campo Asigna_Gerencia, no esta disponible para este tipo sello"
+      condition.rise(:warning, :string, LsMsj)
+   _endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Responsable << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(4,2).oElemento.stexto << PsValor
+   _else
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(4,3).oElemento.stexto << PsValor
+   _endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Domicilio << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(5,2).oElemento.stexto << PsValor
+   _else
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(3,3).oElemento.stexto << PsValor
+   _endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Telefono << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(6,2).oElemento.stexto << PsValor
+   _else
+      _self.oTablas.elemento(:tbl_Direccion).oCeldas.Celda(5,3).oElemento.stexto << PsValor
+   _endif
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Ruta << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      _self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(1,2).oElemento.stexto << PsValor.write_string
+   _else
+      _self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(1,2).oElemento.stexto << PsValor.write_string
+   _endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Tramo << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      _self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(2,2).oElemento.stexto << PsValor.write_string
+   _else
+      _self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(3,2).oElemento.stexto << PsValor.write_string
+   _endif
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Enlace << PsValor
+
+   _if _self.sTipo_Sello = "A"
+   _then
+      # Mensaje de error : Campo no disponible
+      _local LsMsj << "El campo Enlace, no esta disponible para este tipo sello"
+      condition.rise(:warning, :string, LsMsj)
+   _else
+      _self.oTablas.elemento(:tbl_Ruta).oCeldas.Celda(2,2).oElemento.stexto << PsValor
+   _endif
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Proyecto << PsValor
+
+
+      _self.oTablas.elemento(:tbl_Proyecto).oCeldas.Celda(2,1).oElemento.stexto << PsValor
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Reviso << PsValor
+
+
+      _self.oTablas.elemento(:tbl_Proyecto).oCeldas.Celda(2,2).oElemento.stexto << PsValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Superviso << PsValor
+
+      _self.oTablas.elemento(:tbl_Proyecto).oCeldas.Celda(4,1).oElemento.ntamanio << 17
+      _self.oTablas.elemento(:tbl_Proyecto).oCeldas.Celda(4,1).oElemento.stexto << PsValor
+
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvAsigna_Aprobo << PsValor
+
+      _self.oTablas.elemento(:tbl_Proyecto).oCeldas.Celda(4,2).oElemento.nTamanio << 17
+      _self.oTablas.elemento(:tbl_Proyecto).oCeldas.Celda(4,2).oElemento.stexto << PsValor
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.asigna_num_tramo << RsCve_tramo
+	## 
+	##
+
+	_self.sCve_tramo << RsCve_tramo.write_string
+
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_observaciones.asigna_num_tramo(RsCve_Ruta, RsCve_tramo )
+	## 
+	##
+
+	_self.sCve_ruta << RsCve_ruta.write_string	
+	_self.sCve_tramo << RsCve_tramo.write_string
+
+	
+_endmethod
+
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvObten_Proyecto 
+
+
+	_local LoProy_Red
+	
+	LoProy_Red << c_proyecto_red.new()
+	LoProy_Red.identificador_proyecto("1")
+	
+      _return LoProy_Red.empresa_proyecto		
+      
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_observaciones.prvObten_Reviso 
+
+      _local LoProy_Red
+
+      LoProy_Red << c_proyecto_red.new()
+      LoProy_Red.identificador_proyecto("1")
+
+      _return LoProy_Red.empresa_constructora
+	
+_endmethod
+

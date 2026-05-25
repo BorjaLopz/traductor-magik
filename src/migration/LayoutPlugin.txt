@@ -1,0 +1,130 @@
+Clase Magik: layout_plugin
+Hereda de: layout_plugin (SW framework plugin, _package sw)
+Archivo fuente: src/legacy/layout_plugin.magik
+Archivo migrado: src/migration/LayoutPlugin.tsx
+
+=============================================================================
+PROPÓSITO
+=============================================================================
+Plugin principal de la aplicación GIS para gestión de planos (layouts).
+Registra acciones de UI (quick_preview, layout_designer, quick_print,
+quick_pdf, plano_de_captura) y coordina la generación/previsualización
+de planos de layout en el diseñador SW.
+
+=============================================================================
+CONSTANTES → MÓDULO TS
+=============================================================================
+MESES = ['Enero','Febrero',…,'Diciembre']
+  → constante MESES (readonly tuple, 12 elementos)
+  Usada en fecha_med() para formato dd/Mes/yyyy.
+
+REGISTERED_ACTIONS
+  → constante REGISTERED_ACTIONS (5 entradas)
+  Documentación de las 5 acciones SW que init_actions registra.
+
+=============================================================================
+MÉTODOS → FUNCIONES TS
+=============================================================================
+
+fecha_med()
+  → fechaMed(): string
+  Devuelve fecha actual como "d/Mes/yyyy" usando MESES.
+  new Date() reemplaza date_now() de Magik.
+
+init_actions()
+  → lista REGISTERED_ACTIONS (acciones no implementadas en TS, solo documentadas)
+  En Magik: registra quick_preview, layout_designer, quick_print, quick_pdf,
+  plano_de_captura como sw_action con mensajes e imágenes.
+  En TS: la UI React gestiona las acciones directamente.
+
+plano_de_captura()
+  → planoDeCaptura(esExistenteFibra, contexto): PlanoCaptura
+  Determina el tipo de plano a generar:
+    esExistenteFibra = true →
+      Magik: user:c_plano_de_captura_fo.new().genera_plano(LoDtoOptico)
+      TS: retorna PlanoCaptura{tipo:'FIBRA_LOCAL', sello:'c_plano_de_captura_fo'}
+    else →
+      Crea página de construcción: marco 4×2, norte B, título "PLANO DE CAPTURA",
+      sello c_sello_estandar_construccion, c_geom_set_layout_plano_captura con
+      nMargenVp=800, modulos_ancho=4, modulos_alto=2, sTipoPlano="CONSTRUCCION".
+  El título incluye: "PLANO DE CONSTRUCCIÓN\n{distrito} / {programa}-{año}".
+
+  Magik evalúa existente_fibra? como:
+    sch.project.job_type.lowercase = "existente"
+    AND sch.tipo_diseno = :secundaria
+    AND active_design.id_dto_optico isnt unset
+
+preview_layout(a_layout, activate_custom_properties?, title)
+  → previewLayout (no migrado directamente)
+  En Magik: activa dialog :layout_preview y llama set_current_layout.
+  En TS: responsabilidad del componente de previsualización React.
+
+quick_preview(a_template_name?)
+  → quickPreview(currentViewBounds?, swTemplatesDbDir?): { templateFile, landscape }
+  Lee SW_TEMPLATES_DB_DIR (env var); si no existe usa
+  SMALLWORLD_GIS + "\..\sigp\templates_xml".
+  Template: path + "\p_libre_plot.xml".
+  Orientación:
+    :automatic → landscape = width > height
+    :portrait  → landscape = false
+    :landscape → landscape = true
+
+quick_preview_for_map(a_map_view, a_template_name?)
+  → quickPreviewForMap(viewBounds, templateName?): { landscape, templateFile, hasExistingViewports }
+  Carga layout desde XML (layout_document.new_from_xml) o crea uno por defecto.
+  Recorre todos los viewports sin parent_viewport y llama
+  map_viewport_on_map_view.
+  En TS: retorna descripción del layout; el mapeo real es responsabilidad de OL.
+
+start_layout_designer()
+  → no migrado (depende de layout_designer SW UI dialog).
+
+layout_designer (getter)
+  → no migrado (accede a .applications[:layout_designer].application).
+
+=============================================================================
+DECISIONES DE DISEÑO
+=============================================================================
+
+PlanoCaptura como return type:
+  plano_de_captura modifica la UI in-place en Magik (add_element, lyd, etc.).
+  En TS retorna un PlanoCaptura descriptor que el componente React procesa.
+
+SW env vars (SW_TEMPLATES_DB_DIR):
+  El Magik usa system.getenv() para leer variables de entorno del SO.
+  En TS se pasa como parámetro de configuración (inyectable).
+
+esExistenteFibra como parámetro:
+  La evaluación de la condición accede a swg_dsn_admin_engine que no existe
+  en TS. El llamador evalúa la condición y pasa el booleano resultante.
+
+REGISTERED_ACTIONS:
+  Las acciones SW (sw_action) no tienen equivalente directo en React.
+  Se documentan como constante para referencia; cada acción corresponde
+  a un botón/handler en la UI React.
+
+=============================================================================
+DEPENDENCIAS
+=============================================================================
+- React 18 (useState) — solo para el viewer
+- No requiere turf ni OL en la lógica de negocio
+- layout_designer, layout_manager, viewport_mapper: SW UI (no migrado)
+- swg_dsn_admin_engine: GIS runtime (no migrado)
+- c_plano_de_captura_fo: clase de plano FO (no migrado)
+- c_geom_set_layout_plano_captura: variante de c_geom_set_layout (no migrado)
+
+=============================================================================
+ESTADO DE MIGRACIÓN
+=============================================================================
+[x] MESES constante
+[x] fecha_med
+[x] init_actions (documentado en REGISTERED_ACTIONS)
+[x] plano_de_captura (lógica de ramificación fibra/cobre)
+[x] quick_preview (template path + orientación)
+[x] quick_preview_for_map (landscape + template)
+[ ] preview_layout (depende de layout_preview SW dialog)
+[ ] start_layout_designer (depende de SW UI)
+[ ] layout_designer getter (depende de .applications SW)
+[ ] start_application_copy (depende de SW application manager)
+[ ] Lectura real de SW_TEMPLATES_DB_DIR (env var del sistema)
+[ ] Mapeo de viewport en OL (map_viewport_on_map_view)

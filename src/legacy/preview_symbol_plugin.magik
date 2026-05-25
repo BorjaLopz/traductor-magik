@@ -1,0 +1,248 @@
+_package user
+$
+def_slotted_exemplar(:preview_symbol_plugin,{
+                      {:sigc_style_view, _unset}
+		     },:plugin)
+$
+preview_symbol_plugin.define_shared_constant(:databus_producer_data_types,
+					     {
+						     :symbol_name
+					     },
+					     :public)
+$
+preview_symbol_plugin.define_slot_access( :sigc_style_view,
+					 ## Returns the grid to be used
+					 :read, :public )
+$
+preview_symbol_plugin.def_property( :x_offset,
+				    :type, :integer, :default_value, 0,
+				    :description, "X offset used for dialog activation" )
+$
+preview_symbol_plugin.def_property( :y_offset,
+				    :type, :integer, :default_value, 0,
+				    :description, "Y offset used for dialog activation" )
+$
+_method preview_symbol_plugin.activate_preview_symbol()
+    name << :c_preview_symbol_dialog
+    _if (d << _self.get_dialog(name)) _is _unset
+    _then
+	# Create and cache the dialog
+	d << c_preview_symbol_dialog.new_dialog( _self.top_frame )
+	
+	d.owner_plugin << _self
+	
+	_self.cache_dialog( name, d )		
+    _endif
+    d.activate_relative_to( _self.message(:frame_title), _self.top_frame,
+			    _self.x_offset, _self.y_offset )
+    >> d
+_endmethod
+$
+_method preview_symbol_plugin.build_gui(container)
+    d << c_preview_symbol_dialog.new()
+    gui << d.build_embedded_gui(container)
+    #   gui << d.build_gui(container)
+    gui.tab_label << _self.message(:tab_title)
+    >> gui
+_endmethod
+$
+_pragma(classify_level=debug, topic={application_development_examples})
+_method preview_symbol_plugin.init(name, framework)
+	## 
+	## 
+
+	_super.init(name, framework)
+
+
+	_if gis_program_manager.databases[:sigc_style_view] _is _unset 
+	_then
+		_if .sigc_style_view _is _unset 
+		_then
+			.sigc_style_view  << user:abre_style_sigc()
+		
+		_endif
+	_else
+		.sigc_style_view  << gis_program_manager.databases[:sigc_style_view]
+	_endif
+	
+	#
+	# Steve Hall (Ten Sails Consulting) 17/01/06
+	# Devolver _self como resultado.
+	#
+	
+	_return _self 
+_endmethod
+$
+_pragma(classify_level=debug, topic={application_development_examples})
+_method preview_symbol_plugin.init_actions()
+    ## Accion para mostrar la interfaz de preview de simbol
+    _self.add_action(
+	sw_action.new( :activate_preview_symbol,
+		       :engine, _self,
+		       :image, {:activate,_self.module_name},
+		       :action_message, :activate_preview_symbol|()| ) )
+    _self.add_action(
+	  sw_action.new( :open_style_sigc_app,
+			 :engine, _self,
+			 :image, {:app_dibujos, _self.module_name}, 
+			 :action_message, :open_sigc_style_symbol_app|()|) )
+    _self.add_action(
+	  sw_action.new( :merge_style_sigc_view,
+			 :engine, _self,
+			 :image, {:merge, :version_management_plugin},
+			 :action_message, :merge_style_sigc_view|()|) )
+    _self.add_action(
+	  sw_action.new( :post_style_sigc_view,
+			 :engine, _self,
+			 :image, {:post, :version_management_plugin},
+			 :action_message, :post_style_sigc_view|()|) )
+_endmethod
+$
+_pragma(classify_level=debug, topic={application_development_examples})
+_method preview_symbol_plugin.manage_actions()
+	## 
+	##
+	
+	current_writer  << gis_program_manager.databases[:sigc_style_view].current_writer
+
+	_if .sigc_style_view _isnt _unset _andif
+	    .sigc_style_view.writable? _andif
+	    current_writer = "yourself"
+	_then
+		_self.action(:open_style_sigc_app).enabled? << _true  
+		_self.action(:merge_style_sigc_view).enabled? << _true  
+		_self.action(:post_style_sigc_view).enabled? << _true 		
+	_else
+		_self.action(:open_style_sigc_app).enabled? <<  _false  
+		_self.action(:merge_style_sigc_view).enabled? << _false 
+		_self.action(:post_style_sigc_view).enabled? << _false
+
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=debug, topic={application_development_examples})
+_method preview_symbol_plugin.merge_style_sigc_view()
+	## 
+	## Consolida cambios en a la base de datos
+	## de simbolos de sigc
+
+	current_user    << gis_program_manager.authorisation_view.current_user.name
+	current_writer  << gis_program_manager.databases[:sigc_style_view].current_writer
+
+	
+       _if current_writer _isnt _unset 
+       _then
+              LoCurrentwriter << "El usuario " + current_writer + " se encuentra en escritura"
+       _else
+	       LoCurrentwriter << ""
+       _endif 
+	
+       _if .sigc_style_view.mode _is :readonly
+       _then
+	       modo << "Solo lectura"
+       _else
+	       modo << "escritura"
+       _endif
+
+	_try _with LoError
+		_if .sigc_style_view _isnt _unset _andif
+		    .sigc_style_view.writable? _andif
+		    .sigc_style_view.mode _is :write
+		    
+		_then
+			.sigc_style_view.merge()
+			_self.show_message("La base de datos de dibujos se ha actualizado")
+		_else
+			condition.raise(:user_error, :string, "No ha sido posible consolidar la base de datos de dibujos" + %newline + "Intente más tarde")
+		_endif
+		
+	_when error                  
+		
+		condition.raise(:user_error, :string,
+				"No ha sido posible consolidar la base de datos de dibujos" + %newline +
+				"La base de datos de dibujos esta en modo " + modo +  %newline +
+				LoCurrentwriter)
+
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=debug, topic={application_development_examples})
+_method preview_symbol_plugin.open_sigc_style_symbol_app()
+	## 
+	##
+
+	sse << smallworld_product.application_definition(:sigc_style_symbol_editor)
+
+	sse_app << sse.application
+	
+	_if sse_app _is _unset 
+	_then
+		sse.start()
+	_else
+		sse.restart()
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=debug, topic={application_development_examples})
+_method preview_symbol_plugin.post_activation()
+	#---------------------------------------------------
+	##  Objetivo  : <Description>
+	##
+
+	# manejamos las acciones correspondientes
+	_self.manage_actions()
+	
+_endmethod
+$
+_pragma(classify_level=debug, topic={application_development_examples})
+_method preview_symbol_plugin.post_style_sigc_view()
+	## 
+	## Propaga cambios en a la base de datos
+	## de simbolos de sigc  
+
+
+	current_user    << gis_program_manager.authorisation_view.current_user.name
+	
+	current_writer  << gis_program_manager.databases[:sigc_style_view].current_writer
+
+       _if current_writer _isnt _unset 
+       _then
+              LoCurrentwriter << "El usuario " + current_writer + " se encuentra en escritura"
+       _else
+	       LoCurrentwriter << ""
+       _endif 
+	
+
+       _if .sigc_style_view.mode _is :readonly
+       _then
+	       modo << "Solo lectura"
+       _else
+	       modo << "escritura"
+       _endif
+	
+	_try _with LoError
+
+		_if .sigc_style_view _isnt _unset _andif
+		    .sigc_style_view.writable? _andif
+		    .sigc_style_view.mode _is :write
+		_then
+			.sigc_style_view.post()
+			_self.show_message("La base de datos de dibujos se ha actualizado")
+		_else
+			condition.raise(:user_error, :string, "No ha sido posible propagar la base de datos de dibujos" + %newline + "Intente más tarde")
+		_endif
+		
+	_when error
+		
+		condition.raise(:user_error, :string,
+				"No ha sido posible consolidar la base de datos de dibujos" + %newline +
+				"La base de datos de dibujos esta en modo " + modo +  %newline +
+				LoCurrentwriter)
+		
+	_endtry
+	
+_endmethod
+$

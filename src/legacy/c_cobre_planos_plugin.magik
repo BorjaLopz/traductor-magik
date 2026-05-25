@@ -1,0 +1,709 @@
+#----------------------------------------------------------------
+# c_ep_planos_plugin.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rbsaldan
+#
+# Date: 02/Mayo/2007
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+
+_package user
+$
+#remex(:c_cobre_planos_plugin)
+$
+def_slotted_exemplar(:c_cobre_planos_plugin,
+                     {
+			     {:oCurrentRecord,_unset},
+			     {:oCurrentMapView,_unset}
+                     },
+		     :editor_plugin)
+$
+c_cobre_planos_plugin.def_property(:sangria_ver,
+				:type,:float,
+				:default_value,200,
+		                :readable?,_true,
+				:description,"Sangria Vertical")
+$
+c_cobre_planos_plugin.def_property(:sangria_hor,
+				:type,:float,
+				:default_value,200,
+		                :readable?,_true,
+				:description,"Sangria Horizontal")
+$
+c_cobre_planos_plugin.define_shared_constant(:databus_consumer_data_types,
+						  {
+							  :map_selection,
+							  :record_selection,
+							  :active_map_view
+						  },
+						  :public)
+$
+c_cobre_planos_plugin.define_shared_constant(:CARTA_LARGO,2160.00,:public )
+$
+c_cobre_planos_plugin.define_shared_constant(:CARTA_ALTO,2790.00,:public )
+$
+c_cobre_planos_plugin.define_shared_constant(:s_msg_area_act,"Debe existir un estudio activo",:public )
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.init_actions()
+## 
+## 
+	
+	_self.add_action(sw_action.new(:genera_plano_construccion_interno,
+				       :engine, _self,
+				       #:image,{:print_plano_detalles_ctl,:fibra_optica},
+				       #:tooltip,_self.message(:pln_detalles_ctl),
+				       :action_message,:genera_plano_construccion_interno|()|,
+				       :enabled?, _false))
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.sw_databus_data_available(data_type_name, data)
+	## 
+	##
+
+	_if data_type_name _is :map_selection #_or data_type_name _is :record_selection)
+	_then
+		_if data[2].an_element() _isnt _unset
+		_then
+			.oCurrentRecord<<data[2].an_element().rwo
+		_else
+			.oCurrentRecord<<_unset
+		_endif
+	_elif data_type_name _is :record_selection
+	_then
+		.oCurrentRecord<<data[2].an_element()
+	_endif
+	
+	_if data_type_name _is :active_map_view
+	_then
+		.oCurrentMapView<<data
+	_endif
+	_self.manage_actions()
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.manage_actions()
+	## 
+	##
+
+	# Activar cuando este en el mundo interno del edificio.
+	_self.action(:genera_plano_construccion_interno).enabled?<<_true
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.genera_plano_construccion_interno()
+
+	#Inicia Layout Designer
+	(LoPage,LoViewMapperPlugin)<<_self.IniciaLayoutDesigner()
+
+	_if LoPage _isnt _unset _andif LoViewMapperPlugin _isnt _unset 
+	_then
+                #Agregar Marco
+		_self.AddMarco(LoPage,0.5,8.4,21,30)
+		
+		# Agregar CROQUIS
+		_self.AddViewport(LoPage,
+				  :c_vp_croquis,
+				  _unset,
+				  LoViewMapperPlugin,
+				  25,45,10,10,
+				  .oCurrentRecord)
+
+		# Agregar Plano Interno
+		_self.AddViewport(LoPage,
+				  :c_vp_plano_construccion_interno,
+				  _unset,
+				  LoViewMapperPlugin,
+				  35,11,(LoPage.bounds.width/100.0)-42,(LoPage.bounds.height/100.0)-14,
+				  .oCurrentRecord)
+
+		# Agregar sello Estandar Base
+		_self.AddSelloEstandarBaseFo(LoPage,2.5,8.9,21,30)
+
+		# Agregar sello Red Secundaria
+		_self.AddSelloRedSec(LoPage,4.2,9,21,30)
+
+		# Agregar Cuadro Simbologia Red Sec
+		_self.AddSelloSimbologiaRedSec(LoPage,4.2,22,21,30)
+
+		# Agregar Competencia.
+		_self.AddSelloCompetencia(LoPage,4.2,29,21,30,.oCurrentRecord)
+
+		# Agregar Distancia Ter->CD
+		_self.AddSelloDistTerCD(LoPage,9.2,32,21,30,.oCurrentRecord)
+		
+		# Agregar Capacidad Cable
+		_self.AddSelloCapacidadCable(LoPage,14.2,31,21,30)
+	_endif
+	
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.GetPosicion(PiLargo,PiAncho,PiNRen,PiMCol,PiRen,PiCol)
+	## 
+	## 
+	_return (((PiCol-1)*PiLargo/PiMCol).as_number(),((PiRen-1)*PiAncho/PiNRen).as_number())
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.IniciaLayoutDesigner()
+	## 
+	##
+_local LoLayoutPlugin
+_local LoLayoutDesigner
+_local LoLayoutManager
+_local LoViewMapperPlugin
+_local LoDoc
+_local LoPage
+
+	#LoLayoutPlugin   << _self.framework.framework.plugin(:layout_plugin)
+	LoLayoutPlugin   << _self.framework.plugin(:layout_plugin)
+	LoLayoutDesigner << LoLayoutPlugin.start_layout_designer()
+	LoLayoutManager  << LoLayoutDesigner.plugin(:layout_manager)
+	LoViewMapperPlugin<<LoLayoutDesigner.plugin(:viewport_mapper)
+
+	LoDoc  << LoLayoutManager.current_document
+	LoPage << LoLayoutManager.current_page
+
+	#Configurar Pagina 124 cm (Ancho) X 84 cm (Largo)
+	LoPage.set_paper_size(124*100,84*100)
+
+	>>(LoPage,LoViewMapperPlugin)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.GetMapView(PoGeom)
+	## 
+	## 
+_local LoMapView
+_local LoMapPlugin
+
+        #LoMapPlugin<<_self.framework.framework.plugin(:map_plugin)
+	LoMapPlugin<<smallworld_product.pni_application().plugin(:map_plugin)
+	_if PoGeom _isnt _unset 
+	_then
+		LoMapView<<LoMapPlugin.current_map_view
+		LoMapView.goto(PoGeom)
+		LoMapView<<LoMapPlugin.current_map_view
+	_else
+		LoMapView<<LoMapPlugin.current_map_view
+	_endif
+	>>LoMapView
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddViewport(PoPage,PyTipoDeVp,PoLimite,PoViewMapperPlugin,PiCord_x1, PiCord_y1, PiWidth,PiHeight,_optional PoUserBuilding)
+	## 
+	##
+_local LoPage
+_local LoViewport
+_local LoBound
+_local LoBoundary
+_local LiIdBuilding
+
+_local LoNombreEdificio
+_local LoTypeEdificio
+_local LoDto
+_local LoNomDto
+_local LoEdoCons
+
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       # Intercambiar. ya!!
+       LiWidth   << PiWidth *100
+       LiHeight  << PiHeight*100
+
+       LoPage<<PoPage
+       
+       LoBound<<bounding_box.new(LoPage.bounds.xmin+LiCord_x1,
+				 LoPage.bounds.ymin+LiCord_y1,
+				 LoPage.bounds.xmin+LiCord_x1+LiWidth,
+				 LoPage.bounds.ymin+LiCord_y1+LiHeight)
+       
+        _if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	_then
+		# Antes del Mapeo.
+		#LoViewport<<:new_with.send_to(PyTipoDeVp,{:bounds,LoPage.bounds})
+		_if PyTipoDeVp=:c_vp_croquis
+		_then
+			# Calcular el Limite
+			_if PoUserBuilding _isnt _unset 
+			_then
+				LoBoundary<<PoUserBuilding.boundary
+				LoBoundary<<LoBoundary.buffer(15000,:square,:square) # Buff. 15m.
+				LoBoundary<<LoBoundary.sectors.as_sector()
+				LiIdBuilding<<PoUserBuilding.id
+			
+				LoViewport<<c_vp_croquis_edificio.new_with(:bounds,LoBound)
+				LoViewport.etiqueta<<"Croquis de Localización"
+                                LoViewport.ubicacion_norte<<"Esq. Sup. Izquierda"
+				LoViewport.oLimite<<LoBoundary
+				LoViewport.idEdificio<<LiIdBuilding
+
+				# Mapeo
+				LoMapView<<_self.GetMapView(LoViewport.oLimite)
+				PoViewMapperPlugin.map_viewport_on_map_view(
+					LoViewport,LoMapView,
+					LoMapView.current_view_bounds.new_enlarging(0.8), _true)
+			_else
+				_return 
+			_endif
+			
+		_elif PyTipoDeVp=:c_vp_plano_construccion_interno
+		_then
+			_if PoUserBuilding _isnt _unset 
+			_then
+
+				LoApp<<smallworld_product.pni_application()
+				LoAppManager<<LoApp.plugin(:application_manager)
+				LoMapManager<<LoAppManager.map_manager
+				
+				LoMapManager.goto(PoUserBuilding.get_spatial_context(:internal))
+				LoMapView<<LoMapManager.current_map_view
+				LoMapView.zoom_out(LoMapView.world_bounds.bounds.centre,1.5)
+				LoMapView.interrupt_render()
+			 
+
+				LoBoundary<<PoUserBuilding.mit_building_structure.box #.sectors.as_sector()
+				LoBoundary<<LoBoundary.buffer(50000,:square,:square) #Buffer 50m.
+				LoBoundary<<LoBoundary.sectors.as_sector()
+				
+				LoViewport<<c_vp_plano_construccion_interno.new_with(
+						    :bounds,LoBound)
+				LoViewport.oLimite<<LoBoundary
+
+				# Mapeo
+				LoMapView<<_self.GetMapView(LoViewport.oLimite)
+				PoViewMapperPlugin.map_viewport_on_map_view(
+					LoViewport,LoMapView,
+					LoMapView.current_view_bounds.new_enlarging(0.8), _true)
+#				PoViewMapperPlugin.map_viewport_from_object_internals(
+#					LoViewport,PoUserBuilding)
+			_else
+				_return 
+			_endif
+		_else
+			_return
+		_endif
+		
+		
+		# Despues del Mapeo.
+		_if PyTipoDeVp=:c_vp_croquis
+		_then
+			
+			# Asignar el ACE
+			LoViewport.ace_name<<"CENTRALES"
+			# Asignar Scale
+			LoViewport.view_scale<<800
+			
+			# Asignar el grupo de estilos
+			#LoViewport.style_system_category<<:centrales
+		_elif PyTipoDeVp=:c_vp_plano_construccion_interno
+		_then
+			# Asignar el ACE
+			#LoViewport.ace_name<<"CENTRALES"
+			LoMapManager.goto(PoUserBuilding.get_spatial_context(:boundary))
+
+			_if PoUserBuilding _isnt _unset 
+			_then
+				LoViewport.show_info_add<<"Si"
+				LoViewport.nombre_edificio<<PoUserBuilding.name.default("")+
+							    "("+PoUserBuilding.type.default("")+")"
+				
+				LcollDtos<<_self.GetDtosDeUserBuilding(PoUserBuilding)
+
+				
+				LoViewport.lista_distritos.empty()
+				_for LoRec _over LcollDtos.fast_elements()
+				_loop
+					LoViewport.lista_distritos.add(LoRec.user!_distrito)
+				_endloop
+
+				_if (LoDto<<LcollDtos.an_element()) _isnt _unset
+				_then
+					LoViewport.nombre_dto<<LoDto.user!_distrito
+					LoViewport.edo_const_dto<<LoDto.construction_status.default("")
+				_endif
+			_endif 
+		_endif
+
+		# Agregar Viewport
+		LoPage.add_element(LoViewport)
+			
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddMarco(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+	## 
+	## 
+_local LoBound
+_local LoGeneradorSellos
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       LiWidth   << PiWidth*100
+       LiHeight  << PiHeight*100
+       
+       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+				 PoPage.bounds.ymin+LiCord_y1,
+				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+
+       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+       LoGeneradorSellos.genera_sello(PoPage, c_marco,LoBound)
+       PoPage.elements.last.Largo<<4
+       PoPage.elements.last.Alto<<2
+       PoPage.elements.last.set_fill_colour(_unset)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddPlaca(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+	## 
+	## 
+_local LoBound
+_local LoGeneradorSellos
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       LiWidth   << PiWidth*100
+       LiHeight  << PiHeight*100
+       
+       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+				 PoPage.bounds.ymin+LiCord_y1,
+				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+
+       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+       LoGeneradorSellos.genera_sello(PoPage,:placa,LoBound)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddSelloEstandarBaseFo(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+	## 
+	## 
+_local LoBound
+_local LoGeneradorSellos
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       LiWidth   << PiWidth*100
+       LiHeight  << PiHeight*100
+       
+       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+				 PoPage.bounds.ymin+LiCord_y1,
+				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+
+       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+       LoGeneradorSellos.genera_sello(PoPage,c_sello_estandar_base_fo,LoBound)
+       LoSello<<PoPage.elements.last
+       LoSello.o_tablas.sys!slot(:colltablas)[:tbl_ubicacion].bDibuja_bordes?<<_true
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddSelloRedSec(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+	## 
+	## 
+_local LoBound
+_local LoGeneradorSellos
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       LiWidth   << PiWidth*100
+       LiHeight  << PiHeight*100
+       
+       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+				 PoPage.bounds.ymin+LiCord_y1,
+				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+
+       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+       LoGeneradorSellos.genera_sello(PoPage,c_sello_red_secundaria,LoBound)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddSelloSimbologiaRedSec(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+	## 
+	## 
+_local LoBound
+_local LoGeneradorSellos
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       LiWidth   << PiWidth*100
+       LiHeight  << PiHeight*100
+       
+       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+				 PoPage.bounds.ymin+LiCord_y1,
+				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+
+       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+       LoGeneradorSellos.genera_sello(PoPage,c_sello_simbologia_red_sec,LoBound)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddSelloCompetencia(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight, _optional PoUserBuilding)
+	## 
+	## 
+_local LoBound
+_local LoGeneradorSellos
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       LiWidth   << PiWidth*100
+       LiHeight  << PiHeight*100
+       
+       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+				 PoPage.bounds.ymin+LiCord_y1,
+				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+
+       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+       LoGeneradorSellos.genera_sello(PoPage,c_sello_competencia_telmex,LoBound)
+       _if PoUserBuilding _isnt _unset
+       _then
+	       PoPage.elements.last.idedificio<<PoUserBuilding.id
+       _endif
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddSelloCapacidadCable(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+	## 
+	## 
+_local LoBound
+_local LoGeneradorSellos
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       LiWidth   << PiWidth*100
+       LiHeight  << PiHeight*100
+       
+       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+				 PoPage.bounds.ymin+LiCord_y1,
+				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+
+       LoGeneradorSellos << c_generador_sellos.obten_instancia(_unset )
+       LoGeneradorSellos.genera_sello(PoPage,c_sello_capacidad_cable,LoBound)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddSelloDistTerCD(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight,_optional PoUserBuilding)
+	## 
+	## 
+_local LoBound
+_local LoGeneradorSellos
+_local LiCord_x1
+_local LiCord_y1
+_local LiWidth
+_local LiHeight
+
+       LiCord_x1 << PiCord_x1*100
+       LiCord_y1 << PiCord_y1*100
+       LiWidth   << PiWidth*100
+       LiHeight  << PiHeight*100
+       
+       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+				 PoPage.bounds.ymin+LiCord_y1,
+				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+
+       LoGeneradorSellos << c_generador_sellos.obten_instancia(_unset )
+       LoGeneradorSellos.genera_sello(PoPage,c_sello_dist_de_ter_a_cd,LoBound)
+
+       _if PoUserBuilding _isnt _unset
+       _then
+	       PoPage.elements.last.idedificio<<PoUserBuilding.id
+       _endif
+_endmethod
+$
+#_pragma(classify_level=restricted, usage={redefinable})
+#_method c_cobre_planos_plugin.AddSelloDetRegA(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+#	## 
+#	## 
+#_local LoBound
+#_local LoGeneradorSellos
+#_local LiCord_x1
+#_local LiCord_y1
+#_local LiWidth
+#_local LiHeight
+#
+#       LiCord_x1 << PiCord_x1*100
+#       LiCord_y1 << PiCord_y1*100
+#       LiWidth   << PiWidth*100
+#       LiHeight  << PiHeight*100
+#       
+#       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+#				 PoPage.bounds.ymin+LiCord_y1,
+#				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+#				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+#
+#       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+#       LoGeneradorSellos.genera_sello(PoPage,c_sello_det_reg_a,LoBound)
+#       PoPage.elements.last.attributes[:texto1].value<<"REG 56 X 56 X 13"
+#       PoPage.elements.last.attributes[:texto2].value<<"DETALLE DE REG."
+#       PoPage.elements.last.attributes[:texto3].value<<"<<UBICACION>>"
+#       
+#_endmethod
+#$
+#_pragma(classify_level=restricted, usage={redefinable})
+#_method c_cobre_planos_plugin.AddSelloDetRegB(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+#	## 
+#	## 
+#_local LoBound
+#_local LoGeneradorSellos
+#_local LiCord_x1
+#_local LiCord_y1
+#_local LiWidth
+#_local LiHeight
+#
+#       LiCord_x1 << PiCord_x1*100
+#       LiCord_y1 << PiCord_y1*100
+#       LiWidth   << PiWidth*100
+#       LiHeight  << PiHeight*100
+#       
+#       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+#				 PoPage.bounds.ymin+LiCord_y1,
+#				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+#				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+#
+#       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+#       LoGeneradorSellos.genera_sello(PoPage,c_sello_det_reg_b,LoBound)
+#       PoPage.elements.last.attributes[:texto1].value<<"REG 56 X 56 X 13"
+#       PoPage.elements.last.attributes[:texto2].value<<"DETALLE DE REG."
+#       PoPage.elements.last.attributes[:texto3].value<<"<<UBICACION>>"
+#       
+#_endmethod
+#$
+#_pragma(classify_level=restricted, usage={redefinable})
+#_method c_cobre_planos_plugin.AddSelloDetRegC(PoPage, PiCord_x1, PiCord_y1, PiWidth,PiHeight)
+#	## 
+#	## 
+#_local LoBound
+#_local LoGeneradorSellos
+#_local LiCord_x1
+#_local LiCord_y1
+#_local LiWidth
+#_local LiHeight
+#
+#       LiCord_x1 << PiCord_x1*100
+#       LiCord_y1 << PiCord_y1*100
+#       LiWidth   << PiWidth*100
+#       LiHeight  << PiHeight*100
+#       
+#       LoBound<<bounding_box.new(PoPage.bounds.xmin+LiCord_x1,
+#				 PoPage.bounds.ymin+LiCord_y1,
+#				 PoPage.bounds.xmin+LiCord_x1+LiHeight,
+#				 PoPage.bounds.ymin+LiCord_y1+LiWidth)
+#
+#       LoGeneradorSellos << c_generador_sellos.obten_instancia()
+#       LoGeneradorSellos.genera_sello(PoPage,c_sello_det_reg_c,LoBound)
+#       PoPage.elements.last.attributes[:texto1].value<<"REG 56 X 56 X 13"
+#       PoPage.elements.last.attributes[:texto2].value<<"DETALLE DE REG."
+#       PoPage.elements.last.attributes[:texto3].value<<"<<UBICACION>>"
+#       
+#_endmethod
+#$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.AddNorte(PoPage)
+	## 
+	##
+_local LoBounds
+_local LoNorte
+_local LoPage
+
+        LoPage<<PoPage
+	
+	_if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	_then
+		Lobounds<<bounding_box.new(LoPage.bounds.xmin,LoPage.bounds.ymax-1500,
+					   LoPage.bounds.xmin+1000,LoPage.bounds.ymax)
+		LoNorte << c_norte.new_with(:bounds,Lobounds)
+		LoNorte.limites<<_unset
+		LoPage.add_element(LoNorte)
+	_endif
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_cobre_planos_plugin.GetDtosDeUserBuilding(PoUserBuilding)
+	## 
+	##
+_local LcollTabDtos
+_local LcollRes
+_local LcollDtosEncontrados
+
+       # Buscar Distritos fuera del edificio.
+       LcollDtosEncontrados<<rope.new()
+       LcollTabDtos<<gis_program_manager.cached_dataset(:landbase).collections[:user!_distrito]
+       LcollRes<<LcollTabDtos.select(predicate.interacts(:user!_limite,PoUserBuilding.location))
+       _if LcollRes.empty?
+       _then
+	       # Buscar Distritos dentro del edificio.
+	       LoSpatialContext<<PoUserBuilding.get_spatial_context(:internal)
+	       LcollInternalGeoms<<LoSpatialContext.elements[1].world.geometry_set()
+	       LcollRegistros<<LcollInternalGeoms.select(:collection,
+							 {:user!_distrito}).rwo_set()
+
+	       _if LcollRegistros.empty?.not
+	       _then
+		       _for LoRec _over LcollRegistros.fast_elements()
+		       _loop
+			       LcollDtosEncontrados.add(LoRec)
+		       _endloop
+	       _endif
+       _else
+	       _for LoRec _over LcollRes.fast_elements()
+	       _loop
+		       LcollDtosEncontrados.add(LoRec)
+	       _endloop
+	_endif
+	_return LcollRes
+_endmethod
+$
+#--------------------------------------------------------------------
+

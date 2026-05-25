@@ -1,0 +1,96 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Genera la tabla de PEP
+# Autor: fadiaz
+# Fecha de creacion: 27-Abril-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#   27/04/05 DSB 13:00  Se termino de documentar
+# Reviso.
+# fdiaz 
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_pep_dcs)
+
+$
+def_slotted_exemplar(:c_pep_dcs,
+                     {
+		     },
+		      :c_pep
+)
+$
+c_pep_dcs.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_pep_dcs.dfn_Detalle_Titulo_Referencias()
+
+## Objetivo: Asignar los valores a la coleccion que contiene
+## los datos de referencia
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 19/04/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+## Nota: el numero de renglones que se asignen en el metodo
+##   deben de coincidir en dfn_Detalle_Valores_Referencias()
+
+
+	_self.nNumero_Renglones << 3
+	
+        LcollTitReferencias << hash_table.new()
+
+
+        LcollTitReferencias[1] << "DESMONTAJE" 
+        LcollTitReferencias[2] << "CANALIZACION"
+        LcollTitReferencias[3] << "SECUNDARIO"
+
+	_return LcollTitReferencias
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_pep_dcs.dfn_Detalle_Valores_Referencias()
+
+## Objetivo: Asignar los valores a la coleccion que contiene
+## los datos de referencia
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 19/04/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+## Nota: el numero de renglones que se asignen en el metodo
+##  dfn_Detalle_Titulo_Referencias() determina el tama;o de la coleccion
+
+
+        LcollDatReferencias << hash_table.new()
+
+	_if _self.oProyecto.existe?
+	_then
+		LcollDatReferencias[1] << _self.oProyecto.referencia_desmontaje
+		LcollDatReferencias[2] << _self.oProyecto.referencia_canalizacion
+		LcollDatReferencias[3] << _self.oProyecto.referencia_secundarios
+	_else
+		LcollDatReferencias[1] << ""
+		LcollDatReferencias[2] << "" 
+		LcollDatReferencias[3] << ""
+	_endif
+
+
+	_return LcollDatReferencias
+	
+_endmethod
+$
+
+
+	
+
+	

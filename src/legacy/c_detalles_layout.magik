@@ -1,0 +1,85 @@
+
+#  Nombre de la Empresa: Sigma Tao
+#  Traza: El presente código fuente procede de la realización
+# de caso de uso "Generacion de planos (Planos de detalle)"
+#          
+#  Objetivo: Generación de CopyRigth  de planos de detalle.
+#  Autor: hramirea
+#  Fecha de creación: Feb-2004
+#
+_package user
+$
+#remex(:c_detalles_layout)
+$
+def_slotted_exemplar(:c_detalles_layout,
+                     {  },:layout_element)
+$
+c_detalles_layout.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_method c_detalles_layout.defined_attributes
+#  Objetivo: Se definiewn atributos para el plano de detalles.
+#  Parámetros de entrada:  Ninguno.                                    
+#  Parámetros de salida:   Ninguno.                                    
+#  Regresa:  vector  -  LoAtributos  - Atributos el layout element que se agregan a la definicion del elemento. 
+# Fecha de última modificación: 23 febrero 2005
+# Autor de la modificación hramirea
+# Descripción de la modificación: Nuevo.
+#
+_Local LvAtributos
+	
+LvAtributos << rope.new_from(_super.defined_attributes)	
+>> LvAtributos
+_endmethod
+$
+#------------------------------------------------------------
+# (05/02/23 ahernan) : Se definen los atributos del elemento.
+#------------------------------------------------------------
+c_detalles_layout.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_detalles_layout.initialise_for_page(a_layout_page)	
+	##
+
+	(LbBandera, LoElemento) << c_larguillos_layout.busca_elemento(_self.layout_page,"marco_layout")
+
+         _if LbBandera 
+	 _then
+		 _self.bounds << LoElemento.bounds
+		 
+	 _endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_detalles_layout.draw_content_on ( window )
+
+	
+	(LbBandera, LoElemento) << c_larguillos_layout.busca_elemento(_self.layout_page,"marco_layout")
+
+         _if LbBandera
+	 _then
+		 
+		 _self.bounds << LoElemento.bounds
+
+		 #--------------------------------------------------
+		 # (05/03/03 ahernan) : CopyRight
+		 #---------------------------------------------------
+		 LoDespx << _self.bounds.xmax 
+		 LoDespy << _self.bounds.ymin + 550		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x - 80,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 c_larguillos_layout.datos_del_plano(window,"INFORMACION CONFIDENCIAL PROPIEDAD DE TELMEX, ", LoVpTemp,3)
+		  LoDespx << _self.bounds.xmax 
+		 LoDespy << _self.bounds.ymin + 600		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x - 20,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 c_larguillos_layout.datos_del_plano(window,"PROHIBIDA SU REPRODUCCION  PARCIAL O TOTAL.", LoVpTemp,3)
+		 
+	
+	 _endif
+	
+_endmethod
+$

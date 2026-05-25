@@ -1,0 +1,523 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Proporcionar la clase que puede almacenar las caracteristicas
+#           de una celda
+# Autor: dsanchez
+# Fecha de creacion: 15-Enero-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+# 10/03/2005 DSB 11:20  Se implemento el constructor de copia
+# Reviso.
+# dsanchez 
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_captura_texto)
+
+$
+def_slotted_exemplar(:c_captura_texto,
+		     {
+			{:sTexto,        _unset}, # Texto a desplegar
+			{:sOrientacion,  _unset}, # Orientacion del Texto
+			{:sAlineacion,   _unset}, # Alineacion del Texto
+			{:nTamanio,      _unset}, # Tamaño de letra OK
+			{:sEstilo,       _unset}, # Estilo
+			{:sColor,        _unset}, # Color
+			{:oCaja_Texto,   _unset}, # Elemento caja de texto
+			{:bAjuste_Linea?,   _unset}, # Alineacion del Texto uso interno OK
+			{:bRecorte?, _unset}         # Alineacion del Texto uso interno OK
+			
+		     },
+		     :c_base_layout
+)
+
+
+$
+c_captura_texto.define_slot_access(:sTexto,            :writable, :private)
+c_captura_texto.define_slot_access(:sOrientacion,      :writable, :private)
+c_captura_texto.define_slot_access(:sAlineacion,       :writable, :private)
+c_captura_texto.define_slot_access(:nTamanio,          :writable, :private)
+c_captura_texto.define_slot_access(:sEstilo,           :writable, :private)
+c_captura_texto.define_slot_access(:sColor,            :writable, :private)
+c_captura_texto.define_slot_access(:oCaja_Texto,       :writable, :private)
+c_captura_texto.define_slot_access(:bAjuste_Linea?,    :writable, :private)
+c_captura_texto.define_slot_access(:bRecorte?,         :writable, :private)
+
+
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.new(RsNombre)
+## Objetivo: Crear una instancia de celda
+## Parámetros de entrada:
+## 	Cadena - RsNombre - Número del elemento grafico
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_texto_grafico - regresa un objeto c_texto_grafico
+## Fecha de última modificación: 11/Noviembre/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+        # Se crea la instancia
+        oCaja << bounding_box.new(0,0,100,100)
+	_self.oCaja_Texto << textbox_layout.new_with(:bounds,oCaja)
+
+	# Se asigna el texto
+        _self.sTexto << RsNombre
+        _self.oCaja_Texto.text << _self.sTexto
+	
+	# Se quita los bordes
+        _self.oCaja_Texto.outline_style  << _unset
+	_self.oCaja_Texto.set_fill_colour(_unset)
+
+		# Por default se cancela el ajuste de linea y el recorte de texto
+        _self.bAjuste_Linea? << _false 
+        _self.bRecorte?      << _false 
+
+	_self.sAlineacion  << :centre_left
+	_self.sOrientacion << :left_right
+		
+	#	_self.oCaja_Texto.set_fill_colour(colour.called("green"))  OK
+	#       _self.oCaja_Texto.set_foreground_line_colour(colour.called("white"))  OK
+
+
+	#valores por defecto de las celdas
+	_self.sColor << "black"
+	_self.nTamanio << 10
+	_self.sEstilo << "bold"
+	
+	_return _clone
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.new_from(RoObjeto, _optional RsTexto)
+## Objetivo: Constructor de copia
+## Parámetros de entrada: 
+##    c_simbolo_grafico - RoObjeto - Objeto del cual se copiaran los atributos
+## Parámetros de salida:   NA
+## Regresa:  
+##    c_Simbolo_grafico - Instancia de Simbolo_grafico 
+## Fecha de última modificación : 04/01/04
+## Autor de la modificación :
+## Descripción de la modificación :
+##    10/03/05 DSB Se movieron las instrucciones que crean el bounding_box
+##                 antes de la asignacion sTexto	
+##    08/03/05 DSB Se implemento la copia de los margenes	
+##    23/12/04    se valido que el objeto sea de tipo c_simbolo_grafico
+
+
+   _if RoObjeto.is_kind_of?(c_captura_texto)
+   _then
+
+	# Se crea la instancia del bounding_box
+        # estos valores no importan, los valores definitivos los toma de la celda
+        LoCaja << bounding_box.new(0,0,100,100)
+	_self.oCaja_Texto << textbox_layout.new_with(:bounds, LoCaja)
+	   
+        _if RsTexto = _unset 
+	_then
+           _self.sTexto << RoObjeto.sTexto	
+	_else
+	   _self.sTexto << RsTexto
+	_endif
+
+
+	# Se quita los bordes
+        _self.oCaja_Texto.outline_style  << _unset
+	_self.oCaja_Texto.set_fill_colour(_unset)
+
+	# Por default se cancela el ajuste de linea y el recorte de texto
+        _self.bAjuste_Linea? << RoObjeto.bAjuste_Linea? 
+        _self.bRecorte?      << RoObjeto.bRecorte?
+
+	_self.sAlineacion  << RoObjeto.sAlineacion
+	_self.sOrientacion << RoObjeto.sOrientacion
+		
+	#valores por defecto de las celdas
+	LoRojo  << RoObjeto.oCaja_Texto.colour.red
+	LoAzul  << RoObjeto.oCaja_Texto.colour.blue
+	LoVerde << RoObjeto.oCaja_Texto.colour.green
+
+	
+	_self.oCaja_Texto.colour << colour.new_with_properties(:red,LoRojo, :green, LoVerde, :blue, LoAzul)
+	
+	_self.nTamanio << RoObjeto.nTamanio
+	_self.sEstilo  << RoObjeto.sEstilo 
+
+        _self.nMargen_inf << RoObjeto.nMargen_inf / 10
+        _self.nMargen_sup << RoObjeto.nMargen_sup / 10
+        _self.nMargen_izq << RoObjeto.nMargen_izq / 10
+        _self.nMargen_der << RoObjeto.nMargen_der / 10 	
+	
+	_return _clone
+   _else
+	condition.raise(:warning, :string, "El objeto que se proporciono, no es de tipo c_captura_texto")	
+   _endif 	         
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.Despliega()
+## Objetivo: Realizar el dibujo del los textos
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA 
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+
+ 	 _self.oCaja_texto.bounds << _self.oArea
+
+
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sTexto << RsValor
+## Objetivo: Asignar el texto a desplegar, este se almacena en
+## el slot sTexto
+## Parámetros de entrada:
+## 	Cadena - RsValor - Texto a desplegar
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+        _self.oCaja_Texto.text << RsValor
+        
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sTexto
+## Objetivo: retornar en valor del slot sTexto
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Cadena - sTexto : Texto a desplegar
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+	_return _self.oCaja_Texto.text
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sOrientacion << RsValor
+## Objetivo: Asignar un valor permitido al slot sOrientacion
+## Parámetros de entrada:
+## 	Cadena - RsValor - Orientacion del texto
+##                         :left_right Horizontal
+##                         :top_bottom Vertical 
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+	_if RsValor = :left_right _or RsValor = :top_bottom
+	_then
+	     _self.oCaja_Texto.Orientation      << RsValor.write_string
+	_else
+	     condition.raise(:warning, :string, "Error al asignar la Orientación")	
+	_endif
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sOrientacion
+## Objetivo: retornar en valor del slot sOrientacion
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Cadena - sOrientacion : Orientacion del Texto
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	# Se devuelve :left_right o :top_bottom
+	_local LsOrien
+
+	LsOrien << _self.oCaja_Texto.Orientation
+	
+	_return LsOrien.as_symbol()
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sAlineacion << RsValor
+## Objetivo: Asignar un valor permitido al slot sAlineacion
+## Parámetros de entrada:
+## 	simbolo - RsValor - Alineacion del texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+_local LsAlinVert
+_local LsAlinHor
+	
+	_if RsValor = :centre_right _or RsValor = :centre_centre _or RsValor = :centre_left _or
+	    RsValor = :top_right    _or RsValor = :top_centre    _or RsValor = :top_left _or
+    	    RsValor = :bottom_right _or RsValor = :bottom_centre _or RsValor = :bottom_left 
+	_then 
+
+	   # Se extrae la alineacion Horizontal y Vertical
+
+	   LsCadena << RsValor.write_string
+
+	   _for LnCont  _over range(1, LsCadena.size)
+	   _loop
+		   _if LsCadena.subseq(LnCont,1) = "_"
+		   _then
+			   #Se obtiene la alineacion vertical y horizontal
+			   LsAlinVert << LsCadena.subseq(1,LnCont-1)
+			   LsAlinHor  << LsCadena.subseq(LnCont+1, LsCadena.size - LnCont )
+		   _endif
+	   _endloop
+		
+	   _self.Ocaja_Texto.align_Horizontal << LsAlinHor
+	   _self.Ocaja_Texto.align_Vertical << LsAlinVert
+	   
+	_else
+	   condition.raise(:warning, :string, "Error al asignar la alineación")	
+	_endif
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sAlineacion
+## Objetivo: retornar en valor del slot sAlineacion
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Cadena - sAlineacion : Alineacion del texto
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	# Se devuelve un valor como : :centre_right / :centre_centre / :centre_left
+
+	_local LsAlinea
+
+        LsAlinea << _self.Ocaja_Texto.align_Vertical + "_" + _self.Ocaja_Texto.align_Horizontal
+	
+	_return LsAlinea.as_symbol()
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.nTamanio << RnValor
+## Objetivo: Asignar un valor permitido al slot nTamanio
+## Parámetros de entrada:
+## 	Entero - RnValor : Tamanio de letra del texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_if RnValor > 0 
+	_then
+	    _self.oCaja_Texto.Font_Size << RnValor
+	_else
+	   condition.raise(:warning, :string, "Debe ser un número positivo.")	
+	_endif
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.nTamanio
+## Objetivo: retornar en valor del slot nTamanio
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Entero - nTamanio : Tamanio de letra del Texto
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_return  _self.oCaja_Texto.Font_Size 
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sEstilo << RsValor
+## Objetivo: Asignar un valor permitido al slot sEstilo
+## Parámetros de entrada:
+## 	Cadena - RsValor - Estilo para el texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+	
+        _self.oCaja_Texto.font_name << RsValor
+        
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sEstilo
+## Objetivo: retornar en valor del slot sEstilo
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Cadena - sEstilo : Estilo del Texto
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_return _self.oCaja_Texto.font_name
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sColor << RsValor
+## Objetivo: Asignar un valor permitido al slot sColor
+## Parámetros de entrada:
+## 	Cadena - RsValor - Color a utilizar para el Texto
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+#        .sColor << RsValor
+	_self.oCaja_Texto.colour<< colour.called(RsValor)
+        
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.sColor
+## Objetivo: retornar en valor del slot sColor
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa:
+## 	Cadena - sColor : Color del Texto
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+	
+	_return _self.oCaja_Texto.colour
+
+_endmethod
+$
+
+#_pragma(classify_level=restricted, usage={redefinable})
+#_method c_captura_texto.Actualiza_Area_Elemento()
+#
+#	
+#_endmethod
+#$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.Obten_Elemento_captura
+
+	
+	_return .oCaja_Texto
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.bAjuste_Linea? << RbValor
+## Objetivo: Asignar un valor permitido al slot bAjuste_Linea?
+## Parámetros de entrada:
+## 	Boleano - RbValor - Ajuste de linea
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	 _self.oCaja_Texto.wrap << RbValor
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.bAjuste_Linea?
+## Objetivo: retornar en valor del slot bAjuste_Linea?
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Boleano - sAlineacion : Ajuste de linea
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return	 _self.oCaja_Texto.wrap
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.bRecorte? << RbValor
+## Objetivo: Asignar un valor permitido al slot bRecorte?
+## Parámetros de entrada:
+## 	Boleano - RbValor - Recorte
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	 _self.oCaja_Texto.clip << RbValor
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.bRecorte?
+## Objetivo: retornar en valor del slot bRecorte?
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	Boleano - bRecorte : Recorte
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return _self.oCaja_Texto.clip 
+	
+_endmethod
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.oCaja_texto << RoValor
+	## 
+	## 
+
+	.oCaja_Texto << RoValor
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_captura_texto.oCaja_texto
+	## 
+	## 
+
+	_return .oCaja_Texto 
+	
+_endmethod
+$

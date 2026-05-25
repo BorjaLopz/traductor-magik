@@ -1,0 +1,27 @@
+#----------------------------------------------------------------
+# Nombre de la Empresa: SigTao Software, S.A. de C.V.
+#
+# Traza: El presente código fuente procede de la realización
+#        del Plano: "Proyecto de Canalización"
+#
+# Objetivo: Archivo crear el Norte correspondiente al croquis
+# del Proyecto de Canalización
+#
+# Autor: aegijon
+# 
+# Fecha de Creación: 27-Enero-2005
+#
+_package sw
+$
+northarrow_layout.style_data[:Norte_1] <<
+    { 
+      {:circle, :black, 0, 0, 0.22},
+      {:area, :white, :white, coords_rope.new_with_xy(-0.2, -0.05, -0.25, -0.05, -0.25, 0.05, -0.2, 0.05,-0.2, -0.05)},
+      {:area, :white, :white, coords_rope.new_with_xy(0.2, -0.05, 0.25, -0.05, 0.25, 0.05, 0.2, 0.05, 0.2, -0.05)},
+      {:area, :white, :white, coords_rope.new_with_xy(-0.1, 0.18, -0.1, 0.23, 0.1, 0.23, 0.1, 0.18, -0.1, 0.18)},
+      {:area, :white, :white, coords_rope.new_with_xy(-0.1, -0.18, -0.1, -0.23, 0.1, -0.23, 0.1, -0.18, -0.1, -0.18)},
+      {:area, :white, :blue, coords_rope.new_with_xy(
+             -0.05,0.9, -0.05,-1.8, 0.1,-2, 0.1,-1.2, 0.05,-1.1, 0.05,2,0.02,2, -0.13,0.95, -0.05, 0.9)},
+      {:area, :white, :black, coords_rope.new_with_xy(-0.15, 0, -0.35, 0, -0.15, 0)},
+      {:area, :white, :black, coords_rope.new_with_xy(0.15, 0, 0.35, 0, 0.15, 0)},
+    {:text, :plain, 0.0, 1.0, "" } }

@@ -1,0 +1,2821 @@
+_package user
+$
+def_slotted_exemplar(:c_distrito,
+{
+	{:objeto,           _unset, :writable},
+	{:inventario,       _unset, :writable},
+	{:col_viv_lin,      _unset, :writable},
+	{:col_tel_publicos, _unset, :writable},
+	{:col_lotes,        _unset, :writable},
+	{:col_lin_sat,      _unset, :writable},
+	{:dto_nse_pred,     _unset, :writable},
+	{:colonia_cd,       _unset, :writable},
+	{:o_format_float,   _unset, :writable}
+})
+$
+c_distrito.define_shared_constant(:divisor_equivalencia,
+				  property_list.new_with(:|A|,1,:|B|,2,:|C|,3,:|D|,4,:|E|,5,:|F|,6,
+							 :|G|,7,:|H|,8,:|J|,9,:|K|,10,:|L|,11,:|M|,12,
+							 :|O|,13,:|P|,14,:|R|,15,:|S|,16),
+				  :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.agrupa_fibras_muertas_y_reservas(p_datos)
+	## Metodo para agrupar en un solo renglon las fibras muertas y
+	## en reserva de los cables.
+	##
+	_local LoDatos << rope.new()
+	_local LoGis << gis_program_manager.cached_dataset(:gis)
+	_local LoTabCable << LoGis.collection(:sheath)
+	_for idCable,valores _over p_datos.fast_keys_and_elements()
+	_loop
+		fibrasMuertas << sorted_set.new()
+		fibrasReservas << sorted_set.new()
+		id << idCable.write_string.safe_as_integer()
+		cable << LoTabCable.at(id)
+		_for llave, fibras _over valores.fast_keys_and_elements()
+		_loop
+			_for fibra _over fibras.fast_elements()
+			_loop
+				_if llave _is :muertas
+				_then
+					fibnum << fibra.fiber_number.as_integer()
+					fibrasMuertas.add(fibnum)
+#					fibrasMuertas.add(fibra.fiber_number)				
+				_elif llave _is :reservas
+				_then 
+					fibnum << fibra.fiber_number.as_integer()
+					fibrasReservas.add(fibnum)
+#					fibrasReservas.add(fibra.fiber_number)
+				_endif
+			_endloop
+		_endloop
+
+		LoStrCabSec << _self.arma_cadena_cable(cable)
+#		LoStrFoSec << fibrasMuertas.join_as_strings(",")
+		
+		#Muertas		
+		# edwaldo se agrega codigo para dar formato a etiquetas de las fibras
+		LoStrFoSecRope << rope.new_from(fibrasMuertas)		
+		LoStrFoSecMuertas << c_cuentas_fo_engine.parser_cuentas("",LoStrFoSecRope)
+		_if LoStrFoSecMuertas.write_string <> ""
+		_then				
+			plDatos << property_list.new_with(:no_cable,"",:fo_prin,"",:divisor,"",
+						  :cable_sec, LoStrCabSec.write_string,
+						  :fo_sec,    LoStrFoSecMuertas.write_string,
+						  :terminal,"MUERTAS",:puertos,"")
+			LoDatos.add(plDatos)
+		_endif 	
+
+		#Reservas
+#		LoStrFoSec << fibrasReservas.join_as_strings(",")
+		LoStrFoSecRope << rope.new_from(fibrasReservas)
+		LoStrFoSecReserva << c_cuentas_fo_engine.parser_cuentas("",LoStrFoSecRope)
+               _if LoStrFoSecReserva <> ""
+	       _then		
+		       plDatos << property_list.new_with(:no_cable,"",:fo_prin,"",:divisor,"",
+						  :cable_sec, LoStrCabSec.write_string,
+						  :fo_sec,    LoStrFoSecReserva.write_string,
+						  :terminal,"RESERVAS",:puertos,"")
+		       LoDatos.add(plDatos)
+	       _endif 
+	_endloop
+	
+	_return LoDatos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.arma_cadena_cable(p_cable)
+	## Metodo para armar la cadena que se requiere en el sello de
+	## correspondencia del diagrama de empalmes, se recibe como
+	## parametro el p_cable y se retorn una cadena con el spec_id,
+	## el año del proyecto, y la cuenta.
+	##
+	LoText << ""  
+	LoYear << c_proyecto.proyecto_activo.user!_programa_anyo
+	LoYear << c_proyecto.proyecto_activo.user!_programa_anyo.slice_to_end(LoYear.size-1)
+	
+	# (12/03/29 rhernan) : se cambia por la nueva nomenclatura
+	# solicitada en la version 11.7.3
+
+
+	#LoSpec << p_cable.spec_id. 
+
+	
+	LoSpec << p_cable.spec_info.fiber_quantity.write_string + "FO" +  "("+p_cable.spec_info.user!_clase+")"   
+
+
+	#19/Mayo/2011 se agrega el numero del cable.	
+	LoNum << p_cable.user!_numero_cable.default("").write_string 	
+	(Lformat,Lstring)<<c_cuentas_fo_engine.GeneraCuenta(p_cable,_true)
+	
+	# (11/11/24 rhernan) : se obtienen las fibras muertas de los
+	# cables secundarios. 
+	Num_fibras_muertas << p_cable.obtener_fibras_muertas
+	
+	# (11/11/24 rhernan) : se agregan las fibras muertas.
+	#LoText +<< LoSpec + %newline + LoNum + " (" + LoYear.write_string + ") " #+ Lstring
+	_if Num_fibras_muertas _isnt _unset _andif 
+	    Num_fibras_muertas > 0 
+	_then
+	  # (12/04/02 rhernan) : 
+	  #LoText +<< LoSpec + %newline + LoNum + " (" + LoYear.write_string + ") "  + 
+	  #	      " ("+ Num_fibras_muertas.write_string +")"
+		LoText +<< LoSpec + %newline + " (" + LoYear.write_string + ") "  + 
+			   " ("+ Num_fibras_muertas.write_string +")"
+	_else	
+		#LoText +<< LoSpec + %newline + LoNum + " (" + LoYear.write_string + ") "
+		LoText +<< LoSpec + %newline +  " (" + LoYear.write_string + ") " 
+	_endif
+	
+	#write("@@@LoText ---> ", LoText )
+
+	
+	_return LoText 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.asigna_distrito(p_distrito, _optional pb_lotes?)
+
+	## Objetivo:
+	##     - Asigna a .objeto << p_distrito
+	##     - Asigna a .inventario << inventario por NSE en el distrito
+	##     - Asigna a .dto_nse_pred << NSE predominante
+	##     - Asigna a .col_lotes << los lotes que se encuentran
+	##     dentro del límite del distrito
+   	## Parámetros de entrada:
+	##     p_distrito - objeto user!_distrito
+	##     pb_lotes?  - false = NO obtiene el resumen de lotificacion en el distrito
+	##                - true = obtiene el resumen de lotificacion en el distrito
+   	## Parámetros de salida:
+	## (vbluna-27-oct-06)
+
+	.objeto << p_distrito
+
+	_if pb_lotes? = _false
+	_then
+		_return
+	_endif
+	
+	(.inventario, .col_lotes, .dto_nse_pred) <<	.objeto.get_resumen_lotificacion()
+
+	_for nse, inventario _over .inventario.fast_keys_and_elements()
+	_loop
+		pl_inventario << property_list.new()
+		pl_tel_publicos << property_list.new()
+
+		lin_competencia << inventario[4][1][2] + inventario[4][2][2] + inventario[4][3][2]
+		
+		pl_inventario[:viviendas] << inventario[1]
+		pl_inventario[:abonados] << inventario[2]                           ##lineas telmex?
+		pl_inventario[:lineas_multiplicador] << inventario[3][6][2]
+		pl_inventario[:lineas_competencia] << lin_competencia               ###telefono
+		pl_inventario[:lineas_inalambricas]<< inventario[3][3][2]          ###telefono
+		pl_inventario[:solicitudes]<< inventario[3][1][2]                  ###telefono
+		pl_inventario[:viv_sin_servicio]<< inventario[5]
+
+		pl_tel_publicos[:ltc] << inventario[3][4][2]
+		pl_tel_publicos[:pslt]<< inventario[3][5][2]                       ###telefono
+		pl_tel_publicos[:publicos_comp]<< inventario[4][3][2]              ###telefono
+		
+		.col_viv_lin[nse] << pl_inventario
+		.col_tel_publicos[nse] << pl_tel_publicos
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.busca_edificio
+	## fhramire, 7/septiembre/2012
+	## Para el limite de distrito, buscamos la existencia de un
+	## edificio, si lo encontramos, entoces regresamos el edificio.
+
+	LoDis << _self.objeto.user!_limite
+	LoGpm     << gis_program_manager
+	tab_edi   << LoGpm.cached_dataset(:gis).collection(:user!_building)
+	Edificios << tab_edi.select(predicate.interacts(:location,LoDis))
+
+	# Para el caso de que el plano de construccion tenga mas edificios
+	# debemos regresar todos.
+	_if Edificios.size > 0
+	_then
+            _return Edificios.an_element()
+	_else
+	    _return _unset 
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.cables_conectados()
+## Filtra los datos que obtiene el método
+## generate_downstream_cable_tree para obtener solo los cables
+##  - Cuando se trata de los cables de un puente bidireccional
+##    solo se considera uno de los dos cables
+## (vbluna-12-oct-2006)
+
+	_local eqs_cables << equality_set.new()
+	_local eqs_cables_puente << equality_set.new()
+	
+	_for caja _over _self.cajas_distribucion.fast_elements()
+	_loop
+		# Para cada caja de distribución asociada al distrito se
+		# obtienen los elementos y las estructuras que estan
+		# downstream, sin embargo solo nos interesa la primera
+		# coleccion que es la que contiene un rope con uno o varios
+		# trees de elementos conectados que no son estructuras
+		(rope_arbol_elem, estructuras) << caja.generate_downstream_cable_tree()
+
+		# Se recorre el rope para obtener los trees de elementos
+		_for arbol_elem _over rope_arbol_elem.fast_elements()
+		_loop
+			#Se recorre cada tree para obtener los cables
+			_for elem, tree _over arbol_elem.fast_keys_and_trees()
+			_loop @elementos_del_arbol
+				_if elem.is_kind_of?(copper_cable)
+				_then
+					#Si el cable se encuentra en la coleccion
+					#de cables que no se considerarán, continua
+					#con el siguiente elemento del tree
+					_if eqs_cables_puente.includes?(elem)
+					_then
+						_continue @elementos_del_arbol
+					_endif
+
+					#Si el cable pertenece a un puente
+					_if elem.puente _isnt _unset 
+					_then
+						#Si el puente es bidireccional
+						_if elem.puente.tipo_puente = 2
+						_then
+							#Agregar el siguiente cable del puente
+							#a la colección de cables
+							#que no se consideran
+							cables_int << elem.puente.cables_internos()
+							indx << cables_int.index_of_eq(elem)
+							_if indx = 1
+							_then
+								eqs_cables_puente.add(cables_int[2])
+							_else
+								eqs_cables_puente.add(cables_int[1])
+							_endif
+						_endif
+					_endif
+
+					#El cable se agrega a la coleccion que regresa el método
+					eqs_cables.add(elem)
+				_endif
+			_endloop
+		_endloop
+	_endloop
+
+	_return eqs_cables
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.cajas_distribucion
+	## Obtener las mit_terminal_enclosures asociadas al distrito
+	## sin importar el estado de construccion
+	## (vbluna/11-oct-2006)
+	
+	_local col_cajas << rope.new()
+	LoViewport << _self.obten_viewport_principal()
+	LoGis << gis_program_manager.cached_dataset(:gis)
+	_if LoViewport _isnt _unset _andif
+	    LoViewport.elementos_modificados _isnt _unset _andif
+	    LoViewport.elementos_modificados[:mit_terminal_enclosure_sim] _isnt _unset
+	_then
+		objetos << LoViewport.elementos_modificados
+		_for datosCaja _over objetos[:mit_terminal_enclosure_sim].fast_elements()
+		_loop
+			caja << LoGis.collection(:mit_terminal_enclosure).at(datosCaja[2])
+			col_cajas.add(caja)
+		_endloop
+	_else
+		## Si el viewport se copio de otro plano o de otra hoja.
+		_if _self.objeto _isnt _unset 
+		_then	    
+			LoArea    << _self.objeto.user!_limite
+			LoGpm     << gis_program_manager	
+			tab_cajas << LoGpm.cached_dataset(:gis).collection(:mit_terminal_enclosure)	    
+			cajas << tab_cajas.select(predicate.interacts(:location,LoArea))
+			_if cajas.size > 0
+			_then
+				_for Lcaj _over cajas.fast_elements()
+				_loop		  
+					col_cajas.add(Lcaj)
+				_endloop
+			_endif
+		_endif	
+	_endif
+	
+	_return col_cajas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.cajas_existentes
+
+	## Objetivo:
+	##     - Obtener las mit_terminal_enclosures con estado de
+	##     construccion = "EXISTENTE" asociadas al distrito
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     col_cajas_exis - rope con las cajas existentes
+	## vbluna
+	
+	_local col_cajas_exis << rope.new()
+	LoViewport << _self.obten_viewport_principal()
+	LoGis << gis_program_manager.cached_dataset(:gis)
+	
+	_if LoViewport _isnt _unset _andif
+	    LoViewport.elementos_modificados _isnt _unset _andif 
+	    LoViewport.elementos_modificados[:mit_terminal_enclosure_sim] _is  _unset 
+	_then
+		LoArea    << _self.objeto.user!_limite
+		LoGpm     << gis_program_manager	
+		tab_cajas << LoGpm.cached_dataset(:gis).collection(:mit_terminal_enclosure)	    
+		cajas << tab_cajas.select(predicate.interacts(:location,LoArea))
+		_if cajas.size > 0
+		_then
+			_for Lcaj _over cajas.fast_elements()
+			_loop
+				_if Lcaj.construction_status = "EXISTENTE"
+				_then
+					col_cajas_exis.add(Lcaj)
+				_endif
+			_endloop
+		_endif	    
+	_else	
+		_if LoViewport _isnt _unset _andif
+		    LoViewport.elementos_modificados _isnt _unset  _andif 
+		LoViewport.elementos_modificados[:mit_terminal_enclosure_sim] _isnt _unset
+		_then
+			objetos << LoViewport.elementos_modificados
+			_try
+				_for datosCaja _over objetos[:mit_terminal_enclosure_sim].fast_elements()
+				_loop
+					caja << LoGis.collection(:mit_terminal_enclosure).at(datosCaja[2])
+					_if caja.construction_status = "EXISTENTE"
+					_then
+						col_cajas_exis.add(caja)
+					_endif
+				_endloop		   
+			_when does_not_understand
+			_endtry
+			
+		_endif
+	_endif 
+	_return col_cajas_exis
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.cajas_proyectadas
+
+	## Objetivo:
+	##     - Obtener las mit_terminal_enclosures con estado de
+	##     construccion = "PROYECTADO" asociadas al distrito
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     col_cajas_proy - rope con las cajas proyectadas
+	## vbluna
+
+	_local col_cajas_proys << rope.new()
+	LoViewport << _self.obten_viewport_principal()
+	LoGis << gis_program_manager.cached_dataset(:gis)
+	_if LoViewport _isnt _unset _andif
+	    LoViewport.elementos_modificados _isnt _unset _andif 
+	    LoViewport.elementos_modificados[:mit_terminal_enclosure_sim] _isnt _unset
+	_then
+	    objetos << LoViewport.elementos_modificados
+	    _try
+	       _for datosCaja _over objetos[:mit_terminal_enclosure_sim].fast_elements()
+	       _loop
+		   caja << LoGis.collection(:mit_terminal_enclosure).at(datosCaja[2])
+		  # _if caja.construction_status = "EXISTENTE"
+		   _if caja.construction_status = "PROYECTADO"
+		   _then
+		       col_cajas_proys.add(caja)
+		   _endif
+	       _endloop
+	    _when does_not_understand
+	    _endtry
+	_else
+	    ## Si el viewport se copio de otro plano o de otra hoja.
+	    _if _self.objeto _isnt _unset 
+	    _then	    
+	        LoArea    << _self.objeto.user!_limite
+		LoGpm     << gis_program_manager	
+		tab_cajas << LoGpm.cached_dataset(:gis).collection(:mit_terminal_enclosure)	    
+		cajas << tab_cajas.select(predicate.interacts(:location,LoArea))
+		_if cajas.size > 0
+		_then
+		    _for Lcaj _over cajas.fast_elements()
+		    _loop
+			    # (13/08/16 bflores) : SE AGREGABAN TODAS LAS CAJAS QUE ENCONTRABA.
+			    _if caja.construction_status = "PROYECTADO"
+			    _then
+				    col_cajas_proys.add(caja)
+			    _endif
+		    _endloop
+		_endif
+	    _endif		
+	_endif
+	_return col_cajas_proys
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.cantidad_lotes
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     - número de lotes en el distrito
+	## vbluna
+
+	_return .col_lotes.size
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.cantidad_manzanas
+
+	_local lb_es_manzana
+	_local ln_cantidad_manzanas_en_lote << 0
+	_local ln_cantidad_manzanas_en_distrito << 0
+	
+	ln_cantidad_manzanas_en_distrito << _self.cantidad_manzanas_geograficas
+	
+	_for e_lote _over _self.lotes.fast_elements()
+	_loop
+		(lb_es_manzana,ln_cantidad_manzanas_en_lote) <<  e_lote.manzanas_en_lote()
+
+		_if lb_es_manzana
+		_then
+			ln_cantidad_manzanas_en_distrito +<< ln_cantidad_manzanas_en_lote
+		_endif
+	_endloop
+
+	_return  ln_cantidad_manzanas_en_distrito  
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.cantidad_manzanas_geograficas
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     - número de manzanas en el distrito considerando que si
+	## un límite de distrito no abarca la manzana completa solo se
+	## contabiliza el porcentaje de la manzana que está dentro del
+	## límite de distrito
+	## (vbluna-10-julio-06)
+
+	_try
+		_local ln_manzanas << 0
+		
+		l_tbl_mzna  << gis_program_manager.cached_dataset(:landbase).collections[:user!_manzana]
+		l_predicate << predicate.interacts(:user!_limite, .objeto.user!_limite)
+		l_sel_mzna  << l_tbl_mzna.select(l_predicate)
+
+		_for e_mzna _over l_sel_mzna.fast_elements()
+		_loop
+			_if e_mzna.user!_limite.porcentaje_de_interseccion_con(.objeto.user!_limite)/100 = 1
+			_then
+				ln_manzanas +<<1 
+			_endif
+		_endloop
+
+		_return ln_manzanas
+		
+	_when does_not_understand
+		_return 0
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.codigo_postal
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    - string con el código postal asociado a la colonia en la
+	##    cual se encuentra la cd del distrito
+	## vbluna
+
+	_try
+		_return _self.colonia.user!_cp.write_string
+	_when does_not_understand
+	      _return ""
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.colonia
+
+	## Asigna al slot el objeto user!_colonia en el cual se
+	## encuentra ubicada la cd existente
+	## (vbluna/11-10-06)
+
+	_if .colonia_cd _is _unset
+	_then
+		_try
+			gpm << gis_program_manager
+			l_tbl_colonia << gpm.cached_dataset(:landbase).collections[:user!_colonia]
+
+			## Para Distritos que no son abiertos, la red se encuentra dentro
+			## de Edificios, validar sino hay CD en Gis, entonces
+			## probablemente toda la Red se encuentra dentro de Edificios.
+
+			LoCd << _self.cajas_existentes.an_element()
+			
+			_if LoCd _is _unset 
+			_then			    
+			    LoTablaEdi << gis_program_manager.cached_dataset(:gis).collection(:user!_building)
+			    LoEdi << predicate.interacts(:boundary, .objeto.user!_limite)
+			    LoseEdi << LoTablaEdi.select(LoEdi)
+			    _if LoseEdi.size > 0
+			    _then
+				# Se obtiene la Colonia respecto al Edificio encontrado
+			        l_predicate   << predicate.contains(:user!_limite,
+						     LoseEdi.an_element().location)
+			    _endif
+			    
+			_else
+			    # Se obtiene la Colonia respecto a la CD encontrada
+			    l_predicate   << predicate.contains(:user!_limite,
+						     _self.cajas_existentes.an_element().location)
+			_endif
+			
+			l_sel_colonia << l_tbl_colonia.select(l_predicate)
+
+			.colonia_cd << l_sel_colonia.an_element()
+		_when does_not_understand
+		_endtry
+	_endif
+
+	_return .colonia_cd
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.corte_caja_red_princ
+	
+	## Objetivo:
+	##     - Obtener la ocupacion principal asociada al distrito
+   	## Parámetros de entrada:
+   	## Parámetros de salida:    col_corte_princ << hash_table
+	##    - [:|Numero_Strip|] << Ocupacion x strip
+	##    - [:|Total|]        << Ocupacion total
+	## vbluna
+
+	_local col_corte_princ << hash_table.new()
+	_local ls_id_strip
+	_local ln_ocup_strip
+
+	## Fhramire
+	## Bloque para determinar si el Plano de Construccion
+	## es sobre Edificio (distrito cerrado).
+	## La red de cobre se encuentra dentro del edificio	
+
+	## Determinar si el corte de caja es en distrito cobre abierto.
+	## La variable LoRedSecun es un rope con todas las caja de distribucion
+	## existentes dentro del distrito.
+	## para el caso de edificios, entonces sera un rope con
+	## registros tableros.
+	_Local LoBanSec << _false 
+	LoRedSecun << _self.cajas_existentes
+
+	_for LoCD _over LoRedSecun.fast_elements()
+	_loop
+	     LoMufas << _self.mufas_existentes(LoCD)
+	     _if LoMufas.size > 0
+	     _then
+		 LoBanSec << _true
+	     _endif	     	
+	_endloop
+
+	
+	## Si LoRedSec es true, entonces quiere decir que el corte de Caja
+	## es en Dto. Abierto, de otra manera buscamos si existe red en
+	## Edificios.
+
+	_if LoBanSec _is _false 
+	_then
+	    ## Buscar si hay edificios, ademas si hay
+	    ## red secundaria dentro
+	    LoEdificio << _self.busca_edificio
+	    # Si hay edificios, entonces buscar red secundaria
+	    # dentro del edificio.
+	    _if LoEdificio _isnt _unset 
+	    _then	    
+	        LoRedSecun << _self.red_secundaria_dentro(LoEdificio)
+	    _endif
+	_endif	
+	
+	
+	#Para cada caja existente en el distrito
+	#_for caja _over _self.cajas_existentes.fast_elements()
+
+	_for caja _over LoRedSecun.fast_elements()
+	_loop
+		#Recorrer las mufas existentes asociadas al distrito
+		_for mufa _over _self.mufas_existentes(caja).fast_elements()
+		_loop
+			#Para cada mufa recorrer los strips asociados
+			_for strip _over mufa.user!_strips.fast_elements()
+			_loop
+				#Asignar el id del strip y su ocupación asociada
+				ls_id_strip   << strip.user!_numero.write_string.as_symbol()
+				ln_ocup_strip << strip.user!_ocupacion.default(0)
+
+				#Asignar los valores por cada strip y el valor total a la hash
+				# table 
+				col_corte_princ[ls_id_strip] <<
+					col_corte_princ[ls_id_strip].default(0) + ln_ocup_strip
+				col_corte_princ[:|Total|] <<
+					col_corte_princ[:|Total|].default(0) + ln_ocup_strip
+			_endloop
+		_endloop
+	_endloop
+
+	_return col_corte_princ
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.corte_caja_red_sec
+
+	## Objetivo:
+	##     - Obtener la ocupacion secundaria asociada al distrito
+   	## Parámetros de entrada:
+   	## Parámetros de salida:    col_corte_sec << dual_key_a_table
+	##    - [:|Letra_Terminal|, :|Número_Terminal|] << Ocupacion_x_Terminal
+	##    - [:|Letra Terminal|, :|SUMA|]           << Ocupacion_x_letra_Terminal
+	##    - [:|Total|        , :|Total|]          << Ocupacion_x_todas_Terminales
+	## vbluna
+
+	_local col_corte_sec << dual_key_a_table.new()
+	_local ls_id_terminal
+	_local ln_ocup_terminal
+
+	# Fhramire, 7/septiembre/2012
+	_Local LoBanSec << _false	
+	LoRedSecun << _self.cajas_existentes
+
+	_for LoCD _over LoRedSecun.fast_elements()
+	_loop
+	     LoMufas << _self.mufas_existentes(LoCD)
+	     _if LoMufas.size > 0
+	     _then
+		 LoBanSec << _true
+	     _endif	     	
+	_endloop
+
+	## Si LoRedSec es true, entonces quiere decir que el corte de Caja
+	## es en Dto. Abierto, de otra manera buscamos si existe red en
+	## Edificios.
+
+	_if LoBanSec _is _false 
+	_then
+	    ## Buscar si hay edificios, ademas si hay
+	    ## red secundaria dentro
+	    LoEdificio << _self.busca_edificio
+	    # Si hay edificios, entonces buscar red secundaria
+	    # dentro del edificio.
+	    _if LoEdificio _isnt _unset 
+	    _then	    
+	        LoRedSecun << _self.red_secundaria_dentro(LoEdificio)
+	    _endif
+	_endif			
+
+	#Para cada caja existente en el distrito
+	#_for caja _over _self.cajas_existentes.fast_elements()
+
+	_for caja _over LoRedSecun.fast_elements()
+	_loop
+	    #Recorrer las mufas asociadas a cada caja
+	    _for mufa _over _self.mufas_existentes(caja).fast_elements()
+	    _loop
+		#Recorrer las ocupaciones secundarias asociadas a las mufas
+		_for terminal _over mufa.user!_ocup_secundarias.fast_elements()
+		_loop
+		    #Asignar la id de la terminal
+		    ls_id_terminal << terminal.user!_ocup_sec.write_string.as_symbol()
+			
+		    #Asignar el valor de la terminal para cada numero
+		    col_corte_sec[ls_id_terminal,:|1|] << terminal.user!_uno.default(0) +
+							  col_corte_sec[ls_id_terminal,:|1|].default(0)
+		    col_corte_sec[ls_id_terminal,:|2|] << terminal.user!_dos.default(0) +
+							  col_corte_sec[ls_id_terminal,:|2|].default(0)
+		    col_corte_sec[ls_id_terminal,:|3|] << terminal.user!_tres.default(0) +
+							  col_corte_sec[ls_id_terminal,:|3|].default(0)
+		    col_corte_sec[ls_id_terminal,:|4|] << terminal.user!_cuatro.default(0) +
+							  col_corte_sec[ls_id_terminal,:|4|].default(0)
+		    col_corte_sec[ls_id_terminal,:|5|] << terminal.user!_cinco.default(0) +
+							  col_corte_sec[ls_id_terminal,:|5|].default(0)
+				
+		    #Asignar la ocupacion total de cada terminal
+		    ln_ocup_terminal << terminal.user!_uno.default(0) +
+					terminal.user!_dos.default(0) +
+					terminal.user!_tres.default(0) +
+					terminal.user!_cuatro.default(0) +
+					terminal.user!_cinco.default(0)
+		    
+		    col_corte_sec[ls_id_terminal,:|SUMA|] << ln_ocup_terminal +
+							     col_corte_sec[ls_id_terminal,:|SUMA|].default(0)
+		    
+		    col_corte_sec[:|Total|,:|Total|] << ln_ocup_terminal +
+							col_corte_sec[:|Total|,:|Total|].default(0)
+		_endloop
+	    _endloop
+	_endloop
+	
+	_return col_corte_sec
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.direccion
+
+   	## Parametros de entrada:
+   	## Parametros de salida:
+	##    - string con la direccion asociada al distrito
+	## vbluna
+
+	#_return ""
+
+	_try		
+	   _return _self.primera_cd_existente.direccion.default("").write_string
+	_when does_not_understand
+	   _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.distancia_cd_oc
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     - distancia a oc de la caja existente en el distrito
+	##     - si no existe caja existentes se toma de la proyectada
+	## vbluna
+
+	_try
+		LoDistancia << _self.primera_cd_existente.user!_distancia_central
+		_if LoDistancia _isnt _unset 
+		_then
+		    _return (LoDistancia.value/1000).as_float.write_string_normal(3) + " Km"
+		_else
+		    _return "0"
+		_endif
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.distancia_cd_nco
+	#obtener la distancia de la cd al nco
+	LoDistancia << 0
+	
+	_try _with error 
+		LoDistancia << _self.primera_cd_existente.distancia_a_NCO()		
+	_when error
+	      
+	_endtry
+
+	_return LoDistancia
+_endmethod
+$
+## metodos por definir.
+##
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.distancia_cedo_oc
+	#obtener la distanciadel cedo a la oficna comercial
+
+	_return 0
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.distancia_cedo_nco
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+
+	_return 0
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.distancia_promedio_bajante
+	#obtener la distancia promedio de las bajantes en el distrito
+
+	_return 0
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.porcentaje_de_penetracion
+	#obtener el porcentaje de penetracion de red
+	_return 0
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.dto_nse_predominante
+	# Objetivo:
+	#     - En base a la cantidad de viviendas x NSE determinar el
+	#     NSE predominante en el distrito
+
+	_return .dto_nse_pred.write_string
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.es_terminal_doble?(PoLista_hash_terminales,PoCuentaSec )
+  ## Met. para determinar si un terminal de fo es de tipo doble o no. 
+  ##
+
+ loBandera << _false
+ 
+  _for k,i _over PoLista_hash_terminales.fast_keys_and_elements()
+  _loop
+	 # write("K " ,k)
+	#  write("II ",i ) 
+	_if k.write_string.size > 2 _andif
+	    (k.write_string.slice(1,2) = PoCuentaSec _orif
+	     k.write_string.slice_to_end(4) = PoCuentaSec ) 
+	_then 
+	     bandera << _true 
+	     _return bandera, i
+	    # (13/05/08 rhernan) : se comenta el return false para que no
+	    # devuelva false sin antes haber revisado el resto.
+	    #	_else 
+	    #	     _return _false
+	_endif
+  _endloop
+  
+  _return bandera 
+ 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.factor_pen_nse
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     col_factor_pen - hash_table con:
+	##                      [:NSE] << user!_factor_pen
+	## vbluna
+
+	_local col_factor_pen << hash_table.new()
+	col_factor_pen.default_value << 0.0
+
+	_try
+		col_factor_pen[:|A|]  << .objeto.user!_factor_pen.user!_nse_a
+		col_factor_pen[:|B|]  << .objeto.user!_factor_pen.user!_nse_b
+		col_factor_pen[:|C|]  << .objeto.user!_factor_pen.user!_nse_c
+		col_factor_pen[:|D|]  << .objeto.user!_factor_pen.user!_nse_d
+		col_factor_pen[:|E|]  << .objeto.user!_factor_pen.user!_nse_e
+		col_factor_pen[:|C1|] << .objeto.user!_factor_pen.user!_nse_c1
+		col_factor_pen[:|C2|] << .objeto.user!_factor_pen.user!_nse_c2
+		col_factor_pen[:|C3|] << .objeto.user!_factor_pen.user!_nse_c3
+		col_factor_pen[:|IL|] << .objeto.user!_factor_pen.user!_nse_il
+		col_factor_pen[:|IM|] << .objeto.user!_factor_pen.user!_nse_im
+		col_factor_pen[:|IP|] << .objeto.user!_factor_pen.user!_nse_ip
+	_when does_not_understand
+	_endtry
+
+	_return col_factor_pen
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.get_conector_y_cable(p_objeto)
+	## 
+	##
+	conec << p_objeto.get_upstream_connector()
+	cables << rope.new()
+	_if conec _isnt _unset
+	_then
+		cables << conec.get_upstream_cables()
+		_for cable _over cables.elements()
+		_loop
+			
+		_endloop
+	_endif
+	_return conec,cables
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.init()
+
+	.o_format_float << float_format.new(:float_decimal_places, 2)
+	.inventario   << hash_table.new()
+	.col_viv_lin  << hash_table.new()
+	.col_tel_publicos << hash_table.new()
+	.col_lotes    << rope.new()
+	.col_lin_sat  << hash_table.new()
+	.dto_nse_pred << ""
+	
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.lineas_saturacion
+
+	## Objetivo:
+	##    - Obtener las lineas a saturacion X NSE en el distrito =
+	##    (Viviendas sin servicio * Factor de penetracion) + Lineas
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    .col_lin_sat - hash_table con el numero de lineas a
+	##                   saturacion x cada NSE asociadas al distrito
+	## vbluna
+
+	_local l_col_lineas  << _self.viviendas_lineas
+
+	.col_lin_sat.default_value << 0.0
+	
+	_local ln_factor_pen
+	_local ln_viv_sin_serv
+	_local ln_num_lineas
+	_local ln_lineas_satura
+
+	_for nse, value _over _self.factor_pen_nse.keys_and_elements()
+	_loop
+		ln_factor_pen   << value.default(0.0)
+		ln_viv_sin_serv << l_col_lineas[nse][:viv_sin_servicio].default(0)
+		ln_num_lineas   << l_col_lineas[nse][:abonados].default(0)
+		ln_lineas_satura << (ln_viv_sin_serv * ln_factor_pen) + ln_num_lineas
+
+		_if ln_num_lineas > ln_lineas_satura
+		_then
+			.col_lin_sat[nse] << .o_format_float.format(ln_num_lineas)
+		_else
+			.col_lin_sat[nse] << .o_format_float.format(ln_lineas_satura)
+		_endif
+		
+		.col_lin_sat[:|Total|] +<< .col_lin_sat[nse].as_number()
+	_endloop
+
+	.col_lin_sat[:|Total|] << .col_lin_sat[:|Total|].ceiling
+	
+	_return .col_lin_sat
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.lotes
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    .col_lotes - rope con los lotes asociados al distrito
+	## vbluna
+
+	_return .col_lotes
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.mufas_existentes(p_caja)
+
+	## Objetivo:
+	##     - Obtener las mufas con estado de
+	##     construccion = "EXISTENTE" asociadas a p_caja
+   	## Parámetros de entrada:
+	##     p_caja - objeto mit_terminal_enclosure
+   	## Parámetros de salida:
+	##     col_mufas_exis - rope con las mufas existentes
+	## vbluna
+
+	_local col_mufas_exis << rope.new()
+	
+	_for mufa _over p_caja.user!_mufas.fast_elements()
+	_loop
+		_if mufa.construction_status = "EXISTENTE"
+		_then
+			col_mufas_exis.add(mufa)
+		_endif
+	_endloop
+
+	_return col_mufas_exis
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.new()
+
+	_return _clone.init()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.nombre_cd
+	_try
+		_return _self.primera_cd_existente.user!_nombre_distrito.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.nombre_colonia
+
+	## String con el nombre de la colonia en donde se
+	## encuentra ubicada la cd existente
+	## (vbluna/11-10-06)
+
+	_try
+		_return _self.colonia.user!_nombre.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.nombre_delegacion_municipio
+
+	## String con el nombre de la delegacion o municipio en donde
+	## se encuentra ubicada la cd existente
+	## (vbluna/11-10-06)
+	
+	_try
+		gpm << gis_program_manager
+		l_tbl_mpo << gpm.cached_dataset(:landbase).collections[:user!_municipio]
+
+
+		LoCd << _self.cajas_existentes.an_element()
+			
+		_if LoCd _is _unset 
+		_then			    
+		    LoTablaEdi << gis_program_manager.cached_dataset(:gis).collection(:user!_building)
+		    LoEdi << predicate.interacts(:boundary, .objeto.user!_limite)
+		    LoseEdi << LoTablaEdi.select(LoEdi)
+		    _if LoseEdi.size > 0
+		    _then
+			    # Se obtiene la Delegacion/Municipio respecto al Edificio encontrado
+			    l_predicate   << predicate.contains(:user!_limite,
+								LoseEdi.an_element().location)
+		    _endif		    
+		_else
+			# Se obtiene la Delegacion/Municipio respecto a la CD encontrada
+			l_predicate   << predicate.contains(:user!_limite,
+							    _self.cajas_existentes.an_element().location)
+		_endif
+
+		
+		_return l_sel_mpo << l_tbl_mpo.select(l_predicate).an_element().user!_nombre_telmex
+		
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.numero_baldios
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     - cantidad de lotes en el distrito que son tipo "BALDIO"
+	## vbluna
+
+	_local ln_numero << 0
+
+	_for lote  _over _self.lotes.fast_elements()
+	_loop
+		_if lote.user!_calificador = "BALDIO"
+		_then
+			ln_numero +<< 1
+		_endif
+	_endloop
+
+	_return ln_numero
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.numero_escuelas
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     - cantidad de lotes en el distrito que son tipo "ESCUELA"
+	## vbluna
+
+	_local ln_numero << 0
+
+	_for lote  _over _self.lotes.fast_elements()
+	_loop
+		_if lote.user!_calificador = "ESCUELA"
+		_then
+			ln_numero +<< 1
+		_endif
+	_endloop
+
+	_return ln_numero
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.numero_iglesias
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     - cantidad de lotes en el distrito que son tipo "IGLESIA"
+	## vbluna
+
+	_local ln_numero << 0
+
+	_for lote  _over _self.lotes.fast_elements()
+	_loop
+		_if lote.user!_calificador = "IGLESIA"
+		_then
+			ln_numero +<< 1
+		_endif
+	_endloop
+
+	_return ln_numero
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.numero_ruta
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    - string con el numero de ruta al que pertenece la oei
+	##    asociada al distrito
+	## vbluna
+
+	_try
+		_return .objeto.user!_oei.an_element().user!_opb.user!_rutas.user!_numero.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_cables_secundarios_agrupados(p_distrito_optico_id)
+	## Metodo para obtener los cables que salen de todos los cedos
+	## asociados a un limite de distrito optico, esto para llenar
+	## el sello de la lista de cables a proyectar en el plano de
+	## diagrama de empalmes.
+	##
+	paf << smallworld_product.pni_application()
+	plug << paf.plugin(:esquema_tab_plugin)
+	LoEsqGui << plug.sys!slot(:esq_gui)			
+	LoCedos <<  LoEsqGui.get_esquema().user!_empalme_distribucions	
+	
+	LoCables << rwo_set.new()
+	
+	_for cedo _over LoCedos.fast_elements()
+	_loop
+		LoCables.add_all(cedo.obten_cables_secundarios())
+	_endloop  
+
+	_global mis_cablesec
+	        mis_cablesec << LoCables
+		
+	_local grupos << property_list.new()	
+	_local sumaTotal << 0.0
+
+	
+	_for IterCable _over LoCables.fast_elements()
+	_loop
+		_local LoCapacidad << IterCable.get_spec_record().fiber_quantity
+
+		# (15/08/06 bautistaja) : Modified. Se asigna default() 
+		_local tipo << IterCable.get_spec_record().user!_clase.default("")
+		_local LoKey << LoCapacidad.write_string + "$" + tipo
+
+		#SHOW(:LoKey, LoKey, IterCable.user!_long_opt)
+
+		
+		_local LiLongGaza << 0.0		
+		
+		_if LoCapacidad _isnt _unset _andif 
+		    tipo _isnt _unset _andif
+		    grupos[LoKey.write_string.as_symbol()] _is _unset 
+		_then
+			grupos[LoKey.write_string.as_symbol()] << property_list.new_with(:capacidad,"",
+											 :tipo,"",
+											 :longitud,0,
+											 :cables,rope.new())
+		_endif
+		
+		_if grupos[LoKey.write_string.as_symbol()] _isnt _unset _andif
+		    grupos[LoKey.write_string.as_symbol()][:cables].includes?(IterCable).not
+		_then
+			
+			grupos[LoKey.write_string.as_symbol()][:capacidad] << LoCapacidad.write_string +
+									      " F.O"
+			grupos[LoKey.write_string.as_symbol()][:tipo] << tipo.write_string
+			
+			# (12/08/10 hramosr) : se toma el km_real_medido por la
+			# long. calc. user carlos linares.
+			#si hay gazas se acumula en la distancia del cable f.o. 			
+			
+			grupos[LoKey.write_string.as_symbol()][:longitud] +<< IterCable.user!_long_opt.value_in(:m)
+			
+			grupos[LoKey.write_string.as_symbol()][:cables].add(IterCable)
+		_endif
+		
+	_endloop
+
+
+	_return grupos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_datos_correspondencia(p_cedo_id)
+	##  (11/05/17 fmejia) : Metodo que retorna un rope de
+	## proerty_list con la estructura para el sello de
+	## correspondencias en el diagrama de empalmes. Retorna una
+	## lista de property_list's con los 7 valores de las columnas
+	## requeridas en base a las terminales que atiende el cedo con
+	## el id p_cedo_id
+	##
+
+   _local LoTerminales << _self.obten_terminales_fo(p_cedo_id)	
+   _local LoDatos             << rope.new()
+   
+   _local LoCedo_actual       << _unset 
+   _local LoDivisores_en_Cedo << _unset
+
+    LoConectividad      << c_servicios_conectividad.singleton()
+    
+     LoCedo_actual       << mit_manager.modelit_dataset.collection(:user!_empalme_distribucion).at(p_cedo_id)
+     LoDivisores_en_Cedo << LoCedo_actual.obtener_divisores()
+	
+
+
+     #_global terminales      
+     #terminales << LoTerminales     
+     
+     _for terminal _over LoTerminales.fast_elements()
+     _loop
+	     
+	     # SE OBTIENEN LOS DIVISORES POR CADA TERMINAL.
+	     LoDivisores << terminal.obtener_divisores()		
+	     _for divisor _over LoDivisores.fast_elements()
+	     _loop 
+		     #write("DIVISOR--->>>  ", divisor)
+		     #write("@NOMBREeee ====> ", divisor.name)		     		     
+		     #puerto de entrada en el divisor de la terminal
+		     LoPuertoIN << divisor.input_ports()[1]
+		     
+		     #pin que atiende al divisor de la terminal
+		     #write("@@@LoConectividad --->> ",LoConectividad)
+		     
+		     LoPinSec << LoConectividad.obten_objeto_extremo(LoPuertoIN)
+		     
+		     
+			_if LoPinSec _isnt _unset 
+			_then
+				#write("@@LoPinSec --->> ", LoPinSec)				
+				#puertos de salida del divisor de la terminal ordenados por el numero
+				LoPuertosOUT << sorted_set.new()
+				LoPuertosOUT.add_all(divisor.output_ports())
+				LoPuertosOUT << LoPuertosOUT.as_sorted_collection()
+				#Dato de :puertos p.e 1-8.
+				LoStrPuertos << LoPuertosOUT.first.user!_numero +
+						"-" + LoPuertosOUT.last.user!_numero 
+   
+				#Nombre de la terminal para el dato :terminal
+				LoStrTerminal << terminal.user!_nombre
+
+				#cable y atributo del pin que atiende al divisor de terminal
+				#write("@@@VALOR DE PINSEC ====>>> ", LoPinSec)
+				
+				# (11/11/24 rhernan) :
+		## AQUI SE OBTIENE EL CABLE SEC Y LA FIBRA LA FIBRA QUE VIVE EN EL CEDO DE LA TERMINAL
+				## REQUERIREMOS BUSCAR EL MIT_FIBER_PIN DEL CABLE SEC,  QUE VIVE EN
+				## EL CEDO.
+				
+			        (LoCabSec,LoAtrSec)<<LoPinSec.get_cab_and_fiber_attribute
+
+				#write("@@@@@---->>>>OBTENIENDO CABLECIIIIIIN ", LoCabSec) 
+				#lista_pin_secs.add(LoPinSec)						
+				
+				LoStrFoSec << ""
+				LoStrCabSec << ""				
+				
+			    _if LoAtrSec _isnt _unset 
+			    _then 
+				#LoStrFoSec << LoAtrSec.fiber_number
+				#edwaldo se agrega codigo para dar formato a etiquetas de las fibras.
+				# (11/11/24 rhernan) :
+				#LoStrFoSecRope << rope.new_from(LoPinSec.fiber_number)
+
+				#LoStrFoSec << c_cuentas_fo_engine.parser_cuentas("",LoStrFoSecRope)
+				#comentarrr  
+				#LoStrCabSec << _self.arma_cadena_cable(LoCabSec) 		
+				#Divisor en el CEDO
+				LoDivisorCedo << LoAtrSec.optical_splitter
+			    _endif			    
+ 
+			     #19/Mayo/2011 se agrega la validacion de la variable LoDivisorCedo
+			     LoStrDivisor << ""
+			     LoStrFoPrin << ""
+			     LoStrNumCab << "" 
+				
+			     _if LoDivisorCedo _isnt _unset
+			     _then
+				 #Puerto de entrada del Divisor del CEDO
+				  LoPuertoINPrin << LoDivisorCedo.input_ports()[1]			  
+				  # (11/11/25 rhernan) :
+				  #OBTENEMOS LOS OUTPUT_PORTS DEL CEDO EN TURNO
+				  LoPuertosOUTSecs   << LoDivisorCedo.output_ports()
+				  
+				  #Recorremos el puerto que tiene la misma cuenta de la terminal.
+				  _for puerto _over LoPuertosOUTSecs.fast_elements()
+				  _loop 
+				      pin_salida << LoConectividad.obten_objeto_extremo(puerto)     
+
+				      _if LoStrTerminal.split_by(%-).size > 1
+				      _then
+					  cadena_comparar    << LoStrTerminal.split_by(%-)[2]
+				      _elif LoStrTerminal.split_by(%-).size = 1
+				      _then 
+					    cadena_comparar << LoStrTerminal.split_by(%O)[2]
+				      _endif
+				      
+				      _if pin_salida _isnt _unset _andif 
+					  pin_salida.obtener_cuenta() = cadena_comparar
+				      _then 
+					#LoNumeroFibra << pin_salida.fiber_number
+					#LoStrFoSecRope << rope.new_from(pin_salida.fiber_number)
+				        #LoStrFoSec<<c_cuentas_fo_engine.parser_cuentas("",LoStrFoSecRope)
+					 
+					LoStrFoSec << pin_salida.fiber_number
+					 _if pin_salida.sheath_pin.sheath _isnt _unset 
+					 _then
+					  LoStrCabSec<<_self.arma_cadena_cable(pin_salida.sheath_pin.sheath)
+					 _endif
+					  #_leave					 
+				      _endif
+				  _endloop
+				  
+				  #Pin que atiende al puerto de entrada del divisor en CEDO
+				  LoPinPrin << LoConectividad.obten_objeto_extremo(LoPuertoINPrin)
+				       
+				  LoStrDivisor<<_self.divisor_equivalencia[LoDivisorCedo.
+									   name.as_symbol()]
+				  
+				  #Cable y atributo del pin que atiende al divisor del CEDO.
+				   _if LoPinPrin _isnt _unset 
+				   _then				
+				     (LoCabPrin,LoAtrPrin)<<LoPinPrin.get_cab_and_fiber_attribute   
+				     fiber_AT << LoAtrPrin
+				     
+				     _if LoAtrPrin _isnt _unset 
+				     _then
+					  # (11/11/24 rhernan) :
+					  # se cambia la cuenta por el numero de fibra.
+					  # LoStrFoPrin << LoAtrPrin.fiber_number
+					  LoStrFoPrin << LoAtrPrin.user!_cuenta
+				     _endif
+				     
+				     LoStrNumCab << LoCabPrin.user!_numero_cable			     
+				     LoListaCablesFo << LoConectividad.cables_arriba(divisor.gis_owner,
+									:strw_connect_point,
+									LoPinPrin.sheath_pin.sheath)	     
+			                 # (11/11/23 rhernan) : 
+					 # Obtener el cable que sale de la central. 
+			                 _if LoListaCablesFo.size > 0
+					 _then 
+						LoStrNumCab << LoListaCablesFo[1].user!_numero_cable
+					 _endif						
+				   _endif
+			       _endif
+			_endif		
+			
+			#Creamos el property_list con los valores para cada columna del sello.
+			plDatos << property_list.new_with(:no_cable, LoStrNumCab.write_string.default(""),
+						     :fo_prin,  LoStrFoPrin.write_string.default(""),
+						     :divisor,  LoStrDivisor.write_string.default(""),
+						     :cable_sec,LoStrCabSec.write_string.default(""),
+						     :fo_sec,   LoStrFoSec.write_string.default(""), 
+						     :terminal, LoStrTerminal.write_string.default(""),
+						     :puertos,  LoStrPuertos.write_string.default(""))
+			
+			#Agregamos el property_list a un rope, esto equivale a los
+			# renglones del sello.
+			LoDatos.add(plDatos)			
+		_endloop
+	_endloop     
+     
+	LoInfoFibras<<_self.obten_fibras_muertas_y_reservas(p_cedo_id)
+	LoDatos.add_all_last(_self.agrupa_fibras_muertas_y_reservas(LoInfoFibras)) 
+	
+	_return LoDatos 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_datos_correspondenciaII(p_cedo_id)
+
+  _local LoTerminales << _self.obten_terminales_fo(p_cedo_id)   
+   _local ArreNombreTerminales << rope.new()   
+          LoDatos              << rope.new() 
+   _local LoCedo_actual        << _unset 
+   _local LoDivisores_en_Cedo  << _unset
+   _local LoLista_hash_terminales << hash_table.new()
+   _local terminal_doble? << _unset
+   _local LoContador << 0
+   _local mis_puertos_terminal_doble << "" 
+
+  # write("@######################################## OBTEN DATOS CORRESPONDENCIAAAAaaa ")   
+
+  _if LoTerminales.size > 0
+  _then 
+    _for LoTerminal2 _over LoTerminales.fast_elements()
+    _loop
+	 #  write("LoTerminal2 --> ",LoTerminal2)  
+	 LoLista_hash_terminales[LoTerminal2.user!_nombre.slice_to_end(3).as_symbol()] << LoTerminal2 
+    _endloop    
+   
+    LoConectividad      << c_servicios_conectividad.singleton()    
+    LoCedo_actual       << mit_manager.modelit_dataset.collection(:user!_empalme_distribucion).at(p_cedo_id)  
+    
+    LoCables_Secundarios << LoCedo_actual.cables_secundarios()    
+    #19/Mayo/2011 se agrega la validacion de la variable LoDivisorCedo
+    LoStrDivisor << ""
+    LoStrFoPrin << ""
+    LoStrNumCab << ""
+
+    LoCables_Secundarios << _self.ordena_cables_secundariosXcuenta(LoCables_Secundarios)
+    
+    _for LoCableSecundario _over LoCables_Secundarios.fast_elements()
+    _loop
+	_for LoPinSec _over LoCableSecundario.obtener_pines().fast_elements()
+	_loop
+          LoCuentaSec << LoPinSec.obtener_cuenta()
+	  
+	 (terminal_doble?, LoTerminalDoble)<<_self.es_terminal_doble?(LoLista_hash_terminales,LoCuentaSec) 
+	    
+	  _if LoCuentaSec.write_string.size > 0 _andif
+	      (LoLista_hash_terminales.includes_key?(LoCuentaSec.as_symbol()) _orif
+	      terminal_doble? = _true )     #_self.es_terminal_doble?(LoLista_hash_terminales,LoCuentaSec))
+	  _then	
+		LoStrFoSec << ""  
+		LoStrCabSec << ""				
+		LoStrDivisor << ""
+		LoStrFoPrin  << "" 
+		LoStrNumCab  << "" 
+		
+		# (12/04/03 rhernan) :	buscamos la fibra secundaria.	
+		LoStrFoSec << LoPinSec.fiber_number
+		_if LoPinSec _isnt _unset 
+		_then
+			(LoCable, LoAtrSec) << LoPinSec.get_cab_and_fiber_attribute	
+		_endif
+		
+		 
+		_if LoAtrSec _isnt _unset 
+		_then
+			    
+		  #Obtenemos el Divisor optico de esta fibra.
+		  LoDivisorCedo << LoAtrSec.optical_splitter
+		  #Obtenemos el pin principal para obtener el cable principal. 
+		_if LoDivisorCedo _isnt _unset _andif
+		    LoDivisorCedo.input_ports()[1] _isnt _unset 
+		_then
+		     LoStrDivisor<<_self.divisor_equivalencia[LoDivisorCedo.
+							      name.as_symbol()]
+		     
+   		    LoPinPrin << LoConectividad.obten_objeto_extremo(LoDivisorCedo.input_ports()[1])
+		    _if LoPinPrin _isnt _unset 
+		    _then
+			    (LoCabPrin,LoAtrPrin) << LoPinPrin.get_cab_and_fiber_attribute
+		    _endif		    
+		    
+		    _if LoAtrPrin _isnt _unset 
+		    _then
+			# (11/11/24 rhernan) :
+			# se cambia la cuenta por el numero de fibra.
+			# LoStrFoPrin << LoAtrPrin.fiber_number
+			LoStrFoPrin << LoAtrPrin.user!_cuenta
+			LoStrNumCab << LoCabPrin.user!_numero_cable
+			#write("MI PRINCIPAL   ", LoPinPrin)
+			#write("MI SHEATH PIN ",LoPinPrin.sheath_pin) 
+			LoListaCablesFo << LoConectividad.cables_arriba(LoDivisorCedo.gis_owner,
+								     :strw_connect_point,
+								     LoPinPrin.sheath_pin.sheath)
+			# (11/11/23 rhernan) : 
+		    # Obtener el cable que sale de la central. 
+		     _if LoListaCablesFo.size > 0
+		     _then 
+			     LoStrNumCab << LoListaCablesFo[1].user!_numero_cable
+		     _endif		     
+		    _endif   # (12/10/16 cerramos if para no abarcar la nomenclatura de la terminales fo) :
+		    
+		     #Obtenemos el rango de los puertos de salida.		     
+		     LoPuertosOUT << sorted_set.new()
+		    
+		     LoDivisorTerminal << LoLista_hash_terminales.lookup_key(LoCuentaSec.as_symbol())
+		     
+		     # probable es una terminal "dobble" 
+                     _if LoDivisorTerminal _is _unset _andif LoTerminalDoble _isnt _unset 
+		     _then
+		       LoDivisorTerminal << LoTerminalDoble.obtener_divisor_correspondiente(LoCuentaSec)
+		       LoStrTerminal     << LoTerminalDoble.user!_nombre.slice_to_end(3)
+
+		     _elif LoDivisorTerminal _isnt _unset _andif
+			   LoDivisorTerminal.obtener_divisores().size > 0		     
+		     _then			 
+			 LoStrTerminal << LoCuentaSec.write_string			 
+		         LoDivisorTerminal << LoDivisorTerminal.obtener_divisores()[1]
+		     _endif
+		     #write("############# DIVISOR TERMINAL ########## ")		     
+		     #write("LoDivisorTerminal ---> ",LoDivisorTerminal.p)
+		     
+		     #OBTENEMOS LOS PUERTOSS .. por cada Terminal FO.		     
+		      LoPuertosOUT.add_all(LoDivisorTerminal.output_ports())
+		      LoPuertosOUT << LoPuertosOUT.as_sorted_collection()
+		      LoStrPuertos << LoPuertosOUT.first.user!_numero +
+				       "-" + LoPuertosOUT.last.user!_numero
+		_endif		
+		_endif
+	        
+		#write("@VALOR DE LoSTRPuertossss   ", LoStrPuertos)
+		
+	      _if LoPinSec.sheath_pin.sheath _isnt _unset 
+	      _then
+		   LoStrCabSec << _self.arma_cadena_cable(LoPinSec.sheath_pin.sheath) 
+	      _endif
+	      
+	       # (13/05/07 rhernan) : para no agregar renglones dobles con la
+	       # misma informacion..
+	       _if terminal_doble? = _true 
+	       _then
+	          # write("@@LoStrPuertos --->>> ",LoStrPuertos.write_string)
+		   LoContador +<< 1		   
+		   #cachar el string de los puertos para armar los rangos.
+		   _if mis_puertos_terminal_doble  = "" 
+		   _then
+		       mis_puertos_terminal_doble +<<  LoStrPuertos.write_string.default("")+ " "
+		   _else
+			   mis_puertos_terminal_doble +<< " " + LoStrPuertos.write_string.default("")+ " "
+		   _endif		   
+		   #write("@mis_puertos_terminal_doble -> ",mis_puertos_terminal_doble)
+		   
+		   numeros_strings << mis_puertos_terminal_doble.numbers_and_strings		   
+		   pivote_mayor << numeros_strings.an_element()
+		   pivote_menor << numeros_strings.an_element()
+		   
+		   _for i _over numeros_strings.fast_elements()
+		   _loop			   
+		      _if i.as_number() _isnt _unset 
+		      _then
+		         _if i >= pivote_mayor
+			 _then
+			     pivote_mayor << i
+			 _elif i <= pivote_menor
+			 _then 
+			     pivote_menor << i 
+			 _endif 
+		      _endif 		
+		   _endloop
+
+				   
+		   #write("mis_puertos_terminal_doble ---> ",mis_puertos_terminal_doble)		   
+		   mis_puertos_terminal_doble << pivote_menor.write_string+"-"+ pivote_mayor.write_string
+		   #write("CADENAAA ", mis_puertos_terminal_doble )		   
+		   LoStrPuertos << mis_puertos_terminal_doble		   
+	       _else
+		       mis_puertos_terminal_doble << ""  
+	       _endif
+	       
+	       plDatos << property_list.new_with(:no_cable, LoStrNumCab.write_string.default(""),
+						:fo_prin,   LoStrFoPrin.write_string.default(""),
+						:divisor,   LoStrDivisor.write_string.default(""),
+						:cable_sec, LoStrCabSec.write_string.default(""),
+						:fo_sec,    LoStrFoSec.write_string.default(""), 
+						:terminal,  "FO" + LoStrTerminal.write_string.default(""),
+						:puertos,   LoStrPuertos.write_string.default(""))
+       
+	       _if terminal_doble? = _true _andif
+		     LoContador > 1
+	       _then
+		     LoDatos.add(plDatos)
+		     LoContador << 0
+		     mis_puertos_terminal_doble << ""
+	       _elif terminal_doble? = _false _orif
+		     terminal_doble? _is _unset 
+	       _then 
+		     LoDatos.add(plDatos)
+		     LoContador << 0
+		     #mis_puertos_terminal_doble << ""
+	       _endif 	       
+	  _endif 	   
+	_endloop  
+	
+	LoInfoFibras<< _self.obten_fibras_muertas_y_reservas_por_cable_secundario(LoCableSecundario) 
+	LoDatos.add_all_last(_self.agrupa_fibras_muertas_y_reservas(LoInfoFibras)) 
+    _endloop   
+  _endif  
+	  
+  _return LoDatos  
+   
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_fibras_muertas_y_reservas(p_id_cedo)
+	## Metodo para devolver grupos de fibras agrupadas por estado
+	## (MUERTAS, RESERVA ) de los cables que salen del CEDO. Para
+	## encontrar el CEDO lo hacemos por el p_id_cedo.
+	##
+	_local LoTabCedo << gis_program_manager.cached_dataset(:gis).collection(:user!_empalme_distribucion)
+	_local LoCedo << LoTabCedo.at(p_id_cedo)
+	_local LoCables << LoCedo.cables_secundarios()
+	_local LoInfoCables << property_list.new()
+	
+	_for cable _over LoCables.fast_elements()
+	_loop
+		LoLlave << cable.id.write_string.as_symbol()
+		LoInfoCables[LoLlave] << property_list.new_with(:muertas,rope.new(),
+								:reservas,rope.new())
+		_for atributo _over cable.fiber_attributes.fast_elements()
+		_loop
+			_if atributo.user!_estado = "M"
+			_then
+				LoInfoCables[LoLlave][:muertas].add(atributo)
+			_elif atributo.user!_estado = "R"
+			_then
+				LoInfoCables[LoLlave][:reservas].add(atributo)
+			_endif
+		_endloop
+
+		_if LoInfoCables[LoLlave][:muertas].size = 0 _andif
+		    LoInfoCables[LoLlave][:reservas].size = 0
+		_then
+			LoInfoCables.remove_key(LoLlave)
+		_endif
+	_endloop
+	
+	_return LoInfoCables
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_fibras_muertas_y_reservas_por_cable_secundario(PoCableSecundario)
+	## Metodo para devolver grupos de fibras agrupadas por estado
+	## (MUERTAS, RESERVA ) por un cable secundario.
+	## # (12/04/04 rhernan) : 
+	  
+	_local LoInfoCables << property_list.new()
+	
+	LoLlave << PoCableSecundario.id.write_string.as_symbol()
+	LoInfoCables[LoLlave] << property_list.new_with(:muertas,rope.new(),
+								:reservas,rope.new())		
+	_for atributo _over PoCableSecundario.fiber_attributes.fast_elements()
+	_loop
+		_if atributo.user!_estado = "R"
+		_then
+			LoInfoCables[LoLlave][:reservas].add(atributo)
+		_elif atributo.user!_estado = "M"
+		_then
+			LoInfoCables[LoLlave][:muertas].add(atributo)
+		_endif
+	_endloop
+	
+	_if LoInfoCables[LoLlave][:reservas].size = 0 _andif
+	    LoInfoCables[LoLlave][:muertas].size = 0
+	_then
+		LoInfoCables.remove_key(LoLlave)
+	_endif
+	
+	_return LoInfoCables
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_reservas()
+	## 
+	## 
+	LoViewport << _self.obten_viewport_principal()
+	LoReservas << rope.new()
+	LoTabReservas << gis_program_manager.cached_dataset(:gis).collection(:user!_reserva)
+	_if LoViewport _isnt _unset 
+	_then
+	    _if LoViewport.elementos_modificados _is _unset 
+	    _then
+		LoArea     << _self.objeto.user!_limite		
+		Reservas << LoTabReservas.select(predicate.interacts(:location,LoArea))
+		_if Reservas.size > 0
+		_then
+		    _for Lcaj _over Reservas.fast_elements()
+		    _loop
+			LoReservas.add(Lcaj)				
+		    _endloop
+		_endif  
+	    _else 	
+		LoDatosReservas << LoViewport.elementos_modificados[:user!_reserva_sim]
+		_if LoDatosReservas _isnt _unset 
+		_then
+		    _for datos _over LoDatosReservas.fast_elements()
+		    _loop
+			LoReservas.add(LoTabReservas.at(datos[2]))
+		    _endloop
+		_endif
+	    _endif 
+	_endif
+	LoReservas << _self.valida_conectividad_a_caja(LoReservas)
+	
+	_return LoReservas
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_terminales()
+	## 
+	## 
+	LoViewport << _self.obten_viewport_principal()
+	LoTerminales << rope.new()
+	LoTabTerminales << gis_program_manager.cached_dataset(:gis).collection(:copper_terminal)
+	_if LoViewport _isnt _unset 
+	_then
+	    _if LoViewport.elementos_modificados _is _unset 
+	    _then
+		LoArea     << _self.objeto.user!_limite		
+		Terminales << LoTabTerminales.select(predicate.interacts(:location,LoArea))
+		_if Terminales.size > 0
+		_then
+		    _for Lcaj _over Terminales.fast_elements()
+		    _loop
+			LoTerminales.add(Lcaj)				
+		    _endloop
+		_endif  
+	    _else 
+		LoDatosTerminales << LoViewport.elementos_modificados[:copper_terminal_sim]
+		_if LoDatosTerminales _isnt _unset 
+		_then
+			_for datos _over LoDatosTerminales.fast_elements()
+			_loop
+				LoTerminales.add(LoTabTerminales.at(datos[2]))
+			_endloop
+		_endif
+	    _endif 
+	_endif
+	LoTerminales << _self.valida_conectividad_a_caja(LoTerminales)
+	_return LoTerminales	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_terminales_fo(p_id_cedo)
+	## (11/05/17 fmejia) : Metodo para obtener todas las temrinales que atiende un CEDO
+	## en base al id del cedo (p_id_cedo), retornando un sorted_set
+	## ordenado por el nombre de la terminal.
+	##
+	_local LoTerminales << sorted_set.new()
+	_local LoTabCedo << gis_program_manager.cached_dataset(:gis).collection(:user!_empalme_distribucion)
+	_local LoCedo << LoTabCedo.at(p_id_cedo)
+
+	_if LoCedo _isnt _unset 
+	_then
+		LoTerminales.add_all(LoCedo.obten_terminales_atendidas())
+	_endif
+	LoTerminales.sort_by(:user!_nombre)
+	
+	_return LoTerminales
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_terminales_fibra
+
+	       term << _unset 
+	
+		_if _self.objeto _isnt _unset 
+		_then	    
+			LoArea    << _self.objeto.user!_limite
+			LoGpm     << gis_program_manager	
+			tab       << LoGpm.cached_dataset(:gis).collection(:user!_terminal_fo)	    
+			term      << tab.select(predicate.interacts(:location,LoArea))                        
+		_endif
+		
+		_return term 
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.obten_viewport_principal()
+	## 
+	## 
+	LoPaf << smallworld_product.pni_application()
+	LoLayPlug << LoPaf.plugin(:layout_plugin)
+	LoAppl << LoLayPlug.dialogs[:layout_designer]
+	
+	#---------------------------------------------------------
+	LoPlugMan << LoAppl.plugin(:layout_manager)
+	LoDoc << LoPlugMan.current_document
+	LoViewport << _unset
+	_for el _over LoDoc.current_page.elements.fast_elements()
+	_loop
+		_if (el.responds_to?(:class_name) _andif
+		    el.class_name _is :c_viewport_layout_sigc _andif
+		    el.stipoplano = "CONSTRUCCION") _or
+		    (el.responds_to?(:class_name) _andif
+		    el.class_name _is :c_viewport_layout_sigc _andif
+		    el.stipoplano = "CONSTRUCCION_FO")
+		_then
+			LoViewport << el
+			_leave
+		_endif
+	_endloop
+
+	_return LoViewport
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.ocupacion
+
+	## Objetivo:
+	##    - Obtener la ocupacion de lineas en el distrito =
+	##      - Inicial = Total lineas Telmex / Pares conectados actual *100
+	##      - Final   = Total lineas Telmex / Total de pares actual
+	## * 100 + Total de pares de aumento
+	##      - Saturacion = Total lineas Distrito / Total de pares * 100
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    l_col_ocupacion - hash_table con:
+	##       [:|Inicial|] << string con el porcentaje de la ocupacion inicial
+	##       [:|Final|]   << string con el porcentaje de la ocupacion final
+	##       [:|Saturacion|] << string con el porcentaje de la
+	##                          ocupacion a saturacion	
+	## vbluna
+
+	_local l_col_ocupacion << hash_table.new()
+	_local ln_pares_con_act << _self.resumen_pares[:|Con|,:|Act|]
+        _local ln_pares_tot_tot << _self.resumen_pares[:|Tot|,:|Tot|]
+
+	l_col_ocupacion.default_value << 0
+
+	_if (ln_pares_con_act) > 0
+	_then
+		ln_ocup_ini << (_self.total_lineas_telmex/ln_pares_con_act).as_float *100
+	_endif
+	_if (ln_pares_tot_tot) > 0
+	_then
+		ln_ocup_fin << (_self.total_lineas_telmex/ln_pares_tot_tot).as_float *100
+		ln_ocup_sat << (_self.total_lineas_distrito/ln_pares_tot_tot).as_float *100
+	_endif
+
+	l_col_ocupacion[:|Inicial|]    << .o_format_float.format(ln_ocup_ini.default(0))+" % "
+	l_col_ocupacion[:|Final|]      << .o_format_float.format(ln_ocup_fin.default(0))+" % "
+	l_col_ocupacion[:|Saturacion|] << .o_format_float.format(ln_ocup_sat.default(0))+" % "
+
+	_return l_col_ocupacion
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.oe(p_tipo)
+
+   	## Parámetros de entrada:
+	##    p_tipo - "CONSTRUCCION (D)", "DESMONTAJE(J)", "RECONCENTRACION(Y)"
+
+	_local diseno_activo   << swg_dsn_admin_engine.active_design
+	_local proyecto_activo << diseno_activo.project
+	_local l_pep << ""
+	_local l_oe << ""
+	_local pl << property_list.new()
+	pl["D".as_symbol()] << "CONSTRUCCION" 
+	pl["J".as_symbol()] << "DESMONTAJE"
+	pl["Y".as_symbol()] << "RECONCENTRACION"
+		
+	#_if  diseno_activo.tipo_diseno = :secundaria	
+	#_then
+		_for iteroe _over diseno_activo.user!_oe_locals.fast_elements()
+		_loop
+
+			l_pep << proyecto_activo.user!_peps.an_element().source_collection.at(iteroe.user!_pep_id).user!_clave
+			l_pep_tipo << l_pep.slice(1,1).as_symbol()
+			
+			_if pl[l_pep_tipo] = p_tipo.write_string.uppercase
+			_then
+			       L_oE << iteroe.user!_num_oe
+			      
+			       _leave
+			_endif
+			
+		_endloop
+		
+	#_endif
+	
+	_return l_oe
+        
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.oe_reg_scheme(p_tipo)
+
+   	## Parámetros de entrada:
+	##    p_tipo - "CONSTRUCCION (D)", "DESMONTAJE(J)", "RECONCENTRACION(Y)"
+
+	_local diseno_activo   << swg_dsn_admin_engine.active_design
+	_local proyecto_activo << diseno_activo.project
+	_local l_pep << ""
+	_local l_oe << ""
+	_local pl << property_list.new()
+	pl["D".as_symbol()] << "CONSTRUCCION" 
+	pl["J".as_symbol()] << "DESMONTAJE"
+	pl["Y".as_symbol()] << "RECONCENTRACION"
+		
+	#_if  diseno_activo.tipo_diseno = :secundaria	
+	#_then
+		_for iteroe _over diseno_activo.user!_oe_locals.fast_elements()
+		_loop
+
+			l_pep << proyecto_activo.user!_peps.an_element().source_collection.at(iteroe.user!_pep_id).user!_clave
+			l_pep_tipo << l_pep.slice(1,1).as_symbol()
+			
+			_if pl[l_pep_tipo] = p_tipo.write_string.uppercase
+			_then
+			       L_oE << iteroe
+			      
+			       _leave
+			_endif
+			
+		_endloop
+		
+	#_endif
+	
+	_return l_oe
+        
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.oe_reg
+
+	_local diseno_activo << swg_dsn_admin_engine.active_design
+	_local l_oe << _unset 
+		
+		
+	_if  diseno_activo.tipo_diseno = :secundaria _andif 
+	     (LOE<<diseno_activo.user!_oe_locals.an_element())  _isnt _unset 
+	_then
+		L_oe <<  LOE
+	_endif
+	
+	_return l_oe
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.oei
+
+	_local diseno_activo << swg_dsn_admin_engine.active_design
+	_local l_oei << ""
+		
+		
+	_if (LOE<<diseno_activo.user!_oe_locals.an_element())  _isnt _unset 
+	_then
+		L_oei <<  LOE.user!_oei_local.user!_num_oei	
+	_endif
+	
+	_return l_oei
+			
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.opb
+
+
+		_local diseno_activo << swg_dsn_admin_engine.active_design
+		_local l_opb << ""
+
+		_if diseno_activo _isnt _unset _andif
+		    (LoE <<diseno_activo.user!_oe_locals.an_element()) _isnt _unset 
+		_then		
+			l_opb <<LoE.user!_oei_local.user!_op_local.user!_num_op.write_string			
+		_endif
+
+		_return l_opb
+		
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.pep(POE)
+	_local diseno_activo   << swg_dsn_admin_engine.active_design
+	_local proyecto_activo << diseno_activo.project
+	_local l_pep << ""				
+	l_pep << proyecto_activo.user!_peps.an_element().source_collection.at(pOE.user!_pep_id).user!_clave
+	_return l_pep
+             
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.pep(p_tipo)
+	
+	_local diseno_activo   << swg_dsn_admin_engine.active_design
+	_local proyecto_activo << diseno_activo.project
+	_local l_clave_pep << ""
+	_local pl << property_list.new()
+	pl["D".as_symbol()] << "CONSTRUCCION" 
+	pl["J".as_symbol()] << "DESMONTAJE"
+	pl["Y".as_symbol()] << "RECONCENTRACION"
+	
+	_for iteroe _over diseno_activo.user!_oe_locals.fast_elements()
+	_loop
+		
+		l_pep << proyecto_activo.user!_peps.an_element().source_collection.at(iteroe.user!_pep_id).user!_clave
+		l_pep_tipo << l_pep.slice(1,1).as_symbol()
+		
+		_if pl[l_pep_tipo] = p_tipo.write_string.uppercase
+		_then
+			L_clave_pep << l_pep
+			_leave
+		_endif
+		
+	_endloop
+
+	_return l_clave_pep
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.pep_referencias(p_tipo, Ptipo_diseno )
+	#busca en todas las pep las referencias segun las oes
+	#
+        # p_tipo : CONSTRUCCCION, DESMONTAJE , RECONCENTRACION , _unset 
+	# p_tipo_diseno :principales,  :secundaria, :canalizacion
+	
+	_local diseno_activo   << swg_dsn_admin_engine.active_design
+	_local tipo_diseno     << diseno_activo.tipo_diseno
+	_local proyecto_activo << diseno_activo.project
+	_local l_clave_pep     << ""
+	_local LcInfo          << property_list.new()
+
+	_for iterScheme  _over proyecto_activo.schemes.fast_elements()
+	_loop
+		_for  iterOE _over iterScheme.user!_oe_locals.elements()
+		_loop
+			info << iterOE.informacion_administrativa
+
+			_if p_tipo _is _unset 
+			_then
+				cond <<  info[:tipo_diseno] _is  Ptipo_diseno
+			_else
+				cond << info[:tipo_pep] = p_tipo _andif info[:tipo_diseno] _is  Ptipo_diseno
+			_endif
+
+			_if  cond
+			_then
+				LcInfo[iterOE.id] << info
+				l_clave_pep << info[:clave_pep]		
+			_endif			
+		_endloop	
+	_endloop
+	
+	_return LcInfo, l_clave_pep
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.ordena_cables_secundariosXcuenta(LoCables_Secundarios)
+   ## Método para ordenar los cables secundarios en base a la
+   ## cuenta que poseen.
+   ##
+   #1.- primero obtenemos la cuenta "menor" de cada cable 
+
+   lista_cables_secundarios << hash_table.new()
+   lista_ordenada << rope.new()    
+          
+    _for cable_sec  _over LoCables_Secundarios.fast_elements()
+    _loop
+	# cuenta_menor << "A1"
+	contador << 1 
+	_for mfp _over cable_sec.get_all_in_fiber_pins().fast_elements()
+	_loop
+	    _if contador = 1
+	    _then
+		cuenta_menor <<  mfp.obtener_cuenta()		 
+	    _elif mfp.obtener_cuenta().write_string.size > 0 _andif
+		  cuenta_menor >= mfp.obtener_cuenta()		    
+	    _then
+		  cuenta_menor <<  mfp.obtener_cuenta()		      
+	    _endif
+	    contador +<< 1
+	    #write("@PREVALEECEE CUENTA MENOR VALEEE  ", cuenta_menor) 	  	       
+	_endloop	    
+	
+	lista_cables_secundarios[cuenta_menor.as_symbol()] << cable_sec 
+    _endloop
+    
+    _if lista_cables_secundarios.size > 0
+    _then
+       _loop
+	   _if lista_cables_secundarios.size = 0
+	   _then
+		   _leave
+	   _else
+		   elemento_menor << lista_cables_secundarios.a_key()
+		   #write("@@ELEMENTOOO MENOR ", elemento_menor)
+		   
+		   _for key, elemento _over lista_cables_secundarios.fast_keys_and_elements()
+		   _loop
+			   #write("@KEEEY ", key)
+			   #write("@elemento  ", elemento)
+			   _if elemento_menor.write_string >=  key.write_string
+			   _then
+				   elemento_menor << key
+				   #write("ELEMENTO ASIGNADOOO MENORRR ", elemento_menor)		   
+				   cable_menor << elemento
+				   llave_eliminar << key
+			   _endif
+		   _endloop 
+		    
+		   lista_ordenada.add(cable_menor)
+		   lista_cables_secundarios.remove_key(elemento_menor) 
+	   _endif
+       _endloop 	
+    _endif
+    
+    _return lista_ordenada 
+    #_return lista_cables_secundarios
+    
+_endmethod 
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.primera_cd_existente
+	## En caso de existir más de una cd existente en el distrito,
+	## se retorna la cd que tenga asignadas las primeras cuentas (A) 
+
+	_if (cd_exist << _self.cajas_existentes).size > 1
+	_then
+		_for caja _over cd_exist.fast_elements()
+		_loop
+			_for mufa _over caja.user!_mufas.fast_elements()
+			_loop
+				_for ocup_sec _over mufa.user!_ocup_secundarias.fast_elements()
+				_loop
+					_if ocup_sec.user!_ocup_sec = "A"
+					_then
+						_return caja
+					_endif
+				_endloop
+			_endloop
+		_endloop
+		_return cd_exist.an_element()
+	_elif _self.cajas_existentes.size = 1
+	_then
+		_return _self.cajas_existentes.an_element()
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.red_secundaria_dentro(LoEdificio)
+	## 
+	##
+
+	LoRegistros << rope.new()
+	Paff << smallworld_product.pni_application()
+	## Ir al mundo interno del edificio
+	Paff.manager.goto_context(LoEdificio,:internal)	
+	LoMv      << paff.plugin(:map_plugin).current_map_view
+	LoGeoms   << LoMv.get_visible_geometry_set()
+	Limite    << pseudo_area.new_with_sectors(LoGeoms.bounds.sectors)
+	LoPred2   << predicate.within(:inside_location, {Limite})
+	Registros << LoGeoms.select(:predicate,{:user!_registro_tablero, LoPred2})
+	_for LoReg _over Registros.fast_elements()
+	_loop
+            _if LoReg.class_name _is :point
+	    _then
+		## valimos que registros tableros traen mufas
+		_if LoReg.rwo.user!_mufas.size > 0
+		_then
+	            LoRegistros.add(LoReg.rwo)
+		_endif
+	    _endif		   
+	_endloop
+
+	## Regresar al mundo del Gis
+	
+	#Paff.manager.goto_primary_context(LoEdificio.location)
+	
+	_return LoRegistros
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.reservas_existentes
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    col_reservas - rope con las reservas existentes
+	##                   asociadas al distrito
+	## vbluna(11-nov-06)
+	
+	_local col_reservas << rope.new()
+
+        _try
+		_for reserva _over .objeto.user!_reservas.fast_elements()
+		_loop
+			_if reserva.construction_status = "EXISTENTE"
+			_then
+				col_reservas.add(reserva)
+			_endif
+		_endloop
+	_when does_not_understand
+		write("Error al obtener las reservas existentes")
+	_endtry
+
+	_return col_reservas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.reservas_proyectadas
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    col_reservas - rope con las reservas proyectadas
+	##                   asociadas al distrito
+	## vbluna
+	
+	_local col_reservas << rope.new()
+
+        _try
+		_for reserva _over .objeto.user!_reservas.fast_elements()
+		_loop
+			_if reserva.construction_status = "PROYECTADO"
+			_then
+				col_reservas.add(reserva)
+			_endif
+		_endloop
+	_when does_not_understand
+		write("Error al obtener las reservas proyectadas")
+	_endtry
+
+	_return col_reservas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.resumen_km_cable()
+
+	## Generar un resumen de kilometros de pares de cable en el
+	## distrito agrupados por pares muertos, existentes y
+	## proyectados.
+	##  - El Km de pares de un cable está dado por:
+	##          (num. de pares * longitud de cable)/1000
+	##  - Para los pares muertos se consideran solo los
+	##    cables proyectados
+	##  - No se consideran los cables que no tengan asignado estado
+	##    de construcción y especificacion
+	## (vbluna/11-10-2006)
+
+	_local ht_km_ps_dto << hash_table.new() # Almacena los km de cables
+	_local ln_cap_cable                     # Capacidad de un cable
+	_local ln_ps_muertos                    # Num. Pares muertos de un cable
+	_local ln_long_cable                    # Longitud de un cable
+	_local ln_km_ps_cable                   # Km en total de pares de un cable
+	_local ln_km_ps_muertos                 # Km en pares muertos de un cable
+
+	ht_km_ps_dto.default_value << 0.0
+	
+	_for cable _over _self.cables_conectados().fast_elements()
+	_loop
+		#Si el cable no tiene asignada especificación
+		#y estado de construccion, no se considera
+		_if cable.spec_info _isnt _unset _andif
+		    cable.construction_status _isnt _unset
+		_then
+			# obtener la capacidad del cable
+			ln_cap_cable << cable.spec_info.size.as_number()
+
+			# obtener la longitud medida del cable,
+			# si ésta es = unset, se tomará la calculada
+			_if cable.measured_length _isnt _unset
+			_then
+				ln_long_cable << cable.measured_length.value
+			_else
+				ln_long_cable << cable.calculated_length.value
+			_endif
+
+			#calcular los kms de pares por cable
+			ln_km_ps_cable << (ln_cap_cable * ln_long_cable)/1000
+							
+			#Si el cable es existente
+			_if cable.construction_status = "EXISTENTE"
+			_then
+				#Se acumulan los kms al total de km existentes
+				ht_km_ps_dto[:km_ps_exis] +<< ln_km_ps_cable
+
+			#Si el cable es proyectado
+			_elif cable.construction_status = "PROYECTADO"
+			_then
+				#Se acumulan los kms al total de km proyectados
+				ht_km_ps_dto[:km_ps_proy] +<< ln_km_ps_cable
+
+				#Obtener los pares muertos del cable
+				ln_ps_muertos << cable.user!_pares_muertos.default(0)
+
+				_if ln_ps_muertos > 0
+				_then
+					#calcular los kms de pares muertos por cable
+					ln_km_ps_muertos << (ln_ps_muertos * ln_long_cable)/1000
+
+					#Se acumulan los kms al total de km muertos
+					ht_km_ps_dto[:km_ps_muertos] +<< ln_km_ps_muertos
+				_endif
+			_endif
+		_endif
+	_endloop
+
+	_return ht_km_ps_dto
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.resumen_pares
+
+	## Objetivo:
+	##    - Obtener el resumen de pares conectados y en reserva de
+	##      todo el distrito
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    l_col_pares -  dual_key_a_table
+	##    [:|Con|,:|Act|] << Suma de las cuentas lógicas de las terminales existentes
+	##    [:|Con|,:|Aum|] << Suma de las cuentas lógicas de las terminales
+	##                   proyectadas siempre y cuando no sean una sustitucíón
+	##    [:|Con|,:|Tot|] << Conectados Actual + Conectados Aumento
+	##    [:|Res|,:|Act|] << Suma del numero de pares de las reservas existentes
+	##    [:|Res|,:|Aum|] << Suma del numero de pares de las reservas proyectadas
+	##    [:|Res|,:|Tot|] << Reseva Actual + Reseva Aumento
+	##    [:|Tot|,:|Act|] << Conectados Actual + Reserva Actual
+	##    [:|Tot|,:|Aum|] << Conectados Actual + Reseva Aumento
+	##    [:|Tot|,:|Tot|] << Total Actual + Total Aumento
+	## vbluna(11-nov-06)
+
+	_local l_col_pares << dual_key_a_table.new()
+
+
+	l_col_pares[:|Con|,:|Act|] << 0
+	l_col_pares[:|Con|,:|Aum|] << 0
+	l_col_pares[:|Con|,:|Tot|] << 0
+	l_col_pares[:|Res|,:|Act|] << 0
+	l_col_pares[:|Res|,:|Aum|] << 0
+	l_col_pares[:|Res|,:|Tot|] << 0
+	l_col_pares[:|Tot|,:|Act|] << 0
+	l_col_pares[:|Tot|,:|Aum|] << 0
+	l_col_pares[:|Tot|,:|Tot|] << 0
+
+	# Pares conectados Actual
+	
+	LoTerminales << _self.obten_terminales()
+	_for terminal _over LoTerminales.fast_elements()#_self.terminales_existentes.fast_elements()
+	_loop
+		_for cuenta _over terminal.copper_line_of_counts.fast_elements()
+		_loop
+			_if cuenta.user!_cuenta <> "Física" _andif
+			    terminal.construction_status = "EXISTENTE"
+			_then
+				l_col_pares[:|Con|,:|Act|] +<< cuenta.high_range.default(0) -
+							        cuenta.low_range.default(0) + 1
+			_endif
+		_endloop
+	_endloop
+
+	# Pares conectados Aumento
+	_for terminal _over LoTerminales.fast_elements()#_self.terminales_proyectadas.fast_elements()
+	_loop
+		_if terminal.user!_sustitucion <> "SI"
+		_then
+			_for cuenta _over terminal.copper_line_of_counts.fast_elements()
+			_loop
+				_if cuenta.user!_cuenta <> "Física" _andif
+				    terminal.construction_status = "PROYECTADO"
+				_then
+					l_col_pares[:|Con|,:|Aum|]+<<cuenta.high_range.default(0)-
+  							               cuenta.low_range.default(0)+1
+				_endif
+			_endloop
+		_endif
+	_endloop
+	
+	# Pares en reserva Actual
+	LoReservas << _self.obten_reservas()
+	_for reserva _over LoReservas.fast_elements()#_self.reservas_existentes.fast_elements()
+	_loop
+		_if reserva.construction_status = "EXISTENTE"
+		_then
+			l_col_pares[:|Res|,:|Act|] +<< reserva.user!_cantidad_pares.default(0)
+		_endif
+	_endloop
+
+	# Pares en reserva Aumento
+	_for reserva _over LoReservas.fast_elements()#_self.reservas_proyectadas.fast_elements()
+	_loop
+		_if reserva.construction_status = "PROYECTADO"
+		_then
+			l_col_pares[:|Res|,:|Aum|] +<< reserva.user!_cantidad_pares.default(0)
+		_endif
+	_endloop
+	
+	l_col_pares[:|Con|,:|Tot|] << l_col_pares[:|Con|,:|Act|] + l_col_pares[:|Con|,:|Aum|]
+	l_col_pares[:|Res|,:|Tot|] << l_col_pares[:|Res|,:|Act|] + l_col_pares[:|Res|,:|Aum|]
+	l_col_pares[:|Tot|,:|Act|] << l_col_pares[:|Con|,:|Act|] + l_col_pares[:|Res|,:|Act|]
+	l_col_pares[:|Tot|,:|Aum|] << l_col_pares[:|Con|,:|Aum|] + l_col_pares[:|Res|,:|Aum|]
+	l_col_pares[:|Tot|,:|Tot|] << l_col_pares[:|Tot|,:|Act|] + l_col_pares[:|Tot|,:|Aum|]
+		
+	_return l_col_pares
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.superficie_km
+
+   	## Parámetros de salida:
+	##    - Superficie del distrito en km cuadrados
+	## vbluna
+
+	_try
+		_return .objeto.para_kilometros_quadrados( .objeto.user!_limite.area)		
+	_when does_not_understand
+		_return 0
+	_endtry
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.tam_lote_promedio_m
+
+   	## Parámetros de salida:
+	##     - Tamaño promedio de lote en el distrito en metros cuadrados
+	## vbluna
+
+	_try
+		_local ln_total_mts << 0
+
+		_for lote _over _self.lotes.fast_elements()
+		_loop
+			ln_total_mts +<< lote.para_metros_quadrados(lote.user!_limite.area) #   /100
+		_endloop
+
+		_return ln_total_mts/_self.cantidad_lotes
+	_when does_not_understand
+		_return 0
+	_endtry
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.telefonos_publicos
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     l_col_casetas - hash_table con:
+	##                      [:Tipo_caseta] << cantidad casetas
+	##                      [:Total_Tmx] << suma de tipos caseta,
+	##                                      excepto las operteles
+	## vbluna
+
+	_local l_tbl_caseta
+	_local l_predicate
+	_local l_sel_caseta
+	_local l_col_casetas << hash_table.new()
+	l_col_casetas.default_value << 0
+	_local ln_num_casetas
+	_local ls_tipo_caseta
+
+	_try
+		l_tbl_caseta << gis_program_manager.cached_dataset(:landbase).collections[:caseta_tel]
+		l_predicate  << predicate.inside(:posicion, .objeto.user!_limite)
+		l_sel_caseta << l_tbl_caseta.select(l_predicate)
+
+		_for caseta _over l_sel_caseta.fast_elements()
+		_loop
+			ls_tipo_caseta <<
+				c_traductor.tipo_caseta(caseta.user!_tipo.write_string.as_symbol())
+
+			_if ls_tipo_caseta = :|TPTC|
+			_then
+				l_col_casetas[ls_tipo_caseta] +<< 1
+			_endif
+		_endloop
+	_when does_not_understand
+	_endtry
+
+	_for casetas _over .col_tel_publicos.fast_elements()
+	_loop
+		l_col_casetas[:|PSLT|] +<< casetas[:pslt]
+		l_col_casetas[:|LTC|] +<< casetas[:ltc]
+		l_col_casetas[:|OPERT|] +<< casetas[:publicos_comp]
+	_endloop
+
+	l_col_casetas[:|Total_Tmx|] << l_col_casetas[:|PSLT|] + l_col_casetas[:|LTC|] +
+				         l_col_casetas[:|TPTC|]
+	
+	_return l_col_casetas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.terminales_existentes
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    col_terminales - rope con las terminales proyectadas
+	##       asociadas al distrito, no se consideran las terminales
+	##       con tipo de instalación = "SIN SERVICIO"
+	## vbluna
+
+	_local col_terminales << rope.new()
+
+        _try
+		_for terminal _over .objeto.copper_terminals.fast_elements()
+		_loop
+			_if terminal.construction_status = "EXISTENTE"
+			_then
+				_if terminal.user!_instalacion <> "SIN SERVICIO"
+				_then
+					col_terminales.add(terminal)
+				_endif
+			_endif
+		_endloop
+	_when does_not_understand
+	      write("Error al obtener las terminales existentes")
+	_endtry
+
+	_return col_terminales
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.terminales_proyectadas
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    col_terminales - rope con las terminales proyectadas
+	##       asociadas al distrito, no se consideran las terminales
+	##       con tipo de instalación = "SIN SERVICIO"
+	## vbluna
+
+	_local col_terminales << rope.new()
+
+        _try
+		_for terminal _over .objeto.copper_terminals.fast_elements()
+		_loop
+			_if terminal.construction_status = "PROYECTADO"
+			_then
+				_if terminal.user!_instalacion <> "SIN SERVICIO"
+				_then
+					col_terminales.add(terminal)
+				_endif
+			_endif
+		_endloop
+	_when does_not_understand
+	      write("Error al obtener las terminales proyectadas")
+	_endtry
+
+	_return col_terminales
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.tipo_caja
+
+   	## Parámetros de salida:
+	##    - string con el valor del código del material asociada a p_caja
+	## vbluna
+
+	_try
+		_return _self.primera_cd_existente.spec_info.type.default("").write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.total_lineas_distrito
+
+	## Objetivo:
+	##    - Obtener el total de lineas conectadas en el distrito =
+	##   Total lineas saturación + Total de teléfonos públicos telmex
+	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    - cantidad de líneas conectadas en todo el distrito
+	## vbluna
+
+	_local l_col_publicos << _self.telefonos_publicos
+
+	_return _self.total_lineas_saturacion + l_col_publicos[:|Total_Tmx|]
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.total_lineas_saturacion
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    .col_lin_sat[:|Total|] - total de lineas a saturacion en
+	##                             el distrito
+	## vbluna
+
+	_return .col_lin_sat[:|Total|].default(0)
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.total_lineas_telmex
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##     - suma de telefonos publicos telmex + # lineas en el distrito
+	## vbluna
+
+	_try
+		_return _self.telefonos_publicos[:|Total_Tmx|] + _self.total_viv_lin[:abonados]
+	_when does_not_understand
+		_return 0
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.total_viv_lin
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    lst_totales - hash_table con el total de inventario
+	##                  de todos los NSE
+	## vbluna
+
+	_local lht_totales << hash_table.new()
+	lht_totales.default_value << 0
+	
+	_for inventario _over .col_viv_lin.fast_elements()
+	_loop
+		lht_totales[:viviendas] +<< inventario[:viviendas]
+		lht_totales[:abonados]  +<< inventario[:abonados] 
+		lht_totales[:lineas_multiplicador] +<< inventario[:lineas_multiplicador]
+		lht_totales[:lineas_competencia]   +<< inventario[:lineas_competencia]
+		lht_totales[:lineas_inalambricas]  +<< inventario[:lineas_inalambricas]
+		lht_totales[:solicitudes]      +<< inventario[:solicitudes]
+		lht_totales[:viv_sin_servicio] +<< inventario[:viv_sin_servicio]
+	_endloop
+
+	_return lht_totales
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.valida_conectividad_a_caja(p_objetos)
+	## 
+	##
+	LoObjetos << rope.new()
+	_for obj _over p_objetos.elements()
+	_loop
+		con << obj.get_upstream_connector()
+		_if con _isnt _unset
+		_then
+			_loop @salir
+				cables << con.get_upstream_cables()
+				_for cable _over cables.elements()
+				_loop
+					cab << cable
+					con << cable.get_upstream_connector()
+				_endloop
+				# (10/10/19 jtlelo) : se corrigio el problema del ciclado del
+				# metodo al generar el sello se detecto el caso que un empalme
+				# exista sin cables.
+				_if con _is _unset _orif
+				    con.get_upstream_cables().size = 0
+				_then
+					_leave @salir
+				_endif
+			_endloop
+		_endif
+		_if .objeto.get_cd _isnt _unset _andif
+		    .objeto.get_cd.cables_de_salida().includes_string?(cab)
+		_then
+			LoObjetos.add(obj)
+		_endif
+	_endloop
+	
+	_return LoObjetos
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.viviendas_lineas
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##    .col_viv_lin - hash_table con:
+	##       [:NSE] << property_list con:
+	##                  :viviendas
+	##                  :abonados
+	##                  :lineas_multiplicador
+	##                  :lineas_competencia
+	##                  :lineas_inalambricas
+	##                  :solicitudes
+	##                  :viv_sin_servicio
+	## vbluna
+
+	_return .col_viv_lin
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.objetos_modificados_gis
+	paf         << smallworld_product.pni_application()
+	objects     <<  paf.plugin(:job_component_plugin).job_component_gui.get_items().an_element()
+	lista       <<  swg_dsn_admin_engine.active_design.dsm_created_and_modified_objects( _true  )	
+	gis_objects << rope.new()
+	_if objects _isnt _unset 
+	_then
+	    _for iterk, iterv _over objects.fast_keys_and_trees()
+	    _loop
+		    _if iterk.class_name _isnt :symbol
+		    _then
+			    lista.add(iterk)	
+		    _endif		
+	    _endloop
+	_endif
+	_if lista _isnt _unset 
+	_then
+	   _for iterl   _over lista.fast_elements()
+	   _loop
+		   _if  iterl.source_collection.source_view.name.write_string.lowercase = "gis"
+		   _then
+			gis_objects.add(iterl)			   
+		   _endif 
+	   _endloop
+	_return gis_objects
+	_endif	
+_endmethod
+$ 
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.faltas_y_danios
+
+	## Objetivo:
+	##    - Obtener las faltas y daños de los elementos asociados
+	##      al distrito.
+
+
+	_local col_faltas << hash_table.new()
+	_local ls_clave
+	_local ls_descripcion
+	_local ln_cantidad_faltas
+
+	col_faltas.default_value << simple_vector.new_with("",0)
+	
+
+	LoGis << gis_program_manager.cached_dataset(:gis)
+		
+	objetos << _self.objetos_modificados_gis
+	
+	_for Elemento _over objetos.fast_elements()
+	_loop
+		_if Elemento.responds_to?(:user!_faltas_dannoss)
+		_then
+			_for falta _over Elemento.perform(:user!_faltas_dannoss).fast_elements()
+			_loop
+				ls_clave            << falta.user!_clave.write_string.as_symbol()
+				ls_descripcion       << falta.user!_descripcion.write_string
+				ln_cantidad_faltas   << col_faltas[ls_clave][2].default(0)
+				col_faltas[ls_clave] << {ls_descripcion,ln_cantidad_faltas +<< 1}
+			_endloop
+			
+		_endif
+		
+	_endloop				
+	
+	_return col_faltas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.fecha_recorrido
+	
+	_local ls_fecha << c_traductor.mes(date_now().month_number) + " / " + date_now().year.write_string
+	_return ls_fecha
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_distrito.fecha_inventario
+	_local ls_fecha << c_traductor.mes(date_now().month_number) + " / " + date_now().year.write_string
+	_return ls_fecha
+_endmethod
+$
+

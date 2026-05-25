@@ -1,0 +1,89 @@
+_package user
+$
+def_slotted_exemplar(:c_sello_capacidad_cable,
+{
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_capacidad_cable.configura_tabla()
+
+
+_local LoTblContenido
+_local LoTbl
+
+       # Titulo1
+       LoTblTitulo<<property_list.new_with_properties(:ren,{6,6},
+						      :col,{44})
+       LoTbl<<.o_tablas.crea_tabla(2,1,:tbl_titulo)
+       LoTbl.ocoordenada_origen << .o_coord_inicio
+       _self.asigna_medidas_tabla(LoTbl, LoTblTitulo)
+       
+       # Ocultar bordes
+       LcollBordes<<property_list.new()
+       LcollBordes[:borde_sup]<<rope.new_with({1,1})
+       _self.oculta_bordes_celdas(LoTbl,LcollBordes)
+
+       LcollBordes.empty()
+       LcollBordes[:borde_der_izq]<<rope.new_with({1,1})
+       _self.oculta_bordes_celdas(LoTbl,LcollBordes)
+
+       # ------------------
+       # Contenido
+       LoTblContenido << property_list.new_with_properties(:ren,{6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6},
+							   :col,{7,37})
+      
+       LoTbl <<.o_tablas.crea_tabla(18,2, :tbl_contenido)
+       LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo})
+       LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,
+						    .o_coord_inicio.y - LfDesplazaY)
+       _self.asigna_medidas_tabla(LoTbl, LoTblContenido)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_capacidad_cable.etiqueta_celdas()
+
+	
+
+	_self.asigna_texto_celda(:tbl_titulo,1,1,"CUADRO",27,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_titulo,2,1,"PARA CAPACIDAD DE CABLE",27,:centre_centre,0,{0,0.2993,0})
+
+	_self.asigna_texto_celda(:tbl_contenido,1,1,"A",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,2,1,"B",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,3,1,"C",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,4,1,"D",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,5,1,"E",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,6,1,"F",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,7,1,"G",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,8,1,"H",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,9,1,"I",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,10,1,"J",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,11,1,"K",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,12,1,"L",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,13,1,"M",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,14,1,"N",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,15,1,"T",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,16,1,"V",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,17,1,"X",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,18,1,"Z",25,:centre_centre,0,{0,0.2993,0})
+
+	_self.asigna_texto_celda(:tbl_contenido,1,2,"10 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,2,2,"20 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,3,2,"30 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,4,2,"50 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,5,2,"70 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,6,2,"100 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,7,2,"150 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,8,2,"200 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,9,2,"300 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,10,2,"600 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,11,2,"900 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,12,2,"1200 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,13,2,"1800 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,14,2,"2400 PS.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,15,2,"TRONCALES.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,16,2,"VIDEO.",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,17,2,"CABLES COAXIALES",25,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,18,2,"FIBRAS OPTICAS",25,:centre_centre,0,{0,0.2993,0})
+_endmethod
+$

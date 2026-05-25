@@ -1,0 +1,384 @@
+_package user
+$
+def_slotted_exemplar(:c_opbs,
+{
+	{:oCurrent_OPB,    _unset, :writable},
+	{:o_current_ruta,  _unset, :writable},
+	{:o_plugin_owner,  _unset, :writable},
+	{:OPBstree_item,   _unset, :writable},
+	{:oBtn_aceptar,    _unset, :writable},
+	{:oBtn_cancelar,   _unset, :writable},
+	{:CboBoxRutas,     _unset, :writable}
+	
+}, :model)
+$
+c_opbs.define_pseudo_slot(:CboBoxOeis,      _unset, :writable)
+$
+c_opbs.define_pseudo_slot(:CboBoxOes,       _unset, :writable)
+$
+c_opbs.define_pseudo_slot(:CboBoxOpbs,      _unset, :writable)
+$
+c_opbs.define_pseudo_slot(:o_current_opb,   _unset, :writable)
+$
+c_opbs.define_pseudo_slot(:oCurrent_OE,     _unset, :writable)
+$
+c_opbs.define_pseudo_slot(:oCurrent_OEI,    _unset, :writable)
+$
+c_opbs.define_pseudo_slot(:Proyecto,       _unset, :writable)
+$
+c_opbs.define_pseudo_slot(:tipo_plano,     _unset, :writable)
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.activate_in( padre )
+
+
+   _if swg_dsn_admin_engine.active_scheme  _is _unset 
+   _then 
+       _self.framework.show_message("No hay un diseño activo.")
+       _return 
+   _endif
+
+   .Proyecto << swg_dsn_admin_engine.active_scheme.project
+   _if .Proyecto.name.matches?("*FALC*")
+   _then
+	   NombreGroupBox << "Trayectoria Actual"
+	   .tipo_plano << :fosa_cables_fo
+   _else
+	   NombreGroupBox << "Ruta Actual"
+	   .tipo_plano << :fosa_cables
+   _endif
+   
+   .o_plugin_owner << smallworld_product.pni_application().plugin(:gen_planos)
+   .o_plugin_owner.ruta_seleccionada << .o_current_ruta
+   .o_plugin_owner.opb_seleccionada << .ocurrent_opb
+   
+   _local l_button_width << 80
+   
+   _local principal  << rowcol.new( padre, 2, 2, :pixel, :style, :top_level )
+   _local group_box1 << group_box.new( principal, NombreGroupBox, :row, 1, :col, 1 )
+   _local areaDatos  << rowcol.new( group_box1, 5, 3, :pixel, :style, :group_box)
+   
+   padre.resizable? << _false
+   
+   # Crea Combo Box en donde se muestran las Rutas
+   .CboBoxRutas  << text_choice_item.new(  areaDatos, _unset,
+					   :name,"combo_rutas",
+					   :col_alignment,
+					   :fill,
+					   :model, _self,
+					   :width, 200,
+					   :change_selector, :|cbx_the_combo_change|,
+					   :row, 1, :col, 1)
+   .CboBoxRutas.add_dependent(_self)
+   
+   
+   
+   # Crea Combo Box en donde se muestran las Opbs
+   .CboBoxOpbs  << text_choice_item.new(  areaDatos, _unset, 
+					  :name,"combo_opbs",
+					  :col_alignment,
+					  :fill,
+					  :model, _self,
+					  :width, 200,
+					  :change_selector, :|cbx_the_combo_change_opb|,
+					  :row, 2, :col, 1)
+   .CboBoxOpbs.add_dependent(_self)
+   
+   # Crea Combo Box en donde se muestran las Oeis
+   .CboBoxOeis  << text_choice_item.new(  areaDatos, _unset, 
+					  :name,"combo_oeis",
+					  :col_alignment,
+					  :fill,
+			 :model, _self,
+			 :width, 200,
+			 :change_selector, :|cbx_the_combo_change_oei|,
+			 :row, 3, :col, 1)
+   .CboBoxOeis.add_dependent(_self)
+   
+   # Crea Combo Box en donde se muestran las Oes
+   .CboBoxOes  << text_choice_item.new(  areaDatos, _unset, 
+					 :name,"combo_oes",
+			 :col_alignment,
+			 :fill,
+			 :model, _self,
+			 :width, 200,
+			 :change_selector, :|cbx_the_combo_change_oe|,
+			 :row, 4, :col, 1)
+   .CboBoxOes.add_dependent(_self)
+   
+   
+   
+   _local group_botones << group_box.new( principal, "", :row, 2, :col, 1 )
+   _local areaBotones   << rowcol.new( group_botones, 1, 2, :pixel,
+				       :style, :group_box)
+   
+   .oBtn_aceptar  <<  button_item.new_safe(areaBotones, "Aceptar",
+					   _self, :Genera_Plano|()|, :row, 1,:col, 1, :min_width, l_button_width)
+   .oBtn_cancelar <<  button_item.new_safe(areaBotones, "Cancelar",
+					   _self, :salir|()|, :row, 1,:col, 2, :min_width, l_button_width)
+   
+   # ----------------------------------------------------------------------------
+   # Consulta las rutas y las agrega al ComboBox
+   # ----------------------------------------------------------------------------
+   _if .Proyecto.name.matches?("*FALC*")
+   _then
+	   LoColTrayectorias << .Proyecto.user!_trayectoria_fttb
+	   .CboBoxRutas.add_item({_unset ," "})
+	   _for LoTrayectoria  _over LoColTrayectorias.elements()
+	   _loop
+	     LoTrayectoriav << simple_vector.new_with(LoTrayectoria,"Trayectoria "+LoTrayectoria.user!_numero_trayectoria.write_string)
+	     .CboBoxRutas.items.add_last(LoTrayectoriav)
+	     _self.cbx_the_combo_change
+	   _endloop
+   _else 
+	   _try
+		   LoColRutas << .Proyecto.user!_central.get_rutas()
+		   .CboBoxRutas.add_item({_unset ," "})
+		   _for LoRuta  _over LoColRutas.elements()
+		   _loop
+			   LoRutav << simple_vector.new_with(LoRuta,"Ruta "+LoRuta.user!_numero.write_string)
+			   .CboBoxRutas.items.add_last(LoRutav)
+			   _self.cbx_the_combo_change
+		   _endloop
+		   
+		   
+	   _when does_not_understand
+		 
+		 write("No hay proyecto activo")
+		 
+	   _endtry
+   _endif
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.cbx_the_combo_change
+	## 
+	## 
+	# (06/02/14 ahernan) : Volver a llenar el trees de elementos administrativos
+	_if .Proyecto.name.matches?("*FALC*")
+	_then
+		.CboBoxOpbs.items << _unset
+		.CboBoxOeis.items << _unset
+		.CboBoxOes.items  << _unset
+		LoTablaOPs << .Proyecto.user!_op_locals
+		LoListaOPs << rope.new_for(LoTablaOPs.size)
+		.CboBoxOpbs.add_item({_unset ," "})
+		_for op _over LoTablaOPs.elements()
+		_loop
+			LoListaOPs << simple_vector.new_with(op, "OP: "+op.user!_num_op.write_string)
+			.CboBoxOpbs.add_item(LoListaOPs)
+		_endloop
+	_else
+		_local LtOpb << gis_program_manager.cached_dataset(:design_admin).collections[:user!_opb]
+		.o_current_ruta << .CboBoxRutas.value
+		.o_plugin_owner.ruta_seleccionada << .o_current_ruta
+		.CboBoxRutas.changed(:cambiando_combo)		
+		.CboBoxOpbs.items << _unset
+		.CboBoxOeis.items << _unset
+		.CboBoxOes.items  << _unset
+		
+		_if .CboBoxRutas.value  _isnt _unset  
+		_then
+			LoPred << predicate.eq(:id_ruta, .CboBoxRutas.value.id)
+			LoPred << LoPred _and predicate.eq(:user!_tipo_opb,"PRINCIPAL")
+			LopbsxRuta << LtOpb.select(LoPred)
+			.CboBoxOpbs.add_item({_unset ," "})
+			_for opb _over LopbsxRuta.elements()
+			_loop
+				LoOpbs << simple_vector.new_with(opb, "OPB "+opb.user!_valor_opb.write_string)
+				.CboBoxOpbs.add_item(LoOpbs)
+			_endloop			
+		_endif		
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.cbx_the_combo_change_oe
+	## 
+	##
+	o_current_oe << .CboBoxOes.value	
+	.oCurrent_OE << o_current_oe
+	.o_plugin_owner.oe_seleccionada << .oCurrent_oe
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.cbx_the_combo_change_oei
+	## 
+	##
+	o_current_oei << .CboBoxOeis.value	
+	.oCurrent_OEI << o_current_oei
+	.o_plugin_owner.oei_seleccionada << .oCurrent_oei
+	.CboBoxOes.items  << _unset
+	
+	_if .Proyecto.name.matches?("*FALC*")
+	_then
+		_if o_current_oei _isnt _unset 
+		_then			
+			.CboBoxOes.add_item({_unset ," "})
+		    _for oe _over o_current_oei.user!_oe_locals.elements()
+		    _loop
+			    LoOeis << simple_vector.new_with(oe, "OE "+oe.user!_num_oe.write_string)
+			    .CboBoxOes.add_item(LoOeis)
+		    _endloop
+		_endif		
+	_else
+		_if o_current_oei _isnt _unset 
+		_then
+			
+			.CboBoxOes.add_item({_unset ," "})
+			_for oe _over o_current_oei.user!_oes.elements()
+			_loop
+				LoOeis << simple_vector.new_with(oe, "OE "+oe.user!_valor_oe.write_string)
+				.CboBoxOes.add_item(LoOeis)
+			_endloop
+		_endif	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.cbx_the_combo_change_opb
+	## 
+	## 
+	.o_current_opb << .CboBoxOpbs.value
+	.oCurrent_OPB << .o_current_opb
+	.o_plugin_owner.opb_seleccionada << .oCurrent_OPB	
+	.CboBoxOeis.items << _unset
+	.CboBoxOes.items  << _unset
+	
+	_if .Proyecto.name.matches?("*FALC*")
+	_then
+		_if .o_current_opb _isnt _unset 
+		_then
+			.CboBoxOes.items  << _unset
+			.CboBoxOeis.add_item({_unset ," "})
+			_for oei _over .o_current_opb.user!_oei_locals.elements()
+			_loop
+				LoOeis << simple_vector.new_with(oei, "OEI: "+oei.user!_num_oei.write_string)
+				.CboBoxOeis.add_item(LoOeis)
+			_endloop
+		_endif
+	_else
+		_if .o_current_opb _isnt _unset 
+		_then
+			.CboBoxOes.items  << _unset
+			.CboBoxOeis.add_item({_unset ," "})
+			_for oei _over .o_current_opb.user!_oeis.elements()
+			_loop
+				LoOeis << simple_vector.new_with(oei, "OEI "+oei.user!_valor_oei.write_string)
+				.CboBoxOeis.add_item(LoOeis)
+			_endloop
+		_endif			
+	_endif
+
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.current_oe
+	## 
+	## 
+	_return .oCurrent_OE
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.current_oei
+	## 
+	## 
+	_return .oCurrent_OEI
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_opbs.current_opb
+
+	_return .oCurrent_OPB
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_opbs.current_ruta
+
+	_return .o_current_ruta
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_opbs.despliega( PoOPB )
+	
+	_local Lo_Tree        << display_tree.new ( PoOPB )
+	Lo_Tree.styled_string << { :bold, PoOPB.user!_valor_opb}
+
+	_return Lo_Tree	
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.Genera_Plano()
+
+        _if .oCurrent_OE _is _unset  _orif
+	    .oCurrent_OEI _is _unset _orif
+	    .oCurrent_OPB _is _unset 
+	_then
+		_self.show_message("Faltan parámetros")
+	_else
+		.o_plugin_owner.genera_plano_por_opb(.oCurrent_OE.id, .tipo_plano)
+		_self.close()
+	_endif       
+		
+_endmethod
+$
+_method c_opbs.note_change(who, what, _optional change_info)
+
+	_self.refresh()
+	
+_endmethod
+$
+_method c_opbs.opbs()
+	
+_local LoPred
+_local LcolOpb << sorted_collection.new(10, _proc(tree1,tree2)
+					>> tree1.key.user!_valor_opb _cf
+					tree2.key.user!_valor_opb
+					_endproc )
+
+_local LtOpb << gis_program_manager.cached_dataset(:design_admin).collections[:user!_opb]
+
+_if .CboBoxRutas.value  _isnt _unset  
+_then
+	LoPred << predicate.eq(:id_ruta, .CboBoxRutas.value.id)
+	LoPred << LoPred _and predicate.eq(:user!_tipo_opb,"PRINCIPAL")
+	LopbsxRuta << LtOpb.select(LoPred)
+
+	_for opb _over LopbsxRuta.elements()
+	_loop
+		LcolOpb.add ( _self.despliega( opb ) )
+	_endloop
+_endif
+
+_return LcolOpb
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_opbs.refresh()
+	
+	_self.changed(:opbs, :refresh)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_opbs.salir()
+	
+  _self.close()
+  
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item})
+_method c_opbs.selectedOPB(p_selection)
+
+	.oCurrent_OPB << p_selection.an_element().key
+	.o_plugin_owner.opb_seleccionada << .oCurrent_OPB
+	
+_endmethod
+$

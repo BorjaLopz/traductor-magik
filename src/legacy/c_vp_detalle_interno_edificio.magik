@@ -1,0 +1,115 @@
+#----------------------------------------------------------------
+# c_vp_detalle_interno_edificio.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: fhramire
+#
+# Date: 24/05/2011
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+remex(:c_vp_detalle_interno_edificio)
+$
+
+def_slotted_exemplar(:c_vp_detalle_interno_edificio,
+		     {
+			     {:oResulSet,     _unset, :writable, :public}			     
+		     },
+                      :viewport_layout)
+$
+c_vp_detalle_interno_edificio.define_shared_variable(:titulo,"",:public)
+$
+c_vp_detalle_interno_edificio.define_shared_constant(:tamanio,8,:public)
+$
+c_vp_detalle_interno_edificio.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+c_vp_detalle_interno_edificio.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_detalle_interno_edificio.initialise_for_page(a_layout_page)
+## Objetivo: Agregar el ACE y grupo de estilos a self
+## Parametros de entrada: a_layout_page << layout_page.
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+	_self.ace_name << :mit_floor_internal
+	#_self.view_scale<< 5000
+	_self.agregar_titulo(a_layout_page)
+
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_detalle_interno_edificio.geometry_set_for_render
+## Objetivo: Obtener la geometrias de la localizacion del TBA
+## Parametros de salida: Ninguno
+## Regresa: .oResulSet << composite_geometry_set
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+	
+_local LcollGeometrias  # Geometrias que deben dibujarse en el viewport.
+
+        # Obtener los objetos correspondientes al plano.
+        _dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset
+
+	LcollGeometrias << _super.geometry_set_for_render
+
+	.oResulSet << LcollGeometrias
+
+	>> .oResulSet
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_detalle_interno_edificio.draw_content_on(windows)
+## Objetivo: Ejecutar la super
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+	_super.draw_content_on(windows)
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_detalle_interno_edificio.agregar_titulo(PoPage)
+## Objetivo: Agregar el titulo del viewport
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+    _local LoBounds << bounding_box.new(_self.bounds.xmin,
+				  _self.bounds.ymin - 100,
+				  _self.bounds.xmax,
+				  _self.bounds.ymin )
+				  
+    #LoTitulo << _self.titulo
+    LoTitulo << "DETALLE DE EDIFICIO" 
+    LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBounds,
+					   :font_name,        "bold",
+					   :font_size,        _self.tamanio,
+					   :fill_style,       _unset,
+					   :outline_style,    _unset,
+					   :text,             LoTitulo,
+					   :wrap,             _false,
+					   :align_horizontal, :centre,
+					   :align_vertical,   :centre,
+					   :orientation,      :left_right)
+    PoPage.add_element(LoTitulo)
+_endmethod
+$
+

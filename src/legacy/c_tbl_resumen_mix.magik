@@ -1,0 +1,123 @@
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.crea_y_cfg_tbl_resumen(pCoordInicio)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/22 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	_local plLongRensCols
+	_local ren, col
+	_local loTbl
+	#----------------------------------------------------------
+	# Tabla Título de resumen
+	#-----------------------------------------------------------
+	ren << 3
+	col << 5
+	plLongRensCols << property_list.new()
+	plLongRensCols[:ren] << {1, 4, 1}
+	plLongRensCols[:col] << {2, 2,  64, 2, 2}
+        tbl << .o_tablas.crea_tabla(ren, col, :tbl_resumen_tit)
+	tbl.oCoordenada_Origen << pCoordInicio
+	_self.asigna_medidas_tabla(tbl, plLongRensCols)
+	_self.cfg_tbl_titulo(tbl)
+
+	#----------------------------------------------------------
+	# Tabla Detalle de resumen
+	#-----------------------------------------------------------
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_resumen_tit})
+	ren << 5
+	col << 8
+	plLongRensCols << property_list.new()
+	plLongRensCols[:ren] << {2,  4,  4,  4, 2}
+	plLongRensCols[:col] << {2,  2,  2, 35, 25,  2 ,2, 2}
+
+        loTbl << .o_tablas.crea_tabla(ren, col, :tbl_resumen_det)
+	loTbl.oCoordenada_Origen << coordinate.new(pCoordInicio.x, pCoordInicio.y - LfDesplazaY)
+	_self.asigna_medidas_tabla(loTbl, plLongRensCols)
+	_self.cfg_tbl_detalle(loTbl)
+
+	LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_resumen_tit, :tbl_resumen_det})
+	_return LfDesplazaY
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.asigna_etiquetas_a_celdas_tbl_resumen()
+	#---------------------------------------------------
+	## <Req. #> : Asigna a las celtas de la tabla de resumen las
+	## etiquetas constantes o fijas
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	_local ren, col, tamFuente, alineacion
+
+	ren << 2; col << 3; tamFuente << 25; alineacion << :centre_centre
+	_self.asigna_texto_celda(:tbl_resumen_tit, ren, col, "RESUMEN DE COMPROMISO COMERCIAL", tamFuente, alineacion)
+	ren << 2; col << 4; tamFuente << 25; alineacion << :centre_left
+	_self.asigna_texto_celda(:tbl_resumen_det, ren, col, "CLIENTES-EXISTENTES", tamFuente, alineacion)
+	ren << 3; col << 4; 
+	_self.asigna_texto_celda(:tbl_resumen_det, ren, col, "SOLICITUDES-PENDIENTES", tamFuente, alineacion)
+	ren << 4; col << 4;
+	_self.asigna_texto_celda(:tbl_resumen_det, ren, col, "GANANCIA", tamFuente, alineacion)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.defined_attributes_tbl_resumen(pAttribs)
+	#---------------------------------------------------
+	## <Req. #> : Define los atributos que permiten la captura al
+	## usuario para la tabla de resumen
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+
+	pAttribs.add(layout_attribute_definition.new(:clientesExis, :string, :description, "asignar valores",:default_value, "Clientes existentes"))
+	pAttribs.add(layout_attribute_definition.new(:solPend, :string, :description, "asignar valores",:default_value, "Solicitudes pendientes"))
+	pAttribs.add(layout_attribute_definition.new(:ganancia, :string, :description, "asignar valores",:default_value, "Ganancia"))
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_cuadro_firmas_compromiso_comercial_mix.asigna_atribs_a_celdas_editables_tbl_resumen()
+	#---------------------------------------------------
+	## <Req. #> : Asigna los valores que esten en los atributos a
+	## las celdas editables de la tabla resumen.
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (22/07/25 des_david) : Created
+	#-------------- End Revision History ---------------
+	
+	val << _self.attributes[:clientesExis].value
+	ren<< 2; col << 5; tamFuente << 25;  alineacion << :centre_left
+	_self.asigna_texto_celda(:tbl_resumen_det, ren, col, val, tamFuente, alineacion)
+	ren<< 3; col << 5;
+	val << _self.attributes[:solPend].value
+	_self.asigna_texto_celda(:tbl_resumen_det, ren, col, val, tamFuente, alineacion)
+	ren<< 4; col << 5;
+	val << _self.attributes[:ganancia].value
+	_self.asigna_texto_celda(:tbl_resumen_det, ren, col, val, tamFuente, alineacion)
+
+
+_endmethod
+$
+
+
+c_sello_cuadro_firmas_compromiso_comercial_mix.define_attributes()
+$

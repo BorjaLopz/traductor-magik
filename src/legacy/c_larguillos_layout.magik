@@ -1,0 +1,838 @@
+
+#  Nombre de la Empresa: Sigma Tao
+#  Traza: El presente código fuente procede de la realización
+# de caso de uso "Generacion de planos (Proyecto de canalizacion)"
+#          
+#  Objetivo: Generación de larguillos de forma automatica para el
+# proyecto de canalización.
+#  Autor: hramirea
+#  Fecha de creación: 3-ene-2004
+#
+_package user
+$
+#remex(:c_larguillos_layout)
+$
+def_slotted_exemplar(:c_larguillos_layout,
+                     {
+			     {:oApp,_unset,:readable,:public},
+			     {:sNombreAce,_unset,:writable,:public},
+			     {:sNombrePlano,_unset,:writable,:public},
+			     {:oRegistro,_unset,:writable,:public},
+			     {:iMargenVp,0,:writable,:public},
+			     {:oAppLayoutDesigner,_unset,:writable,:public}
+		     },:layout_element)
+$
+c_larguillos_layout.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_method c_larguillos_layout.defined_attributes
+#  Objetivo: Escriba aquí el objetivo por el cual se escribe este código.
+#  Parámetros de entrada:  Ninguno.                                    
+#  Parámetros de salida:   Ninguno.                                    
+#  Regresa:  vector  -  LoAtributos  - Atributos el layout element que se agregan a la definicion del elemento. 
+# Fecha de última modificación: 23 febrero 2005
+# Autor de la modificación hramirea
+# Descripción de la modificación: Coreccion por defectos de inspeccion.
+#
+_Local LvAtributos
+	
+LvAtributos << rope.new_from(_super.defined_attributes)	
+>> LvAtributos
+_endmethod
+$
+#------------------------------------------------------------
+# (05/02/23 ahernan) : Se definen los atributos del elemento.
+#------------------------------------------------------------
+c_larguillos_layout.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.initialise_for_page(a_layout_page)	
+	##
+	(LbBandera, LoElemento) << _self.busca_elemento(_self.layout_page,"marco_layout")
+
+         _if LbBandera 
+	 _then
+		
+		 _self.bounds << LoElemento.bounds
+
+		 
+	 _endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.draw_content_on ( window )
+	
+	(LbBandera, LoElemento) << _self.busca_elemento(_self.layout_page,"marco_layout")
+
+         _if LbBandera 
+	 _then
+		 _self.bounds << LoElemento.bounds
+
+		 #--------------------------------------------------
+		 # (05/03/03 ahernan) : referencia al plano izquierda 
+		 #---------------------------------------------------
+		 LoDespx << _self.bounds.xmin 
+		 LoDespy << _self.bounds.ymin + 200		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x + 150,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 _self.datos_del_plano(window,"REFERENCIA AL PLANO NO. ", LoVpTemp,9)  
+		 #--------------------------------------------------
+		 # (05/03/03 ahernan) : referencia al plano derecha
+		 #---------------------------------------------------
+		 LoDespx << _self.bounds.xmax 
+		 LoDespy << _self.bounds.ymin + 200		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x - 150,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 _self.datos_del_plano(window,"REFERENCIA AL PLANO NO. ", LoVpTemp,9)  
+
+		 #--------------------------------------------------
+		 # (05/03/03 ahernan) : CopyRight
+		 #---------------------------------------------------
+		 LoDespx << _self.bounds.xmax 
+		 LoDespy << _self.bounds.ymin + 200		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x - 80,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 _self.datos_del_plano(window,"INFORMACION CONFIDENCIAL PROPIEDAD DE TELMEX, ", LoVpTemp,2)
+		  LoDespx << _self.bounds.xmax 
+		 LoDespy << _self.bounds.ymin + 200		
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		 LoP2 <<  coordinate.new( LoP1.x - 20,  LoP1.y + 2200 )		
+		 LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		 _self.datos_del_plano(window,"PROHIBIDA SU REPRODUCCION  PARCIAL O TOTAL.", LoVpTemp,2)
+		 
+		 #----------------------
+		 #  Detalles de escala.
+		 #----------------------		
+		 LoDespx << _self.bounds.xmin + 150
+		 LoDespy << _self.bounds.ymin + 1920 + 280
+		 
+		 LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		LoP2 <<  coordinate.new( LoP1.x + 500,  LoP1.y + 250 )
+		
+		LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		_self.traza_cuadro(window,LoVpTemp)
+				
+		#--------------------------------------------
+		# (05/03/01 ahernan) : detalles fibra optica.
+		#--------------------------------------------
+		LoDespx << _self.bounds.xmin + 150 + 500
+		LoDespy << _self.bounds.ymin + 1920 
+		
+		LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		LoP2 <<  coordinate.new( LoP1.x,  LoP1.y + 250 )
+		LoP3 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 250)
+		LoP4 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 150)
+		LoP5 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 100)
+		LoP6 <<  coordinate.new( LoP1.x + 200,  LoP1.y +50)
+		LoP7 <<  coordinate.new( LoP1.x + 200,  LoP1.y )
+		LoP8 <<  coordinate.new( LoP1.x + 600,  LoP1.y + 250)
+		LoP9 <<  coordinate.new( LoP1.x + 600,  LoP1.y + 150)
+		LoP10 << coordinate.new( LoP1.x + 600, LoP1.y + 100)
+		LoP11 << coordinate.new( LoP1.x + 600, LoP1.y + 50)
+		LoP12 << coordinate.new( LoP1.x + 600, LoP1.y )
+		
+		LoP13 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y +  150)
+		LoP14 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y +  100)
+		LoP15 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y + 50)
+		LoP16 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y)
+			
+		# (05/03/02 ahernan) : se dibuja la zona de detalle de fibra optica.
+		
+		LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP3.x, LoP3.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP7.x, LoP7.y , LoP8.x, LoP8.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP5.x, LoP5.y , LoP13.x, LoP13.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP6.x, LoP6.y , LoP14.x, LoP14.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP7.x, LoP15.y , LoP15.x, LoP15.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP12.x, LoP12.y , LoP15.x, LoP15.y )
+		_self.traza_cuadro(window,LoVpTemp)
+	
+		#--------------------------------------------
+		# (05/03/01 ahernan) : detalles Obra civil.
+		#--------------------------------------------
+		LoDespx << _self.bounds.xmin + 150 + 500
+		LoDespy << _self.bounds.ymin + 1640 
+		
+		LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		LoP2 <<  coordinate.new( LoP1.x,  LoP1.y + 250 )
+		LoP3 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 250)
+		LoP4 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 150)
+		LoP5 <<  coordinate.new( LoP1.x + 200,  LoP1.y + 100)
+		LoP6 <<  coordinate.new( LoP1.x + 200,  LoP1.y +50)
+		LoP7 <<  coordinate.new( LoP1.x + 200,  LoP1.y )
+
+		LoP8 <<  coordinate.new( LoP1.x + 600,  LoP1.y + 250)
+		LoP9 <<  coordinate.new( LoP1.x + 600,  LoP1.y + 150)
+		LoP10 << coordinate.new( LoP1.x + 600,  LoP1.y + 100)
+		LoP11 << coordinate.new( LoP1.x + 600,  LoP1.y + 50)
+		LoP12 << coordinate.new( LoP1.x + 600,  LoP1.y )
+
+		LoP13 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y +  250)
+		LoP14 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y +  150)
+		LoP15 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y + 100)
+		LoP16 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y + 50)
+		LoP17 << coordinate.new(  _self.bounds.xmax - 150 , LoP1.y)
+					
+		LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP3.x, LoP3.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP7.x, LoP7.y , LoP8.x, LoP8.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP4.x, LoP4.y , LoP13.x, LoP13.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP5.x, LoP5.y , LoP14.x, LoP14.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP6.x, LoP6.y , LoP15.x, LoP15.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		LoVpTemp << bounding_box.new(LoP7.x, LoP7.y , LoP16.x, LoP16.y )
+		_self.traza_cuadro(window,LoVpTemp)
+			
+		#---------------------------------
+		# (05/03/02 ahernan) : Viewport.
+		#---------------------------------
+		LoDespx << _self.bounds.xmin + 150 + 550
+		LoDespy << _self.bounds.ymin + 30 		
+		LoP1 <<  coordinate.new( LoDespx ,LoDespy)
+		LoP2 <<  coordinate.new( _self.bounds.xmax  ,  _self.bounds.ymax  - 960 )	
+		LoVpTemp << bounding_box.new(LoP1.x, LoP1.y , LoP2.x, LoP2.y )
+		_self.traza_cuadro(window,LoVpTemp)
+		
+		
+	 _endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.traza_cuadro(PoWindow,PoBounds)
+# Objetivo: Traza una caja dadas las coordenadas del borde.
+# Parámetros de entrada:  Canvas - PoWindow  Canvas de layout_Designer.
+#	                  Vector - PoBounds  Borde de la caja que se pintara.
+# Parámetros de salida:   Vector - PoBounds  Borde de la caja que se pintara.
+# Regresa:                Ninguno
+# Fecha  de última modificación: 23-febrero-2005
+#	
+# Autor de la modificación: hramirea
+# Descripción de la modificación: Modificaciones por
+# adecuacion al estandar de magik.
+#	
+	LoP1 << coordinate( PoBounds.xmin ,  PoBounds.ymin )	
+	LoP2 << coordinate( PoBounds.xmin ,  PoBounds.ymax )
+	LoP3 << coordinate( PoBounds.xmax ,  PoBounds.ymin )	
+	LoP4 << coordinate( PoBounds.xmax ,  PoBounds.ymax )
+	
+	LvSec << sector.new_with ( LoP1, LoP2 )
+	lvSec.draw_on ( PoWindow, line_style.called(:red))
+	lvSec << sector.new_with ( LoP1, LoP3 )
+	lvSec.draw_on ( PoWindow, line_style.called(:red))
+	LvSec << sector.new_with ( LoP3, LoP4 )
+	LvSec.draw_on ( PoWindow, line_style.called(:red))
+	lvSec << sector.new_with ( LoP2, LoP4 )
+	LvSec.draw_on ( PoWindow, line_style.called(:red))
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.datos_del_plano(PoWindow,PnsTitulo,PoBounds,PntamFont)
+# Objetivo: Escribe datos particulares de cada larguillo en el
+# sello como son:
+# mapea Larguillo actual	
+# escribe numero de plano de total de planos.
+# Escribe numero total de planos para el plano actual. 	
+# Construcción de canalización (datos de tipo de canalización)
+# Totales (Total en hoja, Total en ruta)
+#	
+# Parámetros de entrada:  Canvas   -  PoWindow     # Canvas de layout_Designer.
+#                         numerico -  PnPlano      # Numero de plano.
+#                         numerico -  PnPlano      # Numero de plano.	
+# Parámetros de salida:   ninguno  
+# Regresa:  Ninguno
+# Fecha  de última modificación: 23-feb-2004
+# Autor de la modificación: hramirea
+# Descripción de la modificación: Adecuacion al estandar.
+#
+	_local LvBb   << bounding_box.new(PoBounds.xmin,PoBounds.ymin, PoBounds.xmax , PoBounds.ymin)
+	_local LsText << vtext_style.new ( font.new_logical ( "Plain" ) )	
+			
+	_if PnsTitulo _isnt _unset 
+	_then
+		PoWindow.draw_vtext_transform( LsText,LvBb.xmin + 120,LvBb.ymin ,
+					       PnsTitulo.write_string  ,
+					       _unset, _unset,
+					       PntamFont, 90.degrees_to_radians ,  :center_center  )	
+	_endif
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.genera_cable_unico()
+
+	_local LoPaf << smallworld_product.pni_application()
+	_local LoMapa << LoPaf.plugin(:map_plugin)
+	_local LoMv   << LoMapa.current_map
+	_local LoCan << rope.new()                     # se genera coleccion de las canalizaciones en orden
+	_local LoCanalizacion << sector_rope.new()     # sector_rope que contiene las canalizaciones en orden.
+        _local LoSeleccion <<  LoMv.current_selection  # Toma la seleccion del grafico.	
+		
+	# (05/05/13 ahernan) : se filtran las lineas de la seleccion.
+	
+	_for LnI  _over  LoSeleccion.elements()
+       _loop
+	       _if      LnI.rwo.rwo_type = "sheath" _or LnI.rwo.rwo_type = "underground_route"
+	       _then
+		       LoCan.add(LnI.rwo)  
+	       _endif
+       _endloop  
+       
+       _if 	LoCan.size = 0 
+       _then
+	       _return _unset 
+       _endif
+
+       
+       # ----------------- ---------------------------------------------------------------
+       # : se toma el primero y se borra de la lista.
+       #----------------------------------------------------------------------------------		
+       LoCurrent_record << LoCan.first
+       LnContadorini <<  LoCan.size
+       LnContador << 0
+	 
+       LoCan.remove(LoCan.first)	
+       LoCanalizacion.add_sectors_last(LoCurrent_record.route.sectors)				
+       
+       _loop
+                
+                LnContador << LnContador + 1
+	       
+	       _if LoCan.size = 0 
+	       _then
+		        LoMv.set_trail_from_geometry(LoCanalizacion.sectors)
+			LoActualTrazo <<  LoMv.trail
+			_return LoActualtrazo
+		  
+	       _endif
+   
+	       _for LoCank  _over LoCan.elements()
+	       _loop
+
+		       _if LoCanalizacion.last_coord.eq_2d?(LoCank.route.sectors.first_coord) _or
+			    LoCanalizacion.last_coord.distance_to( LoCank.route.sectors.first_coord ) < 1000 
+			_then												
+				LoCanalizacion.add_sectors_last(LoCanK.route.sectors)		
+				LoCan.remove_nth(LoCan.index_of_eq(LoCanK))
+				
+			_elif LoCanalizacion.sectors.first_coord.eq_2d?(LoCank.route.sectors.last_coord) _or
+			      LoCanalizacion.sectors.first_coord.distance_to( LoCank.route.sectors.last_coord ) < 1000
+			_then														
+				LoCanalizacion.add_sectors_first(LoCank.route.sectors)					
+				LoCan.remove_nth(LoCan.index_of_eq(LoCanK))											
+			_endif
+ 
+		      _if   LnContador >  LnContadorini 
+		      _then
+			      _return _unset 
+		      _endif
+	       _endloop
+	       
+       _endloop	
+       
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.seleccionar_en_canalizacion(PoObjetos,PoCanalizacion)
+# Objetivo: Tomar la  canalizacion  en la ventana
+# grafica y seleccionar los elementos de tipo puntual que se
+# encuentran sobre esta.
+# Parámetros de entrada:  PoObjetos:  La tabla a la que se aplica la
+#                         seleccion.
+#                         PoCanalizacion: La canalizacion. 	
+# Parámetros de salida:  ninguno.
+#	
+# Regresa:               vector - LDsPozosSS - Coleccion de elementos seleccionados de la tabla
+#                        proporcionada como parametro.
+#	
+# Fecha  de última modificación: 22 octubre 2004
+# Autor de la modificación: ahernan
+# Descripción de la modificación: Adecuacion al estandar de
+#                                 programacion magik.
+#	
+_local LoPaf    << smallworld_product.pni_application()
+_local LoMapa   << LoPaf.plugin(:map_plugin).current_map
+_local LoV        << mit_manager.modelit_dataset
+_local LDsDbv      << LoV.collections
+_local LDsPozosSS  << rope.new()
+_local LDsSp	
+	
+_local LvLista <<      property_list.new_with(
+		      :pozos,    :uub,
+		      :empalmes, :splice_closure,
+		      :gazas,    :figure_eigth )
+
+PdsTabla << LDsDbv[LvLista[PoObjetos]]
+
+LdsPSubida << LDsDbv[:riser]
+
+_if (PdsTabla) _isnt _unset _and  PoCanalizacion  _isnt _unset 
+_then
+	LdsPuntos << PdsTabla.select(predicate.interacts(:location,PoCanalizacion.as_pseudo_geometry))
+	
+	#-----------------------------------------------------------
+	# (05/02/12 ahernan) : filtrar pozos que no tengan subidas.
+	#-----------------------------------------------------------
+	_for LRsPozo   _over  	LdsPuntos.elements()
+	_loop
+
+                LDsPSubida << LdsPSubida.select(predicate.on(:location,LRsPozo.location))
+		
+		_if  (LDsPSubida.size = 0 )
+		_then
+			LDsPozosSS.add( LRsPozo)
+		_endif			
+	_endloop
+		
+	_return LDsPozosSS, LdsPuntos		
+	
+_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.genera_cortes_x_pozos( PcPozos)
+# Objetivo: Genera cortes sobre la canalizacion de pozo a pozo.
+#
+# Parámetros de entrada:  PcPozos:  La tabla a la que se aplica la
+#                         seleccion.
+#                    	
+# Parámetros de salida:  ninguno.
+#	
+# Regresa:               vector - LoRstCorte, - Tramos de canalizacion entre pozo y pozo.
+#                        vector -  LcPozos - Pozos de la canalizacion.	
+#	
+# Fecha  de última modificación: 22 octubre 2004
+# Autor de la modificación: ahernan
+# Descripción de la modificación: Adecuacion al estandar de
+#                                 programacion magik.
+#	
+_local LoApp  << smallworld_product.pni_application()
+_local LcMpG  << LoApp.plugin(:map_plugin)
+_local LoMv   << LcMpG.current_map
+_local LoCanalizacion
+_local Lcpozos << _unset 
+_local LoRstCorte << rope.new()
+_local LvIndices  << sorted_collection.new()
+       LvIndices.order_proc << _proc(PoA,PoB)
+			      >> PoA _cf PoB
+		      _endproc
+
+#LoCanalizacion << _self.genera_canalizacion_unica()
+
+LoCanalizacion << _self.genera_cable_unico()
+       
+_if LoCanalizacion _isnt _unset 
+_then
+	
+	(LcPozos, LdsPuntos)  << _self.seleccionar_en_canalizacion(PcPozos,LoCanalizacion)
+_else
+	_return _unset,_unset,_unset  
+_endif
+
+#----------------------------------------------------------------
+# Se ordenan las coordenadas por distancia
+# al inicio del cable y se hace el corte.
+#----------------------------------------------------------------
+
+_if LcPozos _isnt _unset 
+_then
+	_for LoRs  _over LcPozos.fast_elements() 
+	_loop
+		_if  LoRs.location _isnt _unset 
+		_then			
+			LvIndices.add( LoCanalizacion.sectors.distance_to_coordinate(LoRs.location.coord))
+		_endif		
+	_endloop                        
+
+	LoRstCorte <<  LoCanalizacion.sectors.split_at_distances( LvIndices )
+
+	_return    LoRstCorte, LcPozos, LdsPuntos
+	
+_endif
+
+_return _unset,_unset,_unset 
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.proyecto_canalizacion()
+# Objetivo: Generar el proyecto de canalizacion realizando los
+# cortes que sean necesarios segun la longitud y curvatura de
+# la ruta. 
+#
+# Parámetros de entrada:  Ninguno.	
+# Parámetros de salida:   Ninguno.
+#	
+# Regresa:  numerico - LoPaginas.size  Numero de paginas. 
+#	    vector   - LoPaginas       vector que contiene las
+#                                      paginas que componen el
+#	                               documento del plano. 
+#	
+# Fecha  de última modificación: 23 feb 2004
+# Autor de la modificación: hramirea
+# Descripción de la modificación: Adecuacion al estandar.
+# 
+_local LoApp << smallworld_product.pni_application()
+_local LcMpG  << LoApp.plugin(:map_plugin)
+_local LoGrs << LoApp.manager.pseudo_grs
+_local LoMv  << LcMpG.current_map
+_local LoV   << gis_program_manager.cached_dataset(:gis) 
+_local LoRstCortes
+_local LoPaginas << rope.new()
+
+#---------------------------------------------------------
+# Se recorre el trazo y se realizan
+# cortes de pozo a pozo.
+#--------------------------------------------------------
+(LoRstCortes, LdsPozos, LdsPuntos ) <<  _self.genera_cortes_x_pozos(:pozos)
+
+
+_if LoRstCortes  _isnt _unset 
+_then	
+	_for LRsI  _over  LoRstCortes.elements()
+	_loop
+
+		#-------------------------------
+                #cada corte equivale a una hoja.
+		#-------------------------------
+		# la hoja puede tener varias viewports.
+		#dependiendo del seccionamiento.
+#		#---------------------------------------
+#		(myviewports, n)  <<  _self.subseccionamiento(LRsI)
+#
+#		write("numero de viewports", n)
+#                 print(myviewports)
+
+			
+		_if LRsI.sectors.line_length > 0 
+		_then					
+			#------------------------------------------------------------
+			# Se genera el arreglo de la información
+			# para cada pagina.
+			#------------------------------------------------------------
+			_if LRsI.sectors.line_length/100 > 0 
+			_then
+				# -------------------- --------------------------------------
+				# Calcula el angulo de la canalizacion.
+				# -------------------- --------------------------------------
+                                LoP << perpen.new()				
+                                LnAngulo << LoP.mangulo( LRsI.sectors.as_sector().first_coord,
+							 LRsI.sectors.as_sector().last_coord   )
+				
+				LnAngulo << LnAngulo.radians_to_degrees
+				#---------------------------------------------------------------------
+				# Encuentra los  pozos de la canalización actual
+				#--------------------------------------------------------------------
+				LoMapa << smallworld_product.pni_application().plugin(:map_plugin).current_map
+                                LoMapa.set_trail_from_geometry( LRsI.sectors)
+				LoActualTrazo <<  LoMapa.trail
+				
+
+				# START CHANGE
+				#----------------------------------------------------------------				
+				# (05/04/01 ahernan) : Se cambio la seleccion aplicada a LdsPozos
+				#ahora es a todos los pozos:  LdsPuntos
+				#---------------------------------------------------------------				
+				
+				LdsPozosCan << LdsPuntos.select(predicate.on(:location,
+									    LoActualTrazo.as_pseudo_geometry))
+				#
+				# END CHANGE
+
+				#--------------------------------------------------------------
+				# Busca la canalizacion que finalmente se encuentra entre pozo
+				# y pozo.
+				#--------------------------------------------------------------
+				LdsV << mit_manager.modelit_dataset
+				dbv << LdsV.collections
+				Ldscanalizacion << dbv[:underground_route].select(predicate.on(:route,
+									    LoActualTrazo.as_pseudo_geometry))
+				
+				LsTipoperfil <<  Ldscanalizacion.an_element().user!_perfil_canalizacion
+											
+				#-----------------------------------------------------
+				# calcula el número de módulos.
+				# Modulos de 35 metros.
+				#----------------------------------------------------
+				LnModulos << ((LRsI.sectors.line_length/100) / 35)
+                                (LnEntero,Lndecimal) <<   LnModulos.div_mod_1()
+                                _if Lndecimal > 0 
+				_then
+					LnModulos << 	LnEntero + 1	
+				_endif
+				
+				LnEscala  << 200
+                           				
+				LoPaginas.add({LnAngulo,
+					       LRsI.sectors.line_length/100 ,
+					       LRsI.sectors.buffer(500),
+					       LdsPozosCan,
+					       LnModulos,
+					       LnEscala,
+					       LsTipoperfil })
+				
+			_endif
+		  					
+		_endif
+		
+	_endloop
+
+	
+	_return LoPaginas.size, LoPaginas
+	
+_endif
+
+_return 0,_unset 
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_larguillos_layout.busca_elemento(PoPagina,PsElemento)
+#  Objetivo: Escriba aquí el objetivo.
+#  Parámetros de entrada:  Ninguno.
+#                                  
+#  Parámetros de salida:     Ninguno.
+#                                   
+#  Regresa:  Ninguno.
+# Fecha de última modificación: 24 feb 2005
+# Autor de la modificación bfpalaci
+# Descripción de la modificación: adecuacion al estandar de magik	
+	 	
+_local LbBandera << _false
+_local LoElemento << _unset 
+
+_for i  _over PoPagina.elements()
+_loop
+		
+	_if i.class_name = "marco_layout" _and i.class_name = PsElemento
+	_then
+	       
+		LbBandera  << _true
+		LoElemento << i
+		_leave 
+	_elif  i.class_name = "viewport_layout"
+	_then 
+		write(i.class_name)
+		_if i.name.slice(1,9).eq?("Larguillo")
+		_then
+			LbBandera  << _true
+			LoElemento << i
+		_endif
+	_endif
+	
+_endloop
+
+_return LbBandera,LoElemento 
+
+_endmethod
+$                                  
+_method c_larguillos_layout.subseccionamiento(s)
+# *  Nombre: subseccionamiento.                                    
+# *  Objetivo: Calcula el numero de viewports utilizados para
+# *  un plano pudiendo ser de 1 hasta 5.  
+# * 
+# *  Parametros de entrada: s  - segmeto de la ruta al que se le
+# *  aplicara el calculo de viewports.
+# *
+# *  Parametros de salida:   Ninguno
+#* 
+# *  Regresa :   mybounds     - Arreglo de areas
+# *  quecorresponden a los viewports.
+# *  Regresa :   mymarks      - Arreglo de
+# *  coodenadas que contiene las coordenas del numero de plano correspondiente.
+# *  Regresa :   no_secciones - El numero de
+# *  secciones en que se dividio el larguillo. 
+	
+	_local 	LoApp << smallworld_product.application(:pni)
+	_local LcMpG  << LoApp.plugin(:map_plugin)
+	_local  LoGrs << LoApp.manager.pseudo_grs
+	_local  LoMv  << LcMpG.current_map
+        _local  LoV   << gis_program_manager.cached_dataset(:gis)
+
+	_if   s  _isnt  _unset
+	_then
+		no_viewports << 0
+		
+		_loop
+			no_viewports << no_viewports + 1
+
+			write("Numero de viewports----->", no_viewports )			
+			_if no_viewports = 6
+			_then
+				_return _unset,_unset ,0       
+			_endif
+			
+			no_entro << _false
+			
+			distancias << simple_vector.new(no_viewports)
+
+			size_of_segment <<  s.sectors.line_length / no_viewports
+			
+			distancia << 0
+			mybounds << rope.new()
+				
+			_for   i _over 1.upto(no_viewports)
+			_loop
+				distancia << distancia + size_of_segment
+				distancias[i] << distancia           
+			_endloop
+			
+			## y se hace el split.....
+			
+			subs  <<  s.sectors.split_at_distances(distancias)
+			
+			_for i _over 1.upto(no_viewports)
+			_loop				
+				entro << _false
+
+				## se prueba que el segmento "entre" en el viewport		
+				(caja,entro)  <<  _self.rectificacion(subs[i],no_viewports)
+				
+                                write("write entro?", entro)
+
+				_if (entro = _true)  _then
+					mybounds.add(caja)				
+				_else
+					entro << _false 
+					_leave 
+				_endif 	
+			_endloop 			
+			
+			_if entro = _true  
+			_then
+				_return  mybounds,no_viewports
+			_endif 
+		_endloop
+		
+	_endif 
+_endmethod   
+$
+_method c_larguillos_layout.rectificacion(segmento,indice)
+# *  Nombre: rectificacion.                                    
+# *  Objetivo: Verificar si el segmento dado entra en el
+# *  viewport determinado por el indice.
+# * 
+# *  Parametros de entrada: segmento - segmento que se verifica
+# *  que entre en el viewport correspondiente.  
+# *                         indice   -  indice que ayuda a
+# *  determinar el radio_segmento.
+# *                                    
+# *  Parametros de salida:  Ninguno.
+# *                                  
+# *  Regresa: caja  - sector_rope  que contiene al segmento
+# *           marca - coordenada donde se inserta el no. de plano
+# *           entro - variable que indica si el segmento entro
+# *                   en la caja.
+# *
+	
+	_local 	LoApp << smallworld_product.application(:pni)
+	_local LcMpG  << LoApp.plugin(:map_plugin)
+	_local  LoGrs << LoApp.manager.pseudo_grs
+	_local  LoMv  << LcMpG.current_map
+	_local vista  << LcMpG.current_map_view
+        _local  LoV   << gis_program_manager.cached_dataset(:gis) 
+	_local rectificacion, LoPuntofinal 
+	
+	radio_segmento <<  {30000/2, 15000/2, 10000/2 }
+	radio_general <<  5000/2
+	sobreposicion << 500
+	
+	rectificacion << segmento.sectors.coordinate_for_distance(segmento.sectors.line_length * 0.5)
+	
+	# Encuentra primero y ultimo punto del cable.
+	
+	p1 << segmento.sectors.first_coord
+	p2 << segmento.sectors.last_coord
+
+	_if segmento.sectors.line_length > sobreposicion
+	_then
+		substemp  << segmento.sectors.split_at_distances( {sobreposicion , segmento.sectors.line_length - sobreposicion })
+		buffseccion  << substemp[2].sectors.buffer(sobreposicion)
+	_else
+		buffseccion  << segmento.sectors.buffer(sobreposicion)		
+	_endif		
+
+	# perpendicular al punto de rectificacion....
+	l << perpen.new()
+	l.radio << radio_general		
+	l.linea(p1,rectificacion)
+	l2 << perpen.new()
+	l2.radio << radio_segmento[indice]
+	l2.linea(l.punto_up,l.punto_down)
+	l3<< perpen.new()
+	l3.radio << radio_segmento[indice]
+	l3.linea(l.punto_down,l.punto_up)
+	
+	caja << map_trail.new(LoMv)	
+	caja.add_coordinate(l2.punto_up)
+	caja.add_coordinate(l2.punto_down)
+	caja.add_coordinate(l3.punto_up)
+	caja.add_coordinate(l3.punto_down)
+	caja.add_coordinate(l2.punto_up)
+	
+	# (04/08/23 ahernan) : se construye una caja para verificar
+	# seccionamiento al trazo actual.
+	
+	#vista.goto_bounds(caja.bounds)
+	
+	LoMv.set_trail_from_geometry(caja.as_pseudo_geometry)
+#	_thisthread.sleep(10000)
+
+	# (04/08/23 ahernan) : dibuja el maptrail para checar visualmente
+	# su posicion.
+
+	LoMv.set_trail_from_geometry(segmento.buffer(1))
+		_thisthread.sleep(1000)
+	LoMv.set_trail_from_geometry(buffseccion.buffer(1))
+	_thisthread.sleep(1000)
+	
+	entro << _false
+	
+	_if ( caja.sectors.surrounds??(buffseccion))  _is  _true 
+	_then
+		entro << _true
+
+		_return caja,entro			
+	_endif
+	
+	## Si se encuentra que el subsegmento no entro en el viewport
+	## de todo modos se toma este y se envia de regreso (la causa
+	## debe ser de unos cuantos metros no significativos)
+	_if ( indice = 3  _and entro = _false) 
+	_then
+		write("No entro en 3 intentos...")
+		entro << _true
+		_return caja,entro			
+	_endif
+		
+	_if  entro = _false _then
+		## No entro. Probar con otro nivel de seccionamiento.
+		_return _unset, _unset , _false  			
+	_endif 	
+	
+_endmethod
+$
+

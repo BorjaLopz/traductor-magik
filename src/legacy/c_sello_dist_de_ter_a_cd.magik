@@ -1,0 +1,378 @@
+_package user
+$
+def_slotted_exemplar(:c_sello_dist_de_ter_a_cd,
+{
+}, :c_base_sello_fibra)
+$
+c_sello_dist_de_ter_a_cd.define_shared_constant(:UbicaCoord,
+						hash_table.new_with(
+							:A1,coordinate(2,2),:A2,coordinate(3,2),
+							:A3,coordinate(4,2),:A4,coordinate(5,2),
+							:A5,coordinate(6,2),
+							:B1,coordinate(2,3),:B2,coordinate(3,3),
+							:B3,coordinate(4,3),:B4,coordinate(5,3),
+							:B5,coordinate(6,3),
+							:C1,coordinate(2,4),:C2,coordinate(3,4),
+							:C3,coordinate(4,4),:C4,coordinate(5,4),
+							:C5,coordinate(6,4),
+							:D1,coordinate(2,5),:D2,coordinate(3,5),
+							:D3,coordinate(4,5),:D4,coordinate(5,5),
+							:D5,coordinate(6,5),
+							:E1,coordinate(2,6),:E2,coordinate(3,6),
+							:E3,coordinate(4,6),:E4,coordinate(5,6),
+							:E5,coordinate(6,6),
+							:F1,coordinate(2,7),:F2,coordinate(3,7),
+							:F3,coordinate(4,7),:F4,coordinate(5,7),
+							:F5,coordinate(6,7),
+							:G1,coordinate(2,8),:G2,coordinate(3,8),
+							:G3,coordinate(4,8),:G4,coordinate(5,8),
+							:G5,coordinate(6,8),
+							:H1,coordinate(2,9),:H2,coordinate(3,9),
+							:H3,coordinate(4,9),:H4,coordinate(5,9),
+							:H5,coordinate(6,9),
+							:J1,coordinate(2,10),:J2,coordinate(3,10),
+							:J3,coordinate(4,10),:J4,coordinate(5,10),
+							:J5,coordinate(6,10),
+							:K1,coordinate(2,11),:K2,coordinate(3,11),
+							:K3,coordinate(4,11),:K4,coordinate(5,11),
+							:K5,coordinate(6,11),
+							:L1,coordinate(2,12),:L2,coordinate(3,12),
+							:L3,coordinate(4,12),:L4,coordinate(5,12),
+							:L5,coordinate(6,12),
+							:M1,coordinate(2,13),:M2,coordinate(3,13),
+							:M3,coordinate(4,13),:M4,coordinate(5,13),
+							:M5,coordinate(6,13)),_false)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_dist_de_ter_a_cd.CompletaSharedVariable()
+	## 
+	## 
+	_self.UbicaCoord[:O1]<<coordinate(2,14)
+	_self.UbicaCoord[:O2]<<coordinate(3,14)
+	_self.UbicaCoord[:O3]<<coordinate(4,14)
+	_self.UbicaCoord[:O4]<<coordinate(5,14)
+	_self.UbicaCoord[:O5]<<coordinate(6,14)
+
+	_self.UbicaCoord[:P1]<<coordinate(2,15)
+	_self.UbicaCoord[:P2]<<coordinate(3,15)
+	_self.UbicaCoord[:P3]<<coordinate(4,15)
+	_self.UbicaCoord[:P4]<<coordinate(5,15)
+	_self.UbicaCoord[:P5]<<coordinate(6,15)
+
+	_self.UbicaCoord[:R1]<<coordinate(2,16)
+	_self.UbicaCoord[:R2]<<coordinate(3,16)
+	_self.UbicaCoord[:R3]<<coordinate(4,16)
+	_self.UbicaCoord[:R4]<<coordinate(5,16)
+	_self.UbicaCoord[:R5]<<coordinate(6,16)
+
+	_self.UbicaCoord[:S1]<<coordinate(2,17)
+	_self.UbicaCoord[:S2]<<coordinate(3,17)
+	_self.UbicaCoord[:S3]<<coordinate(4,17)
+	_self.UbicaCoord[:S4]<<coordinate(5,17)
+	_self.UbicaCoord[:S5]<<coordinate(6,17)
+_endmethod
+$
+c_sello_dist_de_ter_a_cd.CompletaSharedVariable()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_dist_de_ter_a_cd.configura_tabla()
+
+
+_local LoTblContenido
+_local LoTbl
+
+       # Titulo1
+       LoTblTitulo<<property_list.new_with_properties(:ren,{5},
+						      :col,{40})
+       LoTbl<<.o_tablas.crea_tabla(1,1,:tbl_titulo)
+       LoTbl.ocoordenada_origen << .o_coord_inicio
+       _self.asigna_medidas_tabla(LoTbl, LoTblTitulo)
+    
+
+       # ------------------
+       # Contenido
+       LoTblContenido << property_list.new_with_properties(:ren,{5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5},
+							   :col,{5,7,7,7,7,7})
+      
+       LoTbl <<.o_tablas.crea_tabla(17,6, :tbl_contenido)
+       LfDesplazaY << .o_tablas.longitud_total_renglones({:tbl_titulo})
+       LoTbl.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,
+						    .o_coord_inicio.y - LfDesplazaY)
+       _self.asigna_medidas_tabla(LoTbl, LoTblContenido)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_dist_de_ter_a_cd.defined_attributes
+	## 
+	## 
+_local LcollAtributos
+
+	LcollAtributos << rope.new_from(_super.defined_attributes)
+	
+	LcollAtributos.add(layout_attribute_definition.new(:idEdificio, :integer,
+							   :description, "id del edificio",
+							   :default_value, _unset,
+							   :allowed_on_properties_page?, _false,
+							   :editor, _unset))
+	
+	_return LcollAtributos
+_endmethod
+$
+c_sello_dist_de_ter_a_cd.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_dist_de_ter_a_cd.etiqueta_celdas()
+
+	
+
+	_self.asigna_texto_celda(:tbl_titulo,1,1,"DISTANCIA DE TERMINAL A C.D.",25,:centre_centre,0,{0,0.2993,0})
+
+	_self.asigna_texto_celda(:tbl_contenido,1,1,"",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,2,1,"A",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,3,1,"B",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,4,1,"C",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,5,1,"D",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,6,1,"E",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,7,1,"F",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,8,1,"G",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,9,1,"H",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,10,1,"J",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,11,1,"K",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,12,1,"L",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,13,1,"M",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,14,1,"O",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,15,1,"P",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,16,1,"R",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,17,1,"S",20,:centre_centre,0,{0,0.2993,0})
+
+	_self.asigna_texto_celda(:tbl_contenido,1,1,"",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,1,2,"1",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,1,3,"2",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,1,4,"3",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,1,5,"4",20,:centre_centre,0,{0,0.2993,0})
+	_self.asigna_texto_celda(:tbl_contenido,1,6,"5",20,:centre_centre,0,{0,0.2993,0})
+
+#	#A1->A5
+#	_self.asigna_texto_celda(:tbl_contenido,2,2,"A1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,2,3,"A2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,2,4,"A3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,2,5,"A4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,2,6,"A5",15,:centre_centre,0,{1,0,0})
+#
+#	#B1->B5
+#	_self.asigna_texto_celda(:tbl_contenido,3,2,"B1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,3,3,"B2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,3,4,"B3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,3,5,"B4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,3,6,"B5",15,:centre_centre,0,{1,0,0})
+#
+#	#C1->C5
+#	_self.asigna_texto_celda(:tbl_contenido,4,2,"C1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,4,3,"C2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,4,4,"C3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,4,5,"C4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,4,6,"C5",15,:centre_centre,0,{1,0,0})
+#
+#	#D1->D5
+#	_self.asigna_texto_celda(:tbl_contenido,5,2,"D1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,5,3,"D2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,5,4,"D3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,5,5,"D4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,5,6,"D5",15,:centre_centre,0,{1,0,0})
+#
+#	#E1->E5
+#	_self.asigna_texto_celda(:tbl_contenido,6,2,"E1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,6,3,"E2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,6,4,"E3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,6,5,"E4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,6,6,"E5",15,:centre_centre,0,{1,0,0})
+#
+#	#F1->F5
+#	_self.asigna_texto_celda(:tbl_contenido,7,2,"F1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,7,3,"F2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,7,4,"F3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,7,5,"F4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,7,6,"F5",15,:centre_centre,0,{1,0,0})
+#
+#	#G1->G5
+#	_self.asigna_texto_celda(:tbl_contenido,8,2,"G1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,8,3,"G2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,8,4,"G3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,8,5,"G4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,8,6,"G5",15,:centre_centre,0,{1,0,0})
+#
+#	#H1->H5
+#	_self.asigna_texto_celda(:tbl_contenido,9,2,"H1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,9,3,"H2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,9,4,"H3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,9,5,"H4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,9,6,"H5",15,:centre_centre,0,{1,0,0})
+#
+#	#J1->J5
+#	_self.asigna_texto_celda(:tbl_contenido,10,2,"J1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,10,3,"J2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,10,4,"J3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,10,5,"J4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,10,6,"J5",15,:centre_centre,0,{1,0,0})
+#
+#	#K1->K5
+#	_self.asigna_texto_celda(:tbl_contenido,11,2,"K1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,11,3,"K2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,11,4,"K3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,11,5,"K4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,11,6,"K5",15,:centre_centre,0,{1,0,0})
+#
+#	#L1->L5
+#	_self.asigna_texto_celda(:tbl_contenido,12,2,"L1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,12,3,"L2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,12,4,"L3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,12,5,"L4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,12,6,"L5",15,:centre_centre,0,{1,0,0})
+#
+#	#M1->M5
+#	_self.asigna_texto_celda(:tbl_contenido,13,2,"M1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,13,3,"M2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,13,4,"M3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,13,5,"M4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,13,6,"M5",15,:centre_centre,0,{1,0,0})
+#
+#	#O1->O5.write_string
+#	_self.asigna_texto_celda(:tbl_contenido,14,2,"O1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,14,3,"O2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,14,4,"O3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,14,5,"O4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,14,6,"O5",15,:centre_centre,0,{1,0,0})
+#
+#	#P1->P5
+#	_self.asigna_texto_celda(:tbl_contenido,15,2,"P1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,15,3,"P2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,15,4,"P3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,15,5,"P4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,15,6,"P5",15,:centre_centre,0,{1,0,0})
+#
+#	#R1->R5
+#	_self.asigna_texto_celda(:tbl_contenido,16,2,"R1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,16,3,"R2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,16,4,"R3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,16,5,"R4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,16,6,"R5",15,:centre_centre,0,{1,0,0})
+#
+#	#S1->S5
+#	_self.asigna_texto_celda(:tbl_contenido,17,2,"S1",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,17,3,"S2",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,17,4,"S3",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,17,5,"S4",15,:centre_centre,0,{1,0,0})
+#	_self.asigna_texto_celda(:tbl_contenido,17,6,"S5",15,:centre_centre,0,{1,0,0})
+
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_dist_de_ter_a_cd.FiltrarTerminalesConDist(PcollCajaORegDist)
+	## 
+	##
+_local LcollTerConDist<<hash_table.new()
+_local LyId             # Id de la terminal.
+_local LfDistanciaACd   # Distancia a la CD
+
+       _for LoRecTab _over PcollCajaORegDist.fast_elements(PcollCajaORegDist)
+       _loop
+	       LcollRelatedObjs<<related_objects_provider.get_related_items_for(LoRecTab)
+	       _for LoRec _over LcollRelatedObjs.fast_elements()
+	       _loop
+		       _if LoRec.is_kind_of?(copper_terminal)
+		       _then
+			      LyId<< LoRec.user!_cuenta.default("no_dato").as_symbol().canonical
+			      LfDistanciaACd<<LoRec.user!_distancia_cd #* 10.0 # para convertir a metros.
+			      _if LyId <> :no_dato
+			      _then
+				      LcollTerConDist[LyId]<<LfDistanciaACd.as_fixed_string(10,3).trim_spaces()
+			      _endif
+		       _endif
+	       _endloop
+       _endloop
+
+       _return LcollTerConDist
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_dist_de_ter_a_cd.llena_datos_celdas()
+	## 
+	##
+
+_local LcollTabUserBuilding
+
+ 
+       LcollTabUserBuilding<<gis_program_manager.cached_dataset(:gis).collections[:user!_building]
+       _if _self.idEdificio _isnt _unset
+       _then
+	       LoUserBuilding<<LcollTabUserBuilding.at(_self.idEdificio)
+	       _if LoUserBuilding _isnt _unset
+	       _then
+		       
+		       LoSpatialContext<<LoUserBuilding.get_spatial_context(:internal)
+		       LcollInternalGeoms<<LoSpatialContext.elements[1].world.geometry_set()
+		       LcollRegistros<<LcollInternalGeoms.select(:collection,
+								 {:user!_registro_tablero}).rwo_set() 
+		       LcollTerminales<<_self.FiltrarTerminalesConDist(LcollRegistros)
+
+		       
+
+		       _for LyKey,LiDist _over LcollTerminales.keys_and_elements()
+		       _loop
+			       LoCoord<<_self.UbicaCoord[LyKey]
+			       LoRenglon<<LoCoord.y.integral_and_fraction()
+			       LoColumna<<LoCoord.x.integral_and_fraction()
+			       LsDato<<LiDist
+			       _self.asigna_texto_celda(:tbl_contenido,
+							LoRenglon,LoColumna,LsDato,
+							15,:centre_centre,0,{1,0,0})
+		       _endloop
+	       _else
+	       # (11/07/19 rhernan) : buscamos via el limite de distrito
+		       LcollLimDtoOptico <<gis_program_manager.cached_dataset(:landbase).
+					   collections[:user!_distrito_optico]
+		       LoReg << LcollLimDtoOptico.at(_self.idEdificio)
+		       
+		       pred << predicate.inside(:boundary, LoReg.user!_limite)
+		       LcollTabUserBuilding.select(pred)
+		     _if LcollTabUserBuilding.select(pred).size > 0
+		     _then
+			     LoArreTerminales << rope.new()
+			_for LoRegUserBuilding _over LcollTabUserBuilding.select(pred).fast_elements()
+			_loop
+			    LoSpatialContext<<LoRegUserBuilding.get_spatial_context(:internal)
+			    LcollInternalGeoms<<LoSpatialContext.elements[1].world.geometry_set()
+			    LcollRegistros<<LcollInternalGeoms.select(:collection,
+						   {:user!_registro_tablero}).rwo_set()
+			    LcollTerminales<<_self.FiltrarTerminalesConDist(LcollRegistros)
+			    _if LcollTerminales.size > 0
+			    _then
+				    LoArreTerminales.add(LcollTerminales)			    
+			    _endif			    
+			_endloop
+			
+			##llenando el sello
+			_if LoArreTerminales.size > 0
+			_then
+			   _for LoArreTerminal _over LoArreTerminales.fast_elements()
+			   _loop	
+				   _for LyKey,LiDist _over LoArreTerminal.keys_and_elements()
+				   _loop
+					   LoCoord<<_self.UbicaCoord[LyKey]
+					   LoRenglon<<LoCoord.y.integral_and_fraction()
+					   LoColumna<<LoCoord.x.integral_and_fraction()
+					   LsDato<<LiDist
+					   _self.asigna_texto_celda(:tbl_contenido,
+								    LoRenglon,LoColumna,LsDato,
+								    15,:centre_centre,0,{1,0,0})
+				   _endloop
+			   _endloop
+			_endif
+		     _endif
+	       _endif       	    
+       _endif
+       
+_endmethod
+$

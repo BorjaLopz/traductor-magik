@@ -1,0 +1,339 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos - estudio de transmisison
+# Objetivo: 
+#           
+# Autor: dsanchez
+# Fecha de creacion: 31-03-2005
+#
+# ---------------- Revision History -----------------
+# Ult Mod.
+#  05/04/05 DSB - 13:45 se definico el obten_valor etiqueta
+#  05/04/05 DSB - Se agrego el slot sNombre_Simbolo, sDescripcion
+#  04/04/05 DSB - Se modifico el new 
+#  01/04/05 DSB - 20:00
+#               - Se agrego el slot oEntidad 
+#               -  Se agregaron los slot oArea y oVentana
+#  31/03/05 DSB - 14:02 se agregaron alguna propiedades  
+
+# Reviso.
+# dsb
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_elemento_entidad_g)
+
+$
+def_slotted_exemplar(:c_elemento_entidad_g,
+    {
+           {:oArea,           _unset }, # Area que debe cubrir la seccion
+           {:oVentana,        _unset }, # Layout
+	   {:oEntidad,        _unset }, # Entidad del negocio
+	   {:sNombre_Simbolo, _unset }, # Simbolo que representa el elemento
+	   {:sDescripcion,    _unset }, # Descripcion que acompaña al elemento	   
+	   {:oElementos,      _unset }, # Elementos que contendrá el dibujo
+	   {:oPto_contacto,   _unset }, # Coordenada donde se debe hacer contacto
+           {:nLong_grafica,   _unset }, # Longitud grafica del elemento
+	   {:bHabilitar,      _unset }, # descartar elementos para calcular el ajuste de las long
+           {:collEtiquetas,   _unset }  # Posicion de las etiquetas
+    }
+)
+$
+c_elemento_entidad_g.define_slot_access(:oArea,            :writable, :public)
+c_elemento_entidad_g.define_slot_access(:oVentana,         :writable, :public)
+c_elemento_entidad_g.define_slot_access(:oEntidad,         :writable, :private)
+c_elemento_entidad_g.define_slot_access(:oElementos,       :writable, :public)
+c_elemento_entidad_g.define_slot_access(:sNombre_Simbolo,  :writable, :private)
+c_elemento_entidad_g.define_slot_access(:sDescripcion,     :writable, :private)
+c_elemento_entidad_g.define_slot_access(:oPto_Contacto,    :writable, :private)
+c_elemento_entidad_g.define_slot_access(:nLong_Grafica,    :writable, :private)
+c_elemento_entidad_g.define_slot_access(:bHabilitar,       :writable, :private)
+c_elemento_entidad_g.define_slot_access(:collEtiquetas,    :writable, :private)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.new(RoObjeto)
+
+## Objetivo: Crear una instancia de la clase c_elemento_entidad_g
+## Parámetros de entrada:
+##     Entidad - RoObjeto:  Objeto entidad que va a representar
+##                   graficamente
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   04/04/05 DSB : Se establecio el valor por defecto de
+##                  bHabilitar a true	
+##   12/02/05 DSB Se creo
+
+   _self.oElementos       << c_elementos.new()
+   _self.oPto_Contacto    << coordinate.new(0,0)
+   _self.collEtiquetas    << hash_table.new()
+   _self.oEntidad         << RoObjeto
+   _self.bHabilitar       << _true
+   _self.sNombre_Simbolo  << _unset 
+   
+   
+#   _self.configurar_elementos(_Self.oEntidad)
+
+   _return _clone
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_abstract _method c_elemento_entidad_g.crea_elementos_internos()
+
+## Objetivo: Crea los elementos que conforman a la
+## seccion graficamente
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+## Notas:
+##  :Etiqueta_1 - Arriba - Longitud calculada de la fibra. calculated_fiber_length
+##  :Simbolo_1  - En medio - Linea
+
+   
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_abstract _method c_elemento_entidad_g.dfn_ubicacion_elementos_internos()
+
+## Objetivo: define la ubicacion dentro del area (bounding_box)
+## de los elementos graficos que lo componen
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se creo		  
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_abstract _method c_elemento_entidad_g.configurar_elementos()
+
+## Objetivo: recibir el objeto entidad con el cual se va a
+##           configurar el objeto de tipo c_elemento_tramo_g
+## Parámetros de entrada:
+##    entidad - RoObjeto: Algun objeto o elemento que
+##            representa un objeto del negocio
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+
+	  
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.nLong_grafica << PnValor
+	## 
+	## 
+
+	.nLong_grafica << PnValor
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.nLong_grafica 
+	## 
+	## 
+
+	_return .nLong_grafica
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.oPto_Contacto << PoCoordenada
+
+	.oPto_Contacto << PoCoordenada
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.oPto_Contacto
+
+	_return .oPto_Contacto
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.bHabilitar? << PbValor
+
+	.bHabilitar << PbValor
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.bHabilitar?
+
+	_return .bHabilitar
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.pos_etiqueta(PsEtiqueta) << PnValor
+	## 
+	##
+
+	_self.collEtiquetas[PsEtiqueta] << PnValor
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.pos_etiqueta(PsEtiqueta)
+	## 
+	##
+
+	_return _self.collEtiquetas[PsEtiqueta]
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.despliega()
+
+## Objetivo: Despliega los elementos graficos 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   04/04/05 DSB Se creo
+
+   # calcula la nueva posicion del area de acuerdo al pto de
+   # contacto externo	
+   _self.oElementos.oArea << _self.reposicionar_Area(_self.oArea)   
+
+   _self.oElementos.oVentana << _self.oVentana
+
+   _self.dfn_ubicacion_elementos_internos()
+
+   _self.oElementos.despliega()
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.asigna_valor_etiqueta(PsEtiqueta) << PsValor
+
+## Objetivo: Asigna el valor a una etiqueta
+## Parámetros de entrada:
+##    PsEtiqueta : Etiqueta que identifica el elemento al cual
+##               se le desea cambiar su contenido
+##    PsValor : Valor que almacenara la etiqueta	
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se subio a la clase entidad
+	
+   LoLbl << _self.oElementos.obten_elemento(PsEtiqueta)
+   LoLbl.sTexto << PsValor
+   
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.obten_valor_etiqueta(PsEtiqueta) 
+
+## Objetivo: Obtiene  el valor de una etiqueta
+## Parámetros de entrada:
+##    PsEtiqueta : Etiqueta que identifica el elemento al cual
+##               se le desea cambiar su contenido
+## Parámetros de salida:  NA
+## Regresa:
+##   String - Cadena que desplegara el elemento	
+## Fecha de última modificación:
+##   01/04/05 DSB Se subio a la clase entidad
+	
+   LoLbl << _self.oElementos.obten_elemento(PsEtiqueta)
+   _return LoLbl.sTexto 
+   
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.asigna_alineacion_etiqueta(PsEtiqueta) << PsValor
+
+## Objetivo: Asigna el valor a una etiqueta
+## Parámetros de entrada:
+##    PsEtiqueta : Etiqueta que identifica el elemento al cual
+##               se le desea cambiar su contenido
+##    PsValor : Valor que almacenara la etiqueta	
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se subio a la clase entidad
+	
+   LoLbl << _self.oElementos.obten_elemento(PsEtiqueta)
+   LoLbl.sAlineacion << PsValor
+   
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.obten_alineacion_etiqueta(PsEtiqueta) 
+
+## Objetivo: Obtiene  la alineacion de una etiqueta
+## Parámetros de entrada:
+##    PsEtiqueta : Etiqueta que identifica el elemento al cual
+##               se le desea cambiar la alineacion
+## Parámetros de salida:  NA
+## Regresa:
+##   String - Cadena que desplegara el elemento	
+## Fecha de última modificación:
+##   01/04/05 DSB Se subio a la clase entidad
+	
+   LoLbl << _self.oElementos.obten_elemento(PsEtiqueta)
+   _return LoLbl.sAlineacion
+   
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_entidad_g.reposicionar_Area(RoArea)
+	
+## Objetivo: Calcular la nueva posicion del area (bounding_box)
+##           de acuerdo al punto de contacto
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se creo
+
+
+   # Calcular las distancias del pto de contacto interior a las
+   # coordenadas inferior y a la superior
+
+   LnAlturaArea << ( RoArea.YMax - RoArea.YMin )
+
+	
+   LnDistEnXInf << 0
+   LnDistEnYInf << LnAlturaArea / 2
+
+   LnDistEnXSup << _self.nLong_grafica
+   LnDistEnYSup << LnAlturaArea / 2
+
+   _return  bounding_box.new( _self.oPto_Contacto.X + LnDistEnXInf,
+                              _self.oPto_Contacto.Y - LnDistEnYInf,
+                              _self.oPto_Contacto.X + LnDistEnXSup,
+                              _self.oPto_Contacto.Y + LnDistEnYSup )
+	
+_endmethod
+$
+
+

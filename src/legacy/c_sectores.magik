@@ -1,0 +1,173 @@
+#----------------------------------------------------------------
+# croquis.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: Alejandro Enriquez G.
+#
+# Date: 04/11/17
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+$
+#remex(:c_sectores)
+$
+def_slotted_exemplar (:c_sectores,
+                      {
+		         {:app, smallworld_product.pni_application()},
+			 {:vp_nombre, _unset}
+		      }, {:layout_element,
+		          :viewport_layout_mixin})
+$
+c_sectores.define_shared_constant(:activate_properties_dialog_on_insert?,
+	                            _false,:public)
+$
+c_sectores.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sectores.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from(_super.defined_attributes)
+	attribs.add (_self.viewport_attribute_definition)
+	>> attribs	
+_endmethod
+$
+
+c_sectores.define_attributes()
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sectores.dibuja_trazo(LoSec_Rope, LoRadio)
+	## 
+	## LoElemento: objeto sobre el que se va a obtener los sectores
+	## LoRadio
+_local LoSector_aux
+_local LoBuffer
+_local LoMapa
+       LoMapa << smallworld_product.pni_application().plugin(:map_plugin).current_map
+       LoSector_aux << _self.arma_sector(LoSec_Rope)
+       LoBuffer << LoSector_aux.buffer(LoRadio, :circular)
+#	LoBuffer << LoBuffer.transformed(transform.new().scalexy(10,10))
+       LoBuffer.world << LoMapa.world
+       LoMapa.set_trail_from_geometry(LoBuffer)
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sectores.arma_sector(LoTCanaliz)
+	## 
+	## 
+#_local LoTramo           # Tramo de Canalización
+_local LoSector_a        # Sector donde se ordenan y unifican los sectores de la Canalización
+_local LoTini            # Cantidad inicial de Tramos de canalizacion
+_local LoTfin            # Cantidad final de Tramos de Canalizacion
+_local LoSectorRope      # Sector_Rope devuelto
+	
+        LoMapa << smallworld_product.pni_application().plugin(:map_plugin)
+#        LoElementos << LoMapa.current_map.current_selection
+#        LoTCanaliz << sector_rope.new()
+	LoSector_a << sector.new()
+	LoSectorRope << sector_rope.new()
+#	_for LoTramo _over LoElementos.fast_elements()
+#	_loop
+#		_if LoTramo.rwo.rwo_type _is LoElemento		
+#		_then
+#			LoTCanaliz.add(LoTramo)
+#		_endif
+#	_endloop
+	_loop
+	LoTini << LoTCanaliz.size
+		_if LoTCanaliz.size = 0
+		_then
+			LoSectorRope.add_sectors_last(LoSector_a)
+			_leave
+		_elif LoTini = LoTfin
+		_then
+			LoSectorRope.add_sectors_last(LoSector_a)
+			LoSector_a << sector.new()
+			_self.ordenamiento(LoTCanaliz,LoSector_a)
+		_else 
+			_self.ordenamiento(LoTCanaliz,LoSector_a)
+		_endif
+		LoTfin << LoTCanaliz.size
+	_endloop	
+#	_return LoSector_a
+	_return LoSectorRope
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sectores.ordenamiento(RoSecRope,RoSector_a)
+	## 
+	## 
+	## Objetivo: El presente código es para que apartir de los
+	## sectores de un sector_rope, se genere un nuevo sector
+	## ordenado, es decir, un sector donde sus coordenadas tiene
+	## una conexión fisica en el mapa. El Sector del sector_rope
+	## que sus coordenadas se agreguen al nuevo sector, sera
+	## borrado del sector_rope
+	## Parámetros de entrada:
+	## RoSecRope:       sector_rope de referencia
+	## RoSector_a:      Sector ordenado
+	## Regresa:         Modifica los parámetros por Referencia
+        ## Fecha  de última modificación: 21-Dic-2004
+        ## Autor de la modificación: aegijon
+        ## Descripción de la modificación: Método nuevo.
+
+_local LoSecRopeIt      # Iterador del sector_rope
+_local LoSecIt          # Iterador del Sector
+
+# se recorren los sectores del sector_rope, si el sector
+# RoSector_a es unset, se la agregan las coordenadas del iterador 
+_for LoSecRopeIt _over RoSecRope.elements()
+	 _loop
+	_if RoSector_a.first_coord _is _unset 
+	_then
+		_for LoSecIt _over LoSecRopeIt.sectors()
+		_loop
+			_for pnt _over LoSecIt.elements()
+			_loop
+				RoSector_a.add_last(pnt)
+			_endloop
+		_endloop
+	RoSecRope.remove(LoSecRopeIt)
+	_continue 
+	_else 
+		_for LoSecIt  _over LosecRopeIt.sectors() #sec  sector del tramo1
+		 _loop
+			 # 1a coord del Tramo = 1a coord del sector nuevo
+			_if LoSecIt.first_coord = RoSector_a.first_coord  
+			_then
+				_continue
+			# Ultima coord del Tramo = 1a coord del sector nuevo
+			_elif LoSecIt.last_coord = RoSector_a.first_coord 
+			_then 
+				RoSector_a.add_all_first(LoSecIt)
+				RoSecRope.remove(LosecRopeIt)
+				_continue
+			# 1a coord del Tramo = Ultima coord del sector nuevo
+			_elif LoSecIt.first_coord = RoSector_a.last_coord 
+			_then 
+				RoSector_a.add_all_last(LoSecIt)
+				RoSecRope.remove(LoSecRopeIt)
+				_continue
+			# Ultima coord del Tramo = Ultima coord del sector nuevo
+			_elif LoSecIt.last_coord = RoSector_a.last_coord 
+			_then 
+				_continue 
+			_else 
+				_continue 
+			_endif
+		 _endloop
+	_endif
+ _endloop
+	
+_endmethod
+$

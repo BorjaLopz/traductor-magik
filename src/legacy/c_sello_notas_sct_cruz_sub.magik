@@ -1,0 +1,103 @@
+_package user
+#remex(:c_sello_notas_sct_cruz_sub)
+$
+def_slotted_exemplar(:c_sello_notas_sct_cruz_sub, {}, :c_sello_notas_sct)
+$
+c_sello_notas_sct_cruz_sub.define_shared_constant(:allowed_on_menu?, _false , :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct_cruz_sub.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblTitulo # Tabla que almacena el título de la tabla
+
+	LoTblTitulo << _self.oTablas.crea_tabla(2,1,:tbl_notas_grales)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# Longitud de los renglones de la tabla, esta dada en mm
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 210
+
+	# Longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 165
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct_cruz_sub.prvAsignaTexto()
+
+	_super.prvAsignaTexto()
+
+_local LsTexto << character.newLine
+     LsTexto +<<" 5.- LA UBICACIÓN DEL CRUZAMIENTO SUBTERRÁNEO CON CABLE DE "+ .s_tipo_cable
+     LsTexto +<< character.newLine
+     LsTexto +<<" INDICADO EN ESTE PROYECTO DEBERÁ SER VERIFICADO Y PRECISADO EN EL LUGAR POR LA RESIDENCIA"
+     LsTexto +<< character.newLine
+     LsTexto +<<" GENERAL DE CONSERVACIÓN DE CARRETERAS EN EL ESTADO DE "+ .s_estado + "."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 6.- EL CRUZAMIENTO SUBTERRÁNEO CON CABLE DE "+ .s_tipo_cable +" SE HARÁ POR EL "
+     LsTexto +<< character.newLine
+     LsTexto +<<" PROCEDIMIENTO DE '"+ .s_procedimiento +"', PARA LO CUAL SE REQUIERE ENCAMISAR "     
+     LsTexto +<< character.newLine
+     LsTexto +<<" EL CABLE CON EL FIN DE PROTEGER LAS FIBRAS ÓPTICAS O COBRE Y PRINCIPALMENTE LA "
+     LsTexto +<< character.newLine
+     LsTexto +<<" CARPETA ASFALTICA EVITANDO SU ROMPIMIENTO."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 7.- AL EFECTUAR EL CRUZAMIENTO POR EL PROCEDIMIENTO DE '"+ .s_procedimiento +"',"
+     LsTexto +<< character.newLine
+     LsTexto +<<" SE EVITARÁ INTERRUMPIR EL TRÁNSITO Y MOLESTIAS AL USUARIO DE ESTA VÍA."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 8.- DENTRO DEL DERECHO DE VÍA, LA DISTANCIA ENTRE LA PARTE MAS BAJA DEL TERRENO"
+     LsTexto +<< character.newLine
+     LsTexto +<<" NATURAL O LA PARTE MAS BAJA DE LA SECCIÓN DEL CAMINO, SOBRE LA CAMISA O CABLE DE "
+     LsTexto +<< character.newLine
+     LsTexto +<< .s_tipo_cable + "SERÁ DE 1.50 M. COMO MÍNIMO EN LOS TRAMOS CON/SIN TERRAPLÉN Y "
+     LsTexto +<< character.newLine
+     LsTexto +<<" NO MENOR DE 2.00 M. A PARTIR DEL FONDO DE LAS CUNETAS."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 9.- EL CRUZAMIENTO SUBTERRÁNEO CON CABLE DE "+ .s_tipo_cable +" QUE SE INDICA EN "
+     LsTexto +<< character.newLine
+     LsTexto +<<" ESTE PROYECTO, DEBERÁ EFECTUARSE CONFORME A LAS INDICACIONES ADICIONALES DE LA "
+     LsTexto +<< character.newLine
+     LsTexto +<<" RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS, ASÍ COMO LAS RECOMENDACIONES "
+     LsTexto +<< character.newLine
+     LsTexto +<<" QUE SE DERIVEN DE LAS INSPECCIONES EN CAMPO."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 10.- LOS POZOS DE VISITA SE UBICARAN FUERA DEL ÁREA DEL DERECHO DE VÍA O DENTRO DE UNA"
+     LsTexto +<< character.newLine
+     LsTexto +<<" FRANJA NO MAYOR DE 2.50 M. DE ANCHO EN AMBOS LADOS DE LA CARRETERA, MEDIDOS A PARTIR "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DEL LIMITE DEL DERECHO DE VÍA."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 11.- CUALQUIER DAÑO QUE SE OCASIONE AL PAVIMENTO, ACOTAMIENTO, CUNETA Y/O SEÑALAMIENTO "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DEBERÁ SER REPARADO DE INMEDIATO POR CUENTA DE TELÉFONOS DE MÉXICO, S.A. DE C.V. DE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" ACUERDO A LAS INDICACIONES DE LA RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS EN"
+     LsTexto +<< character.newLine
+     LsTexto +<<" ESA ENTIDAD."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 12.- PARA EVITAR ACCIDENTES DURANTE LA CONSTRUCCIÓN DE LA OBRA TELÉFONOS DE MÉXICO, S.A. "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE C.V. COLOCARA Y CONSERVARA PERMANENTEMENTE EN EL CAMINO LAS SEÑALES PREVENTIVAS, RES- "
+     LsTexto +<< character.newLine
+     LsTexto +<<" RESTRICTIVAS E INFORMATIVAS QUE INDIQUE LA RESIDENCIA GENERAL DE  CONSERVACIÓN DE CARRE- "
+     LsTexto +<< character.newLine
+     LsTexto +<<" TERAS, CON BASE A LO ESTABLECIDO EN EL 'MANUAL DE DISPOSITIVOS PARA EL CONTROL DEL TRAN- "
+     LsTexto +<< character.newLine	     
+     LsTexto +<<" EN CALLES Y CARRETERAS' EDITADO POR LA SCT EDICIÓN 1986."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 13.- UNA VEZ TERMINADOS LOS TRABAJOS DE ESTA OBRA, DEBERÁN RETIRARSE FUERA DE LOS LIMITES"
+     LsTexto +<< character.newLine
+     LsTexto +<<" DEL DERECHO DE VÍA TODOS LOS MATERIALES SOBRANTES DE LA EXCAVACIÓN Y LOS DE  CONSTRUCCIÓN"
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE LA OBRA INCLUYENDO EL SEÑALAMIENTO DE MODO QUE LA CARRETERA Y LA ZONA DEL DERECHO DE -"
+     LsTexto +<< character.newLine
+     LsTexto +<<" VÍA QUEDEN EN SUS CONDICIONES ORIGINALES."
+
+_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+	
+_endmethod
+$

@@ -1,0 +1,327 @@
+#----------------------------------------------------------------
+# c_plano_principales.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: Alejandro Enriquez Gijon.
+#
+# Date: 05/04/29
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+
+$
+_package user
+$
+#remex(:c_plano_principales)
+$
+def_slotted_exemplar (:c_plano_principales,
+                      {
+		         {:app,         smallworld_product.pni_application(),    :writable,    :public},
+#			 {:origen,      coordinate.new(200,200),                 :writable,    :public},
+			 {:vp_nombre,   _unset,                                  :writable,    :public},
+			 {:marco,       _unset,                                  :writable,    :public}
+		      },
+		      {:layout_element, :viewport_layout_mixin})
+$
+c_plano_principales.define_shared_constant(:activate_properties_dialog_on_insert?,
+	                            _false,:public)
+$
+c_plano_principales.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+c_plano_principales.define_shared_constant(:Carta_X, 2160, :public)
+$
+c_plano_principales.define_shared_constant(:Carta_Y, 2790, :public)
+$
+c_plano_principales.define_shared_constant(:origen, 200,  :public)
+$
+c_plano_principales.define_shared_constant(:Separacion, 50, :public)
+$
+#c_plano_principales.define_shared_constant(:Marco_T0,
+#					    bounding_box.new(  _self.origen,
+#							       _self.origen,
+#							     ( _self.origen + ( _self.Carta_X * 4 ) ),
+#							     ( _self.origen + ( _self.Carta_Y * 2 ) )
+#							    ),
+#					    :public)
+#$
+#c_plano_principales.define_shared_constant(:Marco_T1,
+#					    bounding_box.new(  _self.origen,
+#							       _self.origen,
+#							     ( _self.origen + ( _self.Carta_X * 4 ) ),
+#							     ( _self.origen + ( _self.Carta_Y * 3 ) )
+#							    ),
+#					    :public)
+#$
+#c_plano_principales.define_shared_constant(:Marco_T2,
+#					    bounding_box.new(  _self.origen,
+#							       _self.origen,
+#							     ( _self.origen + ( _self.Carta_X * 5 ) ),
+#							     ( _self.origen + ( _self.Carta_Y * 3 ) )
+#							    ),
+#					    :public)
+#$
+#c_plano_principales.define_shared_constant(:Marco_T3,
+#					    bounding_box.new(  _self.origen,
+#							       _self.origen,
+#							     ( _self.origen + ( _self.Carta_X * 6 ) ),
+#							     ( _self.origen + ( _self.Carta_Y * 3 ) )
+#							    ),
+#					    :public)
+#$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_principales.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from(_super.defined_attributes)
+	attribs.add (_self.viewport_attribute_definition)
+	>> attribs	
+	
+_endmethod
+$
+c_plano_principales.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_principales.genera_plano()
+	## 
+	## Genera el plano de Principales despues de haber capturado la
+	## red principal.
+	## Alejandro Enriquez Gijón (SigmaTao Software, S.A. de C.V.)
+	## Abril.29/2005
+
+_local LoHoja   # Hoja de trabajo donde se genera el Plano
+_local LoVport  # Viewport para mapear la Red
+
+LoHoja << _self.abrir_hoja()
+# Hoja 24" x 36"
+LoHoja.set_paper_size(9144, 6096)
+LoVport << _self.agrega_viewport(LoHoja)
+_self.configura_plano(LoHoja, LoVport)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_principales.configura_plano(LoPagina, LoVport)
+	## 
+	## Este metodo configura los parametros de visualización de los
+	## objetos
+
+_local LoNorte   # Norte
+_local LoTexto   # Texto Generado
+
+LoVport.fill_style    << _unset
+LoVport.outline_style << _unset
+_self.genera_marco(LoPagina)
+#_self.sello(LoPagina)
+
+LoTexto << textbox_layout.new()
+LoTexto.text << "PRINCIPALES"
+LoTexto.bounds << bounding_box.new(9000,200,11000,600)
+LoTexto.colour << colour.new_from_hex("3025B8")
+LoTexto.font_size << 25
+LoTexto.outline_style << _unset
+LoTexto.fill_style << _unset
+LoPagina.add_element(LoTexto)
+
+#LoVport.view_angle << 270
+#LoNorte << northarrow_layout.new_with(:bounds, bounding_box.new(200,5000,1200,6000))
+#LoNorte.style_name <<  "norte_1"
+#LoNorte.fill_style <<  _unset
+#LoNorte.outline_style << _unset
+#LoPagina.add_element(LoNorte)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_principales.sello(LoPagina)
+	## 
+	## Este metodo genera el sello para el plano de red principal
+	## Alejandro Enriquez Gijón (SigmaTao Software, S.A. de C.V.)
+	## Mayo.02/2005
+_local LoSello   #
+
+LoSello << c_pep_dcs.new_with(:bounds, bounding_box.new(150,320,1030,1230))
+LoSello.numero_hoja(3)
+LoSello.total_hoja(8)
+LoPagina.add_element(LoSello)		
+
+LoSello << c_sello_estandar.crea_sello("DIV DTOS", bounding_box.new(150,150,1900,300))
+#	LoSello.identificador_proyecto(_self.sIdProyecto)
+LoPagina.add_element(LoSello)
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_principales.set_marco(MT)
+	## 
+	## Alejandro Enriquez Gijón (SigmaTao Software, S.A. de C.V.)
+	## Ene.03/2006
+	## Metodo que asigna el bounds del tipo de marco
+_local LoBB
+	_if MT _is :T0
+	_then
+		LoBB << bounding_box.new(   _self.origen,
+						   _self.origen,
+						   ( _self.origen + ( _self.Carta_X * 4 ) ),
+						   ( _self.origen + ( _self.Carta_Y * 2 ) )
+					    )
+	_elif MT _is :T1
+	_then
+		LoBB << bounding_box.new(   _self.origen,
+					      _self.origen,
+					    ( _self.origen + ( _self.Carta_X * 4 ) ),
+					    ( _self.origen + ( _self.Carta_Y * 3 ) )
+				       )
+	_elif MT _is :T2
+	_then
+		LoBB << bounding_box.new(   _self.origen,
+					      _self.origen,
+					    ( _self.origen + ( _self.Carta_X * 5 ) ),
+					    ( _self.origen + ( _self.Carta_Y * 3 ) )
+				       )
+	_elif MT _is :T3
+	_then
+		LoBB << bounding_box.new(   _self.origen,
+					      _self.origen,
+					    ( _self.origen + ( _self.Carta_X * 6 ) ),
+					    ( _self.origen + ( _self.Carta_Y * 3 ) )
+				       )
+	_endif 
+	_return LoBB
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_principales.genera_marco(LoPagina)
+	## 
+	## Este metodo genera el marco para el plano de red
+	## principal. No se usa la clase de Marco porque no coinciden
+	## las dimensiones de 6 modulos a lo ancho y 3 a lo alto, con
+	## el marco original.
+	## Alejandro Enriquez Gijón (SigmaTao Software, S.A. de C.V.)
+	## Mayo.02/2005
+
+_local LoMar   # Valor regresado
+_local LoSec     # Sector del marco
+_local LoColorEx  # color del marco
+      write("antes")
+      _self.marco << _self.set_marco(:T3)
+      write(".marco:  ", _self.marco)
+      LoMar << polyline_layout.new()
+      LoSec << sector.new()
+      LoMar.sectors << bounding_box.new( _self.marco.xmin + _self.separacion,
+					 _self.marco.ymin + _self.separacion,
+					 _self.marco.xmax - _self.separacion,
+					 _self.marco.ymax - _self.separacion).sectors
+
+      # Agregar Marcas de doblez (sobre eje X)
+      _for mark _over range( ( _self.origen +   _self.Carta_X),
+			     ( _self.marco.xmax - 10 ),
+			     ( _self.Carta_X)
+      ) 
+      _loop
+	      write("Genera Marca X")
+	      LoSec << sector.new()
+	      LoSec.add_last(coordinate.new(mark, _self.marco.ymax -  _self.separacion))
+	      LoSec.add_last(coordinate.new(mark, _self.marco.ymax - (_self.separacion * 2 ) ) )
+	      LoMar.sectors.add_last(LoSec)
+
+	      LoSec << sector.new()
+	      LoSec.add_last(coordinate.new(mark, _self.marco.ymin +   _self.separacion))	
+	      LoSec.add_last(coordinate.new(mark, _self.marco.ymin + ( _self.separacion * 2 ) ) )	
+	      LoMar.sectors.add_last(LoSec)
+      _endloop
+      # Agregar Marcas de doblez (sobre eje Y)
+      _global var1
+      var1 << _self 
+      _for mark _over range ( ( _self.origen + _self.Carta_Y ),
+			      ( _self.marco.ymax - 10 ),
+			      ( _self.Carta_Y)
+      )
+      _loop
+	      write("Genera Marca Y")	      
+	      LoSec << sector.new()
+	      LoSec.add_last(coordinate.new(_self.marco.xmin + _self.separacion,  mark))
+	      LoSec.add_last(coordinate.new(_self.marco.xmin + ( _self.separacion * 2 ),  mark))
+	      LoMar.sectors.add_last(LoSec)
+	      
+	      LoSec << sector.new()
+	      LoSec.add_last(coordinate.new(_self.marco.xmax - _self.separacion,  mark))
+	      LoSec.add_last(coordinate.new(_self.marco.xmax - ( _self.separacion * 2 ),  mark))
+	      LoMar.sectors.add_last(LoSec)
+	      
+      _endloop
+      # Agregar Marcas de doblez (sobre esquinas)
+      LoSec << sector.new()
+      LoSec.add_last(coordinate.new(_self.marco.xmin + _self.separacion,  _self.marco.ymin))
+      LoSec.add_last(coordinate.new(_self.marco.xmin,  _self.marco.ymin))
+      LoSec.add_last(coordinate.new(_self.marco.xmin,  _self.marco.ymin + _self.separacion))	
+      LoMar.sectors.add_last(LoSec)
+      
+      LoSec << sector.new()
+      LoSec.add_last(coordinate.new(_self.marco.xmin + _self.separacion,  _self.marco.ymax))
+      LoSec.add_last(coordinate.new(_self.marco.xmin,  _self.marco.ymax))
+      LoSec.add_last(coordinate.new(_self.marco.xmin,  _self.marco.ymax - _self.separacion))	
+      LoMar.sectors.add_last(LoSec)
+      
+      LoSec << sector.new()
+      LoSec.add_last(coordinate.new(_self.marco.xmax - _self.separacion,  _self.marco.ymax))
+      LoSec.add_last(coordinate.new(_self.marco.xmax,  _self.marco.ymax))
+      LoSec.add_last(coordinate.new(_self.marco.xmax,  _self.marco.ymax - _self.separacion))	
+      LoMar.sectors.add_last(LoSec)
+      
+      LoSec << sector.new()
+      LoSec.add_last(coordinate.new(_self.marco.xmax - _self.separacion,  _self.marco.ymin))
+      LoSec.add_last(coordinate.new(_self.marco.xmax,  _self.marco.ymin))
+      LoSec.add_last(coordinate.new(_self.marco.xmax,  _self.marco.ymin + _self.separacion))	
+      LoMar.sectors.add_last(LoSec)
+      
+      LoTr << transform.new()
+      LoTr << LoTr.multiply(LoTr.scale(1.009345))
+      LoMar.sectors << LoMar.sectors.transformed(LoTr)
+      LoColorEx << colour.new_from_hex("000000")  
+      LoMar.line_style << line_style.new( LoColorEx, 2 )
+      
+      LoPagina.add_element(LoMar)
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_principales.agrega_viewport(LoPagina)
+	##
+	## En este viewport se mapea la Red
+	## Alejandro Enriquez Gijón (SigmaTao Software, S.A. de C.V.)
+	## Abril.29/2005
+	
+_local LoPaf       # Aplicacion
+_local LoVport     # Viewport auxiliar para la transformacion
+_local LoView_map  # Obtener el Plugin Viewport_mapper para manejo del viewport_layout
+_local LoCmv       # Obtener la vista actual para poder mapear el viewport
+write("Agrega vieport")
+LoPaf << smallworld_product.pni_application()
+LoView_map << LoPaf.plugin(:layout_plugin).start_layout_designer().plugin(:viewport_mapper)
+LoCmv << LoPaf.plugin(:map_plugin).current_map_view
+LoVport << viewport_layout.new_with(:bounds, bounding_box.new(200, 200, 11000, 8900))
+LoPagina.add_element(LoVport)
+#LoView_map.map_viewport_on_map_view(LoVport, LoCmv, LoCmv.world_bounds, _true )
+LoView_map.map_viewport_on_map_view(LoVport, LoCmv, bounding_box.new_with_size(0,0,1200000,1000000) )
+_return LoVport 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_principales.abrir_hoja()
+	## 
+	##
+	_return smallworld_product.pni_application().plugin(:layout_plugin).start_layout_designer().plugin(:layout_manager).current_document.current_page
+	
+	
+_endmethod
+$

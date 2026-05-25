@@ -1,0 +1,2625 @@
+_package user
+$
+def_slotted_exemplar(:c_viewport_layout_sigc,
+{
+	{:oWindows, _unset, :writable, :public},
+	{:obounds,  _unset, :writable, :public},
+	{:ogeomset, _unset,:writable, :public}
+}, :viewport_layout)
+$
+c_viewport_layout_sigc.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_viewport_layout_sigc.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from(_super.defined_attributes)
+	## Propiedad que indica si el viewport se ajusta al marco.
+	attribs.add ( layout_attribute_definition.new(:ajusta_al_marco,             :string,
+						      :description,                 "Ajustar al Marco",
+						      :default_value,               "Si",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method,                 :val_falso_verdadero,
+						      :editor,                      _unset))
+
+	attribs.add ( layout_attribute_definition.new(:fijar_configuracion,         :string,
+						      :description,                 "fijar configuración",
+						      :default_value,               "No",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method,                 :val_falso_verdadero,
+						      :editor,                      _unset))
+
+
+	
+	attribs.add ( layout_attribute_definition.new(:sTipoPlano,                  :string,
+						      :description,                 "Tipo de Plano",
+						      :default_value,               "",
+						      :allowed_on_properties_page?, _true,
+						      :editor,                      _unset))
+	
+	>> attribs
+_endmethod
+$
+c_viewport_layout_sigc.define_attributes()
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.draw_content_on(windows, _optional Punto )
+	## 
+	##
+	       .oWindows<<windows
+	       
+	       _super.draw_content_on(windows)
+	       
+	       _if Punto _isnt _unset 
+	       _then	     
+		       _self.crea_circulo_ubicacion(Punto, .oWindows)
+	       _endif
+      
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.geometry_set_for_render
+	## 
+	## Returns the geometry set which is used in the rendering
+	## code. Based the the visibility attribute the geometry set
+	## needs to get its own TableControl from either the Ace, the
+	## CurrentObjectControl or it has one already.
+	##
+	
+	_dynamic !current_coordinate_system!
+	!current_coordinate_system! << _self.coordinate_system
+	
+        _if _self.fijar_configuracion _isnt _unset  _andif
+	    _self.fijar_configuracion = "Si"  _andif
+	    .ogeomset _isnt _unset 
+	_then
+		_return .ogeomset
+	_endif   
+
+	_if _not _self.mapped?
+	_then
+		_return
+	_endif
+	
+	_if ( my_world << _self.world ) _is _unset _orif
+	    ( a_factory << _self.gs_factory ) _is _unset 
+	_then
+		_return
+	_endif 
+	
+	
+	display_style_name    << _self.display_style
+	style_system_category << _self.style_system_category
+	
+	geom_sets << a_factory.get_geometry_set_for ( _self.ace_name,
+						      my_world,
+						      display_style_name,
+						      :visible, 
+						      style_system_category )
+	
+	# When there is a MapView for the World we are rendering
+	_if ( my_layout << _self.layout ) _isnt _unset _andif
+	    ( a_map_manager << my_layout.map_manager ) _isnt _unset 
+	_then
+		_if ( a_map << a_map_manager.get_map_for ( _self.ace_name, my_world ) ) _isnt _unset
+		_then
+			# Get the Trail (if there is any)
+			_if _self.trail _is _true _andif
+			    ( a_trail << a_map.trail ) _isnt _unset _andif
+			    a_trail.empty? _is _false
+			_then
+				a_geom << a_trail.as_pseudo_geometry
+				a_geom.world << my_world
+				a_geom_set << geometry_set.new_with ( a_geom )
+				geom_sets << geom_sets.append ( a_geom_set )
+			_endif 
+
+			# Get the current selection (if there is any)
+			_if _self.selection _is _true _andif 
+			    ( a_selection << a_map.current_selection ) _isnt _unset _andif
+			    a_selection.size > 0
+			_then
+				# When there is no style system on it, create one.
+				_if a_selection.style_system _is _unset 
+				_then
+					new_sts << transient_style_system.new_from ( geom_sets.style_system )
+					new_sts.style_type << :highlight
+					a_selection.style_system << new_sts
+				_endif
+				geom_sets << geom_sets.append ( a_selection )
+			_endif
+		_endif
+
+		# And see if there are any other plugins, which supply some data
+		_if _self.post_render _is _true _andif
+		    ( some_sets << a_map_manager.request_post_render_geometry_sets(my_world) ) _isnt _unset
+		_then
+			_for geom_set _over some_sets.fast_elements ()
+			_loop
+				geom_sets << geom_sets.append ( geom_set )
+			_endloop 
+		_endif
+	_endif
+
+	# Now make sure that if geom_sets is a composite_geometry_set
+	# that we remove the style_system from it.
+	_if geom_sets.is_kind_of? ( composite_geometry_set )
+	_then
+		geom_sets.style_system << _unset 
+	_endif
+	
+	result_set << geom_sets.select ( :bounds_interacting_with, _self.rotated_world_bounds.bounds )
+
+	_if _self.sTipoPlano = "CONSTRUCCION"
+	_then
+		result_set << _self.plano_construccion(result_set)	
+
+	_elif _self.sTipoPlano = "CONSTRUCCION_FO"
+	_then
+		result_set_res << result_set
+		
+		result_set << _self.plano_construccion_fo(result_set)
+		
+                _if  _self.ace_name = "001 - P Construccion FTTH reub"
+		_then
+			LoEst << result_set.sys!slot(:sets).an_element().style_system
+			(estos,estos2)<<_self.agregar_elementos(result_set_res)
+			estos.style_system << LoEst
+			estos2.style_system<<LoEst
+			result_set << composite_geometry_set.new_with (estos,estos2,result_set)	
+		_endif
+
+	_elif _self.sTipoPlano = "BAJANTES"
+	_then
+		result_set << _self.plano_de_bajantes(result_set)
+	_elif _self.sTipoPlano = "DISTRITOS"
+	_then
+		result_set << _self.plano_distritos(result_set)
+
+	_elif _self.sTipoPlano = "ASHURADO"
+	_then
+		result_set << _self.plano_distritos(result_set)
+	_elif _self.sTipoPlano = "CANALIZACION"
+	_then
+		result_set << _self.plano_canalizacion(result_set)
+	_elif _self.sTipoPlano = "ITINERARIO"
+	_then
+		result_set << _self.plano_itinerario(result_set)
+
+	_elif _self.sTipoPlano = "PLANO_DE_RUTA"
+	_then
+		result_set << _self.plano_ruta_de_cables(result_set)
+
+	_elif _self.sTipoPlano = "Plano_desmontaje_CD"
+	_then
+		result_set << _self.plano_desmontaje_CD(result_set)		
+		
+	_elif _self.ace_name = "CENTRALES"
+	_then
+		result_set << _self.plano_generico(result_set)
+	_elif _self.ace_name = "ESTUDIO_CONJUNTO"
+	_then
+		# Modificacion Elena Sainero
+		result_set << _self.plano_estudio_conjunto(result_set)
+	_elif _self.ace_name = "Physical NI User"
+	_then
+		result_set << _self.plano_fosa_cables(result_set)
+	_endif
+
+	# creamos estructura de guardar visualizacion de los elementos del plano
+	_if _self.elementos_modificados _is _unset 
+	_then	   
+	    LoGuarda << c_guarda_objetos_vp.new()
+	    LoGuarda.oResulSet << result_set
+	    elementos << LoGuarda.genera_lista_gsfr() 
+	    
+	    _for ky,ele _over elementos.keys_and_elements()
+	    _loop
+		_self.guardar_visualizacion(ele,  ky)		
+	    _endloop
+	_endif
+	
+	.ogeomset << result_set 
+	
+	>> result_set 
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.agregar_elementos(result_set_res)
+	#---------------------------------------------------
+	##  Objetivo  : <Description>
+	##
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view
+	v << mit_manager.modelit_dataset
+	mstructs<< equality_set.new()
+	mgeoms<< equality_geometry_set.new()
+	LoInteraccion << equality_geometry_set.new()
+	lista<< swg_dsn_admin_engine.active_design.dsm_created_objects(_unset )
+        lista2<< swg_dsn_admin_engine.active_design.dsm_modified_objects(_unset )
+	lista.add_all(lista2)
+
+	_for geo _over lista.fast_elements()
+	_loop
+		_if geo.is_kind_of?(sheath)
+		_then
+			mst<< geo.structures
+
+			_for st  _over mst.fast_elements()
+			_loop
+				geoms <<st.get_mit_geometry_set_for_world(v.world)
+				mgeoms.add_all(geoms)
+			_endloop				
+		_endif
+	_endloop
+
+	_if mgeoms.size>0
+	_then
+		mbuffer<<mgeoms.buffer(2500)	
+		LoInteraccion << result_set_res.select(:interacting_with, mbuffer)
+	_endif
+
+
+	_return mgeoms,LoInteraccion 
+			
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.busca_perfiles_canalizacion(PoResultlineas, PoResultSet)
+	## (06/11/08 jtlelo) 
+	## Busca los perfiles de canalización a partir de la lineas que
+	## interactuan con el area de trabajo, se verifica una por una
+	## cada linea y si esta interactua con un perfil de
+	## canalización lo se seleccionamos de LoResultSet y creamos
+	## LoPerfilesSet.
+	##
+	LoResultlineas << PoResultlineas
+	LoResultSet << PoResultSet
+	LoPerfilesSet << _unset 
+	_for linea _over LoResultlineas.rwo_set().fast_elements()
+	_loop	
+		LoPred << predicate.interacts(:boundary, {linea.line_4})
+		PerfilSelecc << LoResultSet.select(:predicate,{:mit_presentation_object, LoPred})
+		_if LoPerfilesSet _is _unset 
+		_then
+			LoPerfilesSet << composite_geometry_set.new_with(PerfilSelecc)
+		_else
+			LoPerfilesSet << composite_geometry_set.new_with(LoPerfilesSet, PerfilSelecc)
+		_endif	
+		
+	_endloop
+
+	>> LoPerfilesSet
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.perfiles_canalizacion(PoResultlineas, PoResultSet)
+	## (06/11/08 jtlelo) 
+	## Busca los perfiles de canalización a partir de la lineas que
+	## interactuan con el area de trabajo, se verifica una por una
+	## cada linea y si esta interactua con un perfil de
+	## canalización lo se seleccionamos de LoResultSet y creamos
+	## LoPerfilesSet.
+	##
+	LoResultlineas << PoResultlineas
+	LoResultSet << PoResultSet
+	LoPerfilesSet << equality_geometry_set.new()
+
+	LoEst << PoResultset.sys!slot(:sets).an_element().style_system
+	
+	_for canal _over LoResultlineas.rwo_set().fast_elements()
+	_loop
+		_if (perfil <<  canal.mit_structure.mit_presentation_objects.an_element()) _isnt _unset 
+		_then
+			LoPerfilesSet.add(perfil.boundary)
+			LoPerfilesSet.add(perfil.tierra)	
+		_endif
+		
+		
+	_endloop
+
+	LoPerfilesSet.style_system<<LoEst
+	
+	>> LoPerfilesSet
+
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.crea_anotacion(LoLinea2,Lotexto,color)
+	##metodo muevo rraragon 11/10/06 metodo que genera la anotacion
+	## para las centrales adyacentes en el plano ashurado 
+	##
+	## fhramire, para el caso de Plano de Construccion de FO (Falc)
+	## los distritos opticos colindantes, puede no tener nombre de
+	## distrito, entonces se les pasa cadena vacia.
+	_if Lotexto _is _unset 
+	_then
+	    Lotexto << ""
+	_endif
+
+	loban << _false
+	lcuenta <<0
+	xmin << LoLinea2.last_coord.x-500
+	ymin << LoLinea2.last_coord.y-250
+	xmax << LoLinea2.last_coord.x+500
+	ymax << LoLinea2.last_coord.y+250
+	nom << textbox_layout.new_with(:bounds, bounding_box.new(xmin,ymin,xmax,ymax),
+			               :text,  Lotexto,
+			               :font_size, 12,
+				       :font_name, "Arial",
+				       :colour,colour.called(color),
+				       :outline_style, _unset ,
+			               :set_fill_colour, _unset,
+			               :fill_style,_unset,
+				       :align_horizontal,:centre,
+				       :align_vertical,:centre,
+				       :orientation,:left_right)
+	
+	_for e _over _self.layout_page.elements.fast_elements()
+	 _loop
+		_if e.is_kind_of?(textbox_layout)
+		_then
+			_if e.text=Lotexto _andif e.colour = colour.called(color)
+			_then
+				lcuenta + << 1
+				loban << _true 
+			_elif e.text=Lotexto _andif e.colour <> colour.called(color)
+			_then
+				_self.layout_page.elements.remove(e)
+				loban << _false 
+			_endif  
+		_endif
+	 _endloop
+
+	 _if _not loban _orif lcuenta=0
+	 _then
+		 _self.layout_page.add_element(nom)
+		 _self.layout_page.render_element(.owindows, nom)
+	 _endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.crea_circulo_ubicacion(Punto, windows)
+	## 
+	##
+
+	_dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset	
+
+	est_line1 << line_style.new_with_properties(
+			     :foreground_colour, colour.called(:blue), :width, 1)
+
+	LCoord << Punto.transformed(_self.transform)
+
+	LCo1 << coordinate.new(LCoord.x, LCoord.y)
+	LoCirculo << circle.new(LCo1, 300)
+	LoCirculo.draw_on(windows,est_line1)
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.dibuja_centrales_adyacentes(PcollCoords1,PoCollCoords2)
+	## 
+	## 
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.dibuja_limite_de_central(limite_distrito)
+
+	##(vbluna-29/ago/2012)
+	## Obtiene un conjunto de coordenadas a partir del limite de
+	## una central que coindicen con un limite_distrito
+	## En base a las coordenadas obtenidas, se dibuja una linea en
+	## el layout
+	
+	ldbv << gis_program_manager.cached_dataset(:landbase)
+	coll_central << ldbv.collections[:user!_central]
+	pred_ctls << predicate.interacts(:user!_limite, limite_distrito)
+	result_predicate << coll_central.select(pred_ctls)
+	a_ctl << result_predicate.an_element()
+	
+	_if a_ctl _is _unset
+	_then
+		_return 
+	_endif
+
+	a_sector_rope << sector_rope.new()
+	a_sector << _unset
+	ultima_coord_coincidente << 0
+	cont << 0
+	
+	_for a_coord _over limite_distrito.sectors.coords().fast_elements()
+	_loop
+		cont+<< 1
+
+		_if a_coord.touches?(a_ctl.user!_limite)
+		_then
+			_if ultima_coord_coincidente = 0
+			_then
+				a_sector << sector.new()
+			_elif ultima_coord_coincidente <> (cont-1)
+			_then 
+				a_sector_rope.add(a_sector)
+				a_sector << sector.new()
+			_endif
+
+			a_sector.add(a_coord.transformed(_self.transform))
+			ultima_coord_coincidente << cont
+		_endif
+	_endloop
+
+	_if a_sector _isnt _unset
+	_then
+		a_sector_rope.add(a_sector)
+	_endif
+
+	ls << line_style.new_with_properties(
+                  :foreground_colour, colour.called("magenta"), 
+                  :width, 6, 
+                  :dash_pattern, dash_pattern.new_with(20, 5, 5, 5))
+	
+	a_sector_rope.draw_on(.oWindows,ls)
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.distritos_adyacentes
+	#---------------------------------------------------
+	##  Objetivo  : # Colocar marcas de limites y nombres de los distritos adyacentes.
+	##
+	
+        distritooptico << swg_dsn_admin_engine.active_scheme.distrito_optico
+	LoAreaGeometrica<<distritooptico.user!_limite
+	LoDto << distritooptico.source_collection 
+	LoB   << mit_manager.modelit_dataset.collection(:building)
+	LoPred11 << predicate.touches(:user!_limite, {distritooptico.user!_limite})
+	LcollAdy << LoDto.select(LoPred11)
+	adyacentes<<distritooptico.ubica_seccion_compartida()
+
+	_for k,v _over adyacentes.keys_and_elements()
+	_loop           	     
+		lineat << sector.new()
+		
+                _for Loline _over v[3].fast_elements()
+		_loop
+                      _for LoCord _over Loline.fast_elements()
+		      _loop
+			         LoCoordt<<LoCord.transformed(_self.transform)
+				 lineat.add(LoCoordt)
+		      _endloop		      
+		_endloop
+
+		_self.crea_anotacion(lineat,v[4].write_string,:green)
+		
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.escribe_dato(PoCoordX,PoCoordY,PsTexto,PoColor,PiTamano)
+	## 
+	##
+
+	.oWindows.draw_vtext_transform ( vtext_style.new(font.new_logical("Arial",10),1,1,PoColor),
+					 PoCoordX,
+					 PoCoordY,
+					 PsTexto, _unset, _unset, 
+					 PiTamano.default(10),0.degrees_to_radians,:centre_centre)
+_endmethod
+$
+_pragma(classify_level=advanced)
+_method c_viewport_layout_sigc.filtra_rutas(rutas, coleccion, resultado, buffer, _optional siempre)
+	## Este método regresa los registros de colección que están
+	## indicadoss en rutas y tienen cables de cobre principales
+	## proyectados; los guarda en resultado y regresa un buffer
+	## 
+	# (06/11/07 jtlelo) : Asignamos el tamaño de buffer
+	LoBufferAncho << 4000
+	
+	_for i _over rutas.fast_elements()
+	_loop
+		seleccion << _unset
+		_if i.rwo_type _isnt :underground_route _and i.rwo_type _isnt :aerial_route
+		_then
+			_continue
+		_endif
+		_for cable _over i.cables().fast_elements()
+		_loop
+			_if (cable.rwo_type _is :copper_cable _andif
+			     cable.user!_tipo_red.write_string = "PRINCIPAL") _orif # _andif
+			    # cable.construction_status = "PROYECTADO") _orif
+			    siempre = _true# _andif
+			    #cable.user!_ruta_co _isnt _unset _andif
+			    #cable.user!_ruta_co.user!_numero = Glorutaopb.user!_numero
+			_then
+				# LoColeccion: puede valer :aerial_route ó :underground_route
+				LoColeccion << i.source_collection.name
+				seleccion << coleccion.select(:predicate, {LoColeccion,
+									   predicate.eq(:id, i.id)})
+				_leave
+			_endif
+		_endloop
+		_if seleccion _isnt _unset 
+		_then
+			_if  resultado _is _unset
+			_then
+				buffer << i.route.buffer(LoBufferAncho)
+				resultado << seleccion
+			_else
+				buffer << buffer.union(i.route.buffer(LoBufferAncho))
+				resultado << resultado.append(seleccion)
+			_endif
+		_endif 		
+	_endloop
+	>> (resultado, buffer)
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_viewport_layout_sigc.guardar_visualizacion(elementos, llave)
+	## fhramire 
+	## Funcionalidad para mover simbolos en el plano
+	_if _self.elementos_modificados _is _unset 
+	_then
+	    ## elementos en este caso es ya un property_list
+	    datos << property_list.new()
+	    datos[llave] << elementos
+	    _self.elementos_modificados << datos
+
+	_else
+	    ## elementos en este caso es un rope con los datos.
+	    ## y solo lo agregamos, con la llave = "llave" 
+	    _self.elementos_modificados[llave] << elementos
+	_endif
+	
+	
+_endmethod
+$
+_method c_viewport_layout_sigc.obten_pto_intersect(PoCoordP1,PoCoordP2,PoCoordP3)
+## Objetivo: Obtener el punto que de interseccion de las rectas
+## L1 y L2. La recta L1 pasa por los punto P1, P2 y la recta L2
+## pasa por los puntos P3 y la interseccion con la recta L1.
+## Parametros de Entrada:
+##   PoCoordP1: Coordenada del pto P1.
+##   PoCoordP2: Coordenada del pto P2.
+##   PnCoordP3: Coordenada del pto P3.
+## Parametros de Salida: Ninguno
+## Regresa:
+##   LoCoord:  Coordenada de interseccion de las rectas L1 y L2.
+## Fecha de ultima modificacion: 16/Nov./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+
+LfM       ## Pendiente de la recta que pasa por los puntos P1, P2.
+LfM_inv   ## LfM_inv=1/LfM.
+LfX       ## Coordenada x de la recta que pasa por los puntos P3 y la interseccion.
+LfY       ## Coordenada y de la recta que pasa por los puntos P3 y la interseccion.
+LoCoord   ## Coordenada donde se intersectan L1 y L2.
+
+        LfM<<(PoCoordP2.y-PoCoordP1.y)/(PoCoordP2.x-PoCoordP1.x)
+	_if LfM<>0
+	_then
+		LfM_inv<<LfM.inverse
+		
+		LfX<<(LfM*(LfM*PoCoordP1.x+LfM_inv*PoCoordP3.x-PoCoordP1.y+PoCoordP3.y))/(LfM.to_power(2)+1)
+		LfY<<LfM_inv*(PoCoordP3.x-LfX)+PoCoordP3.y
+		
+		LoCoord<<coordinate(LfX,LfY)
+	_else
+		LoCoord<<coordinate(PoCoordP3.x,PoCoordP1.y)
+	_endif
+
+	>>LoCoord
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.obten_pto_separado(PoCoordP1,PoCoordP2,PfMagnitud,PfAlpha)
+## Objetivo: Obtiene un punto al redededor del punto PoCoordP2
+##           a una distancia PfMagnitud a un angulo PfAlpha.
+## Parametros de Entrada:
+##   PoCoordP1:  Coordenada del pto P1 de la Recta L1.
+##   PoCoordP2:  Coordenada del pto P2 de la recta L2.
+##   PfMagnitud: Magnitud del vector con punto origen PoCoordP1
+##               y magnitud PfMagnitud y angulo PfAlpha.
+##   PfAlpha:   Angulo (sexagesimal )que se le agrega al angulo de la recta L1.
+## Parametros de Salida: Ninguno.
+## Regresa:
+##   LoCoord:  Coordenada.
+## Fecha de ultima modificacion: 16/Nov./2004.
+## Autor de la modificacion: rbsaldan.
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LfTheta  ## Angulo de la recta que pasa por los puntos P1,P2.
+_local LfX      ## Coordenada X.
+_local LfY      ## Coordenada Y.
+      PfAlpha<<PfAlpha.degrees_to_radians
+      _if PoCoordP2.x>=PoCoordP1.x
+      _then
+	      LfTheta<<atan((PoCoordP2.y-PoCoordP1.y)/(PoCoordP2.x-PoCoordP1.x))
+      _else
+	      LfTheta<<atan((PoCoordP2.y-PoCoordP1.y)/(PoCoordP2.x-PoCoordP1.x))+180.degrees_to_radians
+      _endif
+      
+      LfX<<PoCoordP1.x+PfMagnitud*(LfTheta+PfAlpha).cos
+      LfY<<PoCoordP1.y+PfMagnitud*(LfTheta+PfAlpha).sin
+
+      >>coordinate(LfX,LfY)
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.plano_canalizacion(PoResultSet)
+	## 
+	##
+
+	_local LoAppPNI                # Referencia a la Aplicacion PNI.
+	_local LoEditorManager         # Referencia al plugin editor_manager.
+	_local LyNombreTablaPrincipal  # Nombre interno de la tabla user!_central.
+	_local LoObjetoEnEditor        # Objeto que se encuentra en el editor (debe ser una central).
+	_local LoAreaGeometrica        # Area de la central seleccionada.
+	_local LyCampoGeometrico       # Campo geometrico de la central seleccionada.
+	_local LoResultSet            # Conjunto de geometrias que debeb ser dibujadas en Layout Designer.
+
+	LoAppPNI << smallworld_product.pni_application()
+	_if LoAppPNI _is _unset
+	_then
+		#
+		# (06/10/27 jtlelo) : 
+		# Para un usuario de la interfaz no gráfica
+		# no habra una pni_application().
+		# En este caso se utiliza la aplicación
+		# de dicha interfaz no gráfica.
+		#
+		LoAppPNI << smallworld_product.application ( :c_admin_proyectos_sin_grafico )
+	_endif 
+	LoEditorManager << LoAppPNI.plugin(:editor_manager)	
+	LyNombreTablaPrincipal << :user!_central
+	LyCampoGeometrico << :user!_limite
+
+	LoResultSet << PoResultSet
+	LoObjetoEnEditor << _unset
+
+	# Si hay un objeto en la tabla LyNombreTablaPrincipal y su
+	# campo geometrico no es nulo, hacer un filtro de objetos.
+	LoObjetoEnEditor << swg_dsn_admin_engine.active_scheme.project.user!_central
+	_if LoObjetoEnEditor _isnt _unset _andif
+	    (LoAreaGeometrica << LoObjetoEnEditor.perform(LyCampoGeometrico)) _isnt _unset
+	_then
+	        # Obtener Manzanas colindantes con la canalización
+		_local 	TmpResultSet  # Se guardan el conjunto de geometrias.	
+		TmpResultSet << LoResultSet
+
+		# Se obtienen las canalizaciones que interactuan con el area de
+		# limite de central
+		LoPredExistente << predicate.eq(:construction_status, "EXISTENTE")
+		LoPred1 << predicate.like(:user!_central, LoObjetoEnEditor.user!_central.slice(1, 3)+%%)
+		LoPred6 << predicate.interacts(:route, {LoAreaGeometrica}) _and LoPredExistente
+
+		LoResultSet << LoResultSet.select(:predicate, {:underground_route, LoPred6})
+		################################################################################
+		# Se esta modificando para hacer mas rapida la busqueda de las
+		# manzanas colindantes
+		# 
+		#a << lbv.collections[:user!_manzana].descriptor.all_fields[:user!_limite]
+		#geom_list << simple_vector.new_with(a)
+		##scanner << lbv.scanner_for({:sw_gis!area})#,LoAppPNI.plugin(:map_plugin).current_map.world})
+		#scanner << lbv.geometry_scanner(:area)
+		#geom_list << simple_vector.new_with(a)
+		#tc << lbv.table_control_for(geom_list)
+		#_global a_geom_set
+		#a_geom_set << equality_geometry_set.new()
+		#
+		#
+		###############################################################################
+
+		# Crear un buffer a 40mts. con las canalizaciones encontradas.
+		LoBuffer<<_unset
+		_for LoRec _over LoResultSet.rwo_set().fast_elements()
+		_loop
+			###############################################
+			#bd << LoRec.bounds #.new(LoRec.bounds.xmin+10,LoRec.bounds.xmax+10,
+			#scanner.start_scan(bd,tc)
+			#_loop
+			#	geom << scanner.get()
+			#	_if geom _is _unset _then _leave _endif
+			#	a_geom_set.add( geom)
+			#_endloop
+			#
+			#################################################
+			_if LoBuffer _is _unset
+			_then
+				LoBuffer << LoRec.route.buffer(4000)
+			_else
+				LoBuffer << LoBuffer.union(LoRec.route.buffer(4000))
+			_endif
+		_endloop
+		_if LoBuffer _is _unset 
+		_then
+			LoBuffer << LoAreaGeometrica.buffer(10)
+		_endif
+		
+		LoBuffer.world << LoAppPNI.plugin(:map_plugin).current_map.world
+
+
+
+		LoResultSet << TmpResultSet
+		# (06/10/12 jtlelo) : pozos
+		LoPred8 << predicate.within(:location, {LoBuffer}) _and LoPredExistente
+		# Selecciona todas las manzanas que estan dentro del buffer.
+		LoPred3 <<(predicate.interacts(:user!_limite,  {LoBuffer}))
+		# Selecciona todos los ejes de calle que estan dentro del area
+		# del buffer.
+		LoPred4 << predicate.overlays(:user!_posicion, {LoBuffer})
+		# Selecciona el building (edificio de la central) dentro del
+		# buffer.
+		LoPred5 << predicate.interacts(:location, {LoBuffer})_and LoPredExistente
+
+
+		# Selecionamos todos los posibles drafting que existan se
+		# pueden utilizar como señalamientos del perfil de canalización
+		LoPred9 << predicate.interacts(:line_4, {LoBuffer})
+
+	        # (06/11/08 jtlelo) : seleccionamos los perfiles de
+		# canalizacion que existen en el buffer, a partir de las lineas
+		LoResultlineas << LoResultSet.select(:predicate, {:drafting_lines, LoPred9})
+
+		# (06/11/08 jtlelo) : Creamos un geometry set para asegurarnos
+		# que se una con las demas busquedas resultantes
+		LoResultPerfiles << geometry_set.new() 
+		_if LoResultlineas _isnt _unset _andif
+		    LoResultlineas.size > 0
+		_then
+			LoResultPerfiles << _self.busca_perfiles_canalizacion(LoResultlineas, LoResultSet)
+		_endif
+
+		# (06/03/04 jtlelo) :  seleccionamos las manzanas utilizando
+		# un tipo distinto de interaccion. El motivo es acelerar el
+		# proceso, ya que en la valoracion de manzanas el proceso
+		# se prolongaba mucho en el tiempo. 
+		#Mset<<LoResultSet.select ( :collection, { :user!_manzana } )
+		#Mset.select(LoPred3)
+		#Mset << Mset.select_bounds_interacting_with(LoBuffer)
+		#Mset<<Mset.select ( :interacts, LoBuffer ) #_and Mset.select(:within, LoAreaGeometrica)
+		LoResultSet<<LoResultSet.select(:predicate, {:user!_manzana, LoPred3,
+							    :user!_eje_calle, LoPred4,
+							    :building, LoPred5,
+							    :mit_terminal_enclosure, LoPred5,
+						            :underground_route, LoPred6,
+							    :uub, LoPred8,
+							    :drafting_lines, LoPred9})
+
+		# (06/11/08 jtlelo) : unimos las dos busquedas
+		# LoResultPerfiles (Perfiles de canalización que interactuan
+		#                   con el buffer)
+		# LoResultSet (Elementos que interactuan con la central)
+		LoResultSet << composite_geometry_set.new_with (  LoResultPerfiles, LoResultSet )
+		
+	_endif
+	>>LoResultSet
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.plano_construccion(PoResultSet)
+	# Objetivo: Seleccionar todos los objetos visibles que se encuntran dentro de un Distrito.
+	# Parametros de Entrada:          PoResultSet: Seleccion de objetos en la vista.
+	# Parametros de Salida:           Ninguno.
+	# Regresa:                        LoResultSet: Seleccion de objetos de interes.
+	
+	_local LoAppPNI                # Referencia a la Aplicacion PNI.
+	_local LoEditorManager         # Referencia al plugin editor_manager.
+	_local LyNombreTablaPrincipal  # Nombre interno de la tabla user!_central.
+	_local LoObjetoEnEditor        # Objeto que se encuentra en el editor (debe ser un distrito
+	_local LoAreaGeometrica        # Area del distrito seleccionada.
+	_local LoResultSet             # conjunto de geometrias que deben ser dibujadas.
+	_local LoResultSetTemp
+	
+	LoAppPNI<<smallworld_product.pni_application()
+	
+	_if LoAppPNI _is _unset
+	_then
+		LoAppPNI << smallworld_product.application (:c_admin_proyectos_sin_grafico )
+	_endif
+	
+	LoEditorManager << LoAppPNI.plugin(:editor_manager)
+	LyNombreTablaPrincipal << :user!_distrito
+	LyCampoGeometrico << :user!_limite	
+	LoResultSet << PoResultSet
+	LoObjetoEnEditor << _unset
+	
+	_if _self.elementos_bd_lb _isnt _unset _andif
+	    _self.elementos_bd_lb.size > 0 _andif 
+	    _self.obtener_elementos_bd_gis().size > 0
+	_then
+		LoObjetoEnEditor << _self.obtener_elementos_bd_landbase().an_element()
+	_else
+		LoObjetoEnEditor << swg_dsn_admin_engine.active_design.user!_distrito
+	_endif
+	
+	
+	# Si hay un objeto en la tabla LyNombreTablaPrincipal hacer un
+	# filtro de objetos.
+	_if LoObjetoEnEditor _isnt _unset _andif
+	    (LoAreaGeometrica << LoObjetoEnEditor.perform(LyCampoGeometrico)) _isnt _unset
+	_then
+		
+		# Seleccionar todos los objetos visibles
+		# que se encuentren dentro del distrito.
+		LoResultSetTemp << LoResultSet.select(:overlaying, LoAreaGeometrica)
+		
+	     # Se Elimina los elementos no requeridos para el plano de construcción
+		LoResultSetTemp << LoResultSetTemp.exclude(:collection, {  :user!_bajantes,
+									   :user!_bajante,
+									   :curva_nivel,
+									   :user!_municipio,    
+									   :user!_central,        
+									   :user!_estado,         
+									   :user!_poblacion,      
+									   :user!_colonia,        
+									   :user!_localidad,      
+									   :user!_ashurado,       
+									   :swg_dsn_project_area })
+
+	     # Filtracion de la canalización en estado existente
+		LoPredExistente << predicate.eq(:construction_status, "EXISTENTE")
+	     # Selecciona el area del distrito.
+		LoPred1 << predicate.like(:user!_distrito, LoObjetoEnEditor.user!_distrito)
+		# Selecciona las manzanas que estan dentro del distrito
+		LoPred2 << predicate.within(:user!_limite, {LoAreaGeometrica})
+             # Selecciona la canalización
+		LoPred3 << predicate.overlays(:route, {LoAreaGeometrica}) _and LoPredExistente
+           
+     	     # Selecciona distritos adyacentes.
+		LoPred11 << predicate.touches(:user!_limite, {LoAreaGeometrica})
+		# Selecionamos el draftin unico de los pefiles de canalizacion line_4
+		LoPred9 << predicate.interacts(:line_4, {LoAreaGeometrica})
+		
+		LoResultSet << LoResultSet.select(:predicate, {:user!_distrito,    LoPred1,
+							       :user!_manzana,     LoPred2,
+							       :underground_route, LoPred3,
+							       :drafting_lines,    LoPred9})
+		
+		# (2006/04/20 jtlelo) : unimos el resultado de ambas busquedas
+		LoResultSet << composite_geometry_set.new_with ( LoResultSet,
+								 LoResultSetTemp)
+		
+		# (06/10/12 jtlelo) : verificamos que grupo de estilos trae,
+		# para cambiar el color de los nombres de los distritos colindantes.
+		_if _self.style_system_category = :|P Construccion FTTH|
+		_then
+			Color? << :green
+		_else
+			Color? << :black
+		_endif
+		
+		# Colocar marcas de limites y nombres de los distritos adyacentes.
+		LoDto << LoAppPNI.database.collection(:landbase, :user!_distrito)
+		LoB   << LoAppPNI.database.collection(:gis, :building)
+		LcollAdy << LoDto.select(LoPred11)
+		_for LoRec _over LcollAdy.fast_elements()
+		_loop
+                        _try
+				LopSel << predicate.within(:location, LoRec.user!_limite)
+				LoEdificio << LoB.select(LopSel).an_element()
+				
+				(LcollSec1,LcollSec2)<<_self.Seccion_Interseccion(LoAreaGeometrica,LoRec.user!_limite,_self)
+				LcollSec1.draw_on(.oWindows,line_style.new(colour.called(Color?),3))
+				LcollSec2.draw_on(.oWindows,line_style.new(colour.called(Color?),3))
+				
+				LcollSec1<<LcollSec1.as_sector()
+				LcollSec2<<LcollSec2.as_sector()
+				_if LcollSec1.size>=2 _and LcollSec2.size>=2
+				_then
+					# Poner los nombres de las centrales colindantes o adyacentes.				
+					# Crear una linea con los extremos donde se intersecta una central.
+					LoLinea<<sector.new()
+					LoLinea.add(LcollSec1.an_element())
+					LoLinea.add(LcollSec2.an_element())
+					# (06/10/26 jtlelo) : Verificamos si las dos cordenadas xy son
+					# iguales, si son iguales mandamos solo uno, si son diferentes
+					# mandamos el punto medio de las dos 
+					_if (LcollSec1.an_element().x = LcollSec2.an_element().x) _andif
+					    (LcollSec1.an_element().y = LcollSec2.an_element().y)
+					_then
+						LoPto<<LoLinea.an_element()					
+					_else
+						# Obtener el punto medio de la linea LoLinea
+						LoPto<<LoLinea.as_sector_rope().mid_point
+					_endif
+					
+					# Construir la nueva linea desde el punto medio a la central adyacente.
+					LoLinea2<<sector.new()
+					LoLinea2.add(LoPto)
+					LoLinea2.add(LoRec.user!_limite.get_centroid().transformed(_self.transform))
+					
+					# Extender la linea hasta salir de los limites de la central.
+					LnLongitud<<1
+					_loop
+						LoPto<<LoLinea2.coordinate_for_distance(LnLongitud)
+						_if LoPto.within?(LoAreaGeometrica.transformed(_self.transform))
+						_then
+							LnLongitud<<LnLongitud+1
+						_else
+							# Extender la linea 300 ptos mas del limite de la central.
+							LoPto<<_self.obten_pto_separado(LoLinea2.first_coord,LoPto,LnLongitud+300,0)
+							_leave
+						_endif
+					_endloop
+					
+					LoLinea2.remove_last()
+					LoLinea2.add(LoPto)
+					_if LoRec.construction_status="PROYECTADO"
+					_then
+						LoTexto_creado << LoRec.user!_num_dto_ant.default("No Dato").write_string
+						
+					_elif LoRec.construction_status="EXISTENTE"
+					_then
+						LoTexto_creado << LoRec.user!_distrito.write_string
+					_elif LoRec.construction_status="DESMONTAJE"
+					_then
+						
+						LoTexto_creado << "["+LoRec.user!_distrito.write_string+"]"
+					_endif
+					
+					_self.crea_anotacion(LoLinea2,Lotexto_creado,Color?)
+				_endif	
+								
+			_when does_not_understand
+				_continue
+			_endtry
+					
+		_endloop
+	_endif
+	
+	>>LoResultSet
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.plano_construccion_fo(PoResultSet)
+	# Objetivo: Seleccionar todos los objetos visibles que se encuntran dentro de un Distrito.
+	# Parametros de Entrada:          PoResultSet: Seleccion de objetos en la vista.
+	# Parametros de Salida:           Ninguno.
+	# Regresa:                        LoResultSet: Seleccion de objetos de interes.
+	LoAppPNI<<smallworld_product.pni_application()			 
+	LoEditorManager << LoAppPNI.plugin(:editor_manager)
+	LyNombreTablaPrincipal << :user!_distrito_optico
+	LyCampoGeometrico << :user!_limite
+
+	
+	LoResultSet << PoResultSet
+	
+	Dtooptico << swg_dsn_admin_engine.active_design.distrito_optico
+	
+	# Seleccionar todos los objetos visibles que se encuentren dentro del distrito.	
+	LoResultSetTemp << LoResultSet.select(:overlaying, Dtooptico.user!_limite)
+	
+	LoResultSet << LoResultSetTemp	 
+	# Se Elimina los elementos no requeridos para el plano de construcción
+	LoResultSetTemp << LoResultSetTemp.exclude(:collection, {  :user!_bajante,
+								   :curva_nivel,
+								   :underground_route,
+								   :access_point, 
+								   :user!_municipio,    
+								   :user!_central,
+								   :user!_distrito,
+								   :user!_manzana,
+								   :user!_estado,         
+								   :user!_poblacion,      
+								   :user!_localidad,      
+								    :swg_dsn_project_area})
+	
+	LoPred1     << predicate.like(:user!_distrito,     dtoOptico.user!_distrito)
+	
+
+	LoPred9     << predicate.interacts(:line_4,        {Dtooptico.user!_limite})	
+	LoResultlineas << LoResultSet.select(:predicate, {:drafting_lines, LoPred9})
+	 
+	 LoResultPerfiles << geometry_set.new()
+	 
+	 _if LoResultlineas _isnt _unset _andif LoResultlineas.size > 0
+	 _then
+		 LoResultPerfiles << _self.busca_perfiles_canalizacion(LoResultlineas, LoResultSet)
+	 _endif
+
+	 #manzanas
+	 LoPredM      << predicate.interacts(:user!_limite,  {Dtooptico.user!_limite})
+	 LoResultSetM << PoResultSet.select(:predicate,      {:user!_manzana, LoPredM})
+
+	 #canalizacion
+	 LoPredcanal << predicate.inside(:route,     {Dtooptico.user!_limite})  #interacs
+	 LoResultSetCanal << LoResultSet.select(:predicate, {:underground_route, LoPredCanal,:drafting_lines,LoPred9})
+
+	 mis_perfiles << _self.perfiles_canalizacion(LoResultSetCanal, LoResultSet)
+
+	# show(:perfiles2, mis_perfiles.size, LoResultSetCanal.size )
+	 
+	 LoPredDto    << predicate.interacts(:user!_limite,  {Dtooptico.user!_limite})	 
+
+	 LoResultSetTemp << LoResultSetTemp.exclude(:predicate,{:user!_distrito_optico, LoPredDto})
+	 
+	LoResultSet << composite_geometry_set.new_with ( LoResultSetCanal,
+							 mis_perfiles,
+							 LoResultSetM,
+							 LoResultSetTemp,
+							 LoResultPerfiles  )
+	
+	
+	_self.distritos_adyacentes
+	
+	
+	>>LoResultSet
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.plano_de_bajantes(PoResultSet)
+	##
+	## Objetivo: Seleccionar los elementos a visibilizar dento del
+	## plano de estudio de bajantes
+	## Parametros de entrada: PoResultSet #lista de elementos
+	##                                    #visibles en el layout 
+	## Parametros de salida: LoResultSet #lista de elementos
+	##                                   # filtrados 
+	## Creado por: Jtlelo
+	## Fecha:  (06/03/30 jtlelo) : creado.
+	
+	_local LoAppPNI                # Referencia a la Aplicacion PNI.
+	_local LoEditorManager         # Referencia al plugin editor_manager.
+	_local LyNombreTablaPrincipal  # Nombre interno de la tabla user!_central.
+	_local LoObjetoEnEditor        # Objeto que se encuentra en el editor (debe ser un distrito).
+	_local LoAreaGeometrica        # Area del distrito seleccionada.
+	_local LoResultSet             # conjunto de geometrias que debeb ser dibujadas en Layout Designer.
+	
+	
+	LoAppPNI<<smallworld_product.pni_application()
+	_if LoAppPNI _is _unset
+	_then
+		#
+		# (06/10/27 jtlelo) : 
+	        # Para un usuario de la interfaz no gráfica
+		# no habra una pni_application().
+   	        # En este caso se utiliza la aplicación
+	        # de dicha interfaz no gráfica.
+	        #
+		LoAppPNI << smallworld_product.application (:c_admin_proyectos_sin_grafico )
+	_endif
+
+	
+	LoEditorManager<<LoAppPNI.plugin(:editor_manager)
+	LyNombreTablaPrincipal<<:user!_distrito
+	LyCampoGeometrico<<:user!_limite
+	
+	LoResultSet<<PoResultSet
+	LoObjetoEnEditor<<_unset
+	LoObjetoEnEditor<<swg_dsn_admin_engine.active_scheme.user!_distrito
+	
+	# Si hay un objeto en la tabla LyNombreTablaPrincipal hacer un
+	# filtro de objetos.
+	_if LoObjetoEnEditor _isnt _unset _andif
+	    (LoAreaGeometrica<<LoObjetoEnEditor.perform(LyCampoGeometrico)) _isnt _unset
+	_then
+		
+		# Seleccionar todos los objetos visibles
+		# que se encuentren dentro del distrito.
+		LoResultSetTemp << LoResultSet.select(:overlaying, LoAreaGeometrica )
+		
+		
+	# Se elimina el detalle de la caja de distribución
+		LoPred12 << predicate.overlays(:line_8,{LoAreaGeometrica})
+	LoPred12_1 << predicate.overlays(:line_4,{LoAreaGeometrica})
+	
+	
+	LoResultSetTemp << LoResultSetTemp.exclude(:predicate,{:drafting_lines, LoPred12_1,
+							       :drafting_lines, LoPred12})
+	
+	LoResultSetTemp << LoResultSetTemp.exclude(:collection,{:underground_route,
+								:curva_nivel,
+								:user!_municipio, 
+								:user!_central, 
+								:user!_estado, 
+								:user!_poblacion, 
+								:user!_manzana, 
+								:user!_colonia, 
+								:swg_dsn_project_area, 
+								:user!_localidad, 
+								:user!_ashurado, 
+								:mit_presentation_object})
+	
+	# Filtracion de la canalización en estado existente
+	LoPredExistente << predicate.eq(:construction_status,"EXISTENTE")
+	# Selecciona el area del distrito.
+	LoPred1 << predicate.like(:user!_distrito, LoObjetoEnEditor.user!_distrito)
+	# Selecciona las manzanas del distrito
+	LoPred2 << predicate.within(:user!_limite,{LoAreaGeometrica})
+	# Selecciona la canalización
+	LoPred4 << predicate.overlays(:route,{LoAreaGeometrica}) _and LoPredExistente
+	
+	# Selecciona distritos adyacentes.
+	LoPred11 << predicate.touches(:user!_limite,{LoAreaGeometrica})
+	
+	
+	LoResultSet << LoResultSet.select(:predicate,{:user!_distrito,LoPred1,
+						      :user!_manzana, LoPred2,
+						      :underground_route, LoPred4})
+	
+	
+	# (2006/04/20 jtlelo) : unimos el resultado de ambas busquedas	     
+	LoResultSet << composite_geometry_set.new_with (LoResultSet, LoResultSetTemp )
+	# (06/10/12 jtlelo) : verificamos que grupo de estilos trae,
+	# para cambiar el color de los nombres de los distritos colindantes.
+	_if _self.style_system_category = "plano_dtos"
+	_then
+		Color? << :green
+	_else
+		Color? << :black
+	_endif
+	
+	# Colocar marcas de limites y nombres de los distritos adyacentes.
+	LcollAdy << LoAppPNI.database.collection(:landbase,:user!_distrito).select(LoPred11)
+	
+	LoMbuilding << LoAppPNI.database.collection(:gis,:building)
+	
+	_for LoRec _over LcollAdy.fast_elements()
+	_loop
+		# INICIO DEL CAMBIO
+		# (2010-11-23 Aarón Hernández Ramírez, SIGMATAO) : 
+		#
+		
+		_try _with LoError
+		     
+		     LoEdificio<<LoMbuilding.select(predicate.within(:location,LoRec.user!_limite)).an_element()
+		     
+		     (LcollSec1,LcollSec2)<<_self.Seccion_Interseccion(LoAreaGeometrica,LoRec.user!_limite,_self)
+		     LcollSec1.draw_on(.oWindows,line_style.new(colour.called(Color?),3))
+		     LcollSec2.draw_on(.oWindows,line_style.new(colour.called(Color?),3))
+		     
+		     LcollSec1<<LcollSec1.as_sector()
+		     LcollSec2<<LcollSec2.as_sector()
+		     _if LcollSec1.size>=2 _and LcollSec2.size>=2
+		     _then
+				# Poner los nombres de las centrales colindantes o adyacentes.
+			     
+			     # Crear una linea con los extremos donde se intersecta una central.
+			     LoLinea<<sector.new()
+			     LoLinea.add(LcollSec1.an_element())
+				LoLinea.add(LcollSec2.an_element())
+				
+				# Obtener el punto medio de la linea LoLinea
+				LoPto<<LoLinea.as_sector_rope().mid_point
+				
+				# Construir la nueva linea desde el punto medio a la central adyacente.
+				LoLinea2<<sector.new()
+				LoLinea2.add(LoPto)
+				LoLinea2.add(LoRec.user!_limite.get_centroid().transformed(_self.transform))
+				
+				# Extender la linea hasta salir de los limites de la central.
+				LnLongitud<<1
+				_loop
+					LoPto<<LoLinea2.coordinate_for_distance(LnLongitud)
+					_if LoPto.within?(LoAreaGeometrica.transformed(_self.transform))
+					_then
+						LnLongitud<<LnLongitud+1
+					_else
+						# Extender la linea 300 ptos mas del limite de la central.
+						LoPto<<_self.obten_pto_separado(LoLinea2.first_coord,LoPto,LnLongitud+300,0)
+						_leave
+					_endif
+				_endloop
+				LoLinea2.remove_last()
+				LoLinea2.add(LoPto)
+				_if LoRec.construction_status="PROYECTADO"
+				_then
+					LoTexto_creado << LoRec.user!_num_dto_ant.default("No Dato").write_string
+					
+				_elif LoRec.construction_status="EXISTENTE"
+				_then
+					LoTexto_creado << LoRec.user!_distrito.write_string
+				_elif LoRec.construction_status="DESMONTAJE"
+				_then
+					
+					LoTexto_creado << "["+LoRec.user!_distrito.write_string+"]"
+				_endif
+				
+				_self.crea_anotacion(LoLinea2,Lotexto_creado,Color?)
+			_endif
+		     
+		     
+		_when error
+		      write(LoError.write_string + "Error en dto:"  +   LoRec.user!_distrito.write_string )
+		      _continue
+		_endtry
+		
+		
+		#
+		# FIN DEL CAMBIO
+		
+	_endloop
+	_endif
+
+	>>LoResultSet
+	
+	
+_endmethod
+$
+_method c_viewport_layout_sigc.plano_desmontaje_CD(PoResultSet)
+#  Objetivo:              Plano de desmontaje de caja de distribución.
+#  Parámetros de entrada: Tipo - PoResultSet | 
+#  Parámetros de salida:  Tipo - Param1 | Descripción del Parámetro.
+#                         Tipo - Param2 | Descripción del Parámetro.
+#  Regresa:               Tipo - LoResultSet | Descripción de lo que regresa.
+
+        >> PoResultSet
+	
+#        _local lo_app_pni        << smallworld_product.pni_application()
+#        _local lo_editor_manager << lo_app_pni.plugin(:editor_manager)
+#	#Conjunto de geometrias que deben ser dibujadas en Layout Designer
+#	_local lo_composite_geometry_set << PoResultSet
+#	
+#	# obtener el objeto que dibuja el contenido de los planos.
+#	_local lo_c_geom_set_layout << _self.layout_page.all_elements_of(c_geom_set_layout).an_element()
+#	_if lo_c_geom_set_layout _isnt _unset
+#	_then
+#		# Debido a que un plano de ruta de cables puede involucrar
+#		# varios distritos, entonces construir el area geometrica que
+#		# ocupan los distritos.
+#		_local lo_pseudo_area << lo_c_geom_set_layout.oRegistro
+#		# Constrir los predicados con respecto al area geometirca que
+#		# se construyo.
+#		_local lo_p_1 << predicate.within(:location,         {lo_pseudo_area})
+#		_local lo_p_2 << predicate.overlaps(:route,          {lo_pseudo_area})
+#                _local lo_p_3 << predicate.overlaps(:user!_posicion, {lo_pseudo_area})
+#		_local lo_p_4 << predicate.overlaps(:user!_limite,   {lo_pseudo_area})
+#                _global var
+#		var << lo_composite_geometry_set
+#                _global var2
+#		var2 << lo_pseudo_area
+#		lo_composite_geometry_set << lo_composite_geometry_set.select(:predicate,
+#									      {
+#                                                                               :mit_terminal_enclosure, lo_p_1,
+#                                                                               :underground_route,      lo_p_2,
+#                                                                               :uub,                    lo_p_1,
+#                                                                               :pole,                   lo_p_1,
+#                                                                               :user!_eje_calle,        lo_p_3,
+#								               :user!_manzana,          lo_p_4
+#									      }
+#									     )
+#	_endif
+#	>> lo_composite_geometry_set
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.plano_distritos(PoResultSet)
+# Objetivo: Seleccionar los distritos, manzanas, ejes de calle
+#           y el edificio de la central que estan dentro del area de
+#           central.
+# Parametros de Entrada:PoResultSet: Seleccion de objetos en la vista.
+# Parametros de Salida: Ninguno.
+# Regresa: LoResultSet:   Seleccion de objetos de interes.
+# Fecha de ultima modificacion: 23/Dic./2004
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+	
+# Fecha de ultima modificacion: 21/Ene./2004
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Documentar codigo.
+	
+	_local LoAppPNI                # Referencia a la Aplicacion PNI.
+	_local LyNombreTablaPrincipal  # Nombre interno de la tabla user!_central.
+	_local LoObjetoEnEditor        # Objeto que se encuentra en el editor (debe ser una central).
+	_local LoAreaGeometrica        # Area de la central seleccionada.
+	_local LyCampoGeometrico       # Campo geometrico de la central seleccionada.
+	_local LoResultSet             # Conjunto de geometrias que debeb ser dibujadas en Layout Designer.
+#_local LoEditor               # Referencia a un Editor.
+
+
+	LoAppPNI<<smallworld_product.pni_application()
+	_if LoAppPNI _is _unset
+	_then
+		#
+		# Steve Hall (Ten Sails Consulting) 11/05/06
+		# Para un usuario de la interfaz no gráfica
+		# no habra una pni_application().
+		# En este caso se utiliza la aplicación
+		# de dicha interfaz no gráfica.
+		#
+		LoAppPNI << smallworld_product.application ( :c_admin_proyectos_sin_grafico )
+	_endif 
+	
+	LyNombreTablaPrincipal << :user!_central
+	LyCampoGeometrico << :user!_limite
+
+	LoResultSet << PoResultSet
+	LoObjetoEnEditor << _unset
+
+	# Si hay un objeto en la tabla LyNombreTablaPrincipal y su
+	# campo geometrico no es nulo, hacer un filtro de objetos.
+	LoObjetoEnEditor << swg_dsn_admin_engine.active_scheme.project.user!_central
+	_if LoObjetoEnEditor _isnt _unset _andif
+	    (LoAreaGeometrica << LoObjetoEnEditor.perform(LyCampoGeometrico)) _isnt _unset
+	_then
+		
+		# Selecciona el area de la central.
+		LoPred1 << predicate.like(:user!_central, LoObjetoEnEditor.user!_central.slice(1, 3) + %%) 
+		# Selecciona centrales adyacentes.
+		LoPred11 << predicate.touches(:user!_limite, {LoAreaGeometrica})
+		# Seleccionan todos los distritos con prefico igual a la central.
+		LoPred12 << predicate.interacts(:user!_limite, {LoAreaGeometrica})
+		# Seleccionan todos los distritos con prefico igual a la central.
+		LoPred2 << predicate.like(:user!_distrito, LoObjetoEnEditor.user!_central.slice(1, 3) + %%)
+		# Selecciona todos los limites de ditrito que estan dentro del area de la central.
+		#LoPred3<<predicate.interacts(:user!_limite,{LoAreaGeometrica})
+		# Selecciona todos los ejes de calle que estan dentro del area
+		# de la central.
+		LoPred4 << predicate.within(:user!_posicion, {LoAreaGeometrica})
+		# Selecciona el building (edificio de la central) dentro del
+		# area de la central.
+		LoPred5<<predicate.within(:location,{LoAreaGeometrica})
+
+		# Selecciona los distritos ashurados (para el plano Ashurado)
+		LoPred6 << predicate.overlays(:user!_area, {LoAreaGeometrica})
+
+
+		# (06/03/04 jtlelo) :  seleccionamos las manzanas utilizando
+		# un tipo distinto de interaccion. El motivo es acelerar el
+		# proceso, ya que en la valoracion de manzanas el proceso
+		# se prolongaba mucho en el tiempo. 
+		Mset << LoResultSet.select ( :collection, { :user!_manzana } )
+		Mset << Mset.select ( :bb_centre_within, LoAreaGeometrica )
+
+		_if _self.sTipoPlano = "ASHURADO"
+		_then
+			LoResultSet << LoResultSet.select(:predicate, {:user!_central, LoPred1,
+								       #:user!_central, LoPred11,
+								       :user!_distrito, LoPred2,
+								       ##:user!_distrito, LoPred3,
+								       #:user!_colonia, LoPred12,
+								       :user!_eje_calle, LoPred4,
+								       :building, LoPred5,
+								       :user!_ashurado, LoPred6,
+								       :mit_terminal_enclosure, LoPred5})
+		_else
+			LoResultSet << LoResultSet.select(:predicate, {:user!_central, LoPred1,
+								       #:user!_central, LoPred11,
+								       :user!_distrito, LoPred2,
+								       ##:user!_distrito, LoPred3,
+								       #:user!_colonia, LoPred12,
+								       :user!_eje_calle, LoPred4,
+								       :building, LoPred5,
+								       :mit_terminal_enclosure, LoPred5})
+		_endif 
+		#  (06/03/04 jtlelo) : unimos el resultado de ambas busquedas
+		LoResultSet << composite_geometry_set.new_with ( Mset, LoResultSet )
+
+		# (06/10/12 jtlelo) : verificamos que grupo de estilos trae,
+		# para cambiar el color de los nombres de las centrales colindantes.
+		_if _self.style_system_category = "plano"
+		_then
+			Color? << :magenta
+		_else
+			Color? << :black
+		_endif
+		
+		# Colococar marcas de limites y nombres de las centrales adyacentes.
+		LcollAdy << LoAppPNI.database.collection(:landbase, :user!_central).select(LoPred11)
+		_for LoRec _over LcollAdy.fast_elements()
+		_loop
+			LoEdificio << LoAppPNI.database.collection(:gis,:building).select(predicate.within(:location, LoRec.user!_limite)).an_element()
+			(LcollSec1, LcollSec2) << _self.Seccion_Interseccion(LoAreaGeometrica, LoRec.user!_limite, _self)
+			# (06/10/11 rraragon) : por default en negro(1.0,0.0.1.0) anterior
+			#LcollSec1.draw_on(.oWindows,line_style.new(colour.new_rgb(0.0,0.0,0.0),3))
+			#LcollSec2.draw_on(.oWindows,line_style.new(colour.new_rgb(0.0,0.0,0.0),3))
+			LcollSec1.draw_on(.oWindows, line_style.new(colour.called(Color?), 3))
+			LcollSec2.draw_on(.oWindows, line_style.new(colour.called(Color?), 3))
+
+			LcollSec1 << LcollSec1.as_sector()
+			LcollSec2 << LcollSec2.as_sector()
+			_if LcollSec1.size >= 2 _and LcollSec2.size >= 2
+			_then
+				# Poner los nombres de las centrales colindantes o adyacentes.
+
+				# Crear una linea con los extremos donde se intersecta una central.
+				LoLinea<<sector.new()
+				LoLinea.add(LcollSec1.an_element())
+				LoLinea.add(LcollSec2.an_element())
+				# (06/10/26 jtlelo) : Verificamos si las dos cordenadas xy son
+				# iguales, si son iguales mandamos solo uno, si son diferentes
+				# mandamos el punto medio de las dos 
+				_if (LcollSec1.an_element().x = LcollSec2.an_element().x) _andif
+				    (LcollSec1.an_element().y = LcollSec2.an_element().y)
+				_then
+					LoPto << LoLinea.an_element()					
+				_else
+					# Obtener el punto medio de la linea LoLinea
+					LoPto << LoLinea.as_sector_rope().mid_point
+				_endif
+				
+				# Construir la nueva linea desde el punto medio a la central adyacente.
+				LoLinea2 << sector.new()
+				LoLinea2.add(LoPto)
+				LoLinea2.add(LoRec.user!_limite.get_centroid().transformed(_self.transform))
+
+				# Extender la linea hasta salir de los limites de la central.
+				LnLongitud << 1
+				_loop
+					LoPto << LoLinea2.coordinate_for_distance(LnLongitud)
+					_if LoPto.within?(LoAreaGeometrica.transformed(_self.transform))
+					_then
+						LnLongitud << LnLongitud+1
+					_else
+						# Extender la linea 300 ptos mas del limite de la central.
+						LoPto << _self.obten_pto_separado(LoLinea2.first_coord,LoPto,LnLongitud+300,0)
+						_leave
+					_endif
+				_endloop
+				LoLinea2.remove_last()
+				LoLinea2.add(LoPto)
+
+				_if LoEdificio _isnt _unset 
+				_then
+					_if LoEdificio.construction_status = "PROYECTADO"
+					_then
+				# modificación se agregan la siguientes dos lineas de código
+				# para mandar a llamar el metodo crea anotación rraragon 11/10/06
+						LoTexto_creado << "[CTL - " + LoRec.user!_central.write_string + "]"
+						_self.crea_anotacion(LoLinea2, Lotexto_creado, Color?)
+					# se comentan las siguientes lineas por que se manda a llamar
+					# el metodo que crea la anotacion
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#							   LoLinea2.last_coord.y,
+#							   LoRec.user!_ctl_ant.default("No Dato").write_string,
+#							   colour.called(:red),12)
+#
+#						_self.escribe_dato(LoLinea2.last_coord.x-400,
+#								   LoLinea2.last_coord.y-150,
+#								   "[",
+#								   colour.called(:red),12)
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#								   LoLinea2.last_coord.y-150,
+#								   "CTL - "+LoRec.user!_central.write_string,
+#								   colour.new_rgb(1.0,0.0,1.0),12)
+#						_self.escribe_dato(LoLinea2.last_coord.x+400,
+#								   LoLinea2.last_coord.y-150,
+#								   "]",colour.called(:red),12)
+					_else
+						LoTexto_creado << "CTL - " + LoRec.user!_central.write_string
+						_self.crea_anotacion(LoLinea2, Lotexto_creado, Color?)
+					# se comentan las siguientes lineas por el llamado al nuevo metodo
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#							   LoLinea2.last_coord.y,
+#							   "CTL - "+LoRec.user!_central.write_string,
+#							   colour.new_rgb(1.0,0.0,1.0),12)
+					_endif
+				_else
+					LoTexto_creado << "CTL - " + LoRec.user!_central.write_string
+					_self.crea_anotacion(LoLinea2, Lotexto_creado, Color?)
+					# se comentan las siguientes lineas por el llamado al nuevo metodo
+#					_self.escribe_dato(LoLinea2.last_coord.x,
+#							   LoLinea2.last_coord.y,
+#							   "CTL - "+LoRec.user!_central.write_string,
+#							   colour.new_rgb(1.0,0.0,1.0),12)	
+				_endif
+				# fin de la modificación
+			_endif
+		_endloop
+	_endif
+
+	>> LoResultSet
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.plano_estudio_conjunto(PoResultSet)	
+	##
+	## Objetivo: Seleccionar los elementos a visibilizar dento del
+	## plano de estudio de conjunto
+	## Parametros de entrada: PoResultSet #lista de elementos
+	##                                    #visibles en el layout 
+	## Parametros de salida: LoResultSet #lista de elementos
+	##                                   # filtrados 
+	## Creado por: Elena Sainero (Ten Sails Consulting)
+	## Fecha: Diciembre 2005
+	
+	_local LoObjetoEnEditor        # Objeto que se encuentra en el editor (debe ser una central).
+	_local LoAreaGeometrica        # Area de la central seleccionada.
+	_local LoResultSet             # conjunto de geometrias que debeb ser dibujadas en Layout Designer.
+
+	LyCampoGeometrico<<:user!_limite
+	LoResultSet<<PoResultSet
+	LoObjetoEnEditor<< swg_dsn_admin_engine.active_scheme.project.user!_central
+	# Si hay un objeto en la tabla LyNombreTablaPrincipal y su
+	# campo geometrico no es nulo, hacer un filtro de objetos.
+	_if LoObjetoEnEditor _isnt _unset _andif
+	    (LoAreaGeometrica<<LoObjetoEnEditor.perform(LyCampoGeometrico)) _isnt _unset
+	_then
+		LoPredProyectado<<predicate.eq(:construction_status,"PROYECTADO")
+		LoPredExistente<<predicate.eq(:construction_status,"EXISTENTE")
+		LoPredDesmontaje << predicate.eq(:construction_status,"DESMONTAJE")
+		LoPredSin_servicio << predicate.ne(:user!_instalacion,"SIN SERVICIO")
+		
+		# Selecciona el area de la central.
+		LoPred1<<predicate.like(:user!_central,LoObjetoEnEditor.user!_central.slice(1,3)+%%)
+		# Selecciona centrales adyacentes.
+		LoPred11<<predicate.touches(:user!_limite,{LoAreaGeometrica})
+		# Selecciona colonias y municipios que interaccionan con la central.
+		LoPred12 << predicate.interacts(:user!_limite,{LoAreaGeometrica})
+		# Seleccionan todos los distritos con prefijo igual a la central.
+		LoPred2<<predicate.like(:user!_distrito,LoObjetoEnEditor.user!_central.slice(1,3)+%%)
+		# Selecciona todos los ejes de calle que estan dentro del area
+		# de la central.
+		LoPred4<<predicate.within(:user!_posicion,{LoAreaGeometrica})
+		# Selecciona el building (edificio de la central) dentro del
+		# area de la central.
+		# Selecciona la caja terminal dentro del distrito.
+		LoPred5<<predicate.within(:location,{LoAreaGeometrica})
+		LoPred51<<predicate.within(:location_geo,{LoAreaGeometrica})
+		# Selecciona la canalizacion dentro del area de la central.
+		LoPred6<<predicate.within(:route,{LoAreaGeometrica})
+		# Selecciona las colonias.
+		LoPred7<<predicate.interacts(:posicion,{LoAreaGeometrica})
+		# Selecciona las referencias fisicas
+		LoPred8 << predicate.within(:posicion_punto,{LoAreaGeometrica})
+		LoPred9 << predicate.interacts(:posicion_linea,{LoAreaGeometrica})
+
+		# seleccionamos las manzanas utilizando un tipo distinto de
+		# interaccion. El motivo es acelerar el proceso, ya que en la
+		# valoracion de manzanas el proceso se prolongaba mucho en el
+		# tiempo. 
+		Mset<<LoResultSet.select ( :collection, { :user!_manzana } )
+		Mset<<Mset.select ( :bb_centre_within, LoAreaGeometrica )
+
+		LoResultSet<<LoResultSet.select(:predicate,{:user!_central,LoPred1,
+							    :user!_distrito,LoPred2,
+							    #:user!_eje_calle,LoPred4,
+							    #:user!_colonia,LoPred12,
+							    #:user!_municipio,LoPred12,
+							    :building,LoPred5 _and (LoPredProyectado _or LoPredExistente),
+							    :mit_terminal_enclosure,LoPred5 _and (LoPredProyectado _or LoPredExistente),
+							    :uub,LoPred5 _and (LoPredProyectado _or LoPredExistente),
+							    :underground_route,LoPred6 _and (LoPredProyectado _or LoPredExistente),
+							    :aerial_route,LoPred6, 
+							    :copper_terminal,LoPred5 _or LoPred51 _and (LoPredSin_servicio),
+							    :user!_terminal_lp,LoPred5,
+							    :user!_cd_lp, LoPred5,
+							    :user!_central_lp,LoPred5,
+							    :rio,LoPred7,
+							    :cartog_ref_fibra_optica,(LoPred8 _or LoPred9)})
+
+		# unimos el resultado de ambas busquedas
+		LoResultSet << composite_geometry_set.new_with ( Mset, LoResultSet )		
+		# buscamos las centrales adyacentes y las dibujamos.
+		LoAppPNI<<smallworld_product.pni_application()
+		_if LoAppPNI _is _unset
+		_then
+			#
+			# Steve Hall (Ten Sails Consulting) 11/05/06
+			# Para un usuario de la interfaz no gráfica
+			# no habra una pni_application().
+			# En este caso se utiliza la aplicación
+			# de dicha interfaz no gráfica.
+			#
+			LoAppPNI << smallworld_product.application (
+					:c_admin_proyectos_sin_grafico )
+		_endif
+		
+		# (06/10/12 jtlelo) : verificamos que grupo de estilos trae,
+		# para cambiar el color de los nombres de las centrales colindantes.
+		_if _self.style_system_category = "Estudio_Conjunto"
+		_then
+			Color? << :magenta
+		_else
+			Color? << :black
+		_endif
+		
+
+		# Colococar marcas de limites y nombres de las centrales adyacentes.
+		LcollAdy<<LoAppPNI.database.collection(:landbase,:user!_central).select(LoPred11)
+		_for LoRec _over LcollAdy.fast_elements()
+		_loop
+			LoEdificio<<LoAppPNI.database.collection(:gis,:building).
+				    select(predicate.within(:location,LoRec.user!_limite)).an_element()
+		
+			(LcollSec1,LcollSec2)<<_self.Seccion_Interseccion(LoAreaGeometrica,LoRec.user!_limite,_self)
+			LcollSec1.draw_on(.oWindows,line_style.new(colour.called(Color?),3))
+			LcollSec2.draw_on(.oWindows,line_style.new(colour.called(Color?),3))
+
+			LcollSec1<<LcollSec1.as_sector()
+			LcollSec2<<LcollSec2.as_sector()
+			_if LcollSec1.size>=2 _and LcollSec2.size>=2
+			_then
+				# Poner los nombres de las centrales colindantes o adyacentes.
+
+				# Crear una linea con los extremos donde se intersecta una central.
+				LoLinea<<sector.new()
+				LoLinea.add(LcollSec1.an_element())
+				LoLinea.add(LcollSec2.an_element())
+				# (06/10/26 jtlelo) : Verificamos si las dos cordenadas xy son
+				# iguales, si son iguales mandamos solo uno, si son diferentes
+				# mandamos el punto medio de las dos 
+				_if (LcollSec1.an_element().x = LcollSec2.an_element().x) _andif
+				    (LcollSec1.an_element().y = LcollSec2.an_element().y)
+				_then
+					LoPto<<LoLinea.an_element()					
+				_else
+					# Obtener el punto medio de la linea LoLinea
+					LoPto<<LoLinea.as_sector_rope().mid_point
+				_endif
+								
+				# Construir la nueva linea desde el punto medio a la central adyacente.
+				LoLinea2<<sector.new()
+				LoLinea2.add(LoPto)
+				LoLinea2.add(LoRec.user!_limite.get_centroid().transformed(_self.transform))
+				
+				# Extender la linea hasta salir de los limites de la central.
+				LnLongitud<<1
+				_loop
+					LoPto<<LoLinea2.coordinate_for_distance(LnLongitud)
+					_if LoPto.within?(LoAreaGeometrica.transformed(_self.transform))
+					_then
+						LnLongitud<<LnLongitud+1
+					_else
+						# Extender la linea 300 ptos mas del limite de la central.
+						LoPto<<_self.obten_pto_separado(LoLinea2.first_coord,LoPto,LnLongitud+300,0)
+						_leave
+					_endif
+				_endloop
+				LoLinea2.remove_last()
+				LoLinea2.add(LoPto)
+
+				_if LoEdificio _isnt _unset 
+				_then
+					_if LoEdificio.construction_status="PROYECTADO"
+					_then
+
+						LoTexto_creado << "[CTL - "+LoRec.user!_central.write_string+"]"
+						_self.crea_anotacion(LoLinea2,Lotexto_creado,Color?)
+					_else
+						LoTexto_creado << "CTL - "+LoRec.user!_central.write_string
+						_self.crea_anotacion(LoLinea2,Lotexto_creado,Color?)
+					_endif
+				_else
+					LoTexto_creado << "CTL - "+LoRec.user!_central.write_string
+					_self.crea_anotacion(LoLinea2,Lotexto_creado,Color?)
+					# se comentan las siguientes lineas por el llamado al nuevo metodo
+
+				_endif
+				# fin de la modificación
+			_endif
+		_endloop
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+#		LcollAdy<<LoAppPNI.database.collection(:landbase,:user!_central).select(LoPred11)
+#		
+#		_for LoRec _over LcollAdy.fast_elements()
+#		_loop
+#			# SJH 12/05/06
+#			# Este algoritmo para la centraled colindantes
+#			# es muy lento.
+#			# Descomenta este 'leave' si quiere desactivarlo
+#			# por el momento.
+#			
+#			# _leave
+#			# Corregido por rbsaldan.
+#			
+#			LoEdificio<<LoAppPNI.database.collection(:gis,:building).
+#				    select(predicate.within(:location,LoRec.user!_limite)).an_element()
+#			
+#			(LcollSec1,LcollSec2)<<_self.Seccion_Interseccion(LoAreaGeometrica,LoRec.user!_limite)
+#			
+#			LcollSec1.draw_on(.oWindows,line_style.new(colour.new_rgb(1.0,0.0,1.0),3))
+#			LcollSec2.draw_on(.oWindows,line_style.new(colour.new_rgb(1.0,0.0,1.0),3))
+#			
+#			LcollSec1<<LcollSec1.as_sector()
+#			LcollSec2<<LcollSec2.as_sector()
+#			
+#			_if LcollSec1.size>=2 _and LcollSec2.size>=2
+#			_then
+#				# Poner los nombres de las centrales colindantes.
+#				# Crear una linea con los extremos donde se intersectan las centrales.
+#				LoLinea<<sector.new()
+#				LoLinea.add(LcollSec1.an_element())
+#				LoLinea.add(LcollSec2.an_element())
+#				
+#				# Encontrar el punto de interseccion de la linea LoLinea y la
+#				# linea que se forma del centro de la central al punto de
+#				# interseccion con la linea LoLinea.
+#				LoPto<<LoLinea.as_sector_rope().mid_point
+#				
+#				# Construir la nueva linea desde el centro de la central y el
+#				# punto de interseccion encontrado.
+#				LoLinea2<<sector.new()
+#				LoLinea2.add(LoPto)
+#				LoLinea2.add(LoRec.user!_limite.get_centroid().transformed(_self.transform))
+#				
+#			
+#				# Extender la linea hasta salir de los limites de la central.
+#				LnLongitud<<1
+#				_loop
+#					LoPto<<LoLinea2.coordinate_for_distance(LnLongitud)
+#					_if LoPto.within?(LoAreaGeometrica.transformed(_self.transform))
+#					_then
+#						LnLongitud<<LnLongitud+1
+#					_else
+#						# Extender la linea 300 ptos mas del limite de la central.
+#						LoPto<<_self.obten_pto_separado(LoLinea2.first_coord,LoPto,LnLongitud+300,0)
+#						_leave
+#					_endif
+#				_endloop
+#				LoLinea2.remove_last()
+#				LoLinea2.add(LoPto)
+#				
+#				_if LoEdificio _isnt _unset 
+#				_then
+#					_if LoEdificio.construction_status="PROYECTADO"
+#					_then
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#								   LoLinea2.last_coord.y,
+#								   LoRec.user!_ctl_ant.default("No Dato").write_string,
+#								   colour.called(:red),12)
+#						
+#						_self.escribe_dato(LoLinea2.last_coord.x-400,
+#								   LoLinea2.last_coord.y-150,
+#								   "[",
+#								   colour.called(:red),12)
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#								   LoLinea2.last_coord.y-150,
+#								   "CTL - "+LoRec.user!_central.write_string,
+#								   colour.new_rgb(1.0,0.0,1.0),12)
+#						_self.escribe_dato(LoLinea2.last_coord.x+400,
+#								   LoLinea2.last_coord.y-150,
+#								   "]",colour.called(:red),12)
+#					_else
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#								   LoLinea2.last_coord.y,
+#								   "CTL - "+LoRec.user!_central.write_string,
+#								   colour.new_rgb(1.0,0.0,1.0),12)
+#					_endif
+#				_else
+#					_self.escribe_dato(LoLinea2.last_coord.x,
+#							   LoLinea2.last_coord.y,
+#							   "CTL - "+LoRec.user!_central.write_string,
+#							   colour.new_rgb(1.0,0.0,1.0),12)
+#				_endif
+#			_endif
+#		_endloop
+	_endif
+
+
+	>>LoResultSet
+
+_endmethod
+$
+_pragma(classify_level=advanced)
+_method c_viewport_layout_sigc.plano_fosa_cables(PoResultSet)
+	## 
+
+	
+#_local LoAppPNI                # Referencia a la Aplicacion PNI.
+#_local LoEditorManager         # Referencia al plugin editor_manager.
+#_local LyNombreTablaPrincipal  # Nombre interno de la tabla user!_central.
+#_local LoObjetoEnEditor        # Objeto que se encuentra en el editor (debe ser una central).
+#_local LoAreaGeometrica        # Area de la central seleccionada.
+#_local LyCampoGeometrico       # Campo geometrico de la central seleccionada.
+#_local LoResultSet             # Conjunto de geometrias que debeb ser dibujadas en Layout Designer.
+##_local LoEditor               # Referencia a un Editor.
+#
+#	LoAppPNI<<smallworld_product.pni_application()
+#	LoEditorManager<<LoAppPNI.plugin(:editor_manager)	
+#	LyNombreTablaPrincipal<<:user!_central
+#	LyCampoGeometrico<<:user!_limite
+#
+	LoResultSet<<PoResultSet
+#	LoObjetoEnEditor<<_unset
+#	# De todos los editores embebidos, tomar el editor que
+#	# corresponda a la tabla LyNombreTablaPrincipal y tomar la
+#	# referencia al objeto corriente en el editor.
+#	_for LoEditor _over LoEditorManager.sys!slot(:embedded_editors).fast_elements()
+#	_loop
+#		_if LoEditor.collection _isnt _unset _andif 
+#		    LoEditor.collection.name _is LyNombreTablaPrincipal _andif 
+#		    (LoObjetoEnEditor<<LoEditor.current_object) _isnt _unset
+#		_then
+#			# Esto es, en el editor embebido hay un objeto de la tabla
+#			# LyNombreTablaPrincipal.
+#			_leave
+#		_endif
+#	_endloop
+#
+#	# Si hay un objeto en la tabla LyNombreTablaPrincipal y su
+#	# campo geometrico no es nulo, hacer un filtro de objetos.
+#	_if LoObjetoEnEditor _isnt _unset _andif
+#	    (LoAreaGeometrica<<LoObjetoEnEditor.perform(LyCampoGeometrico)) _isnt _unset
+#	_then
+#		
+#		# Selecciona el area de la central.
+#		LoPred1<<predicate.like(:user!_central,LoObjetoEnEditor.user!_central.slice(1,3)+%%) 
+#		# Selecciona centrales adyacentes.
+#		LoPred11<<predicate.touches(:user!_limite,{LoAreaGeometrica})
+#		# Seleccionan todos los distritos con prefico igual a la central.
+#		LoPred12<<predicate.interacts(:user!_limite,{LoAreaGeometrica})
+#		# Seleccionan todos los distritos con prefico igual a la central.
+#		LoPred2<<predicate.like(:user!_distrito,LoObjetoEnEditor.user!_central.slice(1,3)+%%) 
+#		# Selecciona todas las manzanas que estan dentro del area de la central.
+#		LoPred3<<predicate.within(:user!_limite,{LoAreaGeometrica})
+#		# Selecciona todos los ejes de calle que estan dentro del area
+#		# de la central.
+#		LoPred4<<predicate.within(:user!_posicion,{LoAreaGeometrica})
+#		# Selecciona el building (edificio de la central) dentro del
+#		# area de la central.
+#		LoPred5<<predicate.within(:location,{LoAreaGeometrica})
+#
+#		LoResultSet<<LoResultSet.select(:predicate,{:user!_central,LoPred1,
+#							    #:user!_central,LoPred11,
+#							    :user!_distrito,LoPred2,
+#							    :user!_manzana,LoPred3,
+#							    :user!_colonia,LoPred12,
+#							    :user!_eje_calle,LoPred4,
+#							    :building,LoPred5,
+#							    :mit_terminal_enclosure,LoPred5})
+#
+##		#LoResultSet2<<LoResultSet.select(:predicate,{:user!_central,LoPred11})
+##		#write("LoResultSET: ",LoResultSet.size)
+##		LoResultSet<<LoResultSet.select(:predicate,{:user!_central,LoPred1,
+##							    :user!_central,LoPred11,
+##							    :user!_distrito,LoPred2,
+##							    :user!_manzana,LoPred3,
+##							    :user!_eje_calle,LoPred4,
+##							    :building,LoPred5,
+##							    :mit_terminal_enclosure,LoPred5})
+##		#LoResultSet2<<LoResultSet.select(:predicate,{:user!_central,LoPred1})
+##
+##		#LoResultSet2<<LoResultSet2.exclude_geom_type({:area})
+##		
+##		#LoResultSet<<LoResultSet2#.append(LoResultSet2)
+#		
+#		LcollAdy<<LoAppPNI.database.collection(:landbase,:user!_central).select(LoPred11)
+#		_for LoRec _over LcollAdy.fast_elements()
+#		_loop
+#			LoEdificio<<LoAppPNI.database.collection(:gis,:building).
+#				    select(predicate.within(:location,LoRec.user!_limite)).an_element()
+#			
+#			(LcollSec1,LcollSec2)<<_self.Seccion_Interseccion(LoAreaGeometrica,LoRec.user!_limite)
+#			LcollSec1<<LcollSec1.transformed(_self.transform)
+#			LcollSec1.add(_self.obten_pto_separado(LcollSec1.first_coord,
+#							       LcollSec1.last_coord,300,0))
+#			LcollSec1.draw_on(.oWindows,line_style.new(colour.new_rgb(1.0,0.0,1.0),3))
+#
+#			LcollSec2<<LcollSec2.transformed(_self.transform)
+#			LcollSec2.add(_self.obten_pto_separado(LcollSec2.first_coord,
+#							       LcollSec2.last_coord,300,0))
+#			LcollSec2.draw_on(.oWindows,line_style.new(colour.new_rgb(1.0,0.0,1.0),3))
+#			
+#			_if LcollSec1.size>=2 _and LcollSec2.size>=2
+#			_then
+#				# Poner los nombres de las centrales colindantes.
+#
+#				# Crear una linea con los extremos donde se intersectan las centrales.
+#				LoLinea<<sector.new()
+#				LoLinea.add(LcollSec1.an_element())
+#				LoLinea.add(LcollSec2.an_element())
+#
+#				# Encontrar el punto de interseccion de la linea LoLinea y la
+#				# linea que se forma del centro de la central al punto de
+#				# interseccion con la linea LoLinea.
+#				#LoPto<<_self.obten_pto_intersect(LoLinea.first_coord,
+#				#				 LoLinea.last_coord,
+#				#				 LoAreaGeometrica.get_centroid().transformed(_self.transform))
+#
+#				LoPto<<LoLinea.as_sector_rope().mid_point
+#				
+#				# Construir la nueva linea desde el centro de la central y el
+#				# punto de interseccion encontrado.
+#				LoLinea2<<sector.new()
+#				LoLinea2.add(LoAreaGeometrica.get_centroid().transformed(_self.transform))
+#				LoLinea2.add(LoPto)
+#				
+#				# Extender la linea hasta salir de los limites de la central.
+#				LnLongitud<<0
+#				_loop
+#					LoPto<<_self.obten_pto_separado(LoLinea2.first_coord,
+#									LoLinea2.last_coord,
+#									LoLinea2.line_length+LnLongitud,0)
+#					_if LoPto.within?(LoAreaGeometrica.transformed(_self.transform))
+#					_then
+#						LnLongitud<<LnLongitud+100
+#					_else
+#						# Extender la linea 500 ptos mas del limite de la central.
+#						LoPto<<_self.obten_pto_separado(LoLinea2.first_coord,
+#										LoLinea2.last_coord,
+#										LoLinea2.line_length+LnLongitud+500,0)
+#						_leave
+#					_endif
+#				_endloop
+#				LoLinea2.add(LoPto)
+#				
+#				#LoLinea.draw_on(.oWindows,line_style.new(colour.called(:black),3))
+#				#LoLinea2.draw_on(.oWindows,line_style.new(colour.called(:red),3))
+#
+#				_if LoEdificio _isnt _unset 
+#				_then
+#					_if LoEdificio.construction_status="PROYECTADO"
+#					_then
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#							   LoLinea2.last_coord.y,
+#							   LoRec.user!_ctl_ant.default("No Dato").write_string,
+#							   colour.called(:red))
+#
+#						_self.escribe_dato(LoLinea2.last_coord.x-400,
+#								   LoLinea2.last_coord.y-150,
+#								   "[",
+#								   colour.called(:red))
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#								   LoLinea2.last_coord.y-150,
+#								   "CTL - "+LoRec.user!_central.write_string,
+#								   colour.new_rgb(1.0,0.0,1.0))
+#						_self.escribe_dato(LoLinea2.last_coord.x+400,
+#								   LoLinea2.last_coord.y-150,
+#								   "]",colour.called(:red))
+#					_else
+#						_self.escribe_dato(LoLinea2.last_coord.x,
+#							   LoLinea2.last_coord.y,
+#							   "CTL - "+LoRec.user!_central.write_string,
+#							   colour.new_rgb(1.0,0.0,1.0))
+#					_endif
+#				_else
+#					
+#					_self.escribe_dato(LoLinea2.last_coord.x,
+#							   LoLinea2.last_coord.y,
+#							   "CTL - "+LoRec.user!_central.write_string,
+#							   colour.new_rgb(1.0,0.0,1.0))
+#					
+#				_endif
+#			_endif
+#		_endloop
+#	_endif
+	>>LoResultSet
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.plano_generico(PoResultSet)
+# Objetivo: Seleccionar elementos para el plano generico.
+# Parametros de Entrada:PoResultSet: Seleccion de objetos en la vista.
+# Parametros de Salida: Ninguno.
+# Regresa: LoResultSet:   Seleccion de objetos de interes.
+# Fecha de ultima modificacion: 2/Mayo/2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+_local LoResultSet
+
+        LoResultSet<<PoResultSet
+	_for LdsrRec _over LoResultSet.rwo_set().fast_elements()
+	_loop
+		_if LdsrRec.is_kind_of?(user!_poblacion)
+		_then
+			write(LdsrRec)
+		_endif
+	_endloop
+	_return LoResultSet
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.plano_itinerario(PoResultSet)58
+# Objetivo: Seleccionar los distritos, manzanas, ejes de calle
+#           y el edificio de la central que estan dentro del area de
+#           central.
+# Parametros de Entrada:PoResultSet:  Seleccion de objetos en la vista.
+# Parametros de Salida: Ninguno.
+# Regresa: LoResultSet:               Seleccion de objetos de interes.
+# Fecha de ultima modificacion: 23/Dic./2004
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+	
+# Fecha de ultima modificacion: 21/Ene./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Documentar codigo.
+
+	_local LoAppPNI                # Referencia a la Aplicacion PNI.
+	_local LoEditorManager         # Referencia al plugin editor_manager.
+	_local LyNombreTablaPrincipal  # Nombre interno de la tabla user!_central.
+	_local LoObjetoEnEditor        # Objeto que se encuentra en el editor (debe ser una central).
+	_local LoAreaGeometrica        # Area de la central seleccionada.
+	_local LyCampoGeometrico       # Campo geometrico de la central seleccionada.
+	_local LoResultSet             # conjunto de geometrias que debeb ser dibujadas en Layout Designer.
+#_local LoEditor               # Referencia a un editor.
+	_local LoPredProyectado               # Consulta para elementos proyectados
+     
+     LoAppPNI << smallworld_product.pni_application()
+     _if LoAppPNI _is _unset
+     _then
+	     #
+	     # (06/10/27 jtlelo) : 
+	     # Para un usuario de la interfaz no gráfica
+	     # no habra una pni_application().
+	     # En este caso se utiliza la aplicación
+	     # de dicha interfaz no gráfica.
+	     #
+		LoAppPNI << smallworld_product.application (:c_admin_proyectos_sin_grafico )
+     _endif 
+     LoEditorManager << LoAppPNI.plugin(:editor_manager)
+     LyNombreTablaPrincipal << :user!_central
+     LyCampoGeometrico << :user!_limite
+
+     LoResultSet << PoResultSet
+     LoObjetoEnEditor << _unset
+     # De todos los editores embebidos, tomar el editor que
+     # corresponda a la tabla LyNombreTablaPrincipal y tomar la
+     # referencia al objeto corriente en el editor.
+     _for LoEditor _over LoEditorManager.sys!slot(:embedded_editors).fast_elements()
+     _loop
+	     _if LoEditor.collection _isnt _unset _andif
+		 LoEditor.collection.name _is LyNombreTablaPrincipal _andif 
+		 (LoObjetoEnEditor << LoEditor.current_object) _isnt _unset
+	     _then
+		     # Esto es, en el editor embebido hay un objeto de la tabla
+		     # LyNombreTablaPrincipal.
+		     _leave
+	     _endif
+     _endloop
+     
+     # Si hay un objeto en la tabla LyNombreTablaPrincipal y su
+     # campo geometrico no es nulo, hacer un filtro de objetos.
+     LoObjetoEnEditor << swg_dsn_admin_engine.active_scheme.project.user!_central
+     _if LoObjetoEnEditor _isnt _unset _andif
+	 (LoAreaGeometrica << LoObjetoEnEditor.perform(LyCampoGeometrico)) _isnt _unset
+     _then   LoResultSet.select(:collection, :indicador)
+	     #LoPredProyectado<<predicate.eq(:construction_status,"PROYECTADO")
+	     #LoPredExistente<<predicate.eq(:construction_status,"EXISTENTE")
+	     # Selecciona el area de la centra.
+	     LoPred1 << predicate.like(:user!_central, LoObjetoEnEditor.user!_central.slice(1, 3) + %%)
+
+	     # Selecciona centrales adyacentes.
+	     LoPred11 << predicate.touches(:user!_limite, {LoAreaGeometrica})
+	     
+	     # Seleccionan todos los distritos con prefico igual a la central.
+	     LoPred2 << predicate.like(:user!_distrito, LoObjetoEnEditor.user!_central.slice(1, 3) + %%) 
+	     # Selecciona todas las manzanas que estan dentro del area de la central.
+	     #LoPred3<<predicate.within(:user!_limite,{LoAreaGeometrica})
+
+	     # Selecciona todos los ejes de calle que estan dentro del area
+	     # de la central.
+	     LoPred4 << predicate.within(:user!_posicion, {LoAreaGeometrica})
+	     # Selecciona el building (edificio de la central) dentro del
+	     # area de la central.
+	     # Selecciona la caja terminal dentro del distrito.
+	     LoPred5 << predicate.within(:location, {LoAreaGeometrica})
+
+	     tmprs << LoResultSet.select(:collection, :indicador)
+	     # Selecciona la canalizacion dentro del area de la central.
+	     LoPred6 << predicate.within(:route, {LoAreaGeometrica} ) #_and LoPredProyectado
+	     # Selecciona los pozos dentro del area de la central.
+
+	     #pred. para obtener los draftings
+	     LoPredDrftLn<<predicate.within(:line_1, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_2, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_3, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_4, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_5, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_6, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_7, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_8, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_9, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_10, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_11, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_12, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_13, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_14, {LoAreaGeometrica} ) _or
+			   predicate.within(:line_15, {LoAreaGeometrica} )
+	     
+	     LoPredDrftTx<<predicate.within(:text_1, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_2, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_3, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_4, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_5, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_6, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_7, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_8, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_9, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_10, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_11, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_12, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_13, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_14, {LoAreaGeometrica} ) _or
+			   predicate.within(:text_15, {LoAreaGeometrica} )
+
+	     LoPredDimension<<predicate.within(:dimension, {LoAreaGeometrica} )
+	     
+
+	     # (06/03/04 jtlelo) :  seleccionamos las manzanas utilizando
+	     # un tipo distinto de interaccion. El motivo es acelerar el
+	     # proceso, ya que en la valoracion de manzanas el proceso
+	     # se prolongaba mucho en el tiempo. 
+	     Mset << LoResultSet.select ( :collection, { :user!_manzana } )
+	     Mset << Mset.select ( :bb_centre_within, LoAreaGeometrica )
+
+	     
+	     # (06/10/06 jtlelo) : se deshabilito para la canalizacion y los
+	     # pozos la opción de proyectado y existente
+	     LoResultSet << LoResultSet.select(:predicate,{:user!_central, LoPred1,
+							   :user!_distrito, LoPred2,
+							   #:user!_manzana,LoPred3,
+							   :user!_eje_calle, LoPred4,
+							   :building, LoPred5,
+							   :mit_terminal_enclosure, LoPred5,
+							   :uub, LoPred5, # _and (LoPredProyectado _or LoPredExistente),
+							   :underground_route, LoPred6,
+							   :drafting_lines,LoPredDrftLn,
+							   :drafting_lines,LoPredDrftTx,
+							   :dimensioning,LoPredDimension})# _and (LoPredProyectado _or LoPredExistente)})
+	     
+	     LoResultSet << LoResultSet.append(tmprs)
+
+	     #  (06/03/04 jtlelo) : unimos el resultado de ambas busquedas
+	     LoResultSet << composite_geometry_set.new_with ( Mset, LoResultSet )
+	         # (06/10/12 jtlelo) : verificamos que grupo de estilos trae,
+		# para cambiar el color de los nombres de las centrales colindantes.
+		_if _self.style_system_category = "plano"
+		_then
+			Color? << :magenta
+		_else
+			Color? << :black
+		_endif
+		
+
+		# Colococar marcas de limites y nombres de las centrales adyacentes.
+		LcollAdy << LoAppPNI.database.collection(:landbase, :user!_central).select(LoPred11)
+		_for LoRec _over LcollAdy.fast_elements()
+		_loop
+			LoEdificio << LoAppPNI.database.collection(:gis, :building).
+				    select(predicate.within(:location, LoRec.user!_limite)).an_element()
+		
+			(LcollSec1, LcollSec2) << _self.Seccion_Interseccion(LoAreaGeometrica, LoRec.user!_limite, _self)
+			LcollSec1.draw_on(.oWindows, line_style.new(colour.called(Color?), 3))
+			LcollSec2.draw_on(.oWindows, line_style.new(colour.called(Color?), 3))
+
+			LcollSec1 << LcollSec1.as_sector()
+			LcollSec2 << LcollSec2.as_sector()
+			_if LcollSec1.size >= 2 _and LcollSec2.size >= 2
+			_then
+				# Poner los nombres de las centrales colindantes o adyacentes.
+
+				# Crear una linea con los extremos donde se intersecta una central.
+				LoLinea << sector.new()
+				LoLinea.add(LcollSec1.an_element())
+				LoLinea.add(LcollSec2.an_element())
+
+	  		        # (06/10/26 jtlelo) : Verificamos si las dos cordenadas xy son
+				# iguales, si son iguales mandamos solo uno, si son diferentes
+				# mandamos el punto medio de las dos 
+				_if (LcollSec1.an_element().x = LcollSec2.an_element().x) _andif
+				    (LcollSec1.an_element().y = LcollSec2.an_element().y)
+				_then
+					LoPto << LoLinea.an_element()					
+				_else
+					# Obtener el punto medio de la linea LoLinea
+					LoPto << LoLinea.as_sector_rope().mid_point
+				_endif
+				
+				
+				# Construir la nueva linea desde el punto medio a la central adyacente.
+				LoLinea2 << sector.new()
+				LoLinea2.add(LoPto)
+				LoLinea2.add(LoRec.user!_limite.get_centroid().transformed(_self.transform))
+				
+				# Extender la linea hasta salir de los limites de la central.
+				LnLongitud << 1
+				_loop
+					LoPto << LoLinea2.coordinate_for_distance(LnLongitud)
+					_if LoPto.within?(LoAreaGeometrica.transformed(_self.transform))
+					_then
+						LnLongitud << LnLongitud + 1
+					_else
+						# Extender la linea 300 ptos mas del limite de la central.
+						LoPto << _self.obten_pto_separado(LoLinea2.first_coord, LoPto, LnLongitud + 300, 0)
+						_leave
+					_endif
+				_endloop
+				LoLinea2.remove_last()
+				LoLinea2.add(LoPto)
+
+				_if LoEdificio _isnt _unset 
+				_then
+					_if LoEdificio.construction_status = "PROYECTADO"
+					_then
+
+						LoTexto_creado << "[CTL - " + LoRec.user!_central.write_string + "]"
+						_self.crea_anotacion(LoLinea2, Lotexto_creado, Color?)
+					_else
+						LoTexto_creado << "CTL - " + LoRec.user!_central.write_string
+						_self.crea_anotacion(LoLinea2, Lotexto_creado, Color?)
+					_endif
+				_else
+					LoTexto_creado << "CTL - " + LoRec.user!_central.write_string
+					_self.crea_anotacion(LoLinea2, Lotexto_creado, Color?)
+					# se comentan las siguientes lineas por el llamado al nuevo metodo
+				_endif
+				# fin de la modificación
+			_endif
+		_endloop
+     _endif
+     >>LoResultSet
+_endmethod
+$
+_method c_viewport_layout_sigc.plano_ruta_de_cables(PoResultSet)
+# Objetivo:              Seleccionar los distritos, manzanas, ejes de calle y el edificio de la
+#                        central que estan dentro del area de central.
+# Parametros de Entrada: PoResultSet: Seleccion de objetos en la vista.
+# Parametros de Salida:  Ninguno
+
+	_local LoAppPNI                # Referencia a la Aplicacion PNI.
+	_local LoEditorManager         # Referencia al plugin editor_manager.
+	_local LyNombreTablaPrincipal  # Nombre interno de la tabla user!_central.
+	_local LoObjetoEnEditor        # Objeto que se encuentra en el editor (debe ser una central).
+	_local LoAreaGeometrica        # Area de la central seleccionada.
+	_local LyCampoGeometrico       # Campo geometrico de la central seleccionada.
+	_local LoResultSet             # Conjunto de geometrias que debeb ser dibujadas en Layout Designer.
+
+	LoResultSet << _unset
+	LoBuffer << _unset
+
+	(LoResultSet, LoBuffer) << _self.filtra_rutas(Glorutaopb.get_canalizacion(),
+						      poresultset,
+						      LoResultSet,
+						      LoBuffer)
+	(LoResultSet, LoBuffer) << _self.filtra_rutas(Glorutaopb.get_ruta_aerea(),
+						      poresultset,
+						      LoResultSet,
+						      LoBuffer)
+	LoAppPNI << smallworld_product.pni_application()
+	_if LoAppPNI _is _unset
+	_then
+		# (06/10/27 jtlelo) : 
+		# Para un usuario de la interfaz no gráfica no habrá una pni_application().
+		# En este caso se utiliza la aplicación de dicha interfaz no gráfica.
+		LoAppPNI << smallworld_product.application ( :c_admin_proyectos_sin_grafico )
+                LoSelectCanaliza << _unset 
+	_else
+		LMapaPlugin <<  LoAppPNI.plugin(:map_plugin).current_map
+		LoSelectCanaliza << LMapaPlugin.current_selection
+	_endif
+	_if LoSelectCanaliza _isnt _unset
+	_then
+		(LoResultSet, LoBuffer) << _self.filtra_rutas(LoSelectCanaliza.rwo_set(),
+							      poresultset,
+							      LoResultSet,
+							      LoBuffer,
+							      _true)
+	_endif
+	LoEditorManager << LoAppPNI.plugin(:editor_manager)	
+	LyNombreTablaPrincipal << :user!_central
+	LyCampoGeometrico << :user!_limite
+	LoObjetoEnEditor << _unset
+	# Si hay un objeto en la tabla LyNombreTablaPrincipal y su
+	# campo geometrico no es nulo, hacer un filtro de objetos.
+	LoObjetoEnEditor << swg_dsn_admin_engine.active_scheme.project.user!_central
+	_if LoObjetoEnEditor _isnt _unset _andif
+	    (LoAreaGeometrica << LoObjetoEnEditor.perform(LyCampoGeometrico)) _isnt _unset
+	_then
+	        # Obtener Manzanas colindantes con la canalización
+		_if LoBuffer _isnt _unset 
+		_then
+			LoBuffer.world << LoAppPNI.plugin(:map_plugin).current_map.world
+		_else
+			condition.raise(:user_error, :string,
+                                        "No hay canalización y/o ruta aérea, imposible general el plano.")
+		_endif
+		# (06/11/08 jtlelo) : Seleccionamos todos los elementos que estén dentro del
+		# buffer, (pozos, terminales, empalmes, etc)
+		LoResultSetWithin << PoResultSet.select(:interacting_with, LoBuffer)
+		# Se Elimina los elementos no requeridos para el plano de ruta de cables.
+		LoResultSetWithin << LoResultSetWithin.exclude(:collection, {:user!_lote,
+									     :underground_route,
+									     :aerial_route})
+		# (07/01/26 jtlelo) : Selecciona las llaves del cable proyectado.
+		LoResultSetOverlay << PoResultSet.select(:overlaying, LoBuffer)
+		Lostructure_annotation << LoResultSetOverlay.select(:collection, {:structure_annotation})
+		
+
+		LoResultlineas << LoResultSetWithin.select(:collection, :drafting_lines)
+		# (06/11/08 jtlelo) : Creamos un geometry set para asegurarnos que se una con las
+		# demas busquedas resultantes
+		LoResultPerfiles << geometry_set.new() 
+		_if LoResultlineas _isnt _unset _andif LoResultlineas.size > 0
+		_then
+			LoResultPerfiles << _self.busca_perfiles_canalizacion(LoResultlineas, PoResultSet)
+		_endif
+
+		
+		LoResultSetWithin << LoResultSetWithin.select(:collection, {:user!_manzana,
+									    :user!_eje_calle,
+									    :building,
+									    :user!_reserva,
+							                    :mit_terminal_enclosure,
+							                    :uub,
+							                    :pole,
+							                    :copper_splice})
+		# (06/11/07 jtlelo) : unimos las tres consultas:
+		# LoResultSetWithin (elementos que estan dentro del buffer)
+		# LoResultPerfiles (Perfiles de canalización que interactuan con el buffer)
+		# LoResultSet (Ruta aérea y canalización)
+		LoResultSet << LoResultSet.append(LoResultSetWithin)
+		LoResultSet << LoResultSet.append(LoResultPerfiles)
+		loResultSet << LoResultSet.append(Lostructure_annotation)
+	_endif
+
+#	LoGuarda << c_guarda_objetos_vp.new()
+#	LoGuarda.oResulSet << LoResultSet
+#	elementos << LoGuarda.genera_lista_gsfr()
+#	# (10/05/26 jtlelo) : recibimos una hash_table
+#	
+#	_for ky _over elementos.keys.fast_elements()
+#	_loop
+#		_self.guardar_visualizacion(elementos[ky],  ky)
+#	_endloop
+
+	>>LoResultSet
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.prueba
+	## 
+	##
+	#write(.obounds, " ddddddd")
+	>> .obounds #.bounds
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.Seccion_Interseccion(PoGeom1,PoGeom2, _optional LoVp)
+	## 
+	##
+_local LcollInterseccion
+_local Lbfuera?
+_local LoApp
+_local LoCurrentView
+_local LcollInterseccionFinal1<<sector_rope.new()
+_local LcollInterseccionFinal2<<sector_rope.new()
+
+        LoApp<<smallworld_product.pni_application()
+	_if LoVp _is _unset _then
+		LoVp << _self
+	_endif
+	
+        LcollInterseccion1<<sector.new()
+	LcollInterseccion2<<sector.new()
+	Lbfuera?<<_false
+	LbPuntoActualFuera?<<_false
+	LbPuntoAnteriorFuera?<<_unset
+	LoCoordAnt<<_false
+	
+	_for LoCoord _over PoGeom2.sectors.coords().fast_elements()
+	_loop
+		_if LoCoord.touches?(PoGeom1)
+		_then
+			LbPuntoActualFuera?<<_false
+		_else
+			LbPuntoActualFuera?<<_true
+		_endif
+
+		_if LbPuntoAnteriorFuera? _is _unset
+		_then
+			LbPuntoAnteriorFuera?<<LbPuntoActualFuera?
+			LoCoordAnt<<LoCoord
+			_continue
+		_endif
+		_if LbPuntoAnteriorFuera? _is _false  _and LbPuntoActualFuera? _is _true
+		_then
+			LcollInterseccion1.add(LoCoordAnt.transformed(LoVp.transform))
+			LcollInterseccion1.add(LoCoord.transformed(LoVp.transform))
+		_elif LbPuntoAnteriorFuera? _is _true _and LbPuntoActualFuera? _is _false
+		_then
+			LcollInterseccion2.add(LoCoord.transformed(LoVp.transform))
+			LcollInterseccion2.add(LoCoordAnt.transformed(LoVp.transform))
+		_endif
+		
+		LbPuntoAnteriorFuera?<<LbPuntoActualFuera?
+		LoCoordAnt<<LoCoord
+	_endloop
+
+#	_if LcollInterseccion1.size>=2
+#	_then
+#		LoCoordenada<<LcollInterseccion1.coordinate_for_distance(1) #LoCurrentView.view_scale)
+#		LcollInterseccion1.remove_last()
+#		LcollInterseccion1.add(LoCoordenada)
+#	_endif
+#	_if LcollInterseccion2.size>=2
+#	_then
+#		LoCoordenada<<LcollInterseccion2.coordinate_for_distance(1) #LoCurrentView.view_scale)
+#		LcollInterseccion2.remove_last()
+#		LcollInterseccion2.add(LoCoordenada)
+#	_endif
+	_if  LcollInterseccion1.size>0 _andif  (LcollInterseccion1.size _mod 2)=0
+	_then
+		LoFlag<<_false
+		_for LiIdx _over 1.upto(LcollInterseccion1.size)
+		_loop
+			_if LoFlag _is _true 
+			_then
+				LcollInterseccion1_tmp<<sector.new()
+				LcollInterseccion1_tmp.add(LcollInterseccion1[LiIdx-1])
+				LcollInterseccion1_tmp.add(LcollInterseccion1[LiIdx])
+				
+				LoCoordenada<<LcollInterseccion1_tmp.coordinate_for_distance(0.01)
+				LoCoordenada<<_self.obten_pto_separado(LcollInterseccion1[LiIdx-1],LoCoordenada,100,0)
+				LcollInterseccion1_tmp[LcollInterseccion1_tmp.size]<<LoCoordenada
+
+				LcollInterseccionFinal1.add(LcollInterseccion1_tmp)
+				LoFlag<<_false
+			_else
+
+				LoFlag<<_true
+			_endif
+		_endloop
+	_endif
+
+
+	_if  LcollInterseccion2.size>0 _andif  (LcollInterseccion2.size _mod 2)=0
+	_then
+		LoFlag<<_false
+		_for LiIdx _over 1.upto(LcollInterseccion2.size)
+		_loop
+			_if LoFlag _is _true 
+			_then
+				LcollInterseccion2_tmp<<sector.new()
+				LcollInterseccion2_tmp.add(LcollInterseccion2[LiIdx-1])
+				LcollInterseccion2_tmp.add(LcollInterseccion2[LiIdx])
+
+				LoCoordenada<<LcollInterseccion2_tmp.coordinate_for_distance(0.01)
+				LoCoordenada<<_self.obten_pto_separado(LcollInterseccion2[LiIdx-1],LoCoordenada,100,0)
+				LcollInterseccion2_tmp[LcollInterseccion2_tmp.size]<<LoCoordenada
+
+				LcollInterseccionFinal2.add(LcollInterseccion2_tmp)
+				LoFlag<<_false
+			_else
+
+				LoFlag<<_true
+			_endif
+		_endloop
+	_endif
+	
+	#_endif
+	_return LcollInterseccionFinal1,LcollInterseccionFinal2
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.ubica_elemento(Punto)
+	## 
+	##
+	windows << .oWindows
+	#_self.draw_content_on(windows, Punto)
+
+	_self.crea_circulo_ubicacion(Punto, windows)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_viewport_layout_sigc.val_falso_verdadero
+## Objetivo: Regresar un arreglo con los  valores "Si", "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasSiNo
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+	_local LasSiNo    ##Arreglo con los valores "Si", "No"
+	LasSiNo << rope.new()
+
+	## Agrega los valores "Si", "No"
+	LasSiNo.add("Si")
+	LasSiNo.add("No")
+
+	>> LasSiNo
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_viewport_layout_sigc.zoom_to()
+# Objetivo: Hacer un zoom a un area o punto de un viewport ya mapeado.
+# Parametros de Entrada: Ninguno.
+# Parametros de Salida: Ninguno.
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 24/Nov./2004
+# Autor de la modificacion: rbsaldan.
+# Descripcion de la modificacion: Metodo nuevo
+
+# Fecha de ultima modificacion: 21/Ene./2005
+# Autor de la modficacion: rbsaldan.
+# Descripcion de la modificacion: Documentar codigo.
+	
+_local LoLayoutDesigner   # Referencia a la aplicacion de layout designer.
+_local LoApp              # Referencia a la aplicacion de pni.
+
+        # Obtener la aplicacion pni.
+	LoApp << smallworld_product.pni_application()
+	
+	LoMapPlugin << LoApp.plugin(:map_plugin)
+
+	
+	# Obtener la aplicacion layout designer.
+	LoLayoutDesigner << LoApp.plugin(:layout_plugin).start_layout_designer()
+	
+	# Obtener
+	LoViewMapperPlugin<<LoLayoutDesigner.plugin(:viewport_mapper)
+	# Obtener el layout manager
+	LoLayoutManager<<LoLayoutDesigner.plugin(:layout_manager)
+
+	_if LoLayoutDesigner _isnt _unset _and LoLayoutManager _isnt _unset
+	_then
+		# Obtener los sectores de un trail dibujado en el layout designer.
+		LcollSector << LoLayoutManager.current_layout_view.trail.current_sector
+		_if LcollSector _isnt _unset
+		_then
+			# Obtener la transformacion del viewport (self).
+			LoTransGisPag<<_self.transform
+			# Obtener la transformacion inversa del viewport (self).
+			LoTransPagGis<<LoTransGisPag.inverse()
+			_if LcollSector.size=1  # El trail es un punto.
+			_then
+				LoCoord<<LcollSector.first_coord
+				LoCoord<<LoCoord.transformed(LoTransPagGis)
+			
+				# Crear un buffer de 20 metros.
+				LoBuffer<<LoCoord.buffer(20*1000)
+				LoBuffer << LoBuffer.transformed(transform.new().scalexy(0.01,0.01))
+				LoBuffer.world << LoMapPlugin.current_map.world
+				# Hacer un acercamiento del buffer en el mapa en la vista principal.
+				LoMapPlugin.goto(LoBuffer)
+			_else   # El trail es una linea o area.
+				# Obtener el bound de trail, crear una pseudo area con ese
+				# trail, dibujar la psudo area en el mapa de la vista principal
+				# y tener la referencia a dicho trail.
+				LoBound<<LcollSector.bounds.transformed(LoTransPagGis)
+				Lopsa<<pseudo_area.new_with_sectors(LoBound.sectors)
+				LoMapPlugin.current_map.set_trail_from_geometry(Lopsa)
+				LoTrail<<smallworld_product.pni_application().plugin(:map_trail).current_trail
+
+				# Hacer un acercamiento del trail al mapa de la vista principal.
+				LoBounds<<LoTrail.bounds
+				LoBounds<<Lobounds.transformed(transform.new().scalexy(0.01,0.01)).bounds
+
+				LoMapPlugin.current_map_view.goto_bounds(LoBounds)
+				LoMapPlugin.current_map_view.view_scale<<LoMapPlugin.current_map_view.view_scale*10
+			_endif
+
+			# Crear un viewport y mapearlo a la vista actual del mapa y
+			# agregarlo a la pagina actual en el layout designer.
+			LoVpArea<<bounding_box.new(0,0,500,500)
+			LoViewport<<viewport_layout.new_with(:bounds,LoVpArea)
+			LoViewport.set_fill_colour(_unset)
+			LoViewport.trail<<_false
+			Loviewport.selection<<_false
+			_self.layout_page.add_element(LoViewport)
+			
+			LoMapView<<LoMapPlugin.current_map_view
+			LoViewMapperPlugin.map_viewport_on_map_view(LoViewport,
+								    LoMapView,
+								    LoMapView.current_view_bounds,
+								    _true)
+			LoViewport.ace_name<<_self.ace_name.default("CENTRALES")
+		_else
+			LoLayoutDesigner.show_message("haga un trazo (punto o linea) sobre el Viewport seleccionado.")
+		_endif
+	_endif
+_endmethod
+$

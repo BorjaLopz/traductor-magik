@@ -1,0 +1,643 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Planos - Fibra Óptica 
+# Objetivo: Mostrar la lista de materiales para proyectos de FO 
+# Autor:    ahernanram
+# Fecha de creacion: (15/02/06 ahernan)
+#
+#----------------------------------------------------------------
+_package user
+$
+#remex(:c_lista_materiales_fibra)
+$
+def_slotted_exemplar(:c_lista_materiales_fibra,
+{
+	 {:tipo, _unset},  #se indica si la lista de materiales es de elementos de red o estructuras
+	 {:LoElemResumen, _unset},
+	 {:LoDesc,        _unset},
+	 {:pl_datos,      _unset},
+	 {:ht,           _unset }
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.new_with(Podatos, _gather args)
+	#---------------------------------------------------
+	##  Objetivo  : generar una instancisa del sello de lista de
+	## materiales inicializada segun el tipo de elementos que se
+	## desea exponer, donde 
+	## PoDatos contiene el tipo de elementos que se listaran  y sus
+	## valores son :red o :estructuras.
+
+	.tipo << Podatos
+
+	.loDesc << {
+	          {"Cierre FOSC 450BS (CEDO)"},
+		  {"Intervención Cierre FOSC 450BS (subterráneo)"},
+		  {"Jgo de Reent FOSC 450 BS"},
+		  {"Cierre FOSC 350 C  Subterráneo (Recto)"},
+		  {"Cierre FOSC 350 C  Aéreo (Recto)"},
+		  {"Cierre FOSC 350 C  Subterráneo (1E/2S)"},		 
+		  {"Cierre FOSC 350 C  Aéreo (1E/2S)"},		  
+		  {"Cierre FOSC 350 C  Subterráneo (1E/3S)"},
+		  {"Cierre FOSC 350 C  Aéreo (1E/3S)"},
+		  {"Cierre FOSC 350 C  Subterráneo (1E/4S)"},
+		  {"Cierre FOSC 350 C  Aéreo (1E/4S)"},
+		  {"Intervención FOSC 350 C (subterráneo)"},
+		  {"Jgo de Reent FOSC 350 C (subterráneo)"},
+		  {"Intervención FOSC 350 C (aéreo)"},
+		  {"Jgo de Reent FOSC 350 C (aéreo)"},		  
+		  {"Divisor 1:8"},	
+		  {"Fusiones por fibra"},
+		  {"Terminal optica de 8 puertos"},
+		  {"Terminal optica de 16 puertos"},
+		  {"Etiqueta tipo bandera para cable"},
+		  {"Bajante óptico"},		
+		  {"Cantidad de gazas"}}
+
+
+        .pl_datos << property_list.new()
+
+	.pl_datos[:c_fosc_450cedo]     <<   0     #"Cierre FOSC 450BS (CEDO)" ))
+	.pl_datos[:i_fosc_450_sub]     <<   0     #"Intervención FOSC 450 BS FOSC 450BS (subterráneo)" ))
+	.pl_datos[:jgo_fosc_450]       <<   0     #"Jgo de Reent FOSC 450 BS" ))
+	.pl_datos[:c_fosc_350_sub_r]   <<   0     #"Cierre FOSC 350 C  Subterráneo (Recto)" ))
+	.pl_datos[:c_fosc_350_ae_r]    <<   0     #"Cierre FOSC 350 C  Aéreo (Recto)" ))
+	.pl_datos[:c_fosc_350_sub_12]  <<   0     #"Cierre FOSC 350 C  Subterráneo (1E/2S)" ))
+	.pl_datos[:c_fosc_350_ae_12]   <<   0     #"Cierre FOSC 350 C  Aéreo (1E/2S)" ))
+	.pl_datos[:c_fosc_350_sub_13]  <<   0     #"Cierre FOSC 350 C  Subterráneo (1E/3S)" ))
+	.pl_datos[:c_fosc_350_ae_13]   <<   0     #"Cierre FOSC 350 C  Aéreo (1E/3S)" ))
+	.pl_datos[:c_fosc_350_sub_14]  <<   0     #"Cierre FOSC 350 C  Subterráneo (1E/4S)" ))
+	.pl_datos[:c_fosc_350_ae_14]   <<   0     #"Cierre FOSC 350 C  Aéreo (1E/4S)" ))
+	.pl_datos[:i_fosc_350_sub]     <<   0     #"Intervención FOSC 350 C (subterráneo)" ))
+	.pl_datos[:jgo_fosc_350_sub]   <<   0     #"Jgo de Reent FOSC 350 C (subterráneo)" ))
+	.pl_datos[:i_fosc_350_ae]      <<   0     #"Intervención FOSC 350 C (aéreo)" ))
+	.pl_datos[:jgo_fosc_350_ae]    <<   0     #"Jgo de Reent FOSC 350 C (aéreo)"  ))
+	.pl_datos[:divisor_18]         <<   0     #"Divisor 1:8"  ))
+	.pl_datos[:fusiones_fibra]     <<   0     #"Fusiones por fibra"  ))
+	.pl_datos[:terminal_optica_8]  <<   0     #"Terminal optica de 8 puertos" ))
+	.pl_datos[:terminal_optica_16] <<   0     #"Terminal optica de 16 puertos"  ))
+	.pl_datos[:etiqueta_bandera]   <<   0     #"Etiqueta tipo bandera para cable" ))
+	.pl_datos[:bajante_optico]     <<   0     #"Bajante óptico" ))
+	.pl_datos[:gazas]              <<   0     #"Cantidad de gazas" ))
+
+
+	>> _super.new_with(property_list.new_from_gathered ( args ))
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.defined_attributes
+
+	
+	attribs << rope.new_from (_super.defined_attributes)
+	attribs.add(layout_attribute_definition.new(:c_fosc_450cedo,    :string,:default_value,"",:description,"Cierre FOSC 450BS (CEDO)" ))
+	attribs.add(layout_attribute_definition.new(:i_fosc_450_sub,    :string,:default_value,"",:description,"Intervención Cierre FOSC 450BS (subterráneo)" ))
+	attribs.add(layout_attribute_definition.new(:jgo_fosc_450,      :string,:default_value,"",:description,"Jgo de Reent FOSC 450 BS" ))
+	attribs.add(layout_attribute_definition.new(:c_fosc_350_sub_r,  :string,:default_value,"",:description,"Cierre FOSC 350 C  Subterráneo (Recto)" ))
+	attribs.add(layout_attribute_definition.new(:c_fosc_350_ae_r,   :string,:default_value,"",:description,"Cierre FOSC 350 C  Aéreo (Recto)" ))
+	attribs.add(layout_attribute_definition.new(:c_fosc_350_sub_12, :string,:default_value,"",:description,"Cierre FOSC 350 C  Subterráneo (1E/2S)" ))
+	attribs.add(layout_attribute_definition.new(:c_fosc_350_ae_12,  :string,:default_value,"",:description,"Cierre FOSC 350 C  Aéreo (1E/2S)" ))
+	attribs.add(layout_attribute_definition.new(:c_fosc_350_sub_13, :string,:default_value,"",:description,"Cierre FOSC 350 C  Subterráneo (1E/3S)" ))
+	attribs.add(layout_attribute_definition.new(:c_fosc_350_ae_13,  :string,:default_value,"",:description,"Cierre FOSC 350 C  Aéreo (1E/3S)" ))
+	attribs.add(layout_attribute_definition.new(:c_fosc_350_sub_14, :string,:default_value,"",:description,"Cierre FOSC 350 C  Subterráneo (1E/4S)" ))
+	attribs.add(layout_attribute_definition.new(:c_fosc_350_ae_14,  :string,:default_value,"",:description,"Cierre FOSC 350 C  Aéreo (1E/4S)" ))
+	attribs.add(layout_attribute_definition.new(:i_fosc_350_sub,    :string,:default_value,"",:description,"Intervención FOSC 350 C (subterráneo)" ))
+	attribs.add(layout_attribute_definition.new(:jgo_fosc_350_sub,  :string,:default_value,"",:description,"Jgo de Reent FOSC 350 C (subterráneo)" ))
+	attribs.add(layout_attribute_definition.new(:i_fosc_350_ae,     :string,:default_value,"",:description,"Intervención FOSC 350 C (aéreo)" ))
+	attribs.add(layout_attribute_definition.new(:jgo_fosc_350_ae,   :string,:default_value,"",:description,"Jgo de Reent FOSC 350 C (aéreo)"  ))
+	attribs.add(layout_attribute_definition.new(:divisor_18,        :string,:default_value,"",:description,"Divisor 1:8"  ))
+	attribs.add(layout_attribute_definition.new(:fusiones_fibra,    :string,:default_value,"",:description,"Fusiones por fibra"  ))
+	attribs.add(layout_attribute_definition.new(:terminal_optica_8, :string,:default_value,"",:description,"Terminal optica de 8 puertos" ))
+	attribs.add(layout_attribute_definition.new(:terminal_optica_16,:string,:default_value,"",:description,"Terminal optica de 16 puertos"  ))
+	attribs.add(layout_attribute_definition.new(:etiqueta_bandera,  :string,:default_value,"",:description,"Etiqueta tipo bandera para cable" ))
+	attribs.add(layout_attribute_definition.new(:bajante_optico,    :string,:default_value,"",:description,"Bajante óptico" ))
+	attribs.add(layout_attribute_definition.new(:gazas,             :string,:default_value,"",:description,"Cantidad de gazas" ))
+
+	>> attribs
+	
+_endmethod
+$
+c_lista_materiales_fibra.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.configura_tabla()
+	##Define la estructura del sello de la lista de materiales
+
+	.o_color_linea <<  {1.0, 0.0, 0.0}
+		
+	_self.obten_lista_materiales()
+	  
+	renglones_agregar << .loDesc.size 
+
+	_if .ht _isnt _unset
+	_then
+		lo_tabla << .o_tablas.crea_tabla(2+renglones_agregar,3,:tbl_lista_materiales)
+	_else
+		lo_tabla << .o_tablas.crea_tabla(2,4,:tbl_lista_materiales)
+	_endif
+
+	# coordenada donde inicia la tabla
+	lo_tabla.ocoordenada_origen << .o_coord_inicio
+	# longitud de los renglones de la tabla, dada en mm 
+	_for n_reng _over range(1,2+renglones_agregar)
+	_loop
+		lo_tabla.orenglones.elemento(n_reng).nlongitud << 6
+	_endloop
+
+	# longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 6
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 80
+	lo_tabla.ocolumnas.elemento(3).nlongitud  << 20
+		
+	# se ocultan bordes de celdas
+	oculta << rope.new_with({1,1},{1,2},{1,3})
+	
+	_for e _over oculta.fast_elements()
+	_loop
+	lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Sup? << _false
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false 
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.asigna_celdas_a_colorear()
+	
+	_local lst_celdas_color << rope.new()
+	
+	_local ren_tbl << _self.o_tablas.elemento(:tbl_lista_materiales).oceldas.sys!slot(:nnumren)
+		
+	lst_celdas_color.add({:tbl_lista_materiales,1,2,.o_color_linea})
+
+	_for  iterIndice   _over 3.upto(ren_tbl)
+		_loop
+			lst_celdas_color.add({:tbl_lista_materiales,iterIndice,2,{0.0, 0.6, 0.2}})
+			lst_celdas_color.add({:tbl_lista_materiales,iterIndice,3, {1.0, 0.0, 0.0}})
+		_endloop
+
+	_return lst_celdas_color
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.etiqueta_celdas_desc()
+	
+	LoFormato << float_format.new(:float_decimal_places,2)
+	material << property_list.new()
+	
+	cont << 2
+	
+	#Cantidad de renglones de la tabla actual
+	_local ren_tbl << _self.o_tablas.elemento(:tbl_lista_materiales).oceldas.sys!slot(:nnumren)
+	
+	_for  Iterkeyc _over  .LoDesc.elements()
+	_loop
+		cont+<<1		
+		material[:desc_uc] << Iterkeyc.an_element()
+		material[:cantidad] << "0"
+		
+		_if ren_tbl >= cont
+		_then
+			_self.asigna_texto_celda(:tbl_lista_materiales,cont,1, cont-2                ,25,_unset)
+			_self.asigna_texto_celda(:tbl_lista_materiales,cont,2,material[:desc_uc ]    ,25,:centre_left )
+			_self.asigna_texto_celda(:tbl_lista_materiales,cont,3,material[:cantidad]    ,25,_unset )
+		_endif
+		
+	_endloop
+	
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.etiqueta_celdas()
+	## Titulos de la lista de materiales
+	_self.asigna_texto_celda(:tbl_lista_materiales,1,2,"LISTA DE MATERIALES PROYECTADOS",30,_unset)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,1,"No",20,_unset)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,2,"DESCRIPCION",20,_unset)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,3,"CANTIDAD",20,_unset)
+	
+	_self.etiqueta_celdas_desc()
+		
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.llena_datos_celdas()
+
+	LoFormato << float_format.new(:float_decimal_places,2)
+	##pl_datos << property_list.new()
+
+       #hacer calculos
+	.pl_datos[:c_fosc_450cedo]     << _self.contar("user!_empalme_distribucion","FOSC 450" )
+
+	.pl_datos[:i_fosc_450_sub]     <<   0     #"Intervención FOSC 450 BS FOSC 450BS (subterráneo)" ))
+	.pl_datos[:jgo_fosc_450]       <<   0     #"Jgo de Reent FOSC 450 BS" ))
+	#calculados:
+	.pl_datos[:c_fosc_350_sub_r]   <<  _self.contar("splice_closure","CIERRE FOSC 350 CRECTOSUBTERRANEO") #Cierre FOSC 350 C  Subterráneo (Recto)
+	.pl_datos[:c_fosc_350_ae_r]    <<  _self.contar("splice_closure","CIERRE FOSC 350 CRECTOAEREO")       #Cierre FOSC 350 C  Aéreo (Recto)
+	.pl_datos[:c_fosc_350_sub_12]  <<  _self.contar("splice_closure","CIERRE FOSC 350 C1E/2SSUBTERRANEO") #Cierre FOSC 350 C  Subterráneo (1E/2S) 
+	.pl_datos[:c_fosc_350_ae_12]   <<  _self.contar("splice_closure","CIERRE FOSC 350 C1E/2SAEREO")       #Cierre FOSC 350 C  Aéreo (1E/2S) ))
+	.pl_datos[:c_fosc_350_sub_13]  <<  _self.contar("splice_closure","CIERRE FOSC 350 C1E/3SSUBTERRANEO") #Cierre FOSC 350 C  Subterráneo (1E/3S) 
+	.pl_datos[:c_fosc_350_ae_13]   <<  _self.contar("splice_closure","CIERRE FOSC 350 C1E/3SSUBTERRANEO") #Cierre FOSC 350 C  Aéreo (1E/3S) 
+	.pl_datos[:c_fosc_350_sub_14]  <<  _self.contar("splice_closure","CIERRE FOSC 350 C1E/4SSUBTERRANEO") #Cierre FOSC 350 C  Subterráneo (1E/4S) 
+	.pl_datos[:c_fosc_350_ae_14]   <<  _self.contar("splice_closure","CIERRE FOSC 350 C1E/4SAEREO")       #Cierre FOSC 350 C  Aéreo (1E/4S) 
+	
+	.pl_datos[:i_fosc_350_sub]     <<   0                                                      #Intervención FOSC 350 C (subterráneo) 
+	.pl_datos[:jgo_fosc_350_sub]   <<   0                                                      #Jgo de Reent FOSC 350 C (subterráneo) 
+	.pl_datos[:i_fosc_350_ae]      <<   0                                                      #Intervención FOSC 350 C (aéreo)
+	.pl_datos[:jgo_fosc_350_ae]    <<   0                                                      #Jgo de Reent FOSC 350 C (aéreo)
+	.pl_datos[:divisor_18]         <<   0                                                      #Divisor 1:8  ))
+	.pl_datos[:fusiones_fibra]     <<   _self.contar_fusiones()                                #Fusiones por fibra  
+	.pl_datos[:terminal_optica_8]  << _self.contar("user!_terminal_fo","8 Puertos" )           #Terminal optica de 8 puertos 
+	.pl_datos[:terminal_optica_16] << _self.contar("user!_terminal_fo","16 Puertos" )          #Terminal optica de 16 puertos 
+	.pl_datos[:etiqueta_bandera]   <<   0     #"Etiqueta tipo bandera para cable" ))
+	.pl_datos[:bajante_optico]     <<   0     #"Bajante óptico" ))
+	.pl_datos[:gazas]              <<   0     #"Cantidad de gazas" ))
+
+       #revisar propiedades....       
+	.pl_datos << _self.info_sello_propiedades(.pl_datos)
+		
+	cont << 2
+	
+	#Cantidad de renglones de la tabla actual
+	_local ren_tbl << _self.o_tablas.elemento(:tbl_lista_materiales).oceldas.sys!slot(:nnumren)
+	
+	_for  Iterkey, iterValue  _over .pl_datos.keys_and_elements()
+	_loop
+		cont+<<1		
+		
+		_if ren_tbl >= cont
+		_then
+			_self.asigna_texto_celda(:tbl_lista_materiales,cont,3, itervalue ,25,_unset )
+		_endif
+		
+	_endloop
+	
+	
+_endmethod
+$
+_method c_lista_materiales_fibra.actualiza_datos()
+        ## actualiza la informacion de las celdas.
+	
+	_self.llena_datos_celdas()
+	
+	_self.draw_content_on(.window)
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.buscar_elementos_en_mapa()
+	## Busca los cables proyectados
+
+	# (22/10/06 des_aaron) : validar
+	
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view 
+	Lovp << mv.get_geometry_set()
+
+	elementos << equality_set.new()
+			
+	_if Lovp _is _unset
+	_then _return _endif
+	_if Lovp.world _is _unset 
+	_then _return _unset 
+	_endif
+
+
+	_if  mv.ace_name _is :gs!schematic 
+	_then
+
+		gset << Lovp.world.geometry_set()
+				
+		_for geom _over gset.fast_elements()
+		_loop
+
+			reg_gis << geom.rwo.source_rwo_records().an_element()
+					
+			
+			_if reg_gis _isnt _unset _andif
+			    reg_gis.responds_to?(:construction_status) _andif
+			    reg_gis.rwo_type _isnt  :sheath 
+			_then
+				_if reg_gis.construction_status = "PROYECTADO" 
+				_then
+					elementos.add ( reg_gis )				 
+			_endif
+			_endif
+			
+		_endloop
+		
+		
+	_endif
+	
+		_return elementos
+
+	
+_endmethod
+$
+# (23/02/08 des_aaron) : actualizado para sello.
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.contar_fusiones()
+	#---------------------------------------------------
+	##  Objetivo  : Obtener el numero de fusiones proyectadas en
+	## los elementos CEDO, Empalme, y Terminal.
+
+	lista << swg_dsn_admin_engine.active_design.scan_geometries
+	ht  << hash_table.new()
+	ht[:mit_internal_connection] << rope.new()
+	
+       _for  IterObject _over lista.fast_elements()
+       _loop	       
+	       _if IterObject.responds_to?(:mit_internal_connections)
+	       _then
+                  _for iterMit _over IterObject.mit_internal_connections.fast_elements()
+		  _loop
+			  _if iterMit.user!_tipo_conexion.uppercase = "FUSION" _andif
+			      iterMit.construction_status = "PROYECTADO"
+			  _then			  
+				 ht[:mit_internal_connection].add(iterMit) 
+			  _else
+				  
+			  _endif
+		  _endloop		    		 
+	       _endif
+       _endloop
+
+       _return ht[:mit_internal_connection].size
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.consultar_Lista_materiales_esq()
+	
+	mm << hash_table.new()
+
+	lista << swg_dsn_admin_engine.active_design.scan_geometries
+	
+	listamapa << _self.buscar_elementos_en_mapa()
+
+	lista.add_all(listamapa )
+	
+	_for k _over lista.elements()
+	_loop
+		_if k.responds_to?(:source_collection) _andif
+		    k.responds_to?(:construction_status)  _andif
+		    (k.source_collection.name _isnt :sheath  _andif
+		     k.source_collection.name _isnt :aerial_route  _andif
+		     k.source_collection.name _isnt :mit_splice_tray  _andif
+		     k.source_collection.name _isnt :figure_eight  _andif
+		     k.source_collection.name _isnt :limite_distrito_optico  _andif
+		     k.source_collection.name _isnt :user!_limite_terminal_fo)   _andif k.construction_status =  "PROYECTADO"
+		_then
+                        _if k.source_collection.name _is :user!_terminal_fo  _andif
+			    listamapa.includes?(k).not
+			_then
+			        _continue	
+			_endif
+
+			# (22/11/16 des_aaron) : solo divisores dentro de CEDO
+                        _if k.source_collection.name _is :optical_splitter  _andif
+			    k.gis_owner _isnt _unset _andif
+			    k.gis_owner.source_collection.name _isnt  :user!_empalme_distribucion
+			_then
+			        _continue	
+			_endif
+
+                        _if k.source_collection.name _is :mit_internal_connection  _andif
+			    k.user!_tipo_conexion _isnt _unset _andif
+			    k.user!_tipo_conexion = "FUSION" _andif
+			    k.gis_Owner _isnt  :user!_terminal_fo
+			_then
+			        _continue	
+			_endif
+
+			
+                       _if k.responds_to?(:spec_id) 
+		       _then
+
+			        mkey << k.source_collection.name.write_string + "|"  + k.spec_id
+				
+			       _if k.responds_to?(:user!_tipo_emp) 
+			       _then
+				       aereo       << {"AZOTEA" ,"FACHADA" , "POSTE" ,"INTERIOR" }
+				       subterraneo << {"ENTERRADO","POZO" ,"SUBTERRANEO"}
+
+				       _if aereo.index_of_eq(k.user!_ubicacion_empalme) _isnt _unset 
+				       _then
+					     ubicacion << "AEREO"
+				       _else
+					     ubicacion << "SUBTERRANEO"   
+					     
+				       _endif
+				       
+				       mkey << k.source_collection.name.write_string +   %space + k.spec_id + %space  + k.user!_tipo_emp + ubicacion
+			       _endif
+
+			       mkey << mkey.as_symbol()
+		       _else
+			        mkey << (k.source_collection.name.write_string + "|"  ).as_symbol()
+		       _endif
+			
+			_if mm[mkey] _is _unset 
+			_then		
+				mm[mkey] << equality_set.new()			
+			_endif
+
+
+			
+			mm[mkey].add(k)				
+		_endif
+	_endloop	
+
+		
+	_return mm
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.contar(name, criterio)
+	#---------------------------------------------------
+
+	##show(:cuenta_objeto,name )
+	
+	mm << _self.consultar_Lista_materiales_esq()
+	
+	ht  << hash_table.new()
+       total << 0
+	
+       _for  IterObjectkey,itervalue  _over mm.keys_and_elements()
+       _loop	     	   
+	       _if  IterObjectkey.write_string.lowercase.index_of_seq(name.lowercase) _isnt  _unset  _andif
+		    IterObjectkey.write_string.lowercase.index_of_seq(criterio.lowercase) _isnt _unset 
+	       _then
+ 		      total << itervalue.size		    
+	       _endif	 
+       _endloop
+
+       _return total
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.info_sello_propiedades(pl_datos)
+
+
+	pl_datos[:c_fosc_450cedo]     <<   _self.valor_propiedad(:c_fosc_450cedo,    pl_datos[:c_fosc_450cedo])     #"Cierre FOSC 450BS (CEDO)" ))
+	pl_datos[:i_fosc_450_sub]     <<   _self.valor_propiedad(:i_fosc_450_sub,    pl_datos[:i_fosc_450_sub])     #"Intervención FOSC 450 BS FOSC 450BS (subterráneo)" ))
+	pl_datos[:jgo_fosc_450]       <<   _self.valor_propiedad(:jgo_fosc_450,      pl_datos[:jgo_fosc_450])       #"Jgo de Reent FOSC 450 BS" ))
+	pl_datos[:c_fosc_350_sub_r]   <<   _self.valor_propiedad(:c_fosc_350_sub_r,  pl_datos[:c_fosc_350_sub_r])   #"Cierre FOSC 350 C  Subterráneo (Recto)" ))
+	pl_datos[:c_fosc_350_ae_r]    <<   _self.valor_propiedad(:c_fosc_350_ae_r,   pl_datos[:c_fosc_350_ae_r])    #"Cierre FOSC 350 C  Aéreo (Recto)" ))
+	pl_datos[:c_fosc_350_sub_12]  <<   _self.valor_propiedad(:c_fosc_350_sub_12, pl_datos[:c_fosc_350_sub_12])  #"Cierre FOSC 350 C  Subterráneo (1E/2S)" ))
+	pl_datos[:c_fosc_350_ae_12]   <<   _self.valor_propiedad(:c_fosc_350_ae_12,  pl_datos[:c_fosc_350_ae_12])   #"Cierre FOSC 350 C  Aéreo (1E/2S)" ))
+	pl_datos[:c_fosc_350_sub_13]  <<   _self.valor_propiedad(:c_fosc_350_sub_13, pl_datos[:c_fosc_350_sub_13])  #"Cierre FOSC 350 C  Subterráneo (1E/3S)" ))
+	pl_datos[:c_fosc_350_ae_13]   <<   _self.valor_propiedad(:c_fosc_350_ae_13,  pl_datos[:c_fosc_350_ae_13])   #"Cierre FOSC 350 C  Aéreo (1E/3S)" ))
+	pl_datos[:c_fosc_350_sub_14]  <<   _self.valor_propiedad(:c_fosc_350_sub_14, pl_datos[:c_fosc_350_sub_14])  #"Cierre FOSC 350 C  Subterráneo (1E/4S)" ))
+	pl_datos[:c_fosc_350_ae_14]   <<   _self.valor_propiedad(:c_fosc_350_ae_14,  pl_datos[:c_fosc_350_ae_14])   #"Cierre FOSC 350 C  Aéreo (1E/4S)" ))
+	pl_datos[:i_fosc_350_sub]     <<   _self.valor_propiedad(:i_fosc_350_sub,    pl_datos[:i_fosc_350_sub])     #"Intervención FOSC 350 C (subterráneo)" ))
+	pl_datos[:jgo_fosc_350_sub]   <<   _self.valor_propiedad(:jgo_fosc_350_sub,  pl_datos[:jgo_fosc_350_sub])   #"Jgo de Reent FOSC 350 C (subterráneo)" ))
+	pl_datos[:i_fosc_350_ae]      <<   _self.valor_propiedad(:i_fosc_350_ae,     pl_datos[:i_fosc_350_ae])      #"Intervención FOSC 350 C (aéreo)" ))
+	pl_datos[:jgo_fosc_350_ae]    <<   _self.valor_propiedad(:jgo_fosc_350_ae,   pl_datos[:jgo_fosc_350_ae])    #"Jgo de Reent FOSC 350 C (aéreo)"  ))
+	pl_datos[:divisor_18]         <<   _self.valor_propiedad(:divisor_18,        pl_datos[:divisor_18])         #"Divisor 1:8"  ))
+	pl_datos[:fusiones_fibra]     <<   _self.valor_propiedad(:fusiones_fibra,    pl_datos[:fusiones_fibra])     #"Fusiones por fibra"  ))
+	pl_datos[:terminal_optica_8]  <<   _self.valor_propiedad(:terminal_optica_8, pl_datos[:terminal_optica_8])  #"Terminal optica de 8 puertos" ))
+	pl_datos[:terminal_optica_16] <<   _self.valor_propiedad(:terminal_optica_16,pl_datos[:terminal_optica_16]) #"Terminal optica de 16 puertos"  ))
+	pl_datos[:etiqueta_bandera]   <<   _self.valor_propiedad(:etiqueta_bandera,  pl_datos[:etiqueta_bandera])   #"Etiqueta tipo bandera para cable" ))
+	pl_datos[:bajante_optico]     <<   _self.valor_propiedad(:bajante_optico,    pl_datos[:bajante_optico])     #"Bajante óptico" ))
+	pl_datos[:gazas]              <<   _self.valor_propiedad(:gazas,             pl_datos[:gazas])              #"Cantidad de gazas" ))
+	
+	_return pl_datos
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.valor_propiedad(Propiedad, dato_actual)
+	## 
+	##
+        ##show(:datos, propiedad, dato_actual)
+	
+	_if _self.attributes[Propiedad]  _isnt _unset  _andif
+	    _self.attributes[Propiedad].value _isnt _unset _andif
+	    _self.attributes[Propiedad].value.write_string.size > 0
+	_then
+		LoPropiedad << _self.attributes[Propiedad].value.write_string.uppercase
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.consultar_Lista_materiales()
+	
+	mm << hash_table.new()
+
+	lista << swg_dsn_admin_engine.active_design.scan_geometries
+	
+	listamapa << _self.buscar_elementos_en_mapa()
+
+	lista.add_all(listamapa )
+	
+	_for k _over lista.elements()
+	_loop
+		_if k.responds_to?(:source_collection) _andif
+		    k.responds_to?(:construction_status)  _andif
+		    (k.source_collection.name _isnt :sheath  _andif
+		     k.source_collection.name _isnt :aerial_route  _andif
+		     k.source_collection.name _isnt :mit_splice_tray  _andif
+		     k.source_collection.name _isnt :figure_eight  _andif
+		     k.source_collection.name _isnt :limite_distrito_optico  _andif
+		     k.source_collection.name _isnt :user!_limite_terminal_fo)   _andif k.construction_status =  "PROYECTADO"
+		_then
+
+			#
+                        _if k.source_collection.name _is :user!_terminal_fo  _andif
+			    listamapa.includes?(k).not
+			_then
+			        _continue	
+			_endif
+
+			# (22/11/16 des_aaron) : solo divisores dentro de CEDO
+                        _if k.source_collection.name _is :optical_splitter  _andif
+			    k.gis_owner _isnt _unset _andif
+			    k.gis_owner.source_collection.name _isnt  :user!_empalme_distribucion
+			_then
+			        _continue	
+			_endif
+
+                        _if k.source_collection.name _is :mit_internal_connection  _andif
+			    k.user!_tipo_conexion _isnt _unset _andif
+			    k.user!_tipo_conexion = "FUSION" _andif
+			    k.gis_Owner _isnt  :user!_terminal_fo
+			_then
+			        _continue	
+			_endif
+
+			
+                       _if k.responds_to?(:spec_id) 
+		       _then
+                                mkey << (k.source_collection.external_name.write_string + "|"  + k.spec_id).as_symbol()
+		       _else
+			        mkey << (k.source_collection.external_name.write_string + "|"  ).as_symbol()
+		       _endif
+			
+			_if mm[mkey] _is _unset 
+			_then		
+				mm[mkey] << equality_set.new()			
+			_endif
+
+
+			
+			mm[mkey].add(k)				
+		_endif
+	_endloop	
+
+		
+	_return mm
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.obten_lista_materiales()
+	#---------------------------------------------------
+	##  Objetivo  : obtener la lista de materiales.
+	##
+	 _self.elementos_de_proyecto()
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_fibra.elementos_de_proyecto()
+	#---------------------------------------------------
+	##  Objetivo  : Hacer una lista de todos los materiales del
+	## proyecto.
+	##
+
+	LoElementos << rope.new()
+	ht  << hash_table.new()
+
+	_if .tipo _is :red
+	_then
+		.ht << _self.consultar_Lista_materiales_esq()	
+	_endif 
+	
+	#genera una lista de todos los elementos.
+	
+	_if .ht.size > 0 
+      _then
+	      _for iterObjetoName,lista _over ht.keys_and_elements()  
+	      _loop
+		      _for LoOBjeto _over lista.elements()
+		      _loop
+			     LoElementos.add(LoObjeto)
+		      _endloop
+	      _endloop
+	      
+	_endif
+
+	.LoElemResumen  << LoElementos
+
+_endmethod
+$

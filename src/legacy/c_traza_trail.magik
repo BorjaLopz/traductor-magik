@@ -1,0 +1,169 @@
+#----------------------------------------------------------------
+# linea_perpendicular.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: jtlelo
+#
+# Date: 06/02/28
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+#remex(:c_traza_trail)
+
+def_slotted_exemplar(:c_traza_trail,
+    {
+	  {:xup,_unset,:writable},
+	  {:yup,_unset,:writable},
+	  {:xdown,_unset,:writable},
+	  {:ydown,_unset,:writable},
+	  {:radio,_unset,:writable},
+	  {:sangulo,_unset,:writable},
+	  {:punto_up,_unset,:writable},
+	  {:punto_down,_unset,:writable},
+	  {:transversal,_unset,:writable}
+    },:model,:pni_editor_plugin)
+$
+
+
+_method c_traza_trail.new()
+	>> _clone
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_traza_trail.init()
+	## 
+	## 
+	_super.init()
+	>> _self 
+_endmethod
+$
+
+
+# DADOS DOS PUNTOS DEVUELVE LOS PUNTOS PERPENDICULARES A LA
+# LINEA FORMADA POR P1 Y P2, EN P2 ES EL PUNTO DON<DE SE FORMA
+# LA PERPENDICULAR
+#_pragma(classify_level=restricted, usage={redefinable})
+#_method c_traza_trail.Objeto
+#	## 
+#	##
+#	mapa << smallworld_product.pni_application().plugin(:map_plugin).current_map
+#	obj << mapa.current_selection.an_element()
+#	c1 << obj.first_coord
+#	c2 << obj.mid_point
+#	_self.linea(c1, c2)
+#_endmethod
+#$
+
+_method c_traza_trail.linea(p1,p2,_optional PiAngulo)
+	_local vangulo,aux_trilo
+	.radio << 18000
+	.sangulo << _self.mangulo(p1,p2)
+	_if PiAngulo _is _unset
+	_then 
+		vangulo << .sangulo+90.degrees_to_radians
+	_else		
+		vangulo << .sangulo+PiAngulo.degrees_to_radians
+	_endif
+	
+	#arriba___________________________________
+	.xup << p2.x-.radio*cos(vangulo)
+	.yup << p2.y-.radio*sin(vangulo)
+	.punto_up<<coordinate.new(.xup,.yup)
+	
+	#abajo____________________________________
+	.xdown << p2.x+.radio*cos(vangulo)
+	.ydown << p2.y+.radio*sin(vangulo)
+	.punto_down <<coordinate.new(.xdown,.ydown)
+	
+	####DEVUELVE LA LINEA TRANSVERSAL
+	aux_trilo<<_unset
+	_local 	app << smallworld_product.application(:pni)
+	_local LcMpG << app.plugin(:map_plugin)
+	_local  mv  << LcMpG.current_map_view
+	_local aux_tri << map_trail.new(LcMpG.current_map)
+
+	aux_tri.add_coordinate(.punto_up)
+	aux_tri.add_coordinate(.punto_down)
+	.transversal << aux_tri.sectors
+	_self.trazar_trail
+_endmethod 
+$
+### DADOS DOS PUNTOS DEVUELVE EL ANGULO FORMADO POR ELLOS.
+_method c_traza_trail.mangulo(p1,p2)
+	_local tri,vangulo
+	_local lin << construction_line.new_with_coords(p1,p2)
+	_local vangulo << lin.angle ##.radians_to_degrees-90
+
+	_return vangulo 
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_traza_trail.trazar_trail
+	## 
+	##
+	mapa << smallworld_product.pni_application().plugin(:map_plugin).current_map
+	mt<<map_trail.new(mapa)
+	#agregamos la geometria
+	mt.add_coordinate(.punto_down)
+        c2<<.punto_down+coordinate(6000,-6000)
+	mt.add_coordinate(c2)
+	#trazamos el trail
+	mapa.set_trail_from_geometry(mt.as_pseudo_geometry)
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_traza_trail.dibujar_tierra(limite, window)
+	## 
+	##
+	
+	
+	to_bb << limite
+	LoWin1 << window
+	LoColorEx << colour.new_from_hex("000000")
+	
+	ca << coordinate.new(to_bb.xmin,to_bb.ymin)
+	#mapa.trail.add_coordinate(ca)
+	cb << coordinate.new(to_bb.xmax,to_bb.ymin)
+#	mapa.trail.add_coordinate(cb)
+	#obtenemos la longitud donde se trazara la tierra
+	LoLongitud << ca.distance_to(cb)
+	#Obtenemos los incrementos en X de separacion de lineas
+	LoIncX << LoLongitud/16
+	LoCorIncX << 0
+	LoCorIncY << 300
+	sr << sector_rope.new()
+	sr2 << sector_rope.new()
+	_loop
+		_if LoCorIncX >= LoLongitud
+		_then
+			_leave 
+		_endif
+		s << sector.new()	
+		ca << coordinate.new(to_bb.xmin+LoCorIncX,to_bb.ymin-LoCorIncY)
+		LoCorIncX << LoIncX + LoCorIncX
+		cb << coordinate.new(to_bb.xmin+LoCorIncX,to_bb.ymin)
+		s.add_last(ca)
+		s.add_last(cb)
+		sr.add_last(s)
+	_endloop
+	sec << sector.new()
+	sec.add(coordinate(to_bb.xmin, to_bb.ymin))
+	sec.add(coordinate(to_bb.xmax, to_bb.ymin))
+
+	sr2.add_last(sec)
+	
+	LoWin1.paint(_true, sr2, line_style.new( LoColorEx, 2))
+	LoWin1.paint(_true, sr ,line_style.new( LoColorEx, 2))
+	
+_endmethod
+$

@@ -1,0 +1,297 @@
+_package user
+$
+def_slotted_exemplar(:c_celdas_grafico,
+		     {
+			     {:sNombre_Grafico, _unset}, # Nombre del grafico
+			     {:bVoltear_H,  _false },    # La imagen se volteara horizontalmente
+			     {:bVoltear_V,  _false },    # La imagen se volteara verticalmente
+			     {:nGrados,     0},          # La imagen se girara N grados
+			     {:bBordeSup, _false},       # Se dibuja el borde superior
+			     {:bBordeInf, _false},       # Se dibuja el borde inferior
+			     {:bBordeIzq, _false},       # Se dibuja el borde izquierdo
+			     {:bBordeDer, _false}, 	 # Se dibuja el borde derecho
+			     {:sColorLinea, _unset} 	 # Se dibuja el borde derecho
+		     },
+		     :c_elemento_grafico
+)
+
+$
+c_celdas_grafico.define_slot_access(:bBordeDer,          :writable, :private)
+$
+c_celdas_grafico.define_slot_access(:bBordeInf,          :writable, :private)
+$
+c_celdas_grafico.define_slot_access(:bBordeIzq,          :writable, :private)
+$
+c_celdas_grafico.define_slot_access(:bBordeSup,          :writable, :private)
+$
+c_celdas_grafico.define_slot_access(:bVoltear_H,         :writable, :private)
+$
+c_celdas_grafico.define_slot_access(:bVoltear_V,         :writable, :private)
+$
+c_celdas_grafico.define_slot_access(:nGrados,            :writable, :private)
+$
+c_celdas_grafico.define_slot_access(:sColorLinea,        :writable, :private)
+$
+c_celdas_grafico.define_slot_access(:sNombre_grafico,    :writable, :private)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.bBorde_Der?
+## Objetivo: devuelve (slot bBordeDer) un bolenao indicando si se dibuja
+##	     el borde derecho
+## Parámetros de entrada : NA
+## Parámetros de salida: NA  
+## Regresa: 
+## 	Boleano - bBordeDer : indica si se dibuja el borde derecho
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+	
+	_return _self.bBordeDer 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.bBorde_Der? << RbValor
+## Objetivo: Indicar si se dibuja el borde derecho, asignado el
+## valor al slot bBordeDer
+## Parámetros de entrada : 
+## 	Boleano - RbValor : Boleano que indica si se dibuja el borde derecho
+##                          y se asigna el valor al slot bBordeDer		
+## Parámetros de salida: NA  
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_self.bBordeDer << RbValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.bBorde_Inf?
+## Objetivo: devuelve (slot bBordeInf) un boleano indicando si se dibuja el
+##	     borde inferior
+## Parámetros de entrada : NA
+## Parámetros de salida: NA  
+## Regresa: 
+## 	Boleano - bBordeSup : indica si se dibuja el borde inferior
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_return _self.bBordeInf
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.bBorde_Inf? << RbValor
+## Objetivo: Indicar si se dibuja el borde inferior asignando
+## el valor al slot bBordeInf
+## Parámetros de entrada : 
+## 	Boleano - RbValor : Boleano que indica si se dibuja el borde inferior
+##                          y se asigna el valor al slot bBordeInf		
+## Parámetros de salida: NA  
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_self.bBordeInf << RbValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.bBorde_Izq?
+## Objetivo: devuelve (slot bBordeIzq) un boleano indicando si se dibuja el
+##	     borde izquierdo
+## Parámetros de entrada : NA
+## Parámetros de salida: NA  
+## Regresa: 
+## 	Boleano - bBordeSup : indica si se dibuja el borde izquierdo
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_return _self.bBordeIzq 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.bBorde_Izq? << RbValor
+## Objetivo: Indicar si se dibuja el borde izquierdo, asignado
+## el valor al slot bBordeIzq
+## Parámetros de entrada : 
+## 	Boleano - RbValor : Boleano que indica si se dibuja el borde izquierdo
+##                          y se asigna el valor al slot bBordeIzq		
+## Parámetros de salida: NA  
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_self.bBordeIzq << RbValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.bBorde_Sup? 
+## Objetivo: devuelve (slot bBordeSup) un boleano indicando si se dibuja
+##           el borde superior
+## Parámetros de entrada : NA
+## Parámetros de salida: NA  
+## Regresa: 
+## 	Boleano - bBordeSup : indica si se dibuja el borde superior
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_return _self.bBordeSup
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.bBorde_Sup? << RbValor
+## Objetivo: Indicar si se dibuja el borde superior, asignando
+## el valor al slot bBordeSup
+## Parámetros de entrada : 
+## 	Boleano - RbValor : Boleano que indica si se dibuja el borde superior
+##                          y se asigna el valor al slot bBordeSup	
+## Parámetros de salida: NA  
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_self.bBordeSup << RbValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.color_linea
+	## 
+	## 
+	_return .sColorLinea
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.color_linea << RsColor
+	## 
+	##
+	.sColorLinea << RsColor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.Despliega()
+## Objetivo: Realizar el dibujo de la celda
+## Parámetros de entrada : NA 
+## Parámetros de salida: NA  
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+_local LoEstiloLinea # Objeto del tipo Line_Style, utilizada para dibujar.
+
+	# Se define el estilo de linea
+	LoEstiloLinea << line_style.new_with_properties(
+                  :foreground_colour, _self.color_linea, 
+                  :width, 2)
+
+
+	# Dibuja el borde superior si se solicito	 
+	_if _self.bBordeSup _is _true 
+	_then
+		_local LoCoordena # Almacena dos coordenadas para dibujar una linea
+		
+		LoCoordenada << coords_vector.new(2)
+		LoCoordenada[1] << coordinate.new(_self.oArea.Xmax ,_self.oArea.YMax)
+		LoCoordenada[2] << coordinate.new(_self.oArea.Xmin ,_self.oArea.YMax)
+		_self.oVentana.draw_line_transform(LoEstiloLinea, LoCoordenada)
+	_endif
+
+	# Dibuja el borde inferior si se solicito	 
+	_if _self.bBordeInf _is _true 
+	_then
+		_local LoCoordena # Almacena dos coordenadas para dibujar una linea
+		
+		LoCoordenada << coords_vector.new(2)
+		LoCoordenada[1] << coordinate.new(_self.oArea.Xmin, _self.oArea.Ymin)
+		LoCoordenada[2] << coordinate.new(_self.oArea.Xmax ,_self.oArea.YMin)
+		_self.oVentana.draw_line_transform(LoEstiloLinea, LoCoordenada)
+	_endif
+
+	# Dibuja el borde izquierdo si se solicito	 
+	_if _self.bBordeIzq _is _true 
+	_then
+		_local LoCoordena # Almacena dos coordenadas para dibujar una linea
+		
+		LoCoordenada << coords_vector.new(2)
+		LoCoordenada[1] << coordinate.new(_self.oArea.Xmin ,_self.oArea.YMax)
+		LoCoordenada[2] << coordinate.new(_self.oArea.Xmin ,_self.oArea.Ymin)		
+		_self.oVentana.draw_line_transform(LoEstiloLinea, LoCoordenada)
+	_endif
+
+	# Dibuja el borde derecho si se solicito	 
+	_if _self.bBordeDer _is _true 
+	_then
+		_local LoCoordena # Almacena dos coordenadas para dibujar una linea
+		
+		LoCoordenada << coords_vector.new(2)
+		LoCoordenada[1] << coordinate.new(_self.oArea.Xmax ,_self.oArea.YMin)
+		LoCoordenada[2] << coordinate.new(_self.oArea.Xmax ,_self.oArea.YMax)
+		_self.oVentana.draw_line_transform(LoEstiloLinea, LoCoordenada)
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.init()
+	## 
+	## 
+	_self.color_linea << colour.new_rgb(0.0, 0.0, 0.0)
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_celdas_grafico.init_with( props )
+
+	_super.init_with( props )
+
+	_self.bborde_der? << props[:bBordeDer]
+	_self.bborde_inf? << props[:bBordeInf]
+	_self.bborde_izq? << props[:bBordeIzq]
+	_self.bborde_sup? << props[:bBordeSup]
+
+	>> _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_celdas_grafico.new()
+## Objetivo: Metodo que se crea una nueva instancia
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  
+## 	c_celdas_grafico - Una instancia de la clase
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+	
+	_return _clone.init()
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_celdas_grafico.serial_slots()
+
+	( keys , values ) << _super.serial_slots()
+	
+	keys.add_all_last(rope.new_with(:bBordeSup,:bBordeInf,:bBordeIzq,:bBordeDer,:ColorLinea))
+	values.add_all_last(rope.new_with(.bBordeSup,.bBordeInf,.bBordeIzq,.bBordeDer,.sColorLinea))
+	
+	_return keys, values
+
+_endmethod
+$

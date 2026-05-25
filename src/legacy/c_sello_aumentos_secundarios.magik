@@ -1,0 +1,250 @@
+#% text_encoding = iso8859_1
+# Nombre de la Empresa: Ten Sails Consulting
+# Caso de Uso: Plano de Estudio de Conjunto
+# Objetivo: Genera un layout_element de tipo sello con los
+# datos de aumento de red secundaria en cada distrito 
+# Autor Elena Sainero (Ten Sails Consulting)
+# Fecha de Creacion: Noviembre 2005
+_package user
+$
+#remex(:c_sello_aumentos_secundarios)
+#$
+
+def_slotted_exemplar (:c_sello_aumentos_secundarios,
+		     {
+			     {:distrito,         _unset}, 
+			     {:oCoordOrigen,     _unset },  # Coord donde inicia el sello
+			     {:oWindow,          _unset },  # Ventana o canvas en el que se desplegara el sello
+			     {:oTablas,          _unset }
+		     },
+		     :layout_element)
+$
+
+_pragma(classify_level=advanced)
+c_sello_aumentos_secundarios.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+
+_pragma(classify_level=advanced)
+c_sello_aumentos_secundarios.define_slot_access(:distrito, :writable, :public)
+$
+
+_pragma(classify_level=advanced)
+c_sello_aumentos_secundarios.define_slot_access(:oCoordOrigen, :writable, :public)
+$
+
+_pragma(classify_level=advanced)
+c_sello_aumentos_secundarios.define_slot_access(:oWindow, :writable, :public)
+$
+
+_pragma(classify_level=advanced)
+c_sello_aumentos_secundarios.define_slot_access(:oTablas, :writable, :public)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_aumentos_secundarios.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from (_super.defined_attributes)
+	attribs.add ( layout_attribute_definition.new (	:id_distrito, :string,
+							:description, "Identificador Distrito",
+							:allowed_on_properties_page?, _true,
+							:default_value, _unset)
+		)
+
+	>> attribs
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+c_sello_aumentos_secundarios.define_attributes()
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_aumentos_secundarios.post_initialisation ()
+	## 
+	## Objetivo: Acciones a ejecutar tras la inicializacion
+	## Parametros de Entrada: Ninguno
+	## Parametros de Salida: Ninguno
+	##
+
+	_self.inicializa(coordinate.new(0,0))
+_endmethod
+$
+
+_pragma(classify_level=advanced)
+_method c_sello_aumentos_secundarios.Inicializa(_optional RoCoord)
+	## 
+	## Objetivo: Inicializa el sello
+	## Parametros de Entrada: RoCoord #coordenada donde situar el
+	##                                #sello
+	## Parametros de Salida: Ninguno
+	##
+	
+	_self.set_fill_colour(colour.called("white"))
+
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+	_self.oCoordOrigen << RoCoord
+
+	_self.oTablas << c_tablas.new(_self)
+
+	# Crea y configura cada una de las tablas
+	_if _self.id_distrito _isnt _unset _then
+		# cargamos desde xml
+		reg_distrito << gis_program_manager.cached_dataset(:landbase).collections[:user!_distrito].at(_self.id_distrito)
+		.distrito << reg_distrito.user!_limite
+		red_directa? << .distrito.rwo.es_red_directa?
+	_else
+		_if .distrito _is _unset _then
+			_return
+		_else
+			_self.id_distrito << .distrito.rwo.id
+			red_directa? << .distrito.rwo.es_red_directa?
+		_endif
+	_endif
+	
+
+	_self.crea_sello_secundario(RoCoord,red_directa?)
+
+	# Se conoce el area de la tabla dibujada
+        LoArea << _self.oTablas.area_total()
+
+	# Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	# Crea a los objetos que tendra c/u de las tablas
+	_self.llena_Celdas(red_directa?)
+
+_endmethod
+$
+
+_pragma(classify_level=advanced)
+_method c_sello_aumentos_secundarios.crea_sello_secundario(RoCoord,red_directa?)
+	## 
+	## Objetivo: Crea el sello de aumeno de red secundaria
+	## Parametros de Entrada: RoCoord
+	##                        red_directa? #booleano que indica si
+	##                                     #el distrito posee red
+	##                                     #directa 
+	## Parametros de Salida: Ninguno
+	##
+	
+	_local LnLong # Longitud total de la tabla en cuestión
+        _local LoCoord # Coordenada donde iniciara la tabla en cuestión
+
+	LnLong << 0
+	_if red_directa? _then
+		num_filas << 3
+	_else
+		num_filas << 2
+	_endif
+	
+	LoTblAumento << _self.oTablas.crea_tabla(num_filas,5,:tbl_aumento)
+	LoTblAumento.oCoordenada_Origen << RoCoord
+	LoTblAumento.bDibuja_Columnas_Internas? << _true 
+	LoTblAumento.bDibuja_Renglones_Internos? << _true
+
+	LoTblAumento.oRenglones.elemento(1).nLongitud << 4
+	LoTblAumento.oRenglones.elemento(2).nLongitud << 4
+	_if red_directa? _then
+		LoTblAumento.bDibuja_renglones_internos_dcha?(1,_false)
+		LoTblAumento.oRenglones.elemento(3).nLongitud << 4
+	_endif
+	
+	LoTblAumento.oColumnas.elemento(1).nLongitud  << 15
+	LoTblAumento.oColumnas.elemento(2).nLongitud  << 15
+	LoTblAumento.oColumnas.elemento(3).nLongitud  << 15
+	LoTblAumento.oColumnas.elemento(4).nLongitud  << 15
+	LoTblAumento.oColumnas.elemento(5).nLongitud  << 15
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced)
+_method c_sello_aumentos_secundarios.llena_celdas(red_directa?)
+	## 
+	## Objetivo: Informa el sello de aumeno de red secundaria
+	## Parametros de Entrada: red_directa? #booleano que indica si
+	##                                     #el distrito posee red
+	##                                     #directa 
+	## Parametros de Salida: Ninguno
+	##
+	
+	_if red_directa? _then
+		t0 << c_texto_grafico.new("RED DIRECTA")
+		t0.ntamanio << 30
+		_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(1,3).oElemento << t0
+		fila_tit << 2
+		fila_valor << 3
+	_else
+		fila_tit << 1
+		fila_valor << 2
+	_endif
+	
+	t1 << c_texto_grafico.new("DTO.")
+	t2<< c_texto_grafico.new("CONECT.")
+	t3 << c_texto_grafico.new("AUMENTO")
+	t4 << c_texto_grafico.new("L. PLAZO")
+	t5 << c_texto_grafico.new("TOTAL")
+	t1.ntamanio << 20
+	t2.ntamanio << 20
+	t3.ntamanio << 20
+	t4.ntamanio << 20
+	t5.ntamanio << 20
+	
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_tit,1).oElemento << t1
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_tit,2).oElemento << t2
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_tit,3).oElemento << t3
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_tit,4).oElemento << t4
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_tit,5).oElemento << t5
+
+	resp << .distrito.rwo.obtener_numero_pares()#_self.calcular_valores_sello()
+	
+	NomDistrito   << c_texto_grafico.new(.distrito.rwo.user!_distrito.write_string)
+	ParExist << c_texto_grafico.new(resp[:existente].write_string)
+	ParProy   << c_texto_grafico.new(resp[:proyectado].write_string)
+	
+	ParLP << c_texto_grafico.new(resp[:largo_plazo].write_string)
+	ParTotal << c_texto_grafico.new((resp[:proyectado]+ resp[:existente]+ resp[:largo_plazo]).write_string)
+
+	# se configura el color de los textos
+	ParExist.scolor << "green"
+	ParProy.scolor << "red"
+	ParLP.scolor << "orange"
+
+	# Se configura el tamanio de letra
+	NomDistrito.nTamanio   << 30
+	ParExist.nTamanio << 30
+	ParProy.nTamanio   << 30
+	ParLP.nTamanio   << 30
+	ParTotal.nTamanio << 30
+	
+	# asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_valor,1).oElemento << NomDistrito
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_valor,2).oElemento << ParExist
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_valor,3).oElemento << ParProy
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_valor,4).oElemento << ParLP
+	_self.oTablas.elemento(:tbl_aumento).oCeldas.Celda(fila_valor,5).oElemento << ParTotal
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_aumentos_secundarios.draw_content_on ( window )
+	##
+	## Objetivo: Dibuja el sello
+	## Parametros de Entrada: window # ventana en la que dibujar el
+	##                               # sello 
+	## Parametros de Salida: Ninguno
+	##
+	
+	_self.oWindow << window
+	_self.oTablas.Despliega(window)
+	
+_endmethod
+$
+
+

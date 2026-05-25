@@ -1,0 +1,279 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Representa los datos de una central
+# Autor: dsanchez
+# Fecha de creacion: 20-Diciembre-2005
+#
+# ---------------- Revision History -----------------
+# Ult Mod.
+#  21/12/05 BLV - se modifico el metodo Siglas
+#
+#  20/12/05 DSB - Se creo
+# Reviso.
+# dsb 
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_central_e)
+
+$
+def_slotted_exemplar(:c_central_e,
+    {
+	   {:sSiglas,            _unset }, # Siglas de la central
+	   {:oCtl,               _unset }, # Nodo o central
+	   {:oLimite,            _unset }, # Limite de central
+	   {:oValorPorDefecto,   " " }  # Valor por Defecto
+    }
+)
+$
+c_central_e.define_slot_access(:sSiglas,             :writable, :private)
+c_central_e.define_slot_access(:oCtl,                :writable, :private)
+c_central_e.define_slot_access(:oLimite,             :writable, :private)
+c_central_e.define_slot_access(:oValorPorDefecto,    :writable, :private)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.version()
+
+## Objetivo: Este metodo se debe de modifiar cada vez que se
+## sube a VSS
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa: LA version y fecha de la ultima modificacion
+## Fecha de última modificación: 25/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+	
+   _return  "version 1.00.00.00 20/12/05 12:30 "
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.new()
+## Objetivo: Crear una instancia de celda
+## Parámetros de entrada:
+## Parámetros de salida:   NA
+## Regresa: 
+## Fecha de última modificación: 25/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+   _self.sSiglas          << _unset 	
+
+   _return _clone
+
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.existe_nodo?
+
+## Objetivo: regresa si se encontro la central que se solicito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   boleano : _true  SI existe la central
+##             _falso NO existe la central
+## Fecha de última modificación:
+##   20/12/05 DSB Se creo
+
+	_return _self.oCtl _isnt _unset 
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.existe_limite?
+
+## Objetivo: regresa si se encontro el limite que se solicito
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:
+##   boleano : _true  SI existe el limite
+##             _falso NO existe el limite
+## Fecha de última modificación:
+##   20/12/05 DSB Se creo
+
+	_return _self.oLimite _isnt _unset 
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.siglas << RsValor
+## Objetivo: asignar al objeto las siglas de la central
+##           (slot sSiglas)
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 20/12/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+##  20/12/05 DSB se creo
+
+	.sSiglas << RsValor
+
+        _self.prvLeer_Central_BdD()
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.siglas
+## Objetivo: regresa las siglas de la central
+##           (slot sSiglas)
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 20/12/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+##  20/12/05 DSB se creo
+#  21/12/05 BLV Se agrego el write_string	
+	
+	_return .sSiglas.write_string
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.tipo
+## Objetivo: regresa el tipo de central o nodo 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 20/12/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+##  20/12/05 DSB se creo
+	
+	_if _self.existe_nodo?
+	_then
+		_return .oCtl.user!_tipo.write_string
+	_else
+		_return .oValorPorDefecto
+        _endif 	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.nombre
+## Objetivo: regresa el nombre de la central o nodo 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 20/12/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+##  20/12/05 DSB se creo
+	
+	_if _self.existe_nodo?
+	_then
+		_return .oCtl.user!_nom_nodo.write_string
+	_else
+		_return .oValorPorDefecto
+        _endif 	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_central_e.localidad
+## Objetivo: regresa el nombre de la localidad donde se
+##           encuentra la central o nodo 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 20/12/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+##  20/12/05 DSB se creo
+
+	_if _self.existe_nodo?
+	_then
+		_return .oCtl.user!_localidad.write_string
+	_else
+		_return .oValorPorDefecto
+        _endif 	
+
+_endmethod
+$
+
+_method c_central_e.municipio_delegacion
+## Objetivo: regresa el nombre de la localidad donde se
+##           encuentra la central o nodo 
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 20/12/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+##  20/12/05 DSB se creo
+
+	_if _self.existe_limite?
+	_then
+		_return .oLimite.municipio.write_string
+	_else
+		_return .oValorPorDefecto
+        _endif 	
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private  _method c_central_e.prvLeer_Central_BdD()
+
+## Objetivo: obtener los datos de la central de acuerdo a las
+##            siglas que se proporcionen
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/10/05 DSB Se creo
+
+
+ _local LoPAF
+ _local LoLimite_BD     # Tabla de la B de D donde se almacenan los limites
+                        # de distrito 
+ _local LoPred_Limite    # Sentencia que se define para la busqueda
+ 
+ _local LoCtl_BD    # Tabla de la B de D donde se almacenan las centrales/nodos
+ _local LoPred_Ctl  # Sentencia que se define para la busqueda
+
+       LoPAF     << smallworld_product.pni_application()
+
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+       # Prepara todo lo relacionado para obtener los datos del limite
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+       
+       LoLimite_BD  << LoPAF.database.collection(:landbase, :user!_central)
+       
+     
+       LoPred_Limite << predicate.eq(:user!_central, _self.sSiglas)
+
+       # selecciono el limite de la central para obtener su informacion
+       _self.oLimite << LoLimite_BD.select(LoPred_Limite).an_element()
+
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+       # Prepara todo lo relacionado para obtener los datos de la central
+       #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     
+       
+       LoCtl_BD  << LoPAF.database.collection(:gis, :building)
+       
+     
+       LoPred_Ctl << predicate.eq(:user!_siglas, _self.sSiglas)
+
+       # selecciono el nodo o central para obtener su informacion
+       _self.oCtl << LoCtl_BD.select(LoPred_Ctl).an_element()
+       
+_endmethod 
+$
+
+

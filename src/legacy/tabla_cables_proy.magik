@@ -1,0 +1,233 @@
+#----------------------------------------------------------------
+# tabla_datos_mixin.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: Alejandro Enriquez Gijon
+#
+# Date: May.12/2006
+# Description: Tabla que informa la cantidad de cable proyectado.
+# Este elemento busca todo el cable proyectado en el mundo del viewport.
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+
+#
+_package user
+$
+def_slotted_exemplar ( :tabla_cables_proy, {}, :layout_element )
+$
+tabla_cables_proy.define_shared_constant ( :default_fill_style_attribute,
+					:fill_style,
+					:private )
+$
+tabla_cables_proy.define_shared_constant ( :default_line_style_attribute,
+					:line_style,
+					:private )
+$
+tabla_cables_proy.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+#
+# Este constante define la lista de campos (nombre interno)
+# a listar,
+#
+tabla_cables_proy.define_shared_constant ( :campos,
+					   { :capacidad,
+					     :tipo,
+					     :calibre, 
+					     :cantidad },
+					   :public )
+$
+#
+# Este constante define el Titulo y la anchura de cada columna,
+# en dmm indexada por el nombre interno del campo.
+#
+tabla_cables_proy.define_shared_constant ( :datos_columna,
+				property_list.new_with (
+				:capacidad, {"Capacidad",      200, :capacidad|()| },
+				:tipo,      {"Tipo",           250, :tipo|()|      },
+				:calibre,   {"Calibre",        150, :calibre|()|   },
+				:cantidad,  {"Cantidad (mts)", 300, :cantidad|()|  }),
+				:public )
+$
+#
+# Altura de cabecera en dmm.
+#
+tabla_cables_proy.define_shared_constant ( :altura_cabecera, 70, :public )
+$
+#
+# Altura de fila en dmm.
+#
+tabla_cables_proy.define_shared_constant ( :altura_fila, 50, :public )
+$
+tabla_cables_proy.define_attributes ()
+$
+_method tabla_cables_proy.draw_content_on ( window )
+#
+
+	_if ( elementos << _self.agrupar_elementos() ) _is _unset 
+	_then _return _endif
+
+	# Dibujar el perfil.
+	bounds << _self.bounds
+
+	# Dibujar lineas horizontales.
+	_local vts_aum << vtext_style.new_with_properties(:font, font.new_logical( "Bold" ),
+					:colour, colour.called(:red))
+        ancho << 0
+	_for val _over _self.datos_columna.elements()
+	_loop
+		ancho +<< val[2]
+	_endloop
+	y << bounds.ymax - _self.altura_cabecera
+	sec << sector.new_with( coordinate( bounds.xmin, y ), coordinate( bounds.xmin + ancho, y ) )
+	sec.draw_on ( window, line_style.called(:black) )
+
+	y << y - _self.altura_cabecera
+	sec << sector.new_with( coordinate( bounds.xmin, y ), coordinate( bounds.xmin + ancho, y ) )
+	sec.draw_on ( window, line_style.called(:black) )
+	cadena << "CABLE PROYECTADO A INSTALAR:"
+	window.draw_vtext_transform ( vts_aum, bounds.xmin + ancho/2, bounds.ymax - 0.5*_self.altura_cabecera, 
+				      cadena, _unset, _unset, 3, 0, :centre_centre )
+	_for lin _over range(1, elementos.size)
+	_loop
+		y -<< _self.altura_fila
+		sec << sector.new_with( coordinate( bounds.xmin, y ), coordinate( bounds.xmin + ancho, y ) )
+		sec.draw_on ( window, line_style.called(:black) )
+	_endloop 
+	# bounding_box
+	sec << bounding_box.new_with_corners(coordinate( bounds.xmin,y),
+					     coordinate(bounds.xmin + ancho,bounds.ymax)).sectors
+	sec.draw_on ( window, line_style.called(:black) )
+	
+	# Procesar elementos.	
+	vts << vtext_style.new ( font.new_logical ( "Plain" ) )
+	text_height << 0.6*_self.altura_cabecera / vts.font.cell_height
+	x_columna << bounds.xmin
+
+	# Dibujar conjunto de columnas.
+	_for campo _over _self.campos.fast_elements()
+	_loop
+		x_columna +<< _self.datos_columna[campo][2]
+		xy1 << coordinate ( x_columna, y )			
+		xy2 << coordinate ( x_columna, bounds.ymax - _self.altura_cabecera )
+		sec << sector.new_with ( xy1, xy2 )
+		sec.draw_on ( window, line_style.called(:black) )
+		centrox << x_columna - 0.5*_self.datos_columna[campo][2]
+		centroy << bounds.ymax - 1.5*_self.altura_cabecera
+		cabecera << _self.datos_columna[campo][1]
+		window.draw_vtext_transform ( vts, centrox, centroy, cabecera,
+					      _unset, _unset, text_height, 0, :centre_centre )
+		_endloop
+	columna << 0
+	y_col << bounds.ymax - 2*_self.altura_cabecera - 0.5*_self.altura_fila
+	_for elemento _over elementos.elements()
+	_loop
+		fila << 0
+		_for campo _over _self.campos.elements()
+		_loop
+			x_col <<  bounds.xmin + fila + 0.5 *_self.datos_columna[campo][2]
+			cadena << _self.perform(_self.datos_columna[campo][3], elemento )
+			window.draw_vtext_transform ( vts_aum, x_col, y_col, cadena,
+						      _unset, _unset, text_height, 0, :centre_centre )
+			fila +<< _self.datos_columna[campo][2]
+		_endloop
+		y_col -<< _self.altura_fila
+	_endloop 
+
+	_return
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method tabla_cables_proy.agrupar_elementos()
+	## Busca los cables proyectados y los agrupa
+	_if ( elementos << _self.buscar_elementos() ) _is _unset 
+	_then
+		_return _unset 
+	_endif
+	grupos << hash_table.new()
+	spec << elementos.an_element().spec_id.as_symbol()
+	_for cable _over elementos.elements()
+	_loop
+		_if cable.measured_length _isnt  _unset 
+		_then
+			dis << cable.measured_length.as_float
+		_else 
+			dis << cable.calculated_length.as_float
+		_endif
+		_if grupos[cable.spec_id.as_symbol()] _is _unset 
+		_then
+			grupos[cable.spec_id.as_symbol()] << vector.new(2)
+			grupos[cable.spec_id.as_symbol()][1] << cable.spec_info
+		_endif
+		 grupos[cable.spec_id.as_symbol()][2] << grupos[cable.spec_id.as_symbol()][2].default(0.0) + dis
+	_endloop
+	
+	_return grupos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method tabla_cables_proy.buscar_elementos()
+	## Busca los cables proyectados
+
+	Lovp << _self.layout_page.get_first_element_of( viewport_layout )
+	_if Lovp _is _unset
+	_then _return _endif
+	_if Lovp.world _is _unset 
+	_then _return _unset 
+	_endif
+	gset << Lovp.world.geometry_set()
+	
+	# clasificar los elementos y ordenarlos
+	elementos << sorted_collection.new()
+	elementos.sort_by ( :spec_id )
+	_for geom, sty _over gset.elements_with_sts()
+	_loop
+		_if geom.rwo_type _is :copper_cable
+		_then
+			_if geom.rwo.construction_status = "EXISTENTE"
+			_then
+				elementos.add ( geom.rwo )				 
+			_endif
+		_endif
+	_endloop
+	
+	_if elementos.size = 0
+	_then
+		_return _unset 
+	_endif
+	_return elementos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method tabla_cables_proy.capacidad( vec )
+	##
+	_return vec[1].size.write_string + " Ps."
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method tabla_cables_proy.tipo( vec )
+	##
+	_return vec[1].type
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method tabla_cables_proy.calibre( vec )
+	## 
+	_return vec[1].gauge
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method tabla_cables_proy.cantidad ( vec )
+	## 
+	ff << float_format.new(:float_decimal_places, 2)
+	_return ff.format(vec[2])
+_endmethod
+$

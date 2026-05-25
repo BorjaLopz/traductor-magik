@@ -1,0 +1,346 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Genera el sello estandar central
+# Autor: Alejandro Diaz 
+# Fecha de creacion: 01-Enero-2005
+# 
+# ---------------- Revision History -----------------
+#  Ult Mod.
+#  31/01/2005 DSB   Se creo
+
+#  Reviso
+#  DSB
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_sello_estandar_ctl)
+
+$
+
+def_slotted_exemplar ( :c_sello_estandar_ctl, 
+	{
+	}, :c_sello_estandar_base )
+$
+
+c_sello_estandar_ctl.define_shared_constant(:allowed_on_menu?, _false, :public)
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar_ctl.defined_attributes
+	## 
+	##
+
+	attribs << rope.new_from (_super.defined_attributes)
+	
+	
+	attribs.add ( layout_attribute_definition.new (	:Localidad, :string,
+                   	      	 			:description, "Población",
+							:allowed_on_properties_page?, _true,
+							:default_value, ""
+						  )
+		     ) 
+	attribs.add ( layout_attribute_definition.new (	:Nombre_Central, :string,
+							:description, "Nombre de la central",
+							:allowed_on_properties_page?, _true,
+							:default_value, ""
+						  )
+		    )  
+	attribs.add ( layout_attribute_definition.new (	:Siglas_Central, :string,
+							:description, "Siglas de la central",
+							:allowed_on_properties_page?, _true,
+							:default_value, ""
+						  )
+		    )  
+
+	>> attribs
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+c_sello_estandar_ctl.define_attributes()
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar_ctl.draw_content_on ( window )
+
+## Objetivo: Mandar hacer el dibujo del sello e inicializar el
+## contenido del sello con lo que tienen los atributos 
+## Parámetros de entrada:
+## 	canvas - window - LIenzo en el cual se realiza el dibujo
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 05/02/05
+## Autor de la modificación : dsanchez
+## Descripción de la modificación:
+##   04/02/05 FAD Se agrego la asignacion de los atributos
+	
+         _self.poblacion_tbl       <<  _self.localidad
+         _self.Nombre_central_tbl  <<  _self.nombre_central
+         _self.siglas_central_tbl  <<  _self.siglas_central
+	 
+	_super.draw_content_on(window)
+		 
+_endmethod
+$
+
+
+_private _method c_sello_estandar_ctl.prvCrea_Cfg_Tablas(RoCoord)
+	
+	_super.prvCrea_Cfg_Tablas(RoCoord)
+
+	LnLong << _self.oTablas.Longitud_total_Columnas({:tbl_compania, :tbl_FecDibRev, :tbl_Escala})
+	
+#	LnLong << _self.oTablas.elemento(:tbl_Escala).oColumnas.Longitud_Total() + LnLong
+        LoCoord << coordinate.new(RoCoord.x + LnLong, RoCoord.y)
+
+	_self.prvCrea_Cfg_Tbl_NomPob_NomCtl_CveCtl(LoCoord)
+	
+_endmethod 
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar_ctl.prvCrea_Cfg_Tbl_NomPob_NomCtl_CveCtl(RoCoord)
+
+## Objetivo: crea y configura la tabla compania
+## Parámetros de entrada:
+## 	coordinate - RoCord - Coordenada donde de desplegara el sello
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+        # La celda A almacena el nombre de poblacion y del estado
+	
+	_local LoTblA # Tabla que almacena la celda A Nombre de poblacion y de la central
+
+	LoTblA << _self.oTablas.crea_tabla(2,1,:tbl_CeldaA)
+
+	# lineas internas de la tabla no se dibujaran
+	LoTblA.bDibuja_Columnas_Internas?  << _false
+	LoTblA.bDibuja_Renglones_Internos? << _false
+
+	# Coordenada donde iniciara la tabla
+	LoTblA.oCoordenada_Origen << RoCoord
+
+	# longitudes de los renglones de la tabla, esta dada en mm 
+	LoTblA.oRenglones.elemento(1).nLongitud << 7
+	LoTblA.oRenglones.elemento(2).nLongitud << 8
+
+	# longitud de las columnas, esta dada en mm 
+	LoTblA.oColumnas.elemento(1).nLongitud  << 70
+
+	#------------------------------------------------------
+        # La celda B almacena la siglas (cve) de la central
+	#------------------------------------------------------
+	
+	_local LoTblB # Tabla que almacena la celda A Nombre de poblacion y de la central
+
+	LnLong << _self.oTablas.Longitud_total_Columnas({:tbl_CeldaA})
+	
+	LoTblB << _self.oTablas.crea_tabla(1,1,:tbl_CeldaB)
+
+	# lineas internas de la tabla no se dibujaran
+	LoTblB.bDibuja_Columnas_Internas?  << _false
+	LoTblB.bDibuja_Renglones_Internos? << _false
+
+	# Coordenada donde iniciara la tabla
+	LoTblB.oCoordenada_Origen << coordinate.new(RoCoord.x + LnLong, RoCoord.y)
+
+	# longitudes de los renglones de la tabla, esta dada en mm 
+	LoTblB.oRenglones.elemento(1).nLongitud << 15
+
+	# longitud de las columnas, esta dada en mm 
+	LoTblB.oColumnas.elemento(1).nLongitud  << 45
+
+_endmethod
+$
+	
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_estandar_ctl.prvLlena_Celdas()
+## Objetivo: manda llamar los metodos con los cuales se llena de objetos celda las tablas
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+  
+	_super.prvLlena_celdas()
+
+	_self.prvLlena_Tbl_NomPob_NomCtl_CveCtl()
+	
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_estandar_base.prvLlena_Tbl_NomPob_NomCtl_CveCtl()
+## Objetivo: Llena la tabla compania con sus respectivas celdas
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	_Local LoPob    # Texto grafico que almacena Telefonos
+	_local LoNomCtl # Texto grafico que almacena de Mexico
+
+	# se crean los objetos que almacenara la tabla
+	LoPob    << c_texto_grafico.new("POBLACION")
+	LoNomCtl << c_texto_grafico.new("CENTRAL")
+
+	# Se configura el tamanio de letra
+	LoPob.nTamanio    << 35
+	LoNomCtl.nTamanio << 35
+
+
+	# asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_CeldaA).oCeldas.Celda(1,1).oElemento << LoPob
+	_self.oTablas.elemento(:tbl_CeldaA).oCeldas.Celda(2,1).oElemento << LoNomCtl
+
+
+	#------------------------------------------------------
+        # La celda B almacena la siglas (cve) de la central
+	#------------------------------------------------------
+	
+	_local LoCveCtl # Texto grafico que almacena cve de la central 
+
+	# se crean los objetos que almacenara la tabla
+	LoCveCtl << c_texto_grafico.new("Cve Ctl")
+
+	# Se configura el tamanio de letra
+	LoCveCtl.nTamanio << 35
+
+
+	# asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_CeldaB).oCeldas.Celda(1,1).oElemento << LoCveCtl
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Sello_Estandar_Ctl.Poblacion_tbl << RsValor
+## Objetivo: Permite asignar la poblacion (slot sPoblacion)
+## Parámetros de entrada: 
+##   String- RsValor - nombre de la poblacion
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.elemento(:tbl_CeldaA).oCeldas.Celda(1,1).oElemento.sTexto << RsValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Sello_Estandar_Ctl.Poblacion_tbl
+## Objetivo: Permite obtener el nombre de la poblacion (slot sPoblacion)
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+##   String - RsValor - Nombre de la población
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	>> _self.oTablas.elemento(:tbl_CeldaA).oCeldas.Celda(1,1).oElemento.sTexto
+
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Sello_Estandar_Ctl.Nombre_central_tbl << RsValor
+## Objetivo: Permite asignar la poblacion (slot sPoblacion)
+## Parámetros de entrada: 
+##   String- RsValor - nombre de la poblacion
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.elemento(:tbl_CeldaA).oCeldas.Celda(2,1).oElemento.sTexto << RsValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Sello_Estandar_Ctl.nombre_central_tbl
+## Objetivo: Permite obtener el nombre de la poblacion (slot sPoblacion)
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+##   String - RsValor - Nombre de la población
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	>> _self.oTablas.elemento(:tbl_CeldaA).oCeldas.Celda(2,1).oElemento.sTexto
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Sello_Estandar_Ctl.Siglas_central_tbl << RsValor
+## Objetivo: Permite asignar la poblacion (slot sPoblacion)
+## Parámetros de entrada: 
+##   String- RsValor - nombre de la poblacion
+## Parámetros de salida:  NA
+## Regresa: NA
+## Fecha de última modificación: 24/01/2005
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.elemento(:tbl_CeldaB).oCeldas.Celda(1,1).oElemento.sTexto << RsValor
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Sello_Estandar_Ctl.siglas_central_tbl
+## Objetivo: Permite obtener el nombre de la poblacion (slot sPoblacion)
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: 
+##   String - RsValor - Nombre de la población
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se creo
+
+	>> _self.oTablas.elemento(:tbl_CeldaB).oCeldas.Celda(1,1).oElemento.sTexto
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar_ctl.lee_datos_BdeD()
+
+#  Objetivo: Leer los datos de la base de datos
+#  Parámetros de entrada: NA
+#  Parámetros de salida:  NA
+#  Regresa: NA
+# Fecha de última modificación: 28/10/2004
+# Autor de la modificación : dsanchez
+# Descripción de la modificación: Se documento
+
+
+	_super.lee_datos_BdeD()
+
+        _if _self.oProyecto.existe?
+	_then
+	   _self.localidad      << _self.oProyecto.localidad
+           _self.nombre_central << _self.oProyecto.central
+	   _self.siglas_central << _self.oProyecto.cve_central
+	   
+	_endif
+
+	
+_endmethod 
+$

@@ -1,0 +1,215 @@
+_package sw
+$
+# Nombre de la empresa:           SIGTAO SOFTWARE, S.A. DE C.V.
+# Traza:
+# Objetivo principal del archivo:
+# Autor:
+# Fecha de creación:
+
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method textbox_layout.defined_attributes
+	## 
+	## 
+
+	attribs << rope.new_from ( _super.defined_attributes )
+
+# Autor:                          vnguzman
+# ID de requerimiento:            
+# Fecha de modificación:          Lunes 22 de Mayo de 2006
+# Descripción de la modificación: Pongo en español el valor por omisión
+
+#	attribs.add ( layout_attribute_definition.new ( :text, :string,
+#							:description, "Text",
+#							:editor, in_place_multi_line_editor,
+#							:default_value, "Enter text here" ) )
+
+	attribs.add ( layout_attribute_definition.new ( :text, :string,
+							:description, "Texto",
+							:editor, in_place_multi_line_editor,
+							:default_value, "Introduce tu texto aquí" ) )
+#fin de la modificación
+	
+	attribs.add ( layout_attribute_definition.new ( :font_name, :string,
+							:description, "Font",
+							:default_value, "plain",
+							:enum_method, :enum_font_names ) )	
+	
+	# E.g. use: font.known_scalable_fonts(:screen)
+	# or :plotting, :win32, :postscript, etc
+
+	nvm << numeric_value_manager.new ( :valid_interval, interval.new ( 1.0, 72.0 ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :font_size, :float,
+							:description, "Font Size",
+							:value_mgr, nvm,
+							:default_value, 6.0 ) )
+
+	attribs.add ( layout_attribute_definition.new ( :colour, :colour,
+							:description, "Colour for the text",
+							:default_value, colour.called(:black) ) )
+
+	attribs.add ( layout_attribute_definition.new ( :wrap, :boolean,
+							:description, "Wrap",
+							:default_value, _true ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :clip, :boolean,
+							:description, "Clip",
+							:default_value, _true ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :align_horizontal, :string,
+							:description, "Align H.",
+							:default_value, "left",
+							:enum_method, :enum_horizontal ) )
+	
+	attribs.add ( layout_attribute_definition.new ( :align_vertical, :string,
+							:description, "Align V.",
+							:default_value, "top",
+							:enum_method, :enum_vertical ) )
+
+	attribs.add ( layout_attribute_definition.new ( :orientation, :string,
+							:description, "Orientation",
+							:enum_method, :enum_orientation,
+							:default_value, :left_right ) )
+
+	attribs.add ( layout_attribute_definition.new ( :angle, :float,
+							:description, "Angle",
+							:default_value, 0.0 ) )
+
+	attribs.add ( layout_attribute_definition.new ( :text_width, :float, 
+							:description, "Stroke width of the font, only applies to vector fonts", 
+							:editor, in_place_line_width_editor, 
+							:value_mgr, nvm, 
+							:default_value, 1.0 ) ) 
+	
+	nvm01 << numeric_value_manager.new ( :valid_interval, interval.new ( 0.1, 1.0 ) ) 
+	
+	attribs.add ( layout_attribute_definition.new ( :text_aspect, :float, 
+							:description, "xy-aspect ratio of the font", 
+							:value_mgr, nvm01, 
+							:default_value, 1.0 ) )
+	
+	>> attribs
+	
+_endmethod
+#fin de la modificación
+
+_pragma(classify_level=restricted)
+_method textbox_layout.wrap_lines ( window, string, a_style, delims, border_chars )
+    ##
+    ## Returns a word-wrapped version of STRING for display withing
+    ## self.bounds on WINDOW in A_STYLE. DELIMS are the characters
+    ## that define word breaks. BORDER_CHARS is a coordinate giving
+    ## the margin round the text in x and y (as fractions
+    ## of the nominal character height).
+    ##
+    ## Note: If WINDOW is a plot device, the result is approximate
+    ## (may extend beyond self.bounds depending on the font
+    ## realised on the device)
+    ##
+
+    # Get nominal height of a character in drawing units
+    # ENH: Better if there was a method style.cell_size(window)
+    (dev_char_width,dev_char_height) << a_style.cell_size
+    char_height << dev_char_height / window.transform.nominal_scale
+
+    # Get line spacing
+    # FIXME: Better to do in character units ?
+    string_bounds       << a_style.string_bounds( string )
+    string_world_bounds << window.world_bounds_for(string_bounds)
+    line_height         << string_world_bounds.height
+
+    # Orientation
+    orientation << _self.orientation.write_string.as_symbol ()
+    
+    # Get maximum width for a line
+    border_space    << border_chars*char_height
+    max_line_width  << _self.bounds.width - 2*border_space.x
+    max_line_height << _self.bounds.height - 2*border_space.y
+    
+    # Split text into lines, based on (nominal) size
+    # ----------------------------------------------
+    # Create terminated string (just to flush last line)
+    term_str << string + newline_char
+
+    # Set current line to null
+    i_fst << 1
+    i_lst << 0
+
+    # Keep track of the number of lines (horizontal or vertical)
+    # we've done.
+    i_fill << 0
+    
+    # For each word in string ..
+    lines << rope.new()
+    _for i, ch _over term_str.fast_keys_and_elements()
+    _loop
+	_if (i_delim << delims.index_of(ch)) _isnt _unset
+	_then
+	    # Compute length or proposed line on device (excluding delimiter)
+	    # Note: This result is not reliable for plotters
+	    term_str_bounds << _self.text_bounds(window, a_style, term_str, i_fst, i-1)
+	    prop_line_width << term_str_bounds.width
+	    prop_line_height << term_str_bounds.height
+	    
+	    # If too long, move to next line
+	    _if orientation _is :top_bottom
+	    _then
+		_if prop_line_height > max_line_height _andif
+		    i_lst >= i_fst
+		_then
+		    _if ( i_fill +<< prop_line_width ) > max_line_width
+		    _then
+			_leave
+		    _endif
+		    
+		    lines.add_last( term_str.slice(i_fst,i_lst) )
+		    # Move to start of current word in input (skipping delim)
+		    i_fst << i_lst + 2
+		_endif
+		
+	    _else #assume default left_right
+		_if prop_line_width > max_line_width _andif
+		    i_lst >= i_fst
+		_then
+		    _if ( i_fill +<< prop_line_height ) > max_line_height 
+		    _then
+			_leave
+		    _endif
+		    
+		    lines.add_last( term_str.slice(i_fst,i_lst) )
+		    # Move to start of current word in input (skipping delim)
+		    i_fst << i_lst + 2
+		_endif
+	    _endif
+	    
+	    # Add word to current line
+	    i_lst        << i -1
+	    line_n_chars << (i_lst - i_fst) +1
+
+	    # If newline and anything left, start a new line
+	    _if ch = newline_char _andif line_n_chars >= 0
+	    _then
+		lines.add_last( term_str.slice(i_fst,i_lst) )
+		
+		# Move to start of current word (skipping delim)
+		i_fst << i +1
+
+	    _endif
+	    
+	_endif
+    _endloop
+# Autor:                          vnguzman
+# ID de requerimiento:            falla 889083
+# Fecha de modificación:          Martes 16 de Mayo de 1006
+# Descripción de la modificación: Agrego una cadena vacía para
+#                                 que no lines.an_element() no regrese _unset
+    _if lines.size = 0
+    _then
+        lines.add_last("")
+    _endif
+#fin de la modificación
+
+    >> lines, border_space
+
+_endmethod
+$

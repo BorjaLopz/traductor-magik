@@ -1,0 +1,448 @@
+#----------------------------------------------------------------
+# c_vp_croquis_proy_can.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rbsaldan
+#
+# Date: 09/Mayo/2007
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+remex(:c_vp_croquis_edificio)
+$
+
+def_slotted_exemplar(:c_vp_croquis_edificio,
+		     {
+			     {:oGeometria,_unset,:writable,:public}
+		     },:c_vp_cobre)
+$
+c_vp_croquis_edificio.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_croquis_edificio.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from(_super.defined_attributes)
+	## Propiedad que indica si el viewport se ajusta al marco.
+	_for LoAttrib _over attribs.fast_elements()
+	_loop
+		_if LoAttrib.name _is :olimite
+		_then
+			LoAttrib.allowed_on_properties_page?<<_false
+			_leave
+		_endif
+	_endloop
+	attribs.add(layout_attribute_definition.new(:ajusta_al_marco, :string,
+						    :description, "Ajustar al Marco",
+						    :default_value, "No",
+						    :allowed_on_properties_page?, _true,
+						    :enum_method, :val_falso_verdadero,
+						    :editor, _unset))
+
+	attribs.add(layout_attribute_definition.new(:Tamano, :string,
+						    :description, "Norte",
+						    :default_value, "A",
+						    :allowed_on_properties_page?, _true,
+						    :enum_method, :tamano_norte,
+						    :editor, _unset))
+
+	attribs.add(layout_attribute_definition.new(:Ubicacion_Norte, :string,
+						    :description, "Ubicacion Norte",
+						    :default_value, "Esq. Sup. Derecha",
+						    :allowed_on_properties_page?, _true,
+						    :enum_method, :ubica_norte,
+						    :editor, _unset))
+	
+	attribs.add(layout_attribute_definition.new(:etiqueta, :string,
+						    :description, "Pie de Cuadro",
+						    :default_value, "",
+						    :allowed_on_properties_page?, _true,
+						    :editor, _unset))
+	
+	attribs.add(layout_attribute_definition.new(:limite_edif, :sector,
+						    :description, "Ubicacion de limte de Edificio",
+						    :default_value, _unset,
+						    :allowed_on_properties_page?, _false,
+						    :editor, _unset))
+
+	attribs.add(layout_attribute_definition.new(:idEdificio, :integer,
+						    :description, "id del edificio",
+						    :default_value, _unset,
+						    :allowed_on_properties_page?, _false,
+						    :editor, _unset))
+	
+	>> attribs
+_endmethod
+$
+c_vp_croquis_edificio.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_croquis_edificio.val_falso_verdadero
+## Objetivo: Regresar un arreglo con los  valores "Si", "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasSiNo
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasSiNo    ##Arreglo con los valores "Si", "No"
+	LasSiNo<<rope.new()
+
+	## Agrega los valores "Si", "No"
+	LasSiNo.add("Si")
+	LasSiNo.add("No")
+
+	>> LasSiNo
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_croquis_edificio.tamano_norte
+	## 
+	## 
+## Objetivo: Regresar un arreglo con los  valores "Si, "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasTipoPlano
+## Fecha de ultima modificacion: 12/4/2005
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasTipoPlano    ##Arreglo con los valores para los diferentes marcos.
+	LasTipoPlano<<rope.new()
+	## Agrega valores para identificar los tamanos del norte.
+	LasTipoPlano.add("A")
+	LasTipoPlano.add("B")
+	LasTipoPlano.add("C")
+	>> LasTipoPlano
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_croquis_edificio.ubica_norte
+	## 
+	## 
+## Objetivo: Regresar un arreglo con los  valores "Si, "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasTipoPlano
+## Fecha de ultima modificacion: 12/4/2005
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasUbicacionNorte    ##Arreglo con los valores para los diferentes marcos.
+	LasUbicacionNorte<<rope.new()
+	## Agrega valores para identificar ubicacion del norte.
+	LasUbicacionNorte.add("Esq. Sup. Derecha")
+	LasUbicacionNorte.add("Esq. Sup. Izquierda")
+	LasUbicacionNorte.add("Esq. Inf. Derecha")
+	LasUbicacionNorte.add("Esq. Inf. Izquierda")
+	>> LasUbicacionNorte
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_croquis_edificio.geometry_set_for_render
+	## 
+	## Returns the geometry set which is used in the rendering
+	## code. Based the the visibility attribute the geometry set
+	## needs to get its own TableControl from either the Ace, the
+	## CurrentObjectControl or it has one already.
+	##	
+	LcollGeometrias<<_super.geometry_set_for_render
+
+	_if LcollGeometrias _isnt _unset 
+	_then
+		LcollGeometrias<<LcollGeometrias.select(:collection,{#:mit_terminal_enclosure,
+									    :user!_colonia,
+									    :user!_eje_calle,
+									    :building,
+									    :user!_building,
+									    :underground_route,
+									    :user!_central,
+									    :user!_distrito,
+									    :user!_manzana,
+									    :caseta_tel,
+									    :punto_interes,
+									    :infraestructura,
+									    :construcciones,
+									    :cartog_ref_fibra_optica,
+									    :cuerpos_agua,
+									    :rio,
+									    :user!_geografia,
+									    :aeropuerto,
+									    :user!_carretera,
+									    :ferrocarril,
+									    :vias_comunicacion})
+		
+	_endif
+	
+	>> LcollGeometrias
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_croquis_edificio.initialise_for_page(a_layout_page)
+	## 
+	## 
+	_self.selection<<_false
+	_self.trail<<_false
+	_self.set_fill_colour(_unset)
+	_self.outline_style<<_unset
+	_if .oGeometria _is _unset
+	_then
+		_dynamic !current_coordinate_system! << _unset
+		.oGeometria<<sector.new_from(_self.oLimite.sectors.as_sector())
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_croquis_edificio.construir_arco(PnRadio,PoCentro,PnAngIni,PnAngFin)
+	## 
+	##  
+	Lcollsector<<sector.new()
+	_for LnAng _over PnAngIni.upto(PnAngFin)
+	_loop 
+		LnX << PoCentro.x+PnRadio * cos(LnAng.degrees_to_radians) 
+		LnY << PoCentro.y+PnRadio * sin(LnAng.degrees_to_radians)	  
+		Lcollsector.add(coordinate(LnX,LnY))	  
+	_endloop
+	_return  Lcollsector
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_croquis_edificio.construir_norte(PoSecRop,PsTamano)
+	## 
+	##
+_local Lcollsector
+_local LoBound
+
+        LoBound<<_self.bounds
+	_if PsTamano="A"
+	_then
+		# Flecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+5,_self.bounds.centre.y))        
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,460)) ##
+		Lcollsector.add(Lcollsector.last_coord+coordinate(-30,-230))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(20,-15))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,-670))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(30,-15))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,240))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(-20,10))
+		Lcollsector.add(Lcollsector.first_coord)
+		PoSecRop.add(Lcollsector)
+
+		# Linea Horizontal Izquierda
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x-15,_self.bounds.centre.y))
+		Lcollsector.add(Lcollsector.last_coord-coordinate(75,0))
+		PoSecRop.add(Lcollsector)
+
+		# Linea Horizontal Derecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+15,_self.bounds.centre.y))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(75,0))
+		PoSecRop.add(Lcollsector)
+
+		# Circulo
+		PoSecRop.add(_self.construir_arco(65,_self.bounds.centre,20,70))
+		PoSecRop.add(_self.construir_arco(65,_self.bounds.centre,110,160))
+		PoSecRop.add(_self.construir_arco(65,_self.bounds.centre,200,250))
+		PoSecRop.add(_self.construir_arco(65,_self.bounds.centre,290,340))
+
+		# Bound del Norete 
+		LoBound << bounding_box.new(0,0,60,960)
+		
+	_elif  PsTamano="B"
+	_then
+		# Flecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+5,_self.bounds.centre.y))       
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,320))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(-25,-170))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(15,-15))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,-470))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(30,-15))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(0,170))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(-20,10))
+		Lcollsector.add(Lcollsector.first_coord)
+		PoSecRop.add(Lcollsector)
+
+		# Linea Horizontal Izquierda
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x-15,_self.bounds.centre.y))
+		Lcollsector.add(Lcollsector.last_coord-coordinate(60,0))
+		PoSecRop.add(Lcollsector)
+
+		# Linea Horizontal Derecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+15,_self.bounds.centre.y))
+		Lcollsector.add(Lcollsector.last_coord+coordinate(60,0))
+		PoSecRop.add(Lcollsector)
+
+		# Circulo
+		PoSecRop.add(_self.construir_arco(45,_self.bounds.centre,20,70))
+		PoSecRop.add(_self.construir_arco(45,_self.bounds.centre,110,160))
+		PoSecRop.add(_self.construir_arco(45,_self.bounds.centre,200,250))
+		PoSecRop.add(_self.construir_arco(45,_self.bounds.centre,290,340))
+
+		# Bound del Norete
+		LoBound << bounding_box.new(0,0,60,710)
+	_elif  PsTamano="C"
+	_then
+		# Flecha
+		Lcollsector<<sector.new()
+		Lcollsector.add(coordinate(_self.bounds.centre.x+2.5,_self.bounds.centre.y))       
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(0,230))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(-20,-116))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(10,-10))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(0,-330))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(20,-10))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(0,120))
+		Lcollsector.add(Lcollsector.last_coord+ coordinate(-10,+10))
+		Lcollsector.add(Lcollsector.first_coord)
+		PoSecRop.add(Lcollsector)
+		LoBound << bounding_box.new(0,0,50,500)
+		
+	_endif       
+	_return PoSecRop,LoBound
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_vp_croquis_edificio.draw_content_on(windows)
+	## 
+	##
+_local LoBoundTrans
+_local LsMsg
+_local LoOE
+_local LoTramoCobre
+_local LcollCanalizacion
+_local LoSector
+
+_local LcollSectores<<sector_rope.new()
+_local LoBound
+
+_local LcollGeometrias
+_local LcollBuildings
+_local LoCirculo
+
+#_local LoGeom
+
+
+	.oWindows<<windows
+
+	_if .oGeometria _is _unset
+	_then
+		_dynamic !current_coordinate_system! << _unset
+		.oGeometria<<sector.new_from(_self.oLimite.sectors.as_sector())
+	_endif
+
+
+	# Dibuja contorno del croquis
+	LoContorno<<_self.bounds.sectors.as_sector()
+	LoContorno.draw_on(.oWindows,line_style.new(colour.called(:black),2,dash_pattern.long_dash))
+	
+	
+	 _super.draw_content_on(windows)
+
+
+
+	 # Escribir Etiqueta
+	 LsMsg<<_self.etiqueta
+	 LoFontBold << font.new_with_properties(:type,:logical,
+						:name,"bold",
+						:point_size,50,
+						:orientation,:left_right)
+	 
+	 LoTextStyle<<text_style.new_with_properties(:colour,colour.new_from_dec("175,175,93"),
+						     :font,LoFontBold)
+	 
+	 .oWindows.draw_vtext_transform(LoTextStyle,_self.bounds.centre.x,_self.bounds.ymin-75,LsMsg,
+					_unset, _unset, _unset, _unset, :bottom_centre )
+	 
+	 
+	 # Construir Norte
+	 _local LoWidthHalf
+	 _local LoHeightHalf
+	 (LcollSectores,LoBound)<<_self.construir_norte(LcollSectores,_self.tamano)
+
+	 # Ajusta al angulo del viwport
+	 # El tamaño del Norte se reduce a la 4ta parte.
+	 # El Norte se mueve a la esquina inferior izquierda.
+	 LcollSectores<<LcollSectores.transformed(
+				transform.new().rotate_about(_self.bounds.centre,
+							     -_self.view_angle.degrees_to_radians))
+
+        LoWidthHalf<<LcollSectores.bounds.width*0.5
+	LoHeightHalf<<LcollSectores.bounds.height*0.5
+   
+	#LcollSectores<<LcollSectores.transformed(transform.new().scale_about(_self.bounds.centre,0.5))
+
+
+	
+	_if _self.ubicacion_norte="Esq. Sup. Derecha"
+	_then
+		LcollSectores<<
+			LcollSectores.transformed(transform.new().translate(_self.bounds.width*0.6+LoWidthHalf,
+									    _self.bounds.height*0.5-LoHeightHalf))
+	_elif _self.ubicacion_norte="Esq. Sup. Izquierda"
+	_then
+		LcollSectores<<
+			LcollSectores.transformed(transform.new().translate(-_self.bounds.width*0.6-LoWidthHalf,
+									    _self.bounds.height*0.5-LoHeightHalf))
+	_elif _self.ubicacion_norte="Esq. Inf. Derecha"
+	_then
+		LcollSectores<<
+			LcollSectores.transformed(transform.new().translate(_self.bounds.width*0.6+LoWidthHalf,
+									    -_self.bounds.height*0.5+LoHeightHalf))	
+	_elif _self.ubicacion_norte="Esq. Inf. Izquierda"
+	_then 
+		LcollSectores<<
+			LcollSectores.transformed(transform.new().translate(-_self.bounds.width*0.6-LoWidthHalf,
+									    -_self.bounds.height*0.5+LoHeightHalf))
+	_endif
+	
+	
+	# Dibuja norte
+	LcollSectores.draw_on(.oWindows,line_style.new(colour.called(:black),2))
+	_if _self.tamano="A" _or _self.tamano="B"
+	_then
+		LcollSectores[2].draw_on(.oWindows,line_style.new(colour.called(:black),5))
+		LcollSectores[3].draw_on(.oWindows,line_style.new(colour.called(:black),5))
+	_endif
+
+	#Dibujar circulos en las centrales para distinguirlas.
+	_dynamic !current_coordinate_system! << _unset
+	LcollGeometrias<<_self.geometry_set_for_render
+	_if LcollGeometrias _isnt _unset 
+	_then
+		LcollBuildings<<LcollGeometrias.select(:collection,{:building,:user!_building})
+		_for LoGeom _over LcollBuildings.fast_elements()
+		_loop
+			_if _self.idEdificio _isnt _unset _andif
+			    _self.idEdificio=LoGeom.rwo.id _andif
+			    LoGeom.is_kind_of?(point)
+			_then
+#				LoCirculo<<circle.new(LoGeom.coordinate,1500)
+#				LoCirculo<<LoCirculo.transformed(_self.transform)
+#				LoCirculo.draw_on(.oWindows,line_style.new(colour.called(:black),3))
+				
+				LoBoundary<<LoGeom.rwo.boundary
+				LoBoundary<<LoBoundary.transformed(_self.transform)
+				LoBoundary<<LoBoundary.buffer(6)
+				_if LoBoundary _isnt _unset 
+				_then
+					LoBoundary.draw_on(.oWindows,
+							   line_style.new(colour.called(:red),
+									  6,dash_pattern.short_dash))
+				_endif
+				_leave
+			_endif
+		_endloop
+	_endif
+
+_endmethod
+$

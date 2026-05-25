@@ -1,0 +1,255 @@
+_package user
+$
+def_slotted_exemplar(:c_filas,
+                    {
+                     {:nTotal_Filas,                0}, # Num total de filas
+		     {:collFilas,              _unset}, # Coleccion de filas
+		     {:nLong_Total,                 0}  # Longitud que abarcan
+		    }
+)
+
+$
+c_filas.define_slot_access(:collFilas,      :writable)
+$
+c_filas.define_slot_access(:nLong_Total,    :writable)
+$
+c_filas.define_slot_access(:nTotal_Filas,   :writable)
+$
+_pragma(classify_level=restricted)
+_method c_filas.collFilas << filas
+
+	.collFilas << filas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_filas.elemento(RnFila)
+## Objetivo: Regresa una fila  de acuerdo a la posición
+## Parámetros de entrada: 
+## 	Entero - RnFila - Número de fila a la que se desea acceder
+## Parámetros de salida:   NA
+## Regresa:
+## 	c_filas - regresa un objeto c_fila
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación:
+##   04/01/05 DSB Se valido que RnFila no fuera cero	
+	
+	# Se valida que la fila solicitada sea correcta
+	_if RnFila <= 0 _and RnFila > _self.nTotal_Filas
+	_then
+	   condition.raise(:warning, :string, "Error número de fila incorrecto")
+	_endif
+	
+        >> _self.collFilas[RnFila]
+        
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_filas.Inicia_Elemento(RnNum_Elemento)
+## Objetivo: Regresa el pixel donde inicia la fila que se solicita
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	LnLong - suma de longitudes de todas las filas previas a la que se solicita
+## Fecha de última modificación: 01/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: se creo
+
+_local LnLong # Variable acumulador para obtener la longitud
+
+	LnLong << 0
+	
+        _for LnFila  _over range(1, RnNum_Elemento-1) 
+	_loop
+	   LnLong << _self.collFilas[LnFila].nLongitud + LnLong
+	_endloop
+	
+	_return LnLong
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_filas.init_with( props )
+
+	_for key, value _over props.fast_keys_and_elements()
+	_loop
+		_try _with cond
+		     _self.perform_private( key.with_chevron, value )
+		_when does_not_understand
+		_endtry 
+	_endloop
+
+	_return _self
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_filas.Longitud_Total()
+## Objetivo: Regresa la longitud total de todas las filas
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+##  	Entero - LnLong_Total - Longitud total
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+_local LnLong_Total # Variable acumulador para obtenerla longitud total
+
+	LnLong_Total << 0
+	
+	# Se obtiene la longitud total de las filas
+        _for LnFila  _over range(1, _self.nTotal_Filas) 
+	_loop
+	   LnLong_Total << _self.collFilas[LnFila].nLongitud + LnLong_Total	
+	_endloop
+	
+	_return LnLong_Total
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_filas.new(RnTot_Filas)
+## Objetivo: Crear una instancia de filas
+## Parámetros de entrada: 
+## 	Entero - RnTot_Filas - total de filas que contendra filas 
+## Parámetros de salida:   NA
+## Regresa: 
+##	c_filas - regresa un objeto c_filas
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+_local LnLong << 10 # Longitud por default de cada fila
+
+	_self.nTotal_Filas << RnTot_Filas
+	
+	_self.collFilas << hash_table.new()
+	
+	# Se asigna un objeto fila a cada fila de la coleccion
+	_for LnNum_Fila  _over range(1, _self.nTotal_Filas) 
+	_loop
+	   _self.collFilas[LnNum_Fila] << c_fila.new(LnLong)	
+	_endloop
+	
+	_return _clone
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_filas.new_from_serial( keys, xml_values )
+
+	props << property_list.new()
+	
+	_for nr, key _over keys.fast_keys_and_elements()
+	_loop
+		props[key] << xml_values[nr]
+	_endloop
+	
+	_return _clone.init_with( props )
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_filas.nLong_Total
+## Objetivo: retornar en valor del slot nLong_Total
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+##	Entero - nLong_Total : Longitud total
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .nLong_Total
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_filas.nLong_total << valor
+
+	# Se valida la longitud total no sea cero
+	_if valor > 0
+	_then
+ 	   .nLong_total << valor
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_filas.nTotal_Filas
+## Objetivo: retornar en valor del slot nTotal_Filas
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+##	Entero - nTotal_Filas : Numero total de filas 
+## Fecha de última modificación: 4/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_return .nTotal_Filas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_filas.nTotal_Filas << RnValor
+## Objetivo: Asignar un valor permitido al slot nTotal_Filas
+## Parámetros de entrada:
+## 	Entero - RnValor - Número total de líneas
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	# Se valida que el número total de líneas sea mayor a cero
+	_if RnValor > 0
+	_then
+ 	   .nTotal_Filas << RnValor
+	_else
+	   condition.raise(:warning, :string, "Error al asignar el total de líneas")	
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_filas.serial_slots()
+
+	_local ln_long
+
+	_try
+		ln_long << .nLong_Total/10
+	_when does_not_understand
+		ln_long << 0
+	_endtry
+	
+	keys << rope.new_with(:nTotal_Filas,:collFilas,:nLong_Total)
+	values << rope.new_with(.nTotal_Filas,.collFilas,.nLong_Total)
+
+	>> keys, values
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_filas.serial_structure
+
+	>> :slotted
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_filas.Total_Elementos
+## Objetivo: Regresa el total de elementos o filas 
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+## 	nTotal_Filas - Total de filas
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documento
+
+	>> _self.nTotal_Filas
+	
+_endmethod
+$

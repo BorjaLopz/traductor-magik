@@ -1,0 +1,547 @@
+_package user
+$
+def_slotted_exemplar(:c_plano_diagrama_de_empalmes,{
+			      {:oGpm,_unset,:writable},
+			      {:oPaf,_unset,:writable},
+			      {:oPam,_unset,:writable},
+                              {:oPage, _unset ,:writable , :private},
+		              {:oLayoutDesigner,_unset,:writable},
+			      {:oLayoutPlugin,_unset,:writable},
+			      {:oLayoutManager,_unset,:writable},
+			      {:oViewportMapper,_unset,:writable},
+			      {:oMarco,_unset,:writable},
+			      {:oDtoOptico,_unset,:writable},
+			      {:oEdificios,_unset,:writable}
+		     },
+		     {:c_geom_set_layout, :viewport_layout_mixin})
+$
+_method c_plano_diagrama_de_empalmes.new()
+
+	_return _clone.init()
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.init()
+	## 
+	.oPaf << smallworld_product.pni_application()
+	.oGpm << gis_program_manager
+	.oPam << .oPaf.manager 	 
+	.oEdificios << rwo_set.new()	
+	_return _self
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.add_marco()
+	## 
+	## 
+	.oMarco << c_marco.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+	.oMarco.Largo << 4
+	.oMarco.Alto << 2
+	.oMarco.set_fill_colour(_unset)
+	.oPage.add_element( .oMarco )
+	_self.AddTitulo( .oMarco )
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.add_sellos()
+	## 
+	## 
+	
+	LoSello << c_sello_estandar_construccion.new_with(:bounds,
+							  bounding_box.new(.oMarco.bounds.xmin+50,
+									   .oMarco.bounds.ymin+50,
+									   .oMarco.bounds.xmin+50+2950,
+									   .oMarco.bounds.ymin+50+2740))
+	.opage.add_element(LoSello)
+
+
+	LoSello << c_notas_constructor.new_with(:bounds,bounding_box.new(.oMarco.bounds.xmin+1100,
+									 .oMarco.bounds.ymin+260,
+									 .oMarco.bounds.xmin+2000,
+									 .oMarco.bounds.ymin+1530))	
+	.opage.add_element(LoSello)
+									 
+ 
+	bounds_simbologia << bounding_box.new(.oMarco.bounds.xmin+220,
+					      .oMarco.bounds.ymin+4230,
+					      .oMarco.bounds.xmin+1520,
+					      .oMarco.bounds.ymin+5500)
+
+	_self.agrega_simbolo("simbolos_planos_esquematico" ,bounds_simbologia)
+
+
+	bounds_lista_materiales << bounding_box.new(.oMarco.bounds.xmin+1520,
+						.oMarco.bounds.ymin+2230,
+						.oMarco.bounds.xmin+2820,
+						.oMarco.bounds.ymin+3500)	
+	lo_sellored << c_lista_materiales_fibra.new_with(:red, :bounds, bounds_lista_materiales )
+	.oPage.add_element(lo_sellored)
+
+	bounds_lista_cables << bounding_box.new(.oMarco.bounds.xmin+220,
+					      .oMarco.bounds.ymin+2230,
+					      .oMarco.bounds.xmin+1520,
+					      .oMarco.bounds.ymin+3500)
+	lo_sellocables << c_lista_materiales_cables.new_with(:red, :bounds, bounds_lista_cables )
+	.oPage.add_element(lo_sellocables)
+	
+	bounds_c_pep << bounding_box.new(.oMarco.bounds.xmin+220,
+					 .oMarco.bounds.ymin+ 1450,
+					 .oMarco.bounds.xmin+500,
+					 .oMarco.bounds.ymin+1500)
+	
+	lo_sello << c_pep.new_with(:bounds,bounds_c_pep)
+	.oPage.add_element(lo_sello)
+	
+	_self.add_sellos_correspondencias()
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.agrega_simbolo(pNombreSimbolo, pbounds)
+        
+	LoBound<< pbounds
+	#LoBound.centre<< .oPage.bounds.centre
+		
+	LoSimbolo<<symbol_layout.new_with(:bounds,Lobound)
+	
+	_if (LoSimbolo<<symbol_layout.new_with(:bounds,LoBound,
+					       :name,pNombreSimbolo,
+					       :fill_style,_unset,
+					       :outline_style,_unset)) _isnt _unset 
+	_then
+			.oPage.add_element(LoSimbolo)
+	_endif 
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_plano_diagrama_de_empalmes.add_viewport_principal()
+	## 
+	## 
+	
+	LoMapPlugin << .oPaf.plugin(:map_plugin)
+	LoVpArea << bounding_box.new( .oMarco.bounds.xmin + 3000,
+				      .oMarco.bounds.ymin + 500,
+				      .oMarco.bounds.xmax - 750,
+				      .oMarco.bounds.ymax - 750)
+	
+	LoMapView << LoMapPlugin.current_map_view	
+	LoBoundsMv << LoMapView.current_view_bounds
+	LoViewport << c_viewport_layout_sigc.new_with(:bounds, LoVpArea)
+	LoViewport.set_fill_colour(_unset)
+	LoViewport.outline_style << _unset
+	LoViewport.trail << _false
+	LoViewport.selection << _false
+	LoViewport.sTipoPlano << "DIAGRAMA_EMPALMES"
+	.oPage.add_element(LoViewport)
+	.oViewportMapper.map_viewport_on_map_view(LoViewport,LoMapView, LoBoundsMv,_true)
+	
+	
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_diagrama_de_empalmes.AddNorte()
+	## 
+	## lgranados: Se agrega el norte por default al plano
+	
+	_local LoBounds
+	_local LoNorte
+	_local LoPage
+	
+        LoPage<< .oPage
+	
+	_if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	_then
+		Lobounds<<bounding_box.new(LoPage.bounds.xmin,LoPage.bounds.ymax-1500,
+					   LoPage.bounds.xmin+4000,LoPage.bounds.ymax)
+		LoNorte << c_norte.new_with(:bounds,Lobounds)
+		LoNorte.limites<<_unset
+		LoPage.add_element(LoNorte)
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_diagrama_de_empalmes.AddTitulo(PoMarco)
+## Objetivo: Agregar el titulo al plano
+## Parametros de Entrada: Ninguno.
+## Regresa: Ninguno
+## Fecha de Ultima modificacion:20/10/2009
+## Autor de la modificacion: rmrosale
+## Descripcion de la modificacion: Metodo nuevo 
+
+    LoTitulo << _self.crea_titulo
+    
+    LoBB << bounding_box.new(PoMarco.bounds.xmax-2800,
+			     PoMarco.bounds.ymin+300,
+			     PoMarco.bounds.xmax-200,
+			     PoMarco.bounds.ymin+800)
+    
+    LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBB,
+					   :font_name,        "bold",
+					   :font_size,        8,
+					   :fill_style,       _unset,
+					   :outline_style,    _unset,
+					   :text,             LoTitulo,
+					   :wrap,             _false,
+					   :align_horizontal, :centre,
+					   :align_vertical,   :centre,
+					   :orientation,      :left_right)
+    
+    .oPage.add_element(LoTitulo)	
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_diagrama_de_empalmes.agregar_elementos()
+## Objetivo: Metodo que agrega los elementos necesarios para la
+## ubicaion del TBA
+## Parametros de entrada: Ninguno.
+## Parametros de salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:21/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo
+    _local LoElementos << rope.new()
+    LoCedo << .oDtoOptico.cedos_fo.an_element()
+    
+    LoCable << LoCedo.get_upstream_cables().an_element()    
+
+    LoEst << LoCedo.get_structure()
+    LoElementos.add(LoEst)
+    LoElementos.add(LoCedo)
+    _return LoElementos
+    
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.busca_edificios()
+	## 
+	## 
+	_for iterTerminal _over .oDtoOptico.terminales_fo.elements()
+	_loop
+		LoEstructura << iterTerminal.get_structure()
+
+		_if LoEstructura _isnt _unset 
+		_then
+		    # Obtenemos el campo geometrico de la estructura
+		    LoGeom << LoEstructura.perform(LoEstructura.primary_geometry)
+		
+		    # Validamos el mundo de la estructura
+		    _if LoGeom.world.world_id  <> 0
+		    _then
+			LoPred << predicate.contains(:box,LoGeom)
+			LoTabla << .oGPM.cached_dataset(:gis).collection(:mit_building_structure)
+			LoSel << LoTabla.select(LoPred)
+
+			_if LoSel.size > 0 
+			_then
+				.oEdificios.add(LoSel.an_element())
+			_endif
+		    _endif
+		_endif
+	_endloop
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_diagrama_de_empalmes.crea_titulo
+	
+	
+	## Objetivo: Crear el titulo para los planos RDA
+	## Parametros de salida: Ninguno
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:18/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo
+	
+	sch        << swg_dsn_admin_engine.active_design	
+	nodo       << sch.project.user!_central.building
+	LoNombreNCO << ""
+	LoNcosiglas << ""
+	
+	_if  nodo _isnt _unset 
+	_then
+		ctlname     << sch.project.user!_central.user!_nombre
+		ctlsiglas   << sch.project.user!_central.user!_central
+
+		
+                _if nodo.user!_tipo_servicio.lowercase = "nco"
+		_then
+			LoNombreNCO << nodo.user!_nom_nodo
+			LoNCOsiglas << nodo.user!_siglas
+		_else
+			
+			LoNCO       << nodo.get_nco_record()
+			
+			_if LoNCO _isnt _unset 
+			_then
+				LoNCOsiglas << LoNCO.user!_siglas_nco
+				LoNombreNCO << LoNCO.user!_nombre_nco	
+			_endif
+		_endif 
+		
+		LoEstado    << sch.project.user!_central.building.location.coordinate.estado_txt()
+		LoMun       << sch.project.user!_central.building.location.coordinate.municipio_txt()
+	
+	_endif
+
+	LoTitulo << "PLANO DE DIAGRAMA DE EMPALMES" +  %newline +
+		    "NCO - " +  LoNombreNCO  + %( + LoNcosiglas + %) + %newline + 
+		    "CTL - "  + ctlname      + %( + ctlsiglas + %)   + %newline +
+		    sch.distrito_optico.user!_distrito.default("") +
+		      %newline + LoMun + %space + LoEstado 
+
+	
+	_return LoTitulo	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_diagrama_de_empalmes.estructuras_cable_cedo()
+## Objetivo: Obtener la(s) estructura(s) que contiene al cable de
+## fibra que esta conectado al tba, deben ser de tipo mit_structure_route_mixin
+## Parametros de Entrada: Ninguno
+## Regresa: LoEstructuras << rope de estructuras
+## Fecha de Ultima modificacion:19/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo
+
+_local LoEstructuras << rope.new()
+
+     # Obtener el cable conectado
+    LoCedo << .oDtoOptico.cedos_fo.an_element()
+    LoCable << LoCedo.get_upstream_cables().an_element()
+    
+    _if LoCable _isnt _unset 
+    _then
+	    # Obtener las estructuras
+	    _for st _over LoCable.structures.elements()
+	    _loop
+		    _if st.is_kind_of?(mit_structure_route_mixin)
+		    _then
+			   LoEstructuras.add(st) 
+		    _endif
+	    _endloop
+    _endif
+
+    _return LoEstructuras
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.genera_plano(PODtoOptico)
+	## 
+	##
+	.oDtoOptico << PODtoOptico
+	_local LoDespl << 0
+	_self.inicia_layout()
+	_self.add_marco()
+	_self.AddNorte()
+	_self.add_sellos()
+	_self.add_viewport_principal()
+	LoDoc << .oLayoutManager.current_document
+	LoDoc.user!_tipo_plano << :diagrama_empalmes_fo
+
+	#Regresa el mapa al gis
+	###.oPam.goto_context(.oDtoOptico, .oDtoOptico.primary_spatial_context_name)	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.inicia_layout()
+	## 
+	##
+	.oLayoutPlugin   << .oPaf.plugin(:layout_plugin)
+	.oLayoutPlugin.start_layout_designer()
+	.oLayoutDesigner << .oLayoutPlugin.dialogs[:layout_designer]
+	.oLayoutManager  << .oLayoutDesigner.plugin(:layout_manager)    
+	.oViewportMapper << .oLayoutDesigner.plugin(:viewport_mapper)
+	LoDoc << .oLayoutManager.current_document
+	.oPage << .oLayoutManager.current_page
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_diagrama_de_empalmes.ir_ubicacion_cedo()
+## Objetivo: Obtener la ubicacion del cedo, tomando en cuenta las
+## geometrias de las estructuras por donde pasa el cable
+## conectado al cedo. Se hace un buffer para el area donde esta
+## ubicado.
+## Parametros de Entrada: Ninguno
+## Regresa: LoBuffer << pseudo_area
+## Fecha de Ultima modificacion:19/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo
+
+_local LoBuffer << _unset
+_local LoGeometrias << geometry_set.new()
+
+    # Obtener las geometrias por donde pasa el cable conectado
+    _if (LoGeometrias << _self.obtener_geometrias()).size >0    
+    _then
+	    LoBuffer << LoGeometrias.buffer(500)
+    _endif
+
+    _return LoBuffer
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_diagrama_de_empalmes.obtener_geometrias()
+## Objetivo: Obtener las geometrias de las estructuras por
+## donde  pasa el cable conectado al tba. Se hace un buffer
+## para el area donde esta ubicado.
+## Parametros de Entrada: Ninguno
+## Regresa: LoBuffer << pseudo_area
+## Fecha de Ultima modificacion:19/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo
+_local LoGeometrias << geometry_set.new()
+
+    _if (LoEstructuras << _self.estructuras_cable_cedo()).size >0 
+    _then
+	_for st _over LoEstructuras.fast_elements()
+	_loop
+		_if (LoGeo << st.structure_geometry()) _isnt _unset 
+		_then
+			 LoEst << .oDtoOptico.cedos_fo.an_element().get_structure()
+			 _if LoEst _isnt _unset _andif
+			     #LoEst.location.world.world_id = 0
+			     LoEst.perform(LoEst.primary_geometry).world.world_id = 0
+			 _then
+				LoGeometrias.add(LoGeo)
+			_elif LoGeo.world.world_id <> 0
+			_then 
+			       LoGeometrias.add(LoGeo)
+			_endif
+
+		_endif
+	_endloop
+    _endif
+    _return LoGeometrias	
+
+    
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.add_edificios(PoEdif,PoDespl)
+	## 
+	## 
+	LoBounds << bounding_box.new( .oPage.bounds.xmax-2100-PoDespl,
+				      .oPage.bounds.ymax-4800-PoDespl,
+				      .oPage.bounds.xmax-1100-PoDespl,
+				      .oPage.bounds.ymax-2800-PoDespl)
+	
+	.oPam.goto_context(PoEdif,:internal)
+	
+	LoMv << .oPaf.plugin(:map_plugin).current_map_view
+	LoMapa << .oPaf.plugin(:map_plugin)  
+	
+	
+	LoViewport << c_vp_detalle_interno_edificio.new_with(:trail, _false,
+							     :selection, _false,
+							     :post_render, _false,
+							     :name, "DETALLE DE EDIFICIO",
+							     :bounds, LoBounds)
+	# Agregar el viewport
+	_if (LoGeom << LoMv.get_selectable_geometry_set().select(:geometry_field,:mit_building_structure,:box)).size > 0
+	_then
+		LoEdificio << LoGeom.an_element().rwo
+		LoBounds << LoEdificio.bounds
+	_else
+		LoBounds << bounding_box.new(LoMv.current_view_bounds.xmin + 600,
+					     LoMv.current_view_bounds.ymin,
+					     LoMv.current_view_bounds.xmax - 600,
+					     LoMv.current_view_bounds.ymax)
+	_endif
+	.oViewportMapper.map_viewport_on_map_view(LoViewport,LoMv,LoBounds,_true)	
+	.oPage.add_element(LoViewport)		
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={if_mit_cable_model})
+_method c_plano_diagrama_de_empalmes.add_sellos_correspondencias( )
+	## Se crean los sellos de correspondencias y se agregan una vez
+	## que se haya agregado el sello en cada pagina.
+	##
+
+	LoCedos << .oDtoOptico.cedos_fo
+	
+	_if  LoCedos.size > 0
+	_then	    
+			
+			desplazaX << 3500
+	     
+			_for LoCedo _over LoCedos.fast_elements()
+			_loop			
+	
+	#### OBTENEMOS LOS DATOS PARA ARMAR LAS TABLAS DE CORRESPONDENCIAS
+				LoTerminales << rope.new()
+				contRenFibras << 0
+				LoDatosTerminales << rope.new()
+				LoTamDatosT<< 0
+				
+				LoDatosTerminales << user:c_distrito.obten_datos_correspondenciaII(LoCedo.id)
+				
+				##_self.mismo_cedo_id <<  LoCedo.id
+				
+				user:c_sello_correspondencias.Terminales << LoDatosTerminales
+				LoTamDatosT << LoDatosTerminales.size		 
+				LoTotRenglones    << 1 + LoTamDatosT  
+				LoContador        << 1
+				LoNumMaxRenglones << 40
+				
+				_loop
+					_if (LoTotRenglones _div  LoContador) <= LoNumMaxRenglones
+					_then
+						NumeroDeSellosXCedo << LoContador 
+						_leave
+					_else
+						LoContador +<< 1
+					_endif
+				_endloop
+				
+				_for NumSello _over 1.upto(NumeroDeSellosXCedo) 
+				_loop
+					LoSello << user:c_sello_correspondencias.new_with(:bounds,
+											  bounding_box.new(desplazaX,5700, desplazaX, 5700))     
+					
+					_if (LoTotRenglones -  LoNumMaxRenglones) >=  0 
+					_then		
+						LoTotalRenglones   << LoNumMaxRenglones					
+						LoTotRenglones   << LoTotRenglones -  LoNumMaxRenglones		     
+					_elif LoTotRenglones < LoNumMaxRenglones
+					_then
+						LoTotalRenglones << LoTotRenglones	  
+					_endif
+					
+					LoSello.configura_tabla(LoTotalRenglones+1)
+					LoSello.etiqueta_celdas() 
+					lpl_datos_dist_optico << LoSello.obten_datos_dist_optico(LoCedo.id)
+					
+					### (12/03/13 rhernan): Llenando las tablas de correspondencias.
+					LoSello.llena_datos_tabla_correspondencias(lpl_datos_dist_optico,
+										   LoDatosTerminales, LoTotalRenglones)
+					
+					LoSello.idCedo << LoCedo.id		  
+					.oPage.add_element(LoSello)  
+					desplazaX +<< 1150 
+				_endloop
+				LoSello.LoNumero_max << 1 
+			_endloop  
+##		_endloop  
+	_endif 
+    
+	
+_endmethod
+$
+
+
+
+

@@ -1,0 +1,992 @@
+_package user
+$
+def_slotted_exemplar(:c_Proyecto,
+{
+	{:o_nodo, _unset, :writable}
+})
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.new()
+	
+	_return _clone.init()
+	
+_endmethod 
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.init()
+
+	_return _self
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Proyecto_Activo
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - proyecto asociado al diseño activo en design manager
+	## vbluna
+
+	_try
+		_return _self.Disenio_Activo.project
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Disenio_Activo
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - diseño activo en design manager
+	## vbluna
+	
+	_return swg_dsn_admin_engine.active_scheme
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.nodo()
+	## Devuelve el building asociado a la central sobre la cual se
+	## genera el proyecto
+	## (vbluna-17-10-2006)
+
+	_if .o_nodo _is _unset
+	_then
+		gpm << gis_program_manager
+		lo_pred_ctl << predicate.eq(:user!_siglas, _self.Cve_Central)
+		lo_ctl << gpm.cached_dataset(:gis).collection(:building).select(lo_pred_ctl)
+
+		_if lo_ctl.size > 0
+		_then
+			.o_nodo << lo_ctl.an_element()
+		_endif
+	_endif
+	
+	_return .o_nodo
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.anio_programa
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor del año de programa asociado al proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_programa_anyo.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.area_telmex
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del area telmex 
+	##       correspondiente a la central asociada al proyecto
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_central.user!_area.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Cve_Central
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con la clave de la central asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.Proyecto_Activo.user!_central.user!_central.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Delegacion_Municipio
+
+	## String con el nombre de la delegacion o municipio en donde
+	## se encuentra ubicado el nodo
+	## (vbluna/17-10-06)
+
+	_try
+		gpm << gis_program_manager
+		l_tbl_mpo << gpm.cached_dataset(:landbase).collections[:user!_municipio]
+		l_predicate << predicate.contains(:user!_limite, _self.nodo().location)
+		_return l_sel_mpo << l_tbl_mpo.select(l_predicate).an_element().user!_nombre_telmex
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.colonia
+
+	colonia <<  _self.distrito.get_geo_user!_colonia
+	nombre << ""
+	_if colonia    _isnt _unset 
+	_then
+	        nombre << colonia.user!_nombre 	
+	_endif
+       _return nombre
+       
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Distrito
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - objeto distrito asociado al diseño activo
+	## vbluna
+
+		_if _self.Disenio_Activo.distrito_optico _isnt _unset 
+		_then
+		    _return _self.Disenio_Activo.distrito_optico
+		_else			
+		    _return _self.Disenio_Activo.user!_distrito		
+		_endif
+		
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.division_telmex
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre de la division telmex
+	##       correspondiente a la central asociada al proyecto
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_central.user!_division.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Fecha_Entrega
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - date con la fecha de entrega asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.Proyecto_Activo.user!_fecha_entrega
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Mes_Anio
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con la fecha de entrega asociada al proyecto activo en
+	##      formato MM/AA
+	## vbluna
+
+	_try
+		_local LsMes  << c_Traductor.Mes(_self.Fecha_Entrega.month_number)
+		# (16/06/03 bautistaja) : Modified. SIMA 5993810
+		_local LsAnio << _self.Fecha_Entrega.year.write_string#.slice(3,4)
+		_if LsAnio _isnt _unset _andif
+		    LsAnio <> ""
+		_then
+			LsAnio << LsAnio.slice(LsAnio.size-1, LsAnio.size)
+		_endif
+		#
+		_return LsMes + "/" + LsAnio
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.nombre
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.name.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Nombre_Central
+	
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre de la central asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.Proyecto_Activo.user!_central.user!_nombre.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Numero_Distrito
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el numero de distrito asociado al diseño activo
+	## vbluna
+	
+	_try
+		_return _self.Disenio_Activo.user!_distrito.user!_num_dto.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Numero_Ruta(PoOPB)
+	
+   	## Parámetros de entrada:
+	##      PoOPB - objeto user!_opb
+   	## Parámetros de salida:
+	##      - string con el numero de ruta a la que pertenece PoOPB
+	## vbluna
+	
+	_try
+		_return PoOPB.user!_rutas.user!_numero.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.obten_peps_por_tipo()
+	## Metodo para obtener todas las peps del proyecto agrupadas
+	## por rubro y tipo (rubro: contruccion o desmontaje), (tipo:
+	## fibra, cobre, canalizacion), asi como cada unidad contable
+	## (opbs, oeis, oes) de cada rubro y tipo de pep.
+	##	
+	plInfo << property_list.new_with(:construccion,
+					 property_list.new_with(:fibra,rope.new(),
+								:cobre,rope.new(),
+								:canal,rope.new()),
+					 :desmontaje,
+					 property_list.new_with(:fibra,rope.new(),
+								:cobre,rope.new(),
+								:canal,rope.new()))
+
+	
+	_if (disenio_activo<< _self.disenio_Activo) = ""
+	_then
+		_return plInfo
+	_endif
+
+			_for oe _over disenio_activo.user!_oe_locals.elements()
+			_loop
+				
+				(pep,tipo_pep) << _self.obten_pep_de_oe(oe)
+				
+				plValores << property_list.new_with(:pep,pep,
+								    :opb,oe.user!_oei_local.user!_op_local.user!_num_op,
+								    :oei,oe.user!_oei_local.user!_num_oei,
+								    :oe,oe.user!_num_oe)
+				_if pep<>"" _andif
+				    pep _isnt _unset _andif 
+				    pep.slice(1,1) = "D"
+				_then		      
+					plInfo[:construccion][tipo_pep].add(plValores)
+				_elif pep<>"" _andif
+				      pep _isnt _unset _andif 
+				      pep.slice(1,1) = "J"
+				_then 
+					plInfo[:desmontaje][tipo_pep].add(plValores)
+				_endif
+				
+			_endloop
+	
+	_return plInfo
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.OEI(PoOPB, PsTipoOEI)
+
+	## Parámetros de entrada:
+	##       PoOPB     - objeto user!_opb
+	##       PsTipoOEI - "CANALIZACION", "PRINCIPAL", "SECUNDARIO"
+   	## Parámetros de salida:
+	##       LoI  - objeto user!_oei correspondiente al tipo y obp solicitados
+	##       LoIs - string con el valor de la oei correspondiente al tipo y obp solicitados
+	## vbluna
+	
+	_try
+		_for LoI _over PoOPB.user!_oeis.fast_elements()
+		_loop
+			_if LoI.user!_tipo_oei = PsTipoOEI
+			_then
+				_return LoI, LoI.user!_valor_oei.write_string
+			_endif
+		_endloop
+		
+	_when does_not_understand
+		_return "",""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.oei_distrito_activo
+	## Regresa el objeto user!_oei asociado al distrito del diseño
+	## activo
+	## (vbluna-26/oct/2006)
+
+	_try
+		_return _self.distrito.user!_oei.an_element()
+	_when does_not_understand
+		_return _unset
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.OEs(PoOEI)
+
+	## Parámetros de entrada:
+	##       PoOEI - objeto user!_oei
+   	## Parámetros de salida:
+	##       LcolOE - property_list con las oes asociadas a la oei
+	##       LsOEs  - string con las oes asociadas a la oei = "OE1,OE2"
+	## vbluna
+	
+	_try
+		_local LcolOE  << property_list.new()
+		_local LnIndex << 1
+		_local LsOEs		
+		
+		_for LoI _over PoOEI.user!_oes.fast_elements()
+		_loop
+			LcolOE[LnIndex] << LoI
+			_if LnIndex = 1
+			_then
+				LsOEs << LoI.user!_valor_oe.write_string
+			_else
+				LsOEs << LsOEs.write_string +" ,"+ LoI.user!_valor_oe.write_string
+			_endif
+			LnIndex << LnIndex + 1
+		_endloop
+
+		_return LcolOE, LsOEs.write_string
+		
+	_when does_not_understand
+		_return "",""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Cons_Can
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de construccion de
+	##       canalizacion asociada al proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_pep_cons_cana.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Cons_Princ
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de construccion de
+	##       red principal asociada al proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_pep_cons_ppal.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Cons_Sec
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de construccion de
+	##       red secundaria asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_local l_pep_cons_sec << ""
+		_local diseno_activo << swg_dsn_admin_engine.active_design
+
+		_if diseno_activo.tipo_diseno = :secundaria _andif
+		    diseno_activo.project.name.matches?("FALC*") _andif
+		    (oei << diseno_activo.user!_oei_locals.an_element()) _isnt _unset 
+		_then
+			_for an_oe _over oei.user!_oe_locals.elements()
+			_loop
+				ls_tipo_oe << an_oe.user!_pep.user!_catalogo_pep.user!_tipo_trabajo
+				# validar que sea no sea una oe de canalizacion,
+				# que no sea una oe de principales y que sea de CONSTRUCCION
+				_if an_oe.user!_tramo_cobre _is _unset _andif
+				    an_oe.user!_segmento_locals.size = 0 _andif				
+				    ls_tipo_oe.write_string = "CONSTRUCCION"
+				_then
+					l_pep_cons_sec << an_oe.user!_pep.user!_clave.write_string
+					_leave 
+				_endif
+			_endloop
+		_else
+			l_pep_cons_sec << _self.proyecto_activo.user!_pep_cons_secu.write_string
+		_endif
+
+		_return l_pep_cons_sec
+		
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Desm_Can
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de desmontaje de
+	##       canalizacion asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.proyecto_activo.user!_pep_desm_cana.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Desm_Princ
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de desmontaje de
+	##       red principal asociada al proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_pep_desm_ppal.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Desm_Sec
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de desmontaje de
+	##       red secundaria asociada al proyecto activo
+	## vbluna
+
+	_try
+		_local l_pep_desm_sec << ""
+		_local diseno_activo << swg_dsn_admin_engine.active_design
+
+		_if diseno_activo.tipo_diseno = :secundaria _andif
+		    diseno_activo.project.name.matches?("FALC*") _andif
+		    (oei << diseno_activo.user!_oei_locals.an_element()) _isnt _unset 
+		_then
+			_for an_oe _over oei.user!_oe_locals.elements()
+			_loop
+				ls_tipo_oe << an_oe.user!_pep.user!_catalogo_pep.user!_tipo_trabajo
+				# validar que sea no sea una oe de canalizacion,
+				# que no sea una oe de principales y que sea de DESMONTAJE
+				_if an_oe.user!_tramo_cobre _is _unset _andif
+				    an_oe.user!_segmento_locals.size = 0 _andif				
+				    ls_tipo_oe.write_string = "DESMONTAJE"
+				_then
+					l_pep_desm_sec << an_oe.user!_pep.user!_clave.write_string
+					_leave 
+				_endif
+			_endloop
+		_else
+			l_pep_desm_sec << _self.proyecto_activo.user!_pep_desm_secu.write_string
+		_endif
+
+		_return l_pep_desm_sec
+		
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Reco_Princ
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de reconcentración de
+	##       red principal asociada al proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_pep_reco_ppal.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Reco_Sec
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de reconcentración de
+	##       red secundaria asociada al proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_pep_reco_secu.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Reha_Can
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de rehabilitacion de
+	##       canalizacion asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.proyecto_activo.user!_pep_reha_cana.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Reha_Princ
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de rehabilitacion de
+	##       red principal asociada al proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_pep_reha_ppal.write_string
+	_when does_not_understand
+	        _return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.PEP_Reha_Sec
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##       - string con el valor de la pep de rehabilitacion de
+	##       red secundaria asociada al proyecto activo
+	## vbluna
+	_try
+		_local l_pep_reha_sec << ""
+		_local diseno_activo << swg_dsn_admin_engine.active_design
+
+		_if diseno_activo.tipo_diseno = :secundaria _andif
+		    diseno_activo.project.name.matches?("FALC*") _andif
+		    (oei << diseno_activo.user!_oei_locals.an_element()) _isnt _unset 
+		_then
+			_for an_oe _over oei.user!_oe_locals.elements()
+			_loop
+				ls_tipo_oe << an_oe.user!_pep.user!_catalogo_pep.user!_tipo_trabajo
+				# validar que sea no sea una oe de canalizacion,
+				# que no sea una oe de principales y que sea de REHABILITACION
+				_if an_oe.user!_tramo_cobre _is _unset _andif
+				    an_oe.user!_segmento_locals.size = 0 _andif				
+				    ls_tipo_oe.write_string = "REHABILITACION"
+				_then
+					l_pep_reha_sec << an_oe.user!_pep.user!_clave.write_string
+					_leave 
+				_endif
+			_endloop
+		_else
+			l_pep_reha_sec << _self.proyecto_activo.user!_pep_reha_secu.write_string
+		_endif
+
+		_return l_pep_reha_sec
+		
+	_when does_not_understand
+	        _return ""
+	_endtry
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.poblacion
+
+	## String con el nombre de la poblacion en donde
+	## se encuentra ubicado el nodo
+	## (vbluna/17-10-06)
+
+	_try
+		gpm << gis_program_manager
+		l_tbl_pob << gpm.cached_dataset(:landbase).collections[:user!_poblacion]
+		l_predicate << predicate.contains(:user!_limite, _self.nodo().location)
+		_return l_sel_pob << l_tbl_pob.select(l_predicate).an_element().user!_nombre_telmex
+	_when does_not_understand
+		_return ""
+	_endtry
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Proyecta_Empresa
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre de la empresa que proyecta
+	##      asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.Proyecto_Activo.user!_empresa_proyecto.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Proyectista
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del proyectista asociado
+	##      proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.proyecto_activo.user!_proyectista_proyecto.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.proyectista_disenio
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del proyectista asociado al
+	##      diseño activo
+	## vbluna
+
+	_try
+		_return _self.disenio_activo.user!_proyecto.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.realizo_inventario
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del responsable del inventario asociado al
+	##      diseño activo
+	## vbluna
+
+	_try
+		_return _self.disenio_activo.user!_inventario.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Revisa_Empresa
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre de la empresa que revisa
+	##      asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.Proyecto_Activo.user!_empresa_revisora.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Supervisor
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del supervisor asociado
+	##      proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.proyecto_activo.user!_supervisor.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.supervisor_disenio
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del supervisor asociado al
+	##      diseño activo
+	## vbluna
+
+	_try
+		_return _self.disenio_activo.user!_superviso.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Supervisor_Telmex
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del supervisor telmex asociado
+	##      proyecto activo
+	## vbluna
+	
+	_try
+		_return _self.proyecto_activo.user!_vb.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.supervisor_telmex_disenio
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el nombre del supervisor telmex asociado al
+	##      diseño activo
+	## vbluna
+
+	_try
+		_return _self.disenio_activo.user!_vobo.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Tipo_Central
+	
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - symbolo con el tipo de central asociada al proyecto activo
+	## vbluna
+	
+	_try
+		_return c_traductor.tipo_central(
+				_self.nodo().user!_tipo.write_string.lowercase.as_symbol())
+	_when does_not_understand
+		_return "CTL"
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.tipo_operacion
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el tipo de operacion asociada al
+	##      proyecto activo
+	## vbluna
+
+	_try
+		_return _self.proyecto_activo.user!_programa_tipo.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.Ubicacion
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con Division/Area/Central/Ruta del diseño activo
+	## (vbluna-26/oct/2006)
+	
+	_try
+		_return  _self.division_telmex + "  /  " + _self.area_telmex + "  /  " +
+			 _self.nombre_central + " / " + _self.disenio_activo.name
+	_when does_not_understand
+		
+		_return "División/Área/Central/"
+		
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.oe_reg_scheme(p_tipo)
+
+   	## Parámetros de entrada:
+	##    p_tipo - "CONSTRUCCION (D)", "DESMONTAJE(J)", "RECONCENTRACION(Y)"
+
+	_local diseno_activo   << swg_dsn_admin_engine.active_design
+	_local proyecto_activo << diseno_activo.project
+	_local l_pep << ""
+	_local l_oe << _unset 
+	_local pl << property_list.new()
+	pl["D".as_symbol()] << "CONSTRUCCION" 
+	pl["J".as_symbol()] << "DESMONTAJE"
+	pl["Y".as_symbol()] << "RECONCENTRACION"
+		
+	#_if  diseno_activo.tipo_diseno = :secundaria	
+	#_then
+		_for iteroe _over _self.Disenio_Activo.user!_oe_locals.fast_elements()
+		_loop
+
+			l_pep << proyecto_activo.user!_peps.an_element().source_collection.at(iteroe.user!_pep_id).user!_clave
+			l_pep_tipo << l_pep.slice(1,1).as_symbol()
+			
+			_if pl[l_pep_tipo] = p_tipo.write_string.uppercase
+			_then
+			       L_oE << iteroe
+			      
+			       _leave
+			_endif
+			
+		_endloop
+		
+	#_endif
+	
+	_return l_oe
+        
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.obten_pep_de_oe(p_oe)
+	## Metodo para obtener la pep que tiene relacionada una oe, en
+	## este metodo se obtiene de dos maneras, una tomando si la
+	## relacion de la oe esta llena obtenemos la pep de la tabla de
+	## peps, si no obtenemos la pep del campo del proyecto. Ademas
+	## de retornar tambien el tipo de pep (:fibra, :cobre, :canal)
+	## 
+
+	LoPep << ""
+	LoTipoPep << ""
+
+	dadmin    << gis_program_manager.cached_dataset(:design_admin)
+	tabla_pep << dadmin.collection(:user!_pep)
+        oe_pep << tabla_pep.at(p_oe.user!_pep_id)
+	
+	_if oe_pep _isnt _unset
+	_then		
+		LoPep     << oe_pep.user!_clave
+		LoTipoPep << _self.disenio_activo.tipo_proyecto.lowercase
+		_if LoTipoPep.matches?("fibra*")
+		_then
+			LoTipoPep << :fibra
+		_else
+			LoTipoPep << :cobre
+		_endif
+	_endif
+
+	_return LoPep, LoTipoPep
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Proyecto.programa
+
+   	## Parámetros de entrada:
+   	## Parámetros de salida:
+	##      - string con el programa
+
+	_try
+		_return _self.proyecto_activo.user!_programa.write_string
+	_when does_not_understand
+		_return ""
+	_endtry
+	
+_endmethod
+$
+

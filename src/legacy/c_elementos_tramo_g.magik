@@ -1,0 +1,158 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Clase que administra una colecciion de objetos de tipo
+#           c_elemento_tramo
+# Autor: fdiaz
+# Fecha de creacion: 29-Marzo-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+
+# Reviso.
+# dsanchez
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_elementos_tramo_g)
+
+$
+def_slotted_exemplar(:c_elementos_tramo_g,
+		     {
+		   	{:sNombre_Grafico, _unset} # Nombre del grafico
+  	
+		     }
+                     ,
+		     :c_elementos
+)
+
+$
+c_elementos_tramo_g.define_slot_access(:sNombre_grafico,    :writable, :private)
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elementos_tramo_g.new()
+## Objetivo: Metodo que se crea una nueva instancia
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  
+## 	c_elementos_tramo_g - Una instancia de la clase
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	_super.new()
+	
+	_return _clone
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elementos_tramo_g.Longitud_Total()
+## Objetivo: Obtiene la longitud total de los elementos
+##           a graficar
+## Parámetros de entrada : NA 
+## Parámetros de salida: NA  
+## Regresa: 
+##     Entero - Longitud total
+## Fecha de última modificación: 31/03/2005
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+	
+	_local nLongitud_Total
+	
+	nLongitud_Total << 0
+	
+	# Se recorre la lista de elementos
+	_for LoElemento  _over _self.collElementos.fast_elements()
+	_loop
+	
+		# Solo se consideran los elementos habilitados 
+		_if LoElemento.bHabilitar? = _true
+		_then
+			# No se considere la longitud de los empalmes
+			_if LoElemento.is_kind_of?(c_elemento_empalme_g)
+			_then
+				# No se hace nada
+			_else
+				nLongitud_Total << nLongitud_Total + LoElemento.nLong_Grafica
+			_endif
+		_endif	
+
+	_endloop
+	
+	_return nLongitud_Total
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elementos_tramo_g.Despliega()
+## Objetivo: Dibujar el elemento grafico
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Descripción de la modificación: Creación 
+
+
+        _local LsIndice
+	
+	# Se despliegan todos los elementos graficos contenidos en la celda		
+	_for LoElemento  _over _self.collElementos.fast_elements()
+	_loop
+		LoElemento.oVentana << _self.oVentana
+		LoElemento.oArea << _self.oArea
+		LoElemento.Despliega()
+	_endloop
+
+#       Modo tradicional Desplique de izquierda a derecha
+#       _local LoElemento
+#	_for nContador _over range(1, _self.nTotal_Elementos)  
+#	_loop
+#		
+#		LsIndice << "elem_tramo_" + nContador.write_string
+#		
+#		LoElemento << _self.obten_elemento(LsIndice.as_symbol())
+#		
+#		LoElemento.oVentana << _self.oVentana
+#		LoElemento.oArea << _self.oArea
+#		LoElemento.Despliega()
+#	_endloop
+	
+	
+_endmethod
+$
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elementos_tramo_g.nTotal_Elementos
+## Objetivo: retornar el valor del slot nTotal_Elementos
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  
+## 	Entero - nToTal_Elementos : Numero de elementos
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+        _local LnContador
+        LnContador << 0
+	
+	# Se despliegan todos los elementos graficos contenidos en la celda		
+	_for LoElemento  _over _self.collElementos.fast_elements()
+	_loop
+		_if (LoElemento.bHabilitar? = _true)
+		_then
+			LnContador << lnContador + 1.0
+		_endif
+
+	_endloop
+
+	
+	_return LnContador
+	
+_endmethod
+
+

@@ -1,0 +1,135 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Clase que construye objetos del tipo c_elemento_tramo
+#           segun se le solicite
+# Autor: fdiaz
+# Fecha de creacion: 31-Marzo-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#  05/04/05 DSB Se crearon los metodos para construir
+#               secciones, nodos y empalmes
+# Reviso.
+# dsanchez
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_creador_elemento_tramo_g)
+
+$
+def_slotted_exemplar(:c_creador_elemento_tramo_g,
+    {
+	   {:sNombre_grafico,      _unset },  # Nombre del grafico
+	   {:sCveSello,            _unset }   # Clave del sello
+    }
+
+)
+
+$
+c_creador_elemento_tramo_g.define_slot_access(:sNombre_grafico,    :writable, :private)
+c_creador_elemento_tramo_g.define_slot_access(:sCveSello,    :writable, :private)
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_creador_elemento_tramo_g.new(RsCveSello)
+## Objetivo: Metodo que se crea una nueva instancia
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  
+## 	c_creador_elemento_tramo_g - Una instancia de la clase
+## Fecha de última modificación : 31-Marzo-2005
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	_self.sCveSello  << RsCveSello
+	
+	_return _clone
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_creador_elemento_tramo_g.Crea_Elemento_Tramo(RoElemento)
+## Objetivo: Metodo que se crea una nueva instancia
+## Parámetros de entrada: NA
+## Parámetros de salida:   NA
+## Regresa:  
+## 	c_elemento_tramo_g - Una instancia del tipo c_elemento_tramo
+## Fecha de última modificación : 31-Marzo-2005
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+	# Contiene una referencia al nuevo objeto a crear
+	_local oElemento_Tramo
+ 
+	# Si es de tipo empalme		
+	_if RoElemento.is_kind_of?(splice_closure)
+	_then
+		oElemento_Tramo << _self.crea_elemento_empalme(RoElemento, _self.sCveSello)
+	_endif
+	
+	# Si es de tipo seccion
+	_if RoElemento.is_kind_of?(sheath)
+	_then
+		oElemento_Tramo << c_elemento_seccion_g.new(RoElemento)	
+	_endif		
+	
+	# Si es de tipo nodo
+	_if RoElemento.is_kind_of?(building)
+	_then
+		oElemento_Tramo << c_elemento_nodo_g.new(RoElemento)	
+	_endif	 
+
+	 oElemento_Tramo.configurar_elementos()
+	
+	_return oElemento_Tramo
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_creador_elemento_tramo_g.crea_elemento_empalme(RoElemento, PsCveSello)
+
+ _local LsTipoEmp
+ _local LoEmpalme  << _unset 
+
+   LsTipoEmp << RoElemento.user!_tipo_emp
+   
+   # se compara con 1 si es verdad esta siendo llamado desde el
+   # estudio de transmision
+   _if PsCveSello = "ET"
+   _then
+      _if  LsTipoEmp = "DERIVACION"
+      _then 
+         LoEmpalme <<  c_elemento_empalme_derivacion_g.new(RoElemento)
+ 
+      _else 
+          LoEmpalme <<   c_elemento_empalme_g.new(RoElemento)      
+      _endif
+
+   _else 
+       LoEmpalme << c_elemento_empalme_subterraneo_g.new(RoElemento)	      
+   _endif
+
+   _return  LoEmpalme 
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_creador_elemento_tramo_g.crea_elemento_seccion(RoElemento)
+	## 
+	## 
+
+	_return c_elemento_seccion_g.new(RoElemento)	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_creador_elemento_tramo_g.crea_elemento_nodo(RoElemento)
+
+   _return  c_elemento_nodo_g.new(RoElemento)
+	
+_endmethod
+$

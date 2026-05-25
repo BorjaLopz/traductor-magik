@@ -1,0 +1,400 @@
+#----------------------------------------------------------------
+# marco_layout.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# SIGMA TAO
+#
+# Creador: llruiz
+#
+# Date: 01/10/2004
+# Descripcion: Elemento que dibuja el marco en los planos con
+# una propiedad que controle los "modulos", para que sea la
+# seleccion de modulos  variable
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+
+_package user 
+
+
+#remex(:marco_layout)
+#$
+
+
+def_slotted_exemplar ( :marco_layout, {}, :layout_element )
+$
+#
+# Esta constante define el largo de la línea que del módulo
+# que compone el marco.
+#
+marco_layout.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+marco_layout.define_shared_constant ( :longitud_vertical,
+				       100,
+				       :public )
+$
+
+#
+# Define el ancho de un modulo, será el ancho de una hoja
+# tamaño carta
+#
+marco_layout.define_shared_constant ( :modulo_width,
+				       2160.00,
+				       :public )
+$
+marco_layout.define_shared_constant ( :modulo_height,
+				       2790.00,             
+				       :public )
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method marco_layout.defined_attributes
+	## 
+	##
+	attribs << rope.new_from (_super.defined_attributes)
+
+
+	attribs.add ( layout_attribute_definition.new (	:num_mod, :integer,
+							:description, "Numero de Modulos",
+							:allowed_on_properties_page?, _true,
+							:default_value, 1 ) )
+
+	attribs.add ( layout_attribute_definition.new (	:altura, :integer,
+							:description, "Num pags",
+							:allowed_on_properties_page?, _true,
+							:default_value, 1 ) )
+
+	attribs.add ( layout_attribute_definition.new (	:sello, :integer,
+							:description, "Area del sello",
+							:allowed_on_properties_page?, _true,
+							:default_value, 0 ) )
+
+	attribs.add ( layout_attribute_definition.new(:plano, :string,
+						      :description, "Tipo de Plano",
+						      :default_value, "",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method, :nombre_plano,
+						      :editor, _unset))
+	
+       #print(attribs)
+	
+	>> attribs
+	
+_endmethod
+$
+
+marco_layout.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method marco_layout.nombre_plano
+## 
+## 
+## Objetivo: Regresar un arreglo con los nombres de los planos.
+## Parametros de Salida: Ninguno
+## Regresa: LasTipoPlano
+## Fecha de ultima modificacion: 12/4/2005
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasTipoPlano    # Arreglo con los valores para los diferentes marcos.
+
+	LasTipoPlano<<rope.new()
+
+	## Agrega valores para identificar los marcos.
+	LasTipoPlano.add("")
+	LasTipoPlano.add("Distritos1")
+	LasTipoPlano.add("Distritos2")
+	LasTipoPlano.add("Distritos3")
+	LasTipoPlano.add("Itinerario1")
+	LasTipoPlano.add("Itinerario2")
+	LasTipoPlano.add("Itinerario3")
+	LasTipoPlano.add("Construccion1")
+	LasTipoPlano.add("Construccion2")
+	LasTipoPlano.add("Empalmes")
+	LasTipoPlano.add("Topologico1")
+	LasTipoPlano.add("Topologico2")
+	LasTipoPlano.add("Topologico3")
+
+	>> LasTipoPlano
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method marco_layout.initialise_for_page(a_layout_page)
+##	
+##
+## Objetivo: Formatea la pagina de acuerdo al numero de modulos especificados.
+## Parametros de Salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de ultima modificacion: 17/mayo/2005
+## Autor de la modificacion: hramirea
+## Descripcion de la modificacion: Metodo nuevo
+##	
+	a_layout_page.set_paper_size(   _self.sello +  100 +   _self.num_mod * _self.modulo_width, 
+				          _self.altura * _self.modulo_height + 400  )
+	bb << _self.layout_page.bounds
+
+	bb1 << bounding_box.new(bb.xmin + _self.sello + 100 , bb.ymin + 100, bb.xmax - 100, bb.ymax - 300)
+	_self.bounds << bb1
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method marco_layout.draw_content_on ( window )
+	## 
+	##
+_local LcollAncho
+_local LcollAlto
+_local LnAncho
+_local LnAlto
+_local LnLineaEsquina
+_local LbConfigNormal<<_true
+
+_local LnSangriaHorA<<300
+_local LnSangriaVerA<<300
+
+_local LnSangriaHor<<150
+_local LnSangriaVer<<150
+
+        _if _self.plano="Distritos1"
+	_then
+		# valores de especificacion.
+		#LcollAncho<<{2040,1660,1750,1750,1750,1700}
+		#LcollAlto<<{2745,2795,2745} 
+
+		#--------------------------------------------
+                # valores fuente plano SICG 10.6
+		WRITE("Toma los valores del plano de sigc 10.6")
+		LcollAncho<<{2040,1750,1750,1750,1750,1690}
+	        LcollAlto<<{2741,2791,2741} 
+
+		LbConfigNormal<< _false   
+                _self.num_mod << 6
+		_self.altura <<  3
+		
+	_elif _self.plano="Distritos2"
+	_then
+		LcollAncho<<{2040,1747,1747,1747,1747,1695}
+		LcollAlto<<{2745,2800,2745}
+		LbConfigNormal<<_false 
+		_self.num_mod << 6
+		_self.altura <<  3
+				
+	_elif _self.plano="Distritos3"
+	_then
+		LcollAncho<<{2035,1745,1745,1745,1745,1745,1710}
+		LcollAlto<<{2745,2810,2770}
+		LbConfigNormal<<_false
+	_elif _self.plano="Itinerario1"
+	_then
+		LcollAncho<<{2040,1660,1750,1750,1750,1700}
+		LcollAlto<<{2745,2795,2745}
+		LbConfigNormal<<_false
+	_elif _self.plano="Itinerario2"
+	_then
+		LcollAncho<<{2040,1745,1745,1745,1745,1695}
+		LcollAlto<<{2745,2800,2745}
+		LbConfigNormal<<_false
+	_elif _self.plano="Itinerario3"
+	_then
+		LcollAncho<<{2035,1745,1745,1745,1745,1745,1710}
+		LcollAlto<<{2445,2810,2770}
+		LbConfigNormal<<_false
+	_elif _self.plano="Construccion1"
+	_then
+		LcollAncho<<{1950,1700,1700,1650}
+		LcollAlto<<{2670,2670}
+		LbConfigNormal<<_false
+	_elif _self.plano="Empalmes"
+	_then
+		LcollAncho<<{1950,1700,1700,1650}
+		LcollAlto<<{2670,2670}
+		LbConfigNormal<<_false
+	_elif _self.plano="Topologico1"
+	_then
+		LcollAncho<<{2040,1660,1750,1750,1750,1700}
+		LcollAlto<<{2745,2795,2745}
+		LbConfigNormal<<_false
+	_elif _self.plano="Topologico2"
+	_then
+		LcollAncho<<{2040,1745,1745,1745,1695}
+		LcollAlto<<{2745,2800,2745}
+		LbConfigNormal<<_false
+	_elif _self.plano="Topologico3"
+	_then
+		LcollAncho<<{2035,1745,1745,1745,1745,1745,1710}
+		LcollAlto<<{2745,2770,2745}
+		LbConfigNormal<<_false
+	_endif
+	
+	_if LbConfigNormal.not
+	_then
+		LnAncho<<0
+		_for LnMed _over LcollAncho.fast_elements()
+		_loop
+			LnAncho<<LnAncho+LnMed
+		_endloop
+		LnAlto<<0
+		_for LnMed _over LcollAlto.fast_elements()
+		_loop
+			LnAlto<<LnAlto+LnMed
+		_endloop
+		
+		_self.layout_page.set_paper_size(LnAncho+LnSangriaHorA , LnAlto+LnSangriaVerA)
+		
+		LoBounds << _self.layout_page.bounds
+		
+		_self.bounds<<bounding_box.new(LoBounds.xmin+LnSangriaHor,
+					     LoBounds.ymin+LnSangriaHor,
+					     LoBounds.xmax-LnSangriaHor,
+					     LoBounds.ymax-LnSangriaHor)
+
+		## Poner las marcas ANCHO
+		LnAncho<<150
+		_for LnMed _over LcollAncho.fast_elements()
+		_loop
+			LnAncho<<LnAncho+LnMed
+			
+			LoMarca<<sector.new()
+			LoMarca.add(coordinate(LnAncho,_self.bounds.ymax))
+			LoMarca.add(coordinate(LnAncho,_self.bounds.ymax-50)) # tenia 1 cm ahernan
+			LoMarca.draw_on(window,line_style.called(:blue))
+			LoMarca<<sector.new()
+			LoMarca.add(coordinate(LnAncho,_self.bounds.ymin))
+			LoMarca.add(coordinate(LnAncho,_self.bounds.ymin+50)) # tenia 1 cm ahernan
+			LoMarca.draw_on(window,line_style.called(:blue))
+		_endloop
+		## Poner las marcas ALTO
+		LnAlto<<150
+		_for LnMed _over LcollAlto.fast_elements()
+		_loop
+			LnAlto<<LnAlto+LnMed
+			LoMarca<<sector.new()
+			LoMarca.add(coordinate(_self.bounds.xmin,LnAlto))
+			LoMarca.add(coordinate(_self.bounds.xmin+50,LnAlto)) # tenia 1 cm
+			LoMarca.draw_on(window,line_style.called(:blue))
+			LoMarca<<sector.new()
+			LoMarca.add(coordinate(_self.bounds.xmax,LnAlto))
+			LoMarca.add(coordinate(_self.bounds.xmax-50,LnAlto))  # tenia 1 cm
+			LoMarca.draw_on(window,line_style.called(:blue))
+		_endloop
+
+
+		# (05/05/18 ahernan) : Se dibujan las esquinas del plano.		
+		_self.esquinas_plano(window)
+		
+		_return
+	_endif
+
+
+	
+	# Marco en base a paginas tamano carta.
+
+	_self.layout_page.set_paper_size(   _self.sello +  100 +   _self.num_mod * _self.modulo_width, 
+					    _self.altura * _self.modulo_height + 400 )
+	
+	bb << _self.layout_page.bounds
+	
+	bb1 << bounding_box.new(bb.xmin + _self.sello + 100 , bb.ymin + 100,bb.xmax - 100, bb.ymax - 300)
+	
+	_self.bounds << bb1
+	
+	
+	ancho << (bb1.xmax - bb1.xmin) / _self.num_mod
+
+		
+	_for i _over range(1,  _self.num_mod-1)
+	_loop
+		x << bb1.xmin + i * ancho
+		y1 << coordinate( x, bb1.ymin)
+		y2 << coordinate( x, y1.y + _self.longitud_vertical)
+		sec << sector.new_with ( y1, y2 )
+		sec.draw_on ( window, line_style.called(:blue))
+		y1 << coordinate( x, bb1.ymax)
+		y2 << coordinate( x, y1.y - _self.longitud_vertical)
+		sec << sector.new_with ( y1, y2 )
+		sec.draw_on ( window, line_style.called(:blue))
+	_endloop
+
+	_for i _over range(1,  _self.altura-1)
+	_loop
+		x << bb1.xmin
+		y1 << coordinate( x, bb1.ymin + (i * _self.modulo_height))
+		y2 << coordinate( x + 2 *_self.longitud_vertical , y1.y)
+		sec << sector.new_with ( y1, y2 )
+		sec.draw_on ( window, line_style.called(:red))
+
+		x << bb1.xmax
+		y1 << coordinate( x, bb1.ymin + (i * _self.modulo_height))
+		y2 << coordinate( x - 2 *_self.longitud_vertical , y1.y)
+		sec << sector.new_with ( y1, y2 )
+		sec.draw_on ( window, line_style.called(:red))
+		
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method marco_layout.esquinas_plano(window)
+	## 
+	##
+		
+		# Poner las esquinas del plano.  (Inferior izquierda) 
+		LoLinea<<sector.new()
+		LoP1 << coordinate(_self.bounds.xmin - 50,_self.bounds.ymin - 50)
+		LoP2 << coordinate(_self.bounds.xmin - 50,_self.bounds.ymin + 50)
+		LoP3 << coordinate(_self.bounds.xmin + 50,_self.bounds.ymin - 50)
+		LoLinea.add(LoP1)
+		LoLinea.add(LoP2)
+		LoLinea.draw_on(window,line_style.called(:blue))
+		
+		LoLinea<<sector.new()		
+		LoLinea.add(LoP1)
+		LoLinea.add(LoP3)
+		LoLinea.draw_on(window,line_style.called(:blue))
+
+		#-----------------------------------------------------
+		# Poner las esquinas del plano.  (Superior izquierda)
+		#-----------------------------------------------------
+		LoLinea<<sector.new()
+		LoP1 << coordinate(_self.bounds.xmin - 50,_self.bounds.ymax - 50)
+		LoP2 << coordinate(_self.bounds.xmin - 50,_self.bounds.ymax + 50)
+		LoLinea.add(LoP1)
+		LoLinea.add(LoP2)
+		LoLinea.draw_on(window,line_style.called(:blue))
+		LoLinea<<sector.new()		
+		LoLinea.add(LoP2)
+		LoP3 << coordinate(_self.bounds.xmin + 50,_self.bounds.ymax + 50)
+		LoLinea.add(LoP3)
+		LoLinea.draw_on(window,line_style.called(:blue))
+
+		# Poner las esquinas del plano.  (Superior derecha) 
+		LoLinea<<sector.new()
+		LoP1 << coordinate(_self.bounds.xmax + 50,_self.bounds.ymax + 50)
+		LoP2 << coordinate(_self.bounds.xmax - 50,_self.bounds.ymax + 50)
+		LoLinea.add(LoP1)
+		LoLinea.add(LoP2)
+		LoLinea.draw_on(window,line_style.called(:blue))
+		LoLinea<<sector.new()		
+		LoLinea.add(LoP1)
+		LoP3 << coordinate(_self.bounds.xmax + 50,_self.bounds.ymax - 50)
+		LoLinea.add(LoP3)
+		LoLinea.draw_on(window,line_style.called(:blue))
+
+		# Poner las esquinas del plano.  (Inferior derecha) 
+		LoLinea<<sector.new()
+		LoP1 << coordinate(_self.bounds.xmax + 50,_self.bounds.ymin - 50)
+		LoP2 << coordinate(_self.bounds.xmax - 50,_self.bounds.ymin - 50)
+		LoLinea.add(LoP1)
+		LoLinea.add(LoP2)
+		LoLinea.draw_on(window,line_style.called(:blue))
+		LoLinea<<sector.new()		
+		LoLinea.add(LoP1)
+		LoP3 << coordinate(_self.bounds.xmax + 50,_self.bounds.ymin + 50)
+		LoLinea.add(LoP3)
+		LoLinea.draw_on(window,line_style.called(:blue))
+	
+_endmethod
+$
+

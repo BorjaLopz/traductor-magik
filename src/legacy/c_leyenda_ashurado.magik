@@ -1,0 +1,328 @@
+#----------------------------------------------------------------
+# c_leuenda_ashurado.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: jtlelo
+#
+# Date: 05/12/23
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+# remex(:c_leyenda_ashurado)
+$ 
+def_slotted_exemplar (:c_leyenda_ashurado,
+                       {{:limites, _unset ,:writable, :public},
+			{:oFlag, _false,:writable,:private}},
+                        {:layout_element, :viewport_layout_mixin})
+$
+c_leyenda_ashurado.define_shared_constant(:activate_properties_dialog_on_insert?,
+						 _false,
+		 				 :public)
+$
+c_leyenda_ashurado.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_leyenda_ashurado.defined_attributes
+# Objetivo: Definir los atributos de la clase que seran
+#           visualizados en el cuadro de dialogo de las propiedades de
+#           la clase.
+# Parametros de Entrada: Ninguno.
+# Parametros de Salida: Ninguno
+# Regresa: La definicio de los atributos.
+#   attribs: Definicion de los atributos.
+# Fecha de ultima modificacion: 26/Dic/2005.
+# Autor de la modificacion: jtlelo.
+# Descripcion de la modificacion: Metodo nuevo.
+
+_local LcollAtributos
+	## Atributos basicos de la clase.
+	LcollAtributos << rope.new_from( _super.defined_attributes)
+
+	## Atributos basicos de la clase correspondientes a un viewport.
+	LcollAtributos.add ( _self.viewport_attribute_definition )
+
+	LcollAtributos.add ( layout_attribute_definition.new (:Tamano, :string,
+							      :description, "Norte",
+							      :default_value, "A",
+							      :allowed_on_properties_page?, _true,
+							      :enum_method, :tamano_norte,
+							      :editor, _unset))
+	
+
+	>> LcollAtributos
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_leyenda_ashurado.tamano_norte
+	## 
+	## 
+## Objetivo: Regresar un arreglo con los  valores "Si, "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasTipoPlano
+## Fecha de ultima modificacion: 26/12/2005
+## Autor de la modificacion: jtlelo
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasTipoPlano    ##Arreglo con los valores para los diferentes marcos.
+	LasTipoPlano<<rope.new()
+	## Agrega valores para identificar los tamanos del norte.
+	LasTipoPlano.add("A")
+	LasTipoPlano.add("B")
+	LasTipoPlano.add("C")
+	>> LasTipoPlano
+_endmethod
+$
+c_leyenda_ashurado.define_attributes ()
+$
+_method c_leyenda_ashurado.depends_on?(another)
+# Objetivo: Indica si hay dependencia entre el simbolo y another.
+# Parametros de Entrada:
+#     another: 
+# Parametros de Salida: Ninguno
+# Regresa: _false o _true
+# Fecha de ultima modificacion: 26/Dic./2005
+# Autor de la modificacion: jtlelo
+# Descripcion de la modificacion: Metodo nuevo.
+	>> _super(viewport_layout_mixin).depends_on?(another)
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_leyenda_ashurado.update_references ( reference_table )
+# Objetivo: Actualizar las referecias con el viewport.
+# Parametros de Entrada:
+#     reference_table: Tabla de referencias.
+# Parametros de Salida: Ninguno
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 26/Dic/2005
+# Autor de la modificacion: jtlelo
+# Descripcion de la modificacion: Metodo nuevo.
+	# 
+	# Conflict resolver method calls viewport_layout_mixin
+	_super(viewport_layout_mixin).update_references ( reference_table )
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_leyenda_ashurado.initialise_for_page(a_layout_page)
+	## 
+	##
+	# Objetivo: Actualizar las referecias con el viewport.
+	# Parametros de Entrada:
+	#     reference_table: Tabla de referencias.
+	# Parametros de Salida: Ninguno
+	# Regresa: Ninguno.
+	# Fecha de ultima modificacion: 26/12/2005
+	# Autor de la modificacion: jtlelo.
+	# Descripcion de la modificacion: Metodo nuevo.
+	_self.outline_style<<_unset
+	_self.set_fill_colour(_unset)
+	.oFlag<<_false
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_leyenda_ashurado.construir_arco(PnRadio,PoCentro,PnAngIni,PnAngFin)
+	## 
+	##  
+	Lcollsector<<sector.new()
+	_for LnAng _over PnAngIni.upto(PnAngFin)
+	_loop 
+		LnX << PoCentro.x+PnRadio * cos(LnAng.degrees_to_radians) 
+		LnY << PoCentro.y+PnRadio * sin(LnAng.degrees_to_radians)	  
+		Lcollsector.add(coordinate(LnX,LnY))	  
+	_endloop
+	_return  Lcollsector
+_endmethod
+$
+
+
+
+_pragma(classify_level=restricted)
+_method c_leyenda_ashurado.construir_leyenda(window)
+	## 
+	##
+
+_local LcollSectores<<sector_rope.new()
+_local PoSecRop 
+_local Lcollsector
+_local LoBound
+
+      cordy << 0 
+      _for cont _over 1.upto(3) 
+      _loop
+	      cordy << cordy + 250
+	      _self.bounds << bounding_box.new(8000,
+					       2000-cordy,
+					       8000,
+					       2000-cordy)
+	      
+	      # Linea Horizontal abajo
+	      PoSecRop << sector_rope.new()
+	      Lcollsector<<sector.new()
+	      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y))
+	      Lcollsector.add(Lcollsector.last_coord+coordinate(150,0))
+	      PoSecRop.add(Lcollsector)
+	      
+	      # Linea vertical derecha
+	      Lcollsector<<sector.new()
+	      Lcollsector.add(coordinate(_self.bounds.centre.x+150,_self.bounds.centre.y+150))
+	      Lcollsector.add(Lcollsector.last_coord-coordinate(0,150))
+	      PoSecRop.add(Lcollsector)
+	      
+	      # Linea vertical Izquierda
+	      Lcollsector<<sector.new()
+	      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y))
+	      Lcollsector.add(Lcollsector.last_coord+coordinate(0,150))
+	      PoSecRop.add(Lcollsector)
+	      
+	      # Linea horizontal arriba
+	      Lcollsector<<sector.new()
+	      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+150))
+	      Lcollsector.add(Lcollsector.last_coord+coordinate(150,0))
+	      PoSecRop.add(Lcollsector)
+	      
+	      PoSecRop.draw_on(window,line_style.new(colour.called(:black),3))
+	      
+	      ######################################################################################################
+	      # diagonal derecha
+	      _if cont = 1 _or cont = 2
+	      _then
+		      PoSecRop << sector_rope.new()
+		      
+		      Lcollsector << sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(150,150))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector << sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+25,_self.bounds.centre.y))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(125,125))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+50,_self.bounds.centre.y))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(100,100))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+75,_self.bounds.centre.y))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(75,75))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+100,_self.bounds.centre.y))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(50,50))
+		      PoSecRop.add(Lcollsector)
+
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+125,_self.bounds.centre.y))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(25,25))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+25))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(125,125))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+50))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(100,100))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+75))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(75,75))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+100))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(50,50))
+		      PoSecRop.add(Lcollsector)
+
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+125))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(25,25))
+		      PoSecRop.add(Lcollsector)
+		      
+		      PoSecRop.draw_on(window,line_style.new(colour.called(:red),2))
+		      
+	      _endif 
+		      #################################################################################################################
+	      
+	      # diagonal izquierda
+	      _if cont = 1 _or cont = 3
+	      _then
+		      PoSecRop << sector_rope.new()
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+150))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(150,-150))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+125))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(125,-125))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+100))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(100,-100))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+75))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(75,-75))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+50))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(50,-50))
+		      PoSecRop.add(Lcollsector)
+
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x,_self.bounds.centre.y+25))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(25,-25))
+		      PoSecRop.add(Lcollsector)
+       
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+25,_self.bounds.centre.y+150))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(125,-125))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+50,_self.bounds.centre.y+150))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(100,-100))
+		      PoSecRop.add(Lcollsector)
+		      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+75,_self.bounds.centre.y+150))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(75,-75))
+		      PoSecRop.add(Lcollsector)
+	      
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+100,_self.bounds.centre.y+150))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(50,-50))
+		      PoSecRop.add(Lcollsector)
+
+		      Lcollsector<<sector.new()
+		      Lcollsector.add(coordinate(_self.bounds.centre.x+125,_self.bounds.centre.y+150))
+		      Lcollsector.add(Lcollsector.last_coord+coordinate(25,-25))
+		      PoSecRop.add(Lcollsector)
+		      
+		      PoSecRop.draw_on(window,line_style.new(colour.called(:green),2))
+	      _endif 
+      _endloop    
+       	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_leyenda_ashurado.draw_content_on(window)
+	## 
+	##
+
+	_self.construir_leyenda(window) 
+
+_endmethod 
+$

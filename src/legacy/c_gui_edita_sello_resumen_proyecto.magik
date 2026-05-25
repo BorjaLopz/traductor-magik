@@ -1,0 +1,165 @@
+# Empresa: Sigmtao Software s.a. de c.v.
+# Comentarios: Creacion de clase: c_gui_edita_sello_resumen_proyecto
+#              para personalizacion del sello Resumen del proyecto,
+#              para que sea posible la Edicion del su contenido.
+#--------------------------------------------------------------
+$
+_package user
+$
+remex(:c_gui_edita_sello_resumen_proyecto) 
+$
+def_slotted_exemplar(:c_gui_edita_sello_resumen_proyecto,
+{
+        {:oVentana, _unset }, 
+	{:oMarco, _unset },
+	{:oPanel, _unset, :writable, :public},
+	{:LoLayout_Designer, _unset},
+	{:LoLayout_Manager, _unset},     
+	{:LoDocumentManager, _unset },
+	{:LoCurrentDoc, _unset },
+	{:LoSello, _unset },
+	{:LoCurrentPage1, _unset },
+	{:oAplicacion, _unset},
+	{:oBoton_escribe, _unset, :writable, :public},
+	{:oBoton_salir, _unset, :writable, :public}
+},  :model)
+$
+# Acceso a los pseudoslots.
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:oVentana, :writable, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:oMarco, :writable, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:LoLayout_Designer, :writable, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:LoLayout_Manager,  :writable, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:LoDocumentManager, :writable, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:LoCurrentDoc, :writable, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:LoCurrentPage1, :writable, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:oAplicacion, :writable, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_shared_variable(:edita_sello_resumen_proy_aux, _unset, :public)
+$
+c_gui_edita_sello_resumen_proyecto.define_slot_access(:LoSello, :writable, :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_gui_edita_sello_resumen_proyecto.new()
+	## Objetivo: se crea el constructor de la clase.
+	_return _clone.init() 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_gui_edita_sello_resumen_proyecto.init()
+   ## Objetivo: se inicializa la clase con sus propiedades.
+ .oMarco << frame.new("Text window")  
+ .oPanel   << panel.new( .oMarco)  
+ .oPanel.start_row()     
+ .oVentana << text_window.new( .oPanel, 33, 110, agent, :editable?, _true ) 
+
+ .oPanel.start_row()
+ .oPanel.start_row()
+ 
+ .oBoton_escribe <<button_item.new( .oPanel,"Escribe Texto al Sello ", _self,:escribe_texto_al_sello)
+ .oBoton_salir << button_item.new( .oPanel,"Cancelar ", _self, :salir)
+ .oPanel.start_row()
+ .oPanel.start_row()
+ .oAplicacion << smallworld_product.pni_application()  
+ .LoLayout_Designer  <<  .oAplicacion.plugin( :layout_plugin).layout_designer 
+ .LoLayout_Manager <<  .LoLayout_Designer.plugin(:layout_manager) 
+
+ _self.edita_sello_resumen_proy_aux << _self
+
+ _return _self
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable}) 
+_method c_gui_edita_sello_resumen_proyecto.abre_ventana
+  ## Objetivo: Activar la interfaz grafica donde se contiene la
+  ## informacion del sello.
+  
+  _if .oMarco _isnt _unset 
+  _then 
+     .oMarco.title << "Personalizacion del Sello"     
+     .oMarco.width << 550
+     .oMarco.height << 500
+     .oMarco.activate()
+  _endif
+  
+  _self.escribe_texto_sello_a_ventana 
+  _self.edita_sello_resumen_proy_aux << _self
+
+   _return _self 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_gui_edita_sello_resumen_proyecto.escribe_texto_sello_a_ventana
+  ## Objetivo: Se envia la información del sello hacia la ventana
+	
+  #.LoSello <<  _self.obten_sello(:c_resumen_proyecto)
+
+  
+ _if .LoSello _isnt _unset _andif
+     .oVentana _isnt _unset 
+ _then
+
+  .oVentana.contents <<	.LoSello.oTablas.elemento(:tbl_resumen_proyecto).oCeldas.Celda(2,1).oElemento.sTexto
+ 
+ _endif  
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_gui_edita_sello_resumen_proyecto.escribe_texto_al_sello
+  ## Objetivo: Escribe el contenido del texto hacia el sello.
+  LoTexto << .oVentana.contents 
+  #.LoSello <<  _self.obten_sello(:c_resumen_proyecto)
+  
+  #Se asigna a la variable compartida el
+  #contenido de la ventana con la finalidad de no perder los datos
+  .LoSello.contenido_sello << .oVentana.contents.uppercase
+  .LoLayout_Manager.action( :layout_view_refresh).execute_action() 
+  
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_gui_edita_sello_resumen_proyecto.obten_sello(Potipo_sello)
+  ## Objetivo.- Obtener el sello Secuencia de Trabajo.
+ .LoLayout_Designer << smallworld_product.pni_application().plugin(:layout_plugin).start_layout_designer()
+ .LoDocumentManager << .LoLayout_Designer.sys!slot(:components)[:document_manager]
+ .LoCurrentDoc << .LoDocumentManager.current_document.sys!slot(:document)
+ .LoCurrentPage1 << .LoCurrentDoc.sys!slot(:pages)[1]
+ 
+ _for elemento _over .LoCurrentPage1.sys!slot(:elements).fast_elements()
+ _loop
+   _if elemento.class_name.write_string =  Potipo_sello.write_string 
+   _then
+      _return elemento
+   _endif
+ _endloop
+ 
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_gui_edita_sello_resumen_proyecto.show_edit_controls()
+    ##  Objetivo: Se muestran los controles de edicion.
+    _return 
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_gui_edita_sello_resumen_proyecto.note_change(who,what)
+	## Objetivo: metodo en el cual se informa si hubo algun cambio.
+	_return {who,what}
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_gui_edita_sello_resumen_proyecto.salir
+  ## Objetivo: Salir de la Interfaz y cerrar la ventana de
+  ## edicion del sello.   
+  _self.oMarco.deactivate()
+  
+_endmethod
+$

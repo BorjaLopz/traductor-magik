@@ -1,0 +1,126 @@
+Clase Magik: c_style_y_viewport_layout
+Hereda de: layout_element, style_element_mixin, viewport_layout_mixin
+Archivo fuente: src/legacy/c_style_y_viewport_layout.magik
+Archivo migrado: src/migration/CStyleYViewportLayout.tsx
+
+=============================================================================
+PROPÓSITO
+=============================================================================
+Elemento de layout que combina un estilo gráfico (symbol/figura) con un
+viewport. Dibuja una figura predefinida (fig_uno..fig_seis) en la posición
+de un objeto GIS (identificado por nIdObjRel), con línea de señalamiento
+y punta de flecha opcionales.
+
+Puede orientarse según el ángulo del viewport (usaViewport='Si') o usar
+el ángulo fijo del atributo 'angulo'. Dibuja a derecha o izquierda según
+el atributo 'derecho'.
+
+=============================================================================
+SLOTS → PROPIEDADES TS
+=============================================================================
+LoObjRel       → loObjRel: unknown | null   (lista de objetos relacionados)
+oVp            → oVp: unknown | null         (viewport asociado)
+
+=============================================================================
+ATRIBUTOS DE LAYOUT (defined_attributes)
+=============================================================================
+figure_name       string   ''     nombre del estilo a buscar en ESTILOS
+symbol_colour     colour   null   color del símbolo
+angulo            integer  0      ángulo del objeto (grados)
+usa_viewport      string   'No'   enum: Si/No — usa ángulo del viewport
+con_linea         string   'No'   enum: Si/No — dibuja línea de señalamiento
+con_punta         string   'No'   enum: Si/No — dibuja punta de flecha
+derecho           string   'Si'   enum: Si/No — dibuja a la derecha
+nIdObjRel         integer  0      id del objeto al que apunta
+LyCampoGeoObjRel  string   ''     campo geométrico del objeto apuntado
+
+=============================================================================
+TIPOS DE FIGURA (TipoFigura)
+=============================================================================
+fig_uno    — etiqueta simple con 4 líneas de texto (diamond shape)
+fig_dos_a  — pozo con círculo: 6 datos (nombre, tipo, dimensión, modelo,
+             distancia, nco). Incluye círculo negro en la cabeza.
+fig_dos_b  — pozo alto (similar a fig_dos_a, más alto). No migrado completamente.
+fig_tres   — grid de círculos (no migrado).
+fig_cuatro — tabla de distrito (no migrado).
+fig_cinco  — canal en forma de flecha (izquierda o derecha según 'derecho').
+fig_seis   — texto simple (un dato).
+
+=============================================================================
+MÉTODOS → FUNCIONES TS
+=============================================================================
+
+defined_attributes()
+  → constante DEFINED_ATTRIBUTES (array de objetos, 9 entradas)
+
+val_falso_verdadero()
+  → constante VAL_SI_NO: SiNo[] = ['Si', 'No']
+
+depends_on?(another)
+  → dependsOn(_another: unknown): boolean
+  Delega a viewport_layout_mixin (retorna false en mock).
+
+initialise_for_page(a_layout_page)
+  → initializeForPage(): void
+  Llama connect_to_viewport_on_page (placeholder en TS).
+
+update_references(reference_table)
+  → updateReferences(referenceTable): void
+  Delega a super viewport_layout_mixin.
+
+crea_figura(PsEstilo, PsNombreParaEstilo, *datos)
+  → creaFigura(tipo, nombre, datos): FiguraDefinicion
+  Construye array de FiguraPrimitive según el tipo de figura.
+  Las coordenadas Magik (mm aprox.) se escalan ×10 para SVG.
+
+draw_content_on(window)
+  → drawContentOn(estilos: Map<string, FiguraDefinicion>): { figura, angulo, completo }
+  Busca el estilo por figureName, aplica ángulo en radianes.
+  En Magik también llama draw_style y dibuja en ventana; en TS retorna
+  los datos de render para consumo del componente React.
+
+=============================================================================
+DECISIONES DE DISEÑO
+=============================================================================
+
+FiguraPrimitive como discriminated union:
+  'area'   → polyline SVG (polígono abierto con fill/stroke)
+  'circle' → circle SVG
+  'text'   → text SVG
+  Permite renderizado genérico sin saber el tipo de figura.
+
+creaFigura() — escala SCALE=10:
+  Las coordenadas en Magik están en mm×10 aprox. Se multiplican ×10
+  para SVG pixel-space. El helper xy() convierte pares x,y a [number,number][].
+
+Atributo ACTIVATE_PROPERTIES_DIALOG_ON_INSERT = false y ALLOWED_ON_MENU = false:
+  Fidelidad al Magik original (el elemento no aparece en menú).
+
+Cross-viewport (usaViewport='Si'):
+  En Magik obtiene el ángulo de oVp.angle. En TS oVp es unknown;
+  el ángulo del viewport debe pasarse externamente al componente.
+
+fig_dos_b, fig_tres, fig_cuatro no implementados:
+  El Magik original no los define completos en este archivo;
+  creaFigura() devuelve [] para esos tipos (default case).
+
+=============================================================================
+DEPENDENCIAS
+=============================================================================
+- React 18 (useState)
+- No requiere turf ni OL — renderizado en SVG puro
+
+=============================================================================
+ESTADO DE MIGRACIÓN
+=============================================================================
+[x] defined_attributes
+[x] val_falso_verdadero
+[x] depends_on?
+[x] initialise_for_page
+[x] update_references
+[x] crea_figura (fig_uno, fig_dos_a, fig_cinco, fig_seis)
+[x] draw_content_on (lógica de negocio)
+[ ] fig_dos_b — no definido en Magik original
+[ ] fig_tres, fig_cuatro — no definidos en Magik original
+[ ] Integración con viewport_layout_mixin real (oVp ángulo)
+[ ] Integración con estilo GIS real (predicate.eq :id nIdObjRel)

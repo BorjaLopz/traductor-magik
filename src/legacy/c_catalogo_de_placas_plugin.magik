@@ -1,0 +1,228 @@
+#----------------------------------------------------------------
+# Nombre de la Empresa: Sigma Tao Software, S.A. de C.V.
+# Traza: 
+# Objetivo: 
+# Autor: lgranados
+# Fecha de creación: 09/12/2010
+# -----------------------------
+
+_package user
+$
+remex(:c_catalogo_de_placas_plugin)
+$
+def_slotted_exemplar(:c_catalogo_de_placas_plugin,
+{
+},
+:plugin)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.init_actions()
+	# Objetivo: 
+	# Parámetros de entrada: n/a
+	# Parámetros de salida: n/a
+	# Regresa: n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :n/a
+
+	_self.add_action(sw_action.new(:catalogo_de_placas,
+				       :engine, _self,
+				       :image,{:catalogo_de_placas, _self.module_name},
+				       :tooltip,_self.message("Catálogo de Placas"),
+				       :enabled?, _true))
+	
+	_self.add_action(sw_action.new(:genera_placa_principales,
+				       :engine, _self,
+				       :image,{:placa_principales, _self.module_name},
+				       :action_message,:genera_placa_principales|()|,
+				       :enabled?, _true))
+	
+	_self.add_action(sw_action.new(:genera_placa_secundarios,
+				       :engine, _self,
+				       :image,{:placa_secundarios, _self.module_name},
+				       :action_message,:genera_placa_secundarios|()|,
+				       :enabled?, _true))
+
+	_self.add_action(sw_action.new(:genera_placa_troncal_zonal,
+				       :engine, _self,
+				       :image,{:placa_troncal_zonal, _self.module_name},
+				       :action_message,:genera_placa_troncal_zonal|()|,
+				       :enabled?, _true))
+
+	_self.add_action(sw_action.new(:genera_placa_rda_rof,
+				       :engine, _self,
+				       :image,{:placa_rda_rof, _self.module_name},
+				       :action_message,:genera_placa_rda_rof|()|,
+				       :enabled?, _true))
+
+	_self.add_action(sw_action.new(:genera_placa_troncal,
+				       :engine, _self,
+				       :image,{:placa_troncal, _self.module_name},
+				       :action_message,:genera_placa_troncal|()|,
+				       :enabled?, _true))
+
+	_self.add_action(sw_action.new(:genera_placa_larga_distancia,
+				       :engine, _self,
+				       :image,{:placa_larga_distancia, _self.module_name},
+				       :action_message,:genera_placa_larga_distancia|()|,
+				       :enabled?, _true))
+
+	_self.add_action(sw_action.new(:genera_placa_banda_ancha,
+				       :engine, _self,
+				       :image,{:placa_banda_ancha, _self.module_name},
+				       :action_message,:genera_placa_banda_ancha|()|,
+				       :enabled?, _true))
+	
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.manage_actions(_optional PbActivar?)
+	# Objetivo: manejar la disponibilidad de las actions.
+	# Parámetros de entrada:
+	# Parámetros de salida:
+	#   PbActivar? - sirve para saber si las actions deben o no
+	# estar disponibles.
+	# Regresa: n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación : n/a 
+
+	_self.action(:genera_placa_principales).enabled?<< PbActivar?	 
+	_self.action(:genera_placa_secundarios).enabled?<< PbActivar?	 
+	_self.action(:genera_placa_troncal_zonal).enabled?<< PbActivar?
+	_self.action(:genera_placa_rda_rof).enabled?<< PbActivar?
+	_self.action(:genera_placa_troncal).enabled?<< PbActivar?
+	_self.action(:genera_placa_larga_distancia).enabled?<< PbActivar?
+	_self.action(:genera_placa_banda_ancha).enabled?<< PbActivar?	 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.genera_placa_principales()
+	# Objetivo: 
+	# Parámetros de entrada: n/a
+	# Parámetros de salida: n/a
+	# Regresa: n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :	n/a
+
+	LoPage << _self.obtiene_pagina()
+	LoSello << c_placa_principales.new_with(:bounds,bounding_box.new(750, 900,450,1250 ))
+	LoPage.add_element(LoSello)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.genera_placa_secundarios()
+	# Objetivo: 
+	# Parámetros de entrada: n/a
+	# Parámetros de salida: n/a
+	# Regresa: n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :	n/a
+	
+	LoPage << _self.obtiene_pagina()
+ 	LoSello << c_placa_secundarios.new_with(:bounds, bounding_box.new(600,900,450,1250 ))
+	LoPage.add_element(LoSello)
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.genera_placa_troncal_zonal()
+	# Objetivo: 
+	# Parámetros de entrada:n/a
+	# Parámetros de salida:n/a
+	# Regresa:n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :	 n/a
+
+	LoPage << _self.obtiene_pagina()
+ 	LoSello << c_placa_troncal_zonal.new_with(:bounds, bounding_box.new(500,900,450,1250))
+	LoPage.add_element(LoSello)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.genera_placa_rda_rof()
+	# Objetivo: 
+	# Parámetros de entrada:n/a
+	# Parámetros de salida:n/a
+	# Regresa:n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :	 n/a
+
+	LoPage << _self.obtiene_pagina()
+	LoSello << c_placa_rda_rof.new_with(:bounds, bounding_box.new(400,900,450,1250 ))
+	LoPage.add_element(LoSello)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.genera_placa_troncal()
+	# Objetivo: 
+	# Parámetros de entrada:n/a
+	# Parámetros de salida:n/a
+	# Regresa:n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :	 n/a
+
+	LoPage << _self.obtiene_pagina()
+	LoSello << c_placa_troncal.new_with(:bounds, bounding_box.new(300,900,450,1250 ))
+	LoPage.add_element(LoSello)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.genera_placa_larga_distancia()
+	# Objetivo: 
+	# Parámetros de entrada:n/a
+	# Parámetros de salida:n/a
+	# Regresa:n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :	 n/a
+	
+	LoPage << _self.obtiene_pagina()
+ 	LoSello << c_placa_larga_distancia.new_with(:bounds, bounding_box.new(200,900,450,1250 ))
+	LoPage.add_element(LoSello)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.genera_placa_banda_ancha()
+	# Objetivo: 
+	# Parámetros de entrada:n/a
+	# Parámetros de salida:n/a
+	# Regresa:n/a
+	# Fecha de última modificación : n/a
+	# Autor de la modificación: n/a
+	# Descripción de la modificación :	 n/a
+	
+	LoPage << _self.obtiene_pagina()
+	LoSello << c_placa_banda_ancha.new_with(:bounds, bounding_box.new(100,900,450,1250 ))
+	LoPage.add_element(LoSello)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_catalogo_de_placas_plugin.obtiene_pagina()
+	## 
+	## 
+	LoLayoutPlugin    << smallworld_product.pni_application().plugin(:layout_plugin)
+	LoLayoutDesigner  << LoLayoutPlugin.start_layout_designer()
+	LoLayoutManager   << LoLayoutDesigner.plugin(:layout_manager)
+	LoViewMapperPlugin<<LoLayoutDesigner.plugin(:viewport_mapper)
+	LoDoc  << LoLayoutManager.current_document
+	LoPage << LoLayoutManager.current_page
+	_return Lopage
+	
+_endmethod
+$

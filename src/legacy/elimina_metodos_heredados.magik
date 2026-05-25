@@ -1,0 +1,30 @@
+_package user
+$
+LoClasesPorAnalizar << rope.new_with(c_vp_croquis_edificio,
+				     c_sello_dist_de_ter_a_cd,
+				     c_sello_competencia_telmex,
+				     c_vp_plano_construccion_interno,
+				     c_vp_cobre)
+$
+LoMetodosPorBorrar << rope.new_with(:cedos,				    
+				    :elementos_modificados|<<|,
+				    :elementos_modificados,
+				    :agregar_cedos,				    
+				    :agregar_cedos|<<|,
+				    :cedos|<<|,
+				    :elementos_bd_lb|<<|,
+				    :elementos_bd_lb,
+				    :elementos_bd_gis,				    
+				    :elementos_bd_gis|<<|)
+$
+# Iteramos sobre todas las clase a analizar
+_for LoClase _over LoClasesPorAnalizar.fast_elements()
+_loop
+	# Iteramos sobre el listado de metodos a borrar por cada clase
+	_for LoMetodo _over LoMetodosPorBorrar.fast_elements()
+	_loop
+		# Borramos el metodo heredado
+		LoClase.remove_method(LoMetodo)
+	_endloop	
+_endloop
+$

@@ -1,0 +1,932 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Genera la tabla de Resumen de Proyecto
+# Autor: fadiaz
+# Fecha de creacion: 2-Marzo-2004
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#
+# Reviso.
+# Alto : 26 cm 
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_resumen_proyecto)
+
+$
+def_slotted_exemplar(:c_resumen_proyecto,
+                     {
+			    {:otablas,         _unset},
+			    {:oCoordOrigen,  _unset}, #Coord donde inicia el sello
+	    		    {:oWindow,       _unset}, #Ventana o canvas en el que se desplegara el sello
+	     		    {:bTablas_Creadas, _false}  # Indica si las tabals ya fueron creadas
+
+		     },
+		      :layout_element 
+)
+$
+c_resumen_proyecto.define_shared_constant(:allowed_on_menu?,_false  ,:public)
+$
+c_resumen_proyecto.define_slot_access(:oCoordOrigen,    :writable, :public)
+c_resumen_proyecto.define_slot_access(:oTablas,         :writable, :public)
+c_resumen_proyecto.define_slot_access(:bTablas_creadas, :writable, :public)
+c_resumen_proyecto.define_slot_access(:oWindow,         :writable, :public)
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto.defined_attributes
+	## 
+	##
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	>> attribs
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+c_resumen_proyecto.define_attributes()
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto.draw_content_on(window)
+
+## Objetivo: Mandar hacer el dibujo del sello e inicializar el
+## contenido del sello con lo que tienen los atributos 
+## Parámetros de entrada:
+## 	canvas - window - LIenzo en el cual se realiza el dibujo
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 2/ Marzo /2005
+## Autor de la modificación : FADD
+## Descripción de la modificación:
+##   02/03/05 FAD Se creo la clase
+
+	_self.oWindow << window
+	
+	_if _self.bTablas_creadas = _false 
+	_then
+	   _self.inicializa(coordinate.new(0,0))	
+	_endif
+
+	
+	 _self.oTablas.Despliega(window)	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto.inicializa(_optional RoCoord)
+
+## Objetivo: Se inicializan el area, coordenada origen, Crea y configura
+##      cada una de las tablas
+## Parámetros de entrada:
+## 	coordinate - RoCord - Coordenada donde de desplegara el sello
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó	
+
+	#-----------------------------------------------------------
+	#Se Inicializa la coordenada de origen
+	#-----------------------------------------------------------
+
+	_self.set_fill_colour(_unset)
+	
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord
+	
+	# sepasa como parametro el layout
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	#Crea y configura cada una de las tablas 
+	_self.prvCreaCfgTablas(RoCoord)
+
+	#Se conoce el area de la tabla dibujada
+        LoArea << _self.oTablas.area_total()
+
+	#Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+
+	#Crea a los objetos que tendra c/u de las tablas
+	_self.prvLlenaCeldas()
+
+	#-----------------------------------------------------------
+	#Se inicializan los datos a mostrar
+	#-----------------------------------------------------------
+	
+	#_self.Dist_Distrito << 49
+
+	#_self.Dist_Tipo << "SIECOR 14131"
+
+		
+	#Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_resumen_proyecto.prvCreaCfgTablas(RoCoord)
+
+## Objetivo: Se crean y configuran las tablas que forman el sello
+## Parámetros de entrada:
+## 	coordinate - RoCord - Coordenada donde de desplegara el sello
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó	
+
+	#-----------------------------------------------------------
+	#Se crean las tablas que conforman los titulos
+	#-----------------------------------------------------------
+	_self.PrvCreaCfgTbl_sello_resumen_proyecto(RoCoord)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_resumen_proyecto.prvLlenaCeldas()
+
+## Objetivo: Se colocan todos los textos fijos de las tablas
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó	
+	
+	#-----------------------------------------------------------
+	#Se simula el llenado de datos..
+	#-----------------------------------------------------------
+	_self.prvLlenaEtiquetas()
+
+	#-----------------------------------------------------------
+	#Se colocan los simbolos y sus etiquetas
+	#-----------------------------------------------------------
+	_self.prvLlenaSimb_Col1()
+
+	#-----------------------------------------------------------
+	#Se colocan los simbolos y sus etiquetas
+	#-----------------------------------------------------------
+	_self.prvLlenaSimb_Col2()
+
+		#-----------------------------------------------------------
+	#Se colocan los simbolos y sus etiquetas
+	#-----------------------------------------------------------
+	_self.prvLlenaSimb_Col3()
+
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_resumen_proyecto.AsignaCelda2(RoTabla, RnRenglon, RnColumna ,RoValor, _optional RnTamanio)
+
+## Objetivo: Asignar un valor a una celda de una tabla determinada
+## Parámetros de entrada:
+##      RoTabla - Tabla a la cual se le asignara los valores
+##      RoRenglon - numero del renglon en el cual se insertaran el valor
+##      RnColumna - numero de la columna en la cual se insertaran el valor
+## 	RoValor - Valor que van en el renglo/columna
+##      RnTamanio - Tamaño del tipo de letra
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 3/03/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documento
+
+	_if RnTamanio _is unset
+	_then
+		RnTamanio << 25
+	_endif
+	
+_if _self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento _is unset
+_then
+	_local LoDato; #Objeto del tipo c_texto_grafico que se agregara a una celda
+	
+	##Por el momento se considera que el objeto RoValor contiene
+	## una cadena
+	LoDato  << c_texto_grafico.new(RoValor.write_string)
+	
+	LoDato.nTamanio << RnTamanio
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento << LoDato
+_else
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento.sTexto << RoValor.write_string
+_endif	  
+
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_resumen_proyecto.AsignaCelda2(RoTabla, RnRenglon, RnColumna ,RoValor, RnTamanio, RsColor, _optional RsAlineacion)
+
+## Objetivo: Asignar los valores de una coleccion a un renglon determinado
+## Parámetros de entrada:
+##      RoTabla - Tabla a la cual se le asignara los valores
+##      RoRenglon - numero del renglon en el cual se insertaran los valores
+##      RnColumna - numero de la columna en la cual se insertaran el valor
+## 	RoValor - Valor que van en el renglo/columna
+##      RnTamanio - Tamaño del tipo de letra
+##      RsColor - Color del tipo de letra
+##      RsAlineacion - Alineacion del tipo de letra
+## Parámetros de salida: NA
+## Regresa: NA
+## Fecha de última modificación: 24/02/2005
+## Autor de la modificación : fadd
+## Descripción de la modificación: Se documento
+
+	_if RnTamanio _is unset
+	_then
+		RnTamanio << 25
+	_endif
+
+	_if RsColor _is unset
+	_then
+		RsColor << "Black"
+	_endif
+
+	_if RsAlineacion _is _unset 
+	_then
+	     RsAlineacion << :centre_centre
+	_endif
+
+	
+_if _self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento _is unset
+_then
+	_local LoDato; #Objeto del tipo c_texto_grafico que se agregara a una celda
+	
+	##Por el momento se considera que el objeto RoValor contiene
+	## una cadena
+	LoDato  << c_texto_grafico.new(RoValor.write_string)
+	
+	LoDato.nTamanio << RnTamanio
+	LoDato.sColor << RsColor
+	LoDato.sAlineacion << RsAlineacion
+	
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento << LoDato
+_else
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento.sTexto << RoValor.write_string
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento.sColor << RsColor.write_string
+	_self.oTablas.elemento(RoTabla.as_symbol()).oCeldas.Celda(RnRenglon,RnColumna).oElemento.nTamanio << RnTamanio
+_endif	  
+
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_resumen_proyecto.PrvCreaCfgTbl_sello_resumen_proyecto(RoCoord)
+
+## Objetivo: Se crean y configuran las tablas que forman el sello
+## Parámetros de entrada:  
+## 	coordinate - RoCord - Coordenada donde de desplegara el sello
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó	
+	
+	_local LoTabla      #Obejeto c_tabla de la tabla a crear
+	_local LnRenglones  #Numero de renglones de la tabla
+	_local LnColumnas   #Numero de las columnas
+	_local LnDesX       #Desplazamineto en X para colocar la tabla
+	_local LnDesY       #Desplazamiento en Y para colocar la tabla 
+	
+	#-----------------------------------------------------------
+	#Tabla Resumen
+	#-----------------------------------------------------------
+	LnRenglones << 1
+	LnColumnas << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Resumen)
+
+	#Coordenada donde iniciara la tabla
+	LoTabla.oCoordenada_Origen << RoCoord
+
+	LoTabla.oRenglones.elemento(1).nLongitud << 11
+	LoTabla.oColumnas.elemento(1).nLongitud << 156
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_renglones_internos? << _false
+
+	
+	#-----------------------------------------------------------
+	#Tabla Lista
+	#-----------------------------------------------------------
+	LnRenglones << 48
+	LnColumnas << 3
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Lista)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Resumen}) 
+	LnDesX << 0
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+
+
+	#longitudes de los renglones de la tabla, esta dada en mm 
+	_for LnCont  _over  range(1,48)
+	_loop
+		LoTabla.oRenglones.elemento(LnCont).nLongitud << 3.3
+	_endloop 	
+	
+	
+	LoTabla.oColumnas.elemento(1).nLongitud << 10
+	LoTabla.oColumnas.elemento(2).nLongitud << 121
+	LoTabla.oColumnas.elemento(3).nLongitud << 25
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_renglones_internos? << _false
+
+	
+	#-----------------------------------------------------------
+	#Tabla SimbologiaTit
+	#-----------------------------------------------------------
+	LnRenglones << 1
+	LnColumnas << 1
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Simbologia_Tit)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Resumen,:tbl_Lista})
+	LnDesX << 0
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+	
+	LoTabla.oRenglones.elemento(1).nLongitud << 9
+	LoTabla.oColumnas.elemento(1).nLongitud << 156
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_renglones_internos? << _false
+	
+
+	#-----------------------------------------------------------
+	#Tabla SimbologiaCol1
+	#-----------------------------------------------------------
+	LnRenglones << 7
+	LnColumnas << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Simbologia_Col1)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Resumen,:tbl_Lista,:tbl_Simbologia_Tit})
+	LnDesX << 0
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+	
+	LoTabla.oRenglones.elemento(1).nLongitud << 12
+	LoTabla.oRenglones.elemento(2).nLongitud << 16 #18
+	LoTabla.oRenglones.elemento(3).nLongitud << 7
+	LoTabla.oRenglones.elemento(4).nLongitud << 12
+	LoTabla.oRenglones.elemento(5).nLongitud << 10
+	LoTabla.oRenglones.elemento(6).nLongitud << 13 #15
+	LoTabla.oRenglones.elemento(7).nLongitud << 13 #15
+
+	#18,34
+	LoTabla.oColumnas.elemento(1).nLongitud << 22
+	LoTabla.oColumnas.elemento(2).nLongitud << 30
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_renglones_internos? << _false
+	
+	#-----------------------------------------------------------
+	#Tabla SimbologiaCol2
+	#-----------------------------------------------------------
+	LnRenglones << 6
+	LnColumnas << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Simbologia_Col2)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Resumen,:tbl_Lista,:tbl_Simbologia_Tit})
+	LnDesX << _self.oTablas.Longitud_total_Columnas({:tbl_Simbologia_Col1})
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+	
+	LoTabla.oRenglones.elemento(1).nLongitud << 15  #15
+	LoTabla.oRenglones.elemento(2).nLongitud << 12  #12
+	LoTabla.oRenglones.elemento(3).nLongitud << 15  #17
+	LoTabla.oRenglones.elemento(4).nLongitud << 15  #15
+	LoTabla.oRenglones.elemento(5).nLongitud << 12  #12
+	LoTabla.oRenglones.elemento(6).nLongitud << 12  #12
+		
+	LoTabla.oColumnas.elemento(1).nLongitud << 22
+	LoTabla.oColumnas.elemento(2).nLongitud << 30	
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_renglones_internos? << _false
+	
+	#-----------------------------------------------------------
+	#Tabla SimbologiaCol3
+	#-----------------------------------------------------------
+	LnRenglones << 6
+	LnColumnas << 2
+	LoTabla << _self.oTablas.crea_tabla(LnRenglones,LnColumnas,:tbl_Simbologia_Col3)
+
+	#coordenada donde iniciara la tabla que representa el cuerpo
+	LnDesY << _self.oTablas.Longitud_total_Renglones({:tbl_Resumen,:tbl_Lista,:tbl_Simbologia_Tit})
+	LnDesX << _self.oTablas.Longitud_total_Columnas({:tbl_Simbologia_Col1,:tbl_Simbologia_Col2})
+	
+	LoTabla.oCoordenada_Origen << coordinate.new(RoCoord.x + LnDesX, RoCoord.y - LnDesY)
+	
+	LoTabla.oRenglones.elemento(1).nLongitud << 14 #16
+	LoTabla.oRenglones.elemento(2).nLongitud << 10 #10
+	LoTabla.oRenglones.elemento(3).nLongitud << 10 #10
+	LoTabla.oRenglones.elemento(4).nLongitud << 12 #12
+	LoTabla.oRenglones.elemento(5).nLongitud << 13 #13
+	LoTabla.oRenglones.elemento(6).nLongitud << 13 #13
+		
+	LoTabla.oColumnas.elemento(1).nLongitud << 22
+	LoTabla.oColumnas.elemento(2).nLongitud << 30
+
+	LoTabla.bDibuja_bordes? << _false
+	LoTabla.bDibuja_columnas_internas? << _false
+	LoTabla.bDibuja_renglones_internos? << _false	
+	
+_endmethod
+
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto.prvLlenaEtiquetas()
+
+## Objetivo: Se colocan todos los textos fijos del sello
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó	
+
+	_local LoTexto       #Objeto del tipo c_texto_grafico para los textos a agregar
+        _local LoColResumen  #Coleccion con los textos a poner en la tabla
+	
+	# Titulo del sello en la tabla Resumen
+	LoTexto  << c_texto_grafico.new("RESUMEN DEL PROYECTO")
+	LoTexto.nTamanio << 50
+	LoTexto.sAlineacion << :centre_centre
+	LoTexto.sEstilo << "fixed"
+	_self.oTablas.elemento(:tbl_Resumen).oCeldas.Celda(1,1).oElemento << LoTexto
+	
+	
+	#Se utiliza un ciclo para llenar la primera columna de la tabla :tbl_Lista
+
+	LoColResumen << {"LONGITUD TOTAL DEL TRAMO",
+			 "DERIVACIONES",
+			 "TOMAS DE TIERRA",
+			 "CABLE DE 24 F.O TM-13",
+			 "CABLE DE 18 F.O TM-11",
+			 "FLEXODUCTO DE ALTA DENSIDAD",
+			 "POZOS CONICOS PREFABRICADOS",
+			 "CIERRES PARA EMPALME RECTO ENTRE 37 Y 108 F.O. STEWING",
+			 "CIERRES PARA EMPALME CON DERIVACION 1E/2S ENTRE 37 Y 108 F.O.",
+			 "CIERRES PARA EMPALME CON DERIVACION 1E/3S ENTRE 37 Y 108 F.O.",
+			 "BASTIDORES CERRADOS PARA F.O.",
+			 "DISTRIBUIDOR OPTICO DE 36 F.O. D.C.",
+			 "CONEXIONES DE FIBRA OPTICA POR FUSION MOD. 6 F.O.",
+			 "PLACAS DE IDENTIFICACION.",
+			 "SEMBRADO BAJO CUENTA.",
+			 "METROS CUBICOS DE CONCRETO 150 KM/CM2.",
+			 "POSTES DE SEÑALAMIENTO DE TRAYECTORIA.",
+			 "CANALETA ADOSADA APUENTES.",
+			 "DEMOLICION Y REPOSICION DE CUNETA",
+			 "DEMOLICION Y REPOSICION DE ASFALTO",
+			 "DEMOLICION Y REPOSICION DE ADOQUIN",
+			 "TUBO DE FIERRO GALVANIZADO 4'' CED.40.",
+			 "TUBO DE POLIETILENO DE BAJA DENSIDAD 35.5MM.",
+			 "PRUEBA DE CABLE DE 24 F.O. EN BODEGA",
+			 "PRUEBA DE CABLE DE 18 F.O. EN BODEGA",
+			 "EMPALMES",
+			 "POZOS EN CANALIZACION EXISTENTE",
+			 "CANALIZACION 2H4",
+			 "CANALIZACION 3H4",
+			 "CANALIZACION 5H4",
+			 "CANALIZACION 7H4",
+			 "CANALIZACION 3H8",
+			 "CANALIZACION 4H8",
+			 "CANALIZACION A09",
+			 "CANALIZACION A12",
+			 "POZO L2T",
+			 "POZO L3T",
+			 "POZO L4T",
+			 "POZO L6T",
+			 "POZO M1C",
+			 "POZO M2T",
+			 "POZO C1C",
+			 "POZO C1T",
+			 "ESCALERILLA PROYECTADA",
+			 "DISTANCIA CANALIZACION PROYECTADA",
+			 "DISTANCIA CANALIZACION EXISTENTE",
+			 "REFORZAMIENTO DE CANALIZACION",
+			 "TAPAS PARA SUBDIVICION"}
+      
+
+	_for LnCont  _over  range(1,48)
+	_loop
+		_local LsCadena  #Texto que se utilizara para la numeracion de los renglones
+		_local LsTexto   #Contendra cada uno de los elementos del resumen
+		_local LsPuntos  #Permite agregar los puntos a la derecha del texto
+		_local LoCapText #Objeto del tipo c_captura_texto
+		
+		#Se muestran los numeros
+		LsCadena << LnCont.write_string + ".-"
+		LoTexto  << c_texto_grafico.new(LsCadena)
+		LoTexto.nTamanio << 20
+		LoTexto.nMargen_Der << 1	
+		LoTexto.sAlineacion << :centre_right
+		LoTexto.sEstilo << "fixed"
+		_self.oTablas.elemento(:tbl_Lista).oCeldas.Celda(LnCont,1).oElemento << LoTexto
+
+		
+		#Se agrean los puntos a los textos
+		LsTexto << LoColResumen[LnCont]
+
+		LsPuntos << "."
+		_for LnContPuntos  _over  range(LsTexto.size,75)
+		_loop
+			LsPuntos << LsPuntos +"."
+		_endloop
+
+		LsTexto << LsTexto + LsPuntos	
+			
+		LoTexto  << c_texto_grafico.new(LsTexto)
+		LoTexto.nTamanio << 25
+		LoTexto.sAlineacion << :centre_left
+		LoTexto.sEstilo << "fixed"
+		_self.oTablas.elemento(:tbl_Lista).oCeldas.Celda(LnCont,2).oElemento << LoTexto
+
+		#Se hace visible el borde inferior de la tercera columna
+		LoCelda << _self.oTablas.elemento(:tbl_lista).oCeldas.Celda(LnCont,3).oElementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Inf? << _true
+
+		
+		#Se agrega un objeto de tipo c_captura_texto en la tercera columna
+		
+		LoCapText << c_captura_texto.new("EJEMPLO")
+		LoCapText.sEstilo << "fixed"
+		LoCapText.nTamanio << 2
+		LoCapText.bRecorte? << _true
+		_self.oTablas.elemento(:tbl_Lista).oCeldas.Celda(LnCont,3).oElemento << LoCapText
+		
+	_endloop
+
+
+#	# Titulo del sello en la tabla Simbologia
+#	LoTexto  << c_texto_grafico.new("SIMBOLOGIA")
+#	LoTexto.nTamanio << 50
+#	LoTexto.sAlineacion << :centre_centre
+#	LoTexto.sEstilo << "fixed"
+#	LoTexto.bSubrayado? << _true 
+#	_self.oTablas.elemento(:tbl_Simbologia_Tit).oCeldas.Celda(1,1).oElemento << LoTexto
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto.prvLlenaSimb_Col1()
+
+## Objetivo: Se colocan todos los simbolos en el sello y sus etiquetas. Columna1
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó	
+
+	_local LoSimbolo  #Objeto que contendra el dibujo a poner en el sello
+        _local LoTexto    #Objeto que contendra el texto a poner a lado del simbolo
+	_local LsCadena   #Permite armar las etiquetas de texto con codigos de nueva linea
+	
+	# Simbolo y Texto EMPALME TERMINAL PROYECTADO
+	LoSimbolo << c_simbolo_grafico.new("empalme_terminal_p")
+	LoSimbolo.nMargen_izq << 1
+	LoSimbolo.nMargen_der << 1
+	LoSimbolo.nMargen_sup << 1
+	LoSimbolo.nMargen_inf << 1
+
+
+	            #123456789012345678901234
+        LsCadena << "EMPALME TERMINAL" +  character.newline +
+		    "PROYECTADO" 
+	
+	LoTexto  << c_texto_grafico.new(LsCadena)
+	
+	LoTexto.nTamanio << 18
+	LoTexto.sEstilo << "fixed"
+	LoTexto.sAlineacion << :centre_centre
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(1,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(1,2).oElemento << LoTexto
+
+	# Simbolo y Texto EMPALME RECTO PROYECTADO
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"empalme_recto_p")
+
+	            #123456789012345678901234
+        LsCadena << "EMPALME RECTO PROYECTADO"
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(2,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(2,2).oElemento << LoTexto
+
+	# Simbolo y Texto EMPALME DERIVACION PROYECTADO
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"empalme_derivacion_p")
+
+	            #123456789012345678901234
+        LsCadena << "EMPALME DERIVACION" +  character.newline +
+		    "PROYECTADO" 
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(3,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(3,2).oElemento << LoTexto
+
+	# Simbolo y Texto CANALIZACION Y POZO EXISTENTE
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"canalizacion_pe")
+	
+ 	            #123456789012345678901234
+        LsCadena << "CANALIZACION Y POZO" +  character.newline +
+		    "EXISTENTE" 
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(4,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(4,2).oElemento << LoTexto
+
+	# Simbolo y Texto CANALIZACION Y POZO PROYECTADO
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"canalizacion_ppp")
+
+ 	            #123456789012345678901234
+        LsCadena << "CANALIZACION Y POZO" +  character.newline +
+		    "PROYECTADO EN PVC" 
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(5,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(5,2).oElemento << LoTexto
+
+
+	# Simbolo y Texto FO EXISTENTE (ENTERRADA)
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"fibra optica existente e")
+
+	            #123456789012345678901234
+        LsCadena << "F.O. EXISTENTE " +  character.newline +
+		    "(ENTERRADA)" +  character.newline 
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(6,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(6,2).oElemento << LoTexto
+
+	# Simbolo y Texto FO PROYECTADA (ENTERRADA)
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"fibra optica proyectada e")
+
+	            #123456789012345678901234
+        LsCadena << "F.O. PROYECTADA " +  character.newline +
+		    "(ENTERRADA)" +  character.newline 
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(7,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col1).oCeldas.Celda(7,2).oElemento << LoTexto
+		
+	
+_endmethod	
+
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto.prvLlenaSimb_Col2()
+
+## Objetivo: Se colocan todos los simbolos en el sello y sus etiquetas. Columna2
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó	
+
+
+	_local LoSimbolo  #Objeto que contendra el dibujo a poner en el sello
+        _local LoTexto    #Objeto que contendra el texto a poner a lado del simbolo
+	_local LsCadena   #Permite armar las etiquetas de texto con codigos de nueva linea
+	
+	
+	# Simbolo y Texto EMPALME TERMINAL EXISTENTE
+	LoSimbolo << c_simbolo_grafico.new("empalme_terminal_e")
+	LoSimbolo.nMargen_izq << 1
+	LoSimbolo.nMargen_der << 1
+	LoSimbolo.nMargen_sup << 1
+	LoSimbolo.nMargen_inf << 1
+
+
+                    #123456789012345678901234
+        LsCadena << "EMPALME TERMINAL" +  character.newline +
+		    "EXISTENTE" 
+	
+	LoTexto  << c_texto_grafico.new(LsCadena)
+	LoTexto.nTamanio << 18
+	LoTexto.sEstilo << "fixed"
+	LoTexto.sAlineacion << :centre_centre
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(1,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(1,2).oElemento << LoTexto
+
+	
+	# Simbolo y Texto EMPALME RECTO EXISTENTE
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"empalme_recto_e")
+
+	            #123456789012345678901234
+        LsCadena << "EMPALME RECTO EXISTENTE" +  character.newline 
+
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(2,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(2,2).oElemento << LoTexto
+
+	
+	# Simbolo y Texto EMPALME DERIVACION EXISTENTE
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"empalme_derivacion_e")
+
+	            #123456789012345678901234
+        LsCadena << "EMPALME DERIVACION" +  character.newline +
+		    "EXISTENTE" 
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(3,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(3,2).oElemento << LoTexto
+
+	
+	# Simbolo y Texto POZO CONICO PROYECTADO Y CONEXION A TIERRA PROYECTADA
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"pozo_cp")
+
+ 	            #123456789012345678901234
+        LsCadena << "POZO CONICO PROYECTADO Y" +  character.newline +
+		    "CONEXION A TIERRA PROY." 
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(4,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(4,2).oElemento << LoTexto
+
+	
+	# Simbolo y Texto POSTE DE MADERA TELMEX
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"poste de telmex 1")
+
+ 	            #123456789012345678901234
+        LsCadena << "POSTE DE MADERA" +  character.newline +
+		    "TELMEX" 
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(5,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(5,2).oElemento << LoTexto
+
+
+	# Simbolo y Texto POSTE DE LD TELMEX
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"poste de telmex ld")
+
+	            #123456789012345678901234
+        LsCadena << "POSTE DE L.D." +  character.newline +
+		    "TELMEX" 
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(6,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col2).oCeldas.Celda(6,2).oElemento << LoTexto
+		
+	
+_endmethod	
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto.prvLlenaSimb_Col3()
+
+## Objetivo: Se colocan todos los simbolos en el sello y sus etiquetas. Columna3	
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó
+
+	_local LoSimbolo  #Objeto que contendra el dibujo a poner en el sello
+        _local LoTexto    #Objeto que contendra el texto a poner a lado del simbolo
+	_local LsCadena   #Permite armar las etiquetas de texto con codigos de nueva linea
+
+	
+	# Simbolo y Texto GAZA DE 15 MTS PROYECTADA
+	LoSimbolo << c_simbolo_grafico.new("gaza de 15")
+	LoSimbolo.nMargen_izq << 1
+	LoSimbolo.nMargen_der << 1
+	LoSimbolo.nMargen_sup << 1
+	LoSimbolo.nMargen_inf << 1
+
+
+                    #123456789012345678901234
+        LsCadena << "GAZA DE 15.0 MTS." +  character.newline +
+		    "PROYECTADA" +  character.newline 
+	
+	LoTexto  << c_texto_grafico.new(LsCadena)
+	LoTexto.nTamanio << 18
+	LoTexto.sEstilo << "fixed"
+	LoTexto.sAlineacion << :centre_centre
+	
+#	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(1,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(1,1).oElemento << LoSimbolo
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(1,2).oElemento << LoTexto
+
+	
+	# Simbolo y Texto ARADO TERRENO A
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"arado_terreno_ab")
+
+	            #123456789012345678901234
+        LsCadena << "ARADO TERRENO A" 
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(2,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(2,2).oElemento << LoTexto
+
+	
+	# Simbolo y Texto GAZA DE 15 METROS EXISTENTE
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"gaza de 15 e")
+
+	            #123456789012345678901234
+        LsCadena << "GAZA DE 15.0 MTS." +  character.newline +
+		    "EXISTENTE" +  character.newline 
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(3,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(3,2).oElemento << LoTexto
+
+	
+	# Simbolo y Texto RUEDA TERRENO C
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"rueda_terreno_tipo_c")
+
+ 	            #123456789012345678901234
+        LsCadena << "RUEDA TERRENO C" 
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(4,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(4,2).oElemento << LoTexto
+
+	
+	# Simbolo y Texto LIMITE DE DERECHO DE VIA S.C.T.
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"limite de dv")
+
+ 	            #123456789012345678901234
+        LsCadena << "LIMITE DE DERECHO DE VIA"  +  character.newline +
+	            "S.C.T." 
+
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(5,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(5,2).oElemento << LoTexto
+
+
+	# Simbolo y Texto CARRETERA
+	LoSimbolo << c_simbolo_grafico.new_from(LoSimbolo,"carretera")
+
+	            #123456789012345678901234
+        LsCadena << "CARRETERA"
+	
+	LoTexto  << c_texto_grafico.new_from(LoTexto,LsCadena)
+	
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(6,1).oElementos.Agregar_elemento(LoSimbolo,:t_sc1)
+	_self.oTablas.elemento(:tbl_Simbologia_Col3).oCeldas.Celda(6,2).oElemento << LoTexto
+		
+	
+_endmethod	
+
+$
+
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto.Agrega_LYM(RoLym)
+
+## Objetivo: Permite agregar todos los elementos Layout a la pagina
+## Parámetros de entrada:  
+##    :layout_manager - RoLym : Referencia al LayoutManager
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/Marzo/2005
+## Autor de la modificación : FADD
+## Descripción de la modificación: Se documentó
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+
+_endmethod
+

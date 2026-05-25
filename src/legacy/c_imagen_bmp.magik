@@ -1,0 +1,291 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Proporcionar la clase que puede almacenar una imagen BMP
+#           en una celda
+# Autor: dsanchez
+# Fecha de creacion: 9-Marzo-2005
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+# 9/03/2005 FADD Se creo la clase
+# Reviso : 11/Marzo/2005  FADD
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_imagen_bmp)
+
+$
+def_slotted_exemplar(:c_imagen_bmp,
+		     {
+			{:oImagen_BMP,   _unset}, # Elemento bitmap_layout
+			{:sNombre_Grafico , _unset},   # Nombre y Ruta Local del archivo de imagen BMP
+			{:bVoltear_H,      _false}, # Bandera para voltear la figura Horizontalmente
+			{:bVoltear_V,      _false}, # Bandera para voltear la figura Verticalmente			
+			{:bfit_image,      _false} # Bandera para voltear la figura Verticalmente			
+		     },
+		     :c_base_layout
+)
+
+
+$
+c_imagen_bmp.define_slot_access(:oImagen_BMP,       :writable, :private)
+c_imagen_bmp.define_slot_access(:sNombre_Grafico,   :writable, :private)
+c_imagen_bmp.define_slot_access(:bVoltear_H,        :writable, :private)
+c_imagen_bmp.define_slot_access(:bVoltear_V,        :writable, :private)
+c_imagen_bmp.define_slot_access(:bfit_image,        :writable, :private)
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.new(RsNombre)
+## Objetivo: Crear una instancia de celda
+## Parámetros de entrada:
+## 	Cadena - RsNombre - Número del elemento grafico
+## Parámetros de salida:   NA
+## Regresa: 
+## 	c_texto_grafico - regresa un objeto c_texto_grafico
+## Fecha de última modificación: 11/Noviembre/2004
+## Autor de la modificación : dsanchez
+## Descripción de la modificación: Se documentó
+
+	_local LoCaja
+
+        # Se crea la instancia
+        LoCaja << bounding_box.new(0,0,100,100)
+	_self.oImagen_BMP << bitmap_layout.new_with(:bounds,LoCaja)
+
+	# Se asigna el nombre del archivo .BMP  a mostrar
+        _self.sNombre_Grafico << RsNombre;
+	
+	# Se quita los bordes
+        _self.oImagen_BMP.outline_style  << _unset
+	_self.oImagen_BMP.set_fill_colour(_unset)
+
+	# Valores por default
+		
+        _self.bVoltear_V    << _false 
+        _self.bVoltear_H      << _false 
+        _self.bfit_image       << _false 
+	
+	_return _clone
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.new_from(RoObjeto, _optional RsTexto)
+## Objetivo: Constructor de copia
+## Parámetros de entrada: 
+##    c_simbolo_grafico - RoObjeto - Objeto del cual se copiaran los atributos
+## Parámetros de salida:   NA
+## Regresa:  
+##    c_Simbolo_grafico - Instancia de Simbolo_grafico 
+## Fecha de última modificación : 04/01/04
+## Autor de la modificación :
+## Descripción de la modificación : 
+##    08/03/05 DSB Se implemento la copia de los margenes	
+##    23/12/04    se valido que el objeto sea de tipo c_simbolo_grafico
+
+   _if RoObjeto.is_kind_of?(c_imagen_bmp)
+   _then
+        # Se crea la instancia del bounding_box
+        # estos valores no importan, los valores definitivos los toma de la celda
+        LoCaja << bounding_box.new(0,0,100,100)
+	_self.oImagen_BMP << bitmap_layout.new_with(:bounds,LoCaja)
+
+	_if RsTexto = _unset 
+	_then
+           _self.sNombre_Grafico << RoObjeto.sNombre_Grafico
+	_else
+	   _self.sNombre_Grafico << RsTexto
+	_endif
+
+
+	# Se quita los bordes
+        _self.oImagen_BMP.outline_style  << _unset
+	_self.oImagen_BMP.set_fill_colour(_unset)
+
+	_self.bVoltear_H << RoObjeto.bVoltear_H
+	_self.bVoltear_V << RoObjeto.bVoltear_V
+	_self.bfit_image << RoObjeto.bfit_image
+		
+        _self.nMargen_inf << RoObjeto.nMargen_inf / 10
+        _self.nMargen_sup << RoObjeto.nMargen_sup / 10
+        _self.nMargen_izq << RoObjeto.nMargen_izq / 10
+        _self.nMargen_der << RoObjeto.nMargen_der / 10 	
+	
+	_return _clone
+   _else
+	condition.raise(:warning, :string, "El objeto que se proporciono, no es de tipo c_imagen_bmp")	
+   _endif 	         
+	
+_endmethod
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.Despliega()
+## Objetivo: Realizar el dibujo del los textos
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA 
+## Regresa: NA
+## Fecha de última modificación: 28/10/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+
+ 	 _self.oImagen_BMP.bounds << _self.oArea
+
+
+_endmethod
+
+
+
+# ESTE METODO CAMBIARA DE NOMBRE AQUI Y EN C_CAPTURA_TEXTO!!!!!!!!!!!!!!!!!!!!!
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.Obten_Elemento_captura
+
+	
+	_return .oImagen_BMP
+	
+_endmethod
+# ESTE METODO CAMBIARA DE NOMBRE AQUI Y EN C_CAPTURA_TEXTO!!!!!!!!!!!!!!!!!!!!!
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.sNombre_Grafico << RsValor
+## Objetivo: Asignar el nombre del grafico al slot sNombre_Grafico
+## Parámetros de entrada:  
+##    String - RsValor - Nombre del grafico
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+                
+        #_self.oImagen_BMP.set_filename(RsValor)
+        _self.oImagen_BMP.filename << RsValor
+        
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp. sNombre_Grafico 
+## Objetivo: Retornar el nombre del grafico, asignado en el
+##           slot sNombre_Grafico
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: El nombre del grafico 
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documento
+
+        _return _self.oImagen_BMP.filename
+        
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.bVoltear_H? << RbValor
+## Objetivo: Indicar si la figura debe ser volteada
+## Horizontalmente asignado el valor al slot bVoltear_h
+## Parámetros de entrada:  
+##    Booleano - RbVoltear - Verdadero si la figura debe ser volteada horizontalmente
+##                           False si la figura no debe ser volteada horizontalmente
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_self.oImagen_BMP.flip_image << RbValor
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.bVoltear_H? 
+## Objetivo: Consultar si la figura debe ser volteada
+## Horizontalmente, tomando el valor del slot bVoltear_H
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa: 
+##   Booleano - bVoltear - Indica si se debe voltear o no el simbolo
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_return _self.oImagen_BMP.flip_image
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.bVoltear_V? << RbValor
+## Objetivo: Indicar si la figura debe ser volteada
+## Verticalmente y asignarle el valor al slot bVoltear_V
+## Parámetros de entrada:  
+##    Booleano - RbVoltear - Verdadero si la figura debe ser volteada verticalmente
+##                           False si la figura no debe ser volteada verticalmente
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documento
+
+	_self.oImagen_BMP.mirror_image << RbValor
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.bVoltear_V? 
+## Objetivo: Consultar si la figura debe ser volteada
+## Verticalmente y regresar el valor del slot bVoltear_V
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa:
+##   Booleano - bVoltear - Se indica si el simbolo se debe de voltear
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_return _self.oImagen_BMP.mirror_image
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.bfit_image? << RbValor
+## Objetivo: Indicar si la figura debe ser volteada
+## Verticalmente y asignarle el valor al slot bVoltear_V
+## Parámetros de entrada:  
+##    Booleano - RbVoltear - Verdadero si la figura debe ser volteada verticalmente
+##                           False si la figura no debe ser volteada verticalmente
+## Parámetros de salida:   NA
+## Regresa: NA
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documento
+
+	_self.oImagen_BMP.fit_image << RbValor
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_imagen_bmp.bfit_image? 
+## Objetivo: Consultar si la figura debe ser volteada
+## Verticalmente y regresar el valor del slot bVoltear_V
+## Parámetros de entrada:  NA
+## Parámetros de salida:   NA
+## Regresa:
+##   Booleano - bVoltear - Se indica si el simbolo se debe de voltear
+## Fecha de última modificación: 3/11/2004
+## Autor de la modificación : fdiaz
+## Descripción de la modificación: Se documentó
+
+	_return _self.oImagen_BMP.bfit_image
+	
+_endmethod
+$
+

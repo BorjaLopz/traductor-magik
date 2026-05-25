@@ -1,0 +1,217 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Plano diagrama de emplames
+# Objetivo: Generar el cuadro de simbología para
+#           los planos de diagramas de empalmes
+# Autor:    aalarcon
+# Fecha de creacion: 18/Mayo/2011
+#  (12/03/21 rhernan) : Modified. se agrega funcionalidad para
+# generar el sello posterior al clone del master_series.
+#----------------------------------------------------------------
+$ 
+_package user
+$ 
+#remex(:c_sello_correspondencias)
+$
+def_slotted_exemplar(:c_sello_correspondencias,
+{
+}, :c_base_sello_fibra)
+$
+# (12/03/21 rhernan) : se agregan shared_variables para
+# generacion de los n_sellos de correspondencias que sean necesarios.
+c_sello_correspondencias.define_shared_variable(:Terminales, rope.new(), :public) 
+$
+c_sello_correspondencias.define_shared_variable(:numero_ciclos, 1, :public)
+$
+c_sello_correspondencias.define_shared_variable(:LoNumero_max, 1, :public) 
+$ 
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_correspondencias.defined_attributes
+	## 
+	## 
+_local LcollAtributos
+ 
+	LcollAtributos << rope.new_from(_super.defined_attributes)
+
+	LcollAtributos.add(layout_attribute_definition.new(:idCedo, :integer,
+							   :description, "ID CEDO",
+							   :default_value, _unset,
+							   :allowed_on_properties_page?, _false,
+							   :editor, _unset))
+	
+	_return LcollAtributos
+_endmethod
+$ 
+c_sello_correspondencias.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_correspondencias.configura_tabla( _optional PoNumeroRenglones )
+	LoTerminales        << rope.new()
+	contRenFibras       << 0
+	LoDatosTerminales   << rope.new()
+	LoTamDatosT         << 0
+	LoTotRenglones      << 1 	 
+	LoTabla << .o_tablas.crea_tabla(1,1,:tbl_titulo)
+	LoTabla.ocoordenada_origen << .o_coord_inicio
+	LoTabla.orenglones.elemento(1).nlongitud << 15
+	LoTabla.ocolumnas.elemento(1).nlongitud  << 110
+	LcollColores <<   rope.new_with(0,0,0)
+	c_tabla.color_linea <<  LcollColores	
+	
+ 	LoTabla << .o_tablas.crea_tabla(1,2,:tbl_subtitulos)
+        ln_desp_y << .o_tablas.longitud_total_renglones({:tbl_titulo})
+	LoTabla.ocoordenada_origen << coordinate.new( .o_coord_inicio.x, .o_coord_inicio.y-ln_desp_y)
+	LoTabla.orenglones.elemento(1).nlongitud << 15
+	LoTabla.ocolumnas.elemento(1).nlongitud  << 55
+	LoTabla.ocolumnas.elemento(2).nlongitud  << 55
+	LcollColores        <<   rope.new_with(0,0,0)
+	c_tabla.color_linea <<  LcollColores	
+
+	  _if PoNumeroRenglones _isnt _unset 
+	  _then
+		LoTotRenglones << PoNumeroRenglones
+	  _elif PoNumeroRenglones _is _unset _orif
+		PoNumeroRenglones = 0
+	  _then
+	      LoTotRenglones << 1
+	  _endif	     
+	
+	LoTabla << .o_tablas.crea_tabla(LoTotRenglones,7,:tbl_contenido)
+        ln_desp_y << .o_tablas.longitud_total_renglones({:tbl_subtitulos}) +
+		     .o_tablas.longitud_total_renglones({:tbl_titulo})
+	LoTabla.ocoordenada_origen << coordinate.new( .o_coord_inicio.x,
+						      .o_coord_inicio.y-ln_desp_y)
+	LoTabla.orenglones.elemento(1).nlongitud<< 20
+	_for ren _over range(2,LoTotRenglones)
+	_loop
+		LoTabla.orenglones.elemento(ren).nlongitud<< 10
+	_endloop
+	
+	LoTabla.ocolumnas.elemento(1).nlongitud  << 12
+	LoTabla.ocolumnas.elemento(2).nlongitud  << 12
+	LoTabla.ocolumnas.elemento(3).nlongitud  << 12
+	LoTabla.ocolumnas.elemento(4).nlongitud  << 32
+	LoTabla.ocolumnas.elemento(5).nlongitud  << 16
+	LoTabla.ocolumnas.elemento(6).nlongitud  << 16
+	LoTabla.ocolumnas.elemento(7).nlongitud  << 10
+	LcollColores <<   rope.new_with(0,0,0)
+	c_tabla.color_linea <<  LcollColores
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_correspondencias.etiqueta_celdas()
+
+     _self.asigna_texto_celda(:tbl_titulo,1,1,"TABLA DE CORRESPONDENCIA",50)
+     
+     #Encabezado
+     _self.asigna_texto_celda(:tbl_subtitulos,1,1,"NCO: ",30,:centre_centre,0,{0,0,0})
+     _self.asigna_texto_celda(:tbl_subtitulos,1,2,"DISTRITO: ",30,:centre_centre,0,{0,0,0})
+     
+     txtFoPrin << "No. DE "+ %newline + "CABLE" 
+     _self.asigna_texto_celda(:tbl_contenido,1,1,txtFoPrin,20,:centre_centre,0,{0,0,0})	
+     txtFoPrin << "FIBRA"+ %newline + "ASIGNADA" + %newline + "(PRINCIPAL)"
+     _self.asigna_texto_celda(:tbl_contenido,1,2,txtFoPrin,20,:centre_centre,0,{0,0,0})
+     txtDivisor << "DIVISOR" + %newline + "OPTICO"
+     _self.asigna_texto_celda(:tbl_contenido,1,3,txtDivisor,20,:centre_centre,0,{0,0,0})
+     _self.asigna_texto_celda(:tbl_contenido,1,4,"CABLE SECUNDARIO",20,:centre_centre,0,{0,0,0})
+     txtFoSec << "FIBRA"+ %newline + "ASIGNADA" + %newline + "(SECUNDARIA)"
+     _self.asigna_texto_celda(:tbl_contenido,1,5,txtFoSec,20,:centre_centre,0,{0,0,0})
+     _self.asigna_texto_celda(:tbl_contenido,1,6,"TERMINAL",20,:centre_centre,0,{0,0,0})
+     _self.asigna_texto_celda(:tbl_contenido,1,7,"PUERTOS",20,:centre_centre,0,{0,0,0})	
+     
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_correspondencias.llena_datos_celdas()
+	## 
+	## ESTE VA A SER SOLO UN RETURN PARA NO LLENAR NINGUN DATO.
+	## todo esto se asigna al momento de incluir el sello. ya con
+	## datos.	
+	_return 
+
+	# (12/03/20 rhernan) : no es necesario puesto que esto se
+	# calcula antes..
+	_local cont << 1 
+	_local lpl_datos_dist_optico << _self.obten_datos_dist_optico(_self.idcedo)	
+	_local lpl_datos << c_distrito.obten_datos_correspondencia(_self.idcedo)
+	
+	_for key,dato _over lpl_datos_dist_optico.fast_elements() 
+	_loop 
+	  _self.asigna_texto_celda(:tbl_subtitulos,1,1, "NCO: "+ lpl_datos_dist_optico[:siglas_nco],25,:centre_centre,0,{0,0,0})
+	   
+	  _self.asigna_texto_celda(:tbl_subtitulos,1,2, "DISTRITO: "+ lpl_datos_dist_optico[:nombre_distrito] 
+			 	   ,25,:centre_centre,0,{0,0,0})
+	_endloop
+
+
+_endmethod 
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_correspondencias.llena_datos_tabla_correspondencias(Polpl_datos_dist_optico, PoDatosCorrespondencia,
+						   PoNumeroRenglones)
+  ## 
+  #_local lpl_datos_dist_optico << _self.obten_datos_dist_optico(_self.idcedo)	
+  #_local lpl_datos << c_distrito.obten_datos_correspondencia(_self.idcedo)
+	
+  _local cont << 1 
+ 
+  _for key,dato _over Polpl_datos_dist_optico.fast_elements() 
+  _loop 
+   _self.asigna_texto_celda(:tbl_subtitulos,1,1, "NCO: "+ Polpl_datos_dist_optico[:siglas_nco],25,
+			     :centre_centre,0,{0,0,0})	   
+   _self.asigna_texto_celda(:tbl_subtitulos,1,2, "DISTRITO: " +
+			    Polpl_datos_dist_optico[:nombre_distrito],25,
+			   :centre_centre,0,{0,0,0})
+  _endloop 	 
+  
+ _for dato _over 1.upto(PoDatosCorrespondencia.size)
+ _loop
+
+	 cont +<< 1
+     _if cont <= 40 
+     _then       
+	_if  _self.LoNumero_max _isnt _unset _andif 
+	     _self.LoNumero_max <= PoDatosCorrespondencia.size
+	  _then	  	 
+	   _self.asigna_texto_celda(:tbl_contenido,cont,1,PoDatosCorrespondencia[_self.LoNumero_max][:no_cable],
+				    25,:centre_centre,0,{0,0,0})	   
+	   _self.asigna_texto_celda(:tbl_contenido,cont,2,PoDatosCorrespondencia[_self.LoNumero_max][:fo_prin],
+				    25,:centre_centre,0,{0,0,0}) 
+	   _self.asigna_texto_celda(:tbl_contenido,cont,3,PoDatosCorrespondencia[_self.LoNumero_max][:divisor],
+				    25,:centre_centre,0,{0,0,0}) 
+	   _self.asigna_texto_celda(:tbl_contenido,cont,4,PoDatosCorrespondencia[_self.LoNumero_max][:cable_sec],
+				    25,:centre_centre,0,{0,0,0}) 
+	   _self.asigna_texto_celda(:tbl_contenido,cont,5,PoDatosCorrespondencia[_self.LoNumero_max][:fo_sec],
+				    25,:centre_centre,0,{0,0,0}) 
+	   _self.asigna_texto_celda(:tbl_contenido,cont,6,PoDatosCorrespondencia[_self.LoNumero_max][:terminal],
+				    25,:centre_centre,0,{0,0,0}) 
+	   _self.asigna_texto_celda(:tbl_contenido,cont,7,PoDatosCorrespondencia[_self.LoNumero_max][:puertos],
+				    25,:centre_centre,0,{0,0,0})	   
+	    _self.LoNumero_max +<< 1	    
+	    #cont +<< 1  #para controlar el num. max de renglones.	    
+	  _endif 
+	_endif 
+ _endloop 
+ 
+_endmethod
+
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_correspondencias.obten_datos_dist_optico(PoIdCedo)
+	## 
+	## 
+	_local LoTablaCedo << mit_manager.modelit_dataset.collection(:user!_empalme_distribucion)	
+	_local RegCedo << LoTablaCedo.at(PoIdCedo)
+	_local LoDistOptico << RegCedo.distrito_optico
+	LoDatos_DistOptico << property_list.new()
+
+	LoDatos_DistOptico[:siglas_nco] << LoDistOptico.user!_siglas_nco.write_string
+	LoDatos_DistOptico[:nombre_distrito] << LoDistOptico.user!_distrito.write_string
+	_return LoDatos_DistOptico
+	
+_endmethod
+$
+

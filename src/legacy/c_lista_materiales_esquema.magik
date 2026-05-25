@@ -1,0 +1,479 @@
+_package user
+$
+def_slotted_exemplar(:c_lista_materiales_esquema,
+{
+	 {:tipo, _unset}  #se indica si la lista de materiales es de elementos de red o estructuras.
+
+}, :c_base_sello_fibra)
+$
+c_lista_materiales_esquema.define_slot_access(:tipo,:writable, :public)
+$
+_method c_lista_materiales_esquema.actualiza_datos()
+        ## actualiza la informacion de las celdas.
+	_self.llena_datos_celdas()
+	_self.draw_content_on(.window)
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_esquema.configura_tabla()
+	##Define la estructura del sello de la lista de materiales
+
+	(LoElemResumen, ht) <<   _self.obten_lista_materiales()
+	renglones_agregar << ht.size
+	
+	_if ht _isnt _unset
+	_then
+		lo_tabla << .o_tablas.crea_tabla(2+renglones_agregar,4,:tbl_lista_materiales)
+	_else
+		lo_tabla << .o_tablas.crea_tabla(2,4,:tbl_lista_materiales)
+	_endif
+
+	# coordenada donde inicia la tabla
+	lo_tabla.ocoordenada_origen << .o_coord_inicio
+
+	# longitud de los renglones de la tabla, dada en mm 
+	_for n_reng _over range(1,2+renglones_agregar)
+	_loop
+		lo_tabla.orenglones.elemento(n_reng).nlongitud << 6
+	_endloop
+
+	# longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 6
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 60
+	lo_tabla.ocolumnas.elemento(3).nlongitud  << 35
+	lo_tabla.ocolumnas.elemento(4).nlongitud  << 20
+		
+	# se ocultan bordes de celdas
+	oculta << rope.new_with({1,1},{1,2},{1,3},{1,4})
+	_for e _over oculta.fast_elements()
+	_loop
+	lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Sup? << _false
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false 
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_esquema.elementos_de_proyecto()
+	#---------------------------------------------------
+	##  Objetivo  : Hacer una lista de todos los materiales del
+	## proyecto.
+	##
+	
+	LoElementosall << rope.new()
+	ht  << hash_table.new()
+
+	(listaestr,LoElementos ) << _self.select_from_map
+
+
+	_if .tipo _is :red
+	_then
+		_if LoElementos  _isnt _unset _andif
+		    LoElementos.size > 0	 
+		_then
+			ht.add_all(LoElementos)
+		_endif
+
+	_else
+		_if listaestr  _isnt _unset _andif
+		    listaestr.size > 0	 
+		_then
+			ht.add_all(listaestr)
+		_endif
+	_endif 
+	
+	#genera una lista de todos los elementos.
+	_if ht.size > 0 
+      _then
+	      _for iterObjetoName,lista _over ht.keys_and_elements()  
+	      _loop
+		      _for LoOBjeto _over lista.elements()
+		      _loop
+			     LoElementosall.add(LoObjeto )
+		      _endloop
+	      _endloop
+	      
+	_endif
+	
+	_return LoElementosall, ht
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_esquema.etiqueta_celdas()
+	## Titulos de la lista de materiales
+
+	titulo << "LISTA DE MATERIALES DE ELEMENTOS DE RED"
+	
+	_if .tipo _isnt  :red 
+	_then
+		titulo << "LISTA DE MATERIALES ESTRUCTURAS"
+	_endif
+	_self.asigna_texto_celda(:tbl_lista_materiales,1,2,titulo,30,_unset)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,1,"No",20,_unset)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,2,"DESCRIPCION",20,_unset)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,3,"UNIDAD",20,_unset)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,4,"CANTIDAD",20,_unset)
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_esquema.keys_Order(Loelementos )
+	#---------------------------------------------------
+	##  Objetivo  : Ordenar los keys de un hash_table
+	##
+	
+	_local snproc << sorted_collection.figure_order_proc (
+			:strings_with_numbers )
+
+	order_proc << _proc ( d1, d2 )
+			      _import snproc
+			      >> snproc ( d1,d2 )
+		      _endproc 
+	
+	lista << sorted_collection.new ( _unset, order_proc )
+
+	
+	 keys_order  << Loelementos.keys
+
+	 _for iterKey  _over keys_order.fast_elements()
+	 _loop	
+		 lista.add(iterKey.write_string)
+	 _endloop
+
+	 _return lista
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_lista_materiales_esquema.llena_datos_celdas()
+	## Obtiene la lista de materiales y asigna los valores.
+	##	
+	LoFormato << float_format.new(:float_decimal_places,2)
+
+	v <<  mit_manager.modelit_dataset
+	material << property_list.new()
+
+	(LoElementoss,ht) << _self.obten_lista_materiales()
+
+	#Cantidad de renglones de la tabla actual
+	_local ren_tbl << _self.o_tablas.elemento(:tbl_lista_materiales).oceldas.sys!slot(:nnumren)
+
+	_if ht.size > 0
+	_then
+		cont << 2
+
+                keys_o << _self.keys_Order(ht )
+
+		
+#		_for Iterkey,values _over ht.keys_and_elements()
+
+		_for  Iterkeyc _over keys_o.elements()
+		_loop
+
+			Iterkey	<< Iterkeyc.as_symbol()
+			values << ht[Iterkey.as_symbol()]
+			
+		     cont+<<1
+			
+		     IterObject << values.an_element()
+		     
+		     material[:cantidad] << values.size.write_string
+		     material[:desc_uc] <<  "" 
+		     material[:desc_mat] << ""
+		     
+		     _if IterObject.responds_to?(:primary_geometry)   _andif
+			 IterObject.primary_geometry _is :route
+		     _then
+			     material[:desc_unidad] << "metros"
+			     material[:cantidad] << 0
+
+			     _for record _over values.fast_elements()
+			     _loop
+				     
+					     cable? << record.source_collection.name _is :sheath
+					     
+					     _if cable?
+					     _then
+						     Longitud << record.measured_length.value_in(:m)
+						     
+						     _if Longitud <=0
+						     _then
+							     longitud << record.calculated_fiber_length.value_in(:m)
+						     _endif
+					     _else
+						     Longitud << record.measured_length.value_in(:m)
+					     _endif
+					     
+					     material[:cantidad] +<<  longitud
+				     
+			     _endloop
+
+
+			     material[:cantidad] << material[:cantidad].as_fixed_string(5,2)
+			     
+		     _else
+
+			     material[:desc_unidad] << "pzas"
+		     _endif 
+		     
+		     _if   IterObject.source_collection.name _is :sheath
+		     _then
+
+			     mspec  << IterObject.get_spec_record()
+			     desc <<  mspec.user!_clase.write_string + %space +
+				      mspec.fiber_quantity.write_string
+			     
+			     material[:desc_mat] <<  IterObject.source_collection.external_name +   desc
+			     material[:desc_uc] << ""
+			     			     
+		     _elif IterObject.responds_to?(:user!_tipo_conexion)
+		     _then
+                
+			     material[:desc_mat]  << IterObject.user!_tipo_conexion.write_string
+			     
+		     _elif IterObject.source_collection.name _is :underground_route  _orif
+			   IterObject.source_collection.name _is :figure_eight _orif
+			   IterObject.source_collection.name _is :user!_terminal_fo _orif
+			   IterObject.source_collection.name _is :uub
+		     _then
+			    # material[:desc_mat]  << Iterkey.write_string.split_by("|")[2]  
+
+			     # (15/08/06 bautistaja) : Modified.
+			     rpmaterial << Iterkey.write_string.split_by("|")
+			     _if rpmaterial.size > 1
+			     _then
+				      material[:desc_mat]  << Iterkey.write_string.split_by("|")[2]
+			     _else
+				      material[:desc_mat]  << Iterkey.write_string.split_by("|")[1]
+			     _endif
+			      
+			     material[:desc_uc]  << IterObject.source_collection.external_name 
+		     _else
+		
+			     material[:desc_mat]  << IterObject.source_collection.external_name
+		     _endif
+
+                     _if material[:desc_mat] _is _unset 
+		     _then
+		
+			     material[:desc_mat]<< IterObject.source_collection.external_name.write_string				 			     
+		     _endif 
+		     
+		     material[:desc_uc] +<<  %space  +  material[:desc_mat]				 
+
+		
+		     #(10/02/15 bautistaja): Se valida la cantidad de renglones de
+		     # la tabla actual.
+		     _if ren_tbl >= cont
+		     _then
+			     _self.asigna_texto_celda(:tbl_lista_materiales,cont,1,cont-2,18,_unset)
+			     _self.asigna_texto_celda(:tbl_lista_materiales,cont,2,material[:desc_uc],18,_unset)
+			     _self.asigna_texto_celda(:tbl_lista_materiales,cont,3,material[:desc_unidad],18,_unset)
+			     _self.asigna_texto_celda(:tbl_lista_materiales,cont,4,material[:cantidad],18,_unset)
+
+		     _endif
+		     
+		_endloop
+		
+	_endif
+		
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_esquema.new()
+    >>_clone
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_esquema.new_with(Ptipo, _gather args)
+	#---------------------------------------------------
+	##  Objetivo  : generar una instancisa del sello de lista de
+	## materiales inicializada segun el tipo de elementos que se
+	## desea exponer, donde 
+	## PoDatos contiene el tipo de elementos que se listaran  y sus
+	## valores son :red o :estructuras.
+
+	.tipo << PTipo
+	
+	>> _super.new_with(property_list.new_from_gathered ( args ))
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_esquema.obten_lista_materiales()
+	#---------------------------------------------------
+	##  Objetivo  : obtener la lista de materiales.
+	##
+	(LoElemResumen, ht) << _self.elementos_de_proyecto()
+
+		_return (LoElemResumen,ht)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_lista_materiales_esquema.select_from_map
+	#---------------------------------------------------
+	##  Objetivo  : Obtener los elementos de lalista de materiales a
+	## partir del esquematico generado.
+	##
+
+	     LOestructuras << hash_table.new()
+	     Loelementos   << hash_table.new()
+	     paf << smallworld_product.pni_application()
+	     mv << paf.plugin(:map_plugin).current_map_view
+	     geoms << mv.get_selectable_geometry_set()	
+             
+               cont << 0 	      
+
+              _for itergeo _over geoms.fast_elements()
+	      _loop
+
+		      _if mv.ace_name.lowercase.matches?("*esquema*")
+		      _then
+		      
+			      
+			      _if itergeo.rwo.responds_to?(:owner) _andif
+				  itergeo.rwo.owner.responds_to?(:construction_status) _andif  
+				  itergeo.rwo.owner.construction_status = "PROYECTADO"
+			      _then
+				      
+				      owner << itergeo.rwo.owner			       
+				      cont +<<1
+				      
+				      
+				      LoStr << rope.new()
+				      
+				      _if owner.responds_to?(:structures)
+				      _then
+					      LoStr << owner.structures			     
+				      _endif 
+				      
+				      _if LoStr.size > 0
+				      _then
+					      
+					      # INICIO DEL CAMBIO
+					      # (15/04/20 ahernan) : FILTRAR SOLO PROYECTADOS.
+					      #
+					      
+					      
+					      _for IterStr  _over LoStr.fast_elements()
+					      _loop
+						      _if IterStr.construction_status = "PROYECTADO"
+						      _then
+							      
+							      _if IterStr.source_collection.name _is :underground_route
+							      _then
+								      key <<  IterStr.source_collection.name + "|" + IterStr.perform(:user!_tipo_obra_co).write_string
+								      
+							      _elif IterStr.source_collection.name _is :uub
+							      _then
+								      key <<  IterStr.source_collection.name + "|" + IterStr.perform(:spec_id).write_string
+								      
+							      _else
+								      key << IterStr.source_collection.name + "|"
+							      _endif 
+							      
+							      _if LOestructuras[key]  _is _unset 
+							      _then						    
+								      LOestructuras[key] <<  equality_set.new()
+							      _endif	      
+							      
+							      _if _not LOestructuras[key].includes?(IterStr)
+							      _then						    
+								      LOestructuras[key].add(IterStr) 
+							      _endif
+							      
+							      
+						      _endif
+						      
+					      _endloop
+					      
+					      
+					      
+					      #
+					      # FIN DEL CAMBIO
+					      
+					      
+					      
+					      
+				      _endif
+				      
+				      
+				      
+				      _if   _not owner.is_structure?
+				      _then
+					      
+					      _if    owner.responds_to?(:spec_id)
+					      _then			  
+						      key << owner.source_collection.name + "|"  + owner.spec_id
+						      
+					      _elif  owner.source_collection.name = "figure_eight"
+					      _then
+						      mspec << owner.sheath.get_spec_record()
+						      mcable << mspec.user!_clase  + %space +   mspec.fiber_quantity.write_string +  %space +  "metros"
+						      metros << owner.length.value_in(:m).write_string
+						      key   << (owner.source_collection.name + "|"  +
+								owner.source_collection.external_name + %space  +  mcable).as_symbol()
+						      
+					      _else
+						      key << owner.source_collection.name + "|"  
+				       _endif
+				       
+					      # (15/03/03 ahernan) : asigna el dato.
+					      _if LoElementos[key]  _is  _unset 
+					      _then
+						      LoElementos[key] << equality_set.new()
+					      _endif
+					      
+					      _if _not LoElementos[key].includes?(owner)
+					      _then
+						      
+						      LoElementos[key].add(owner) 
+					      _endif				
+					      
+					      # (15/03/03 ahernan) : Contar fusiones
+					      
+					      _if owner.responds_to?(:mit_internal_connections)
+					      _then
+						      _for iterMit _over owner.mit_internal_connections.fast_elements()
+						      _loop
+							      _if iterMit.user!_tipo_conexion.uppercase = "FUSION" _andif
+								  iterMit.construction_status = "PROYECTADO"
+							      _then
+								      _if LoElementos[:mit_internal_connection]  _is _unset 
+								      _then						    
+									      LoElementos[:mit_internal_connection] <<  equality_set.new() 
+								      _endif	      
+								      
+								      
+								      _if _not LoElementos[:mit_internal_connection].includes?(iterMit)
+								      _then
+									      LoElementos[:mit_internal_connection].add(iterMit) 
+						       _endif				
+							      _endif
+						      _endloop		    		 
+					      _endif
+					      
+					      
+					      
+				      _endif
+				      
+				      
+			      _endif
+			      
+			      
+			      
+		      _endif
+		      
+		      
+	      _endloop
+	      
+
+
+	      
+	      _return LOestructuras, Loelementos
+	      
+_endmethod
+$

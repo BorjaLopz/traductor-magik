@@ -1,0 +1,218 @@
+#----------------------------------------------------------------
+#
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Obtener claves y abreviaciones de varia información
+# Autor: Viridiana Baltazar Luna
+# Fecha de creacion: 13-Febrero-2006
+#
+#----------------------------------------------------------------
+#
+# Fecha de modificación: VBL/17-Febrero-2006/Agreger métodos
+#
+#----------------------------------------------------------------
+
+_package user
+#remex(:c_Traductor)
+
+$
+def_slotted_exemplar(:c_Traductor,
+ {
+   {:oTabla_Mes,       _unset, :writable }, # Almacena abreviaturas de meses del anio
+   {:oTabla_TipoCtl,   _unset, :writable }, # Almacena los tipos de central
+   {:oTabla_Met_PEP,   _unset, :writable }, # Almacena el nombre de los metodos que obtienen 1 PEP
+   {:oTabla_Tipo_Plano,_unset, :writable }, # Almacena los tipos de plano
+   {:oTabla_Sup,       _unset, :writable }, # Almacena los tipos de superficie
+   {:oTabla_Casetas,   _unset, :writable }  # Almacena los tipos de casetas telefónicas
+ }
+)
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Traductor.new()
+	
+	_return _clone.init()
+	
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Traductor.init()
+
+	_return _self
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Traductor.Tipo_Superficie(PsTipo_Sup)
+
+	_if .oTabla_Sup _is _unset
+	_then
+		.oTabla_Sup << hash_table.new()
+		.oTabla_Sup.default_value << ""
+
+		.oTabla_Sup[:|Acera|]         << "ACERA"
+		.oTabla_Sup[:|Adoquin|]       << "ADOQ."
+		.oTabla_Sup[:|Arena|]         << "ARENA"
+		.oTabla_Sup[:|Asfalto|]       << "ASFAL."
+		.oTabla_Sup[:|Azulejo|]       << "AZULE."
+		.oTabla_Sup[:|Carretera|]     << "CARRET."
+		.oTabla_Sup[:|Concreto|]      << "CONCR."
+		.oTabla_Sup[:|Desconocido|]   << "DESCO."
+		.oTabla_Sup[:|Empedrado|]     << "EMPED."
+		.oTabla_Sup[:|Lajas|]         << "LAJAS"
+		.oTabla_Sup[:|Mosaico|]       << "MOSAI."
+		.oTabla_Sup[:|Otros|]         << "OTROS"
+		.oTabla_Sup[:|Pasto (Area Jardinada)|] << "PASTO"
+		.oTabla_Sup[:|Tepetate|]      << "TEPET."
+		.oTabla_Sup[:|Tierra Limpia|] << "TIERRA"
+	_endif
+
+	_return .oTabla_Sup[PsTipo_Sup]
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Traductor.Mes(PnNumeroMes, _optional formato_largo?)
+
+	.oTabla_Mes << hash_table.new()
+	.oTabla_Mes.default_value << ""
+	
+	_if formato_largo? = _true
+	_then
+		.oTabla_Mes[1]  << "ENERO"
+		.oTabla_Mes[2]  << "FEBRERO"
+		.oTabla_Mes[3]  << "MARZO"
+		.oTabla_Mes[4]  << "ABRIL"
+		.oTabla_Mes[5]  << "MAYO"
+		.oTabla_Mes[6]  << "JUNIO"
+		.oTabla_Mes[7]  << "JULIO"
+		.oTabla_Mes[8]  << "AGOSTO"
+		.oTabla_Mes[9]  << "SEPTIEMBRE"
+		.oTabla_Mes[10] << "OCTUBRE"
+		.oTabla_Mes[11] << "NOVIEMBRE"
+		.oTabla_Mes[12] << "DICIEMBRE"
+	_else
+		.oTabla_Mes[1]  << "ENE"
+		.oTabla_Mes[2]  << "FEB"
+		.oTabla_Mes[3]  << "MAR"
+		.oTabla_Mes[4]  << "ABR"
+		.oTabla_Mes[5]  << "MAY"
+		.oTabla_Mes[6]  << "JUN"
+		.oTabla_Mes[7]  << "JUL"
+		.oTabla_Mes[8]  << "AGO"
+		.oTabla_Mes[9]  << "SEP"
+		.oTabla_Mes[10] << "OCT"
+		.oTabla_Mes[11] << "NOV"
+		.oTabla_Mes[12] << "DIC"		
+	_endif
+
+	_return .oTabla_Mes[PnNumeroMes]
+		
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Traductor.Tipo_Central(PsTipoCtl)
+
+	_if .oTabla_TipoCtl _is _unset
+	_then
+		.oTabla_TipoCtl << hash_table.new()
+		.oTabla_TipoCtl.default_value << "CTL"
+
+		.oTabla_TipoCtl[:CENTRAL]    << "CTL"
+		.oTabla_TipoCtl[:CONTENEDOR] << "URL"
+		.oTabla_TipoCtl[:URL]        << "URL"
+		.oTabla_TipoCtl[:GABINETE]   << "NAM"
+		.oTabla_TipoCtl[:NAM]        << "NAM"
+	_endif
+
+	_return .oTabla_TipoCtl[PsTipoCtl]
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Traductor.metodo_pep(PsPEPSel)
+
+	_if .oTabla_Met_PEP _is _unset 
+	_then
+		.oTabla_Met_PEP << hash_table.new()
+		
+		.oTabla_Met_PEP[:pep_construccion_canalizacion]   << "pep_cons_can"
+		.oTabla_Met_PEP[:pep_construccion_principal]      << "pep_cons_princ"
+		.oTabla_Met_PEP[:pep_construccion_secundaria]     << "pep_cons_sec"
+		.oTabla_Met_PEP[:pep_desmontaje_canalizacion]     << "pep_desm_can"
+		.oTabla_Met_PEP[:pep_desmontaje_principal]        << "pep_desm_princ"
+		.oTabla_Met_PEP[:pep_desmontaje_secundaria]       << "pep_desm_sec"
+		.oTabla_Met_PEP[:pep_rehabilitacion_canalizacion] << "pep_reha_can"
+		.oTabla_Met_PEP[:pep_rehabilitacion_principal]    << "pep_reha_princ"
+		.oTabla_Met_PEP[:pep_rehabilitacion_secundaria]   << "pep_reha_sec"
+		.oTabla_Met_PEP[:pep_reconcentracion_principal]   << "pep_reco_princ"
+		.oTabla_Met_PEP[:pep_reconcentracion_secundaria]  << "pep_reco_sec"
+	_endif
+
+	_return .oTabla_Met_PEP[PsPEPSel]
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_traductor.tipo_plano(Id_Tipo_Plano)
+
+	_if .oTabla_Tipo_Plano _is _unset 
+	_then
+		.oTabla_Tipo_Plano << hash_table.new()
+		.oTabla_Tipo_Plano.default_value << ""
+
+		.oTabla_Tipo_Plano[:fosa_cables]        << "FOSA DE CABLES Y DG"
+		.oTabla_Tipo_Plano[:division_distritos] << "DIVISION DE DISTRITOS"
+		.oTabla_Tipo_Plano[:ashurado]           << "ASHURADO"
+		.oTabla_Tipo_Plano[:itinerario]         << "ITINERARIO DE CANALIZACION"
+		.oTabla_Tipo_Plano[:estudio_conjunto]   << "ESTUDIO DE CONJUNTO"
+		.oTabla_Tipo_Plano[:principales]        << "ESQUEMATICO RED PRINCIPAL"
+		.oTabla_Tipo_Plano[:ruta_cables]        << "RUTA DE CABLES"
+		.oTabla_Tipo_Plano[:ruta_cables_fo]	<< "RUTA DE CABLES"
+	_endif
+
+	_return .oTabla_Tipo_Plano[Id_Tipo_Plano]
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_Traductor.tipo_caseta(p_descripcion)
+
+	_if .oTabla_Casetas _is _unset
+	_then
+		.oTabla_Casetas << hash_table.new()
+		.oTabla_Casetas.default_value << ""
+
+		.oTabla_Casetas[:|TELEFONO PUBLICO PONGA SU LINEA A TRABAJAR PSLT|] << :|PSLT|
+		.oTabla_Casetas[:|TELEFONO PUBLICO TARJETA CHIP TPTC|]              << :|TPTC|
+		.oTabla_Casetas[:|TELEFONO PUBLICO LINEA TELEFONO COMPARTIDO LTC|]  << :|LTC|
+		.oTabla_Casetas[:|TELEFONO PUBLICO COMPETENCIA|]                    << :|OPERT|
+	_endif
+
+	_return .oTabla_Casetas[p_descripcion]
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_traductor.nombre_atributo_pep(psym_nombre_pep)
+
+	_local lht_attr_pep << hash_table.new()
+	
+	lht_attr_pep[:|PEPCanalizacionAligeradaFibraUT|] << "user!_pep_ut_cana_ali"
+	lht_attr_pep[:|PEPCanalizacionEncofradaFibraUT|] << "user!_pep_ut_cana_enc"
+	lht_attr_pep[:|PEPFibraAereaUT|]                 << "user!_pep_ut_fib_ae"
+	lht_attr_pep[:|PEPFibraSubterraneaUT|]           << "user!_pep_ut_fib_sub"
+	lht_attr_pep[:|PEPCanalizacionAligeradaFibraZO|] << "user!_pep_zo_cana_ali"
+	lht_attr_pep[:|PEPCanalizacionEncofradaFibraZO|] << "user!_pep_zo_cana_enc"
+	lht_attr_pep[:|PEPFibraAereaZO|]                 << "user!_pep_zo_fib_ae"
+	lht_attr_pep[:|PEPFibraSubterraneaZO|]           << "user!_pep_zo_fib_sub"
+
+	_return lht_attr_pep[psym_nombre_pep]
+	
+_endmethod
+$

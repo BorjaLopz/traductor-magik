@@ -1,0 +1,862 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Planos - Fibra Óptica 
+# Objetivo: Mostrar la lista de materiales para proyectos de FO 
+# Autor:    ahernanram
+# Fecha de creacion: (15/02/06 ahernan)
+#
+#----------------------------------------------------------------
+_package user
+$
+#remex(:c_resumen_del_proyecto)
+$
+def_slotted_exemplar(:c_resumen_del_proyecto,
+{
+	 {:tipo, _unset},  #se indica si la lista de materiales es de elementos de red o estructuras
+	 {:LoElemResumen, _unset},
+	 {:LoDesc,       _unset},
+	 {:ht,_unset }
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.new_with( _gather args)
+	#---------------------------------------------------
+	##  Objetivo  : generar una instancisa del sello de lista de
+	## materiales inicializada segun el tipo de elementos que se
+	## desea exponer, donde 
+	## PoDatos contiene el tipo de elementos que se listaran  y sus
+	## valores son :red o :estructuras.
+
+	.loDesc << {
+	          {"LONGITUD DEL TRAMO A CONSTRUIR KMS","------"},
+		  {"LONGITUD TOTAL DE LA RUTA","------" },
+		  {"DERIVACIONES" , "------"  },
+		  {"CABLE PRECON CON/SCUPC 144 F.O", "TMX-RISER"},
+		  {"CABLE PRECON CON/SCUPC 96 F.O","TMX-RISER"},
+		  {"CABLE PRECON CON/SCUPC 48 F.O","TMX-RISER"},
+		  {"CABLE SUBTERRANEO 144 F.O","SFDTP-2YF"},
+		  {"CABLE SUBTERRANEO 96 F.O","SFDTP-2YF"},
+		  {"CABLE SUBTERRANEO 48 F.O","SFDTP-2YF"},
+		  {"CABLE SUBTERRANEO 24 F.O","SFDTP-2YF"},
+		  {"CABLE SUBTERRANEO 12 F.O","SFDTP-2YF"},
+		  {"CABLE SUBTERRANEO 6 F.O","SFDTP-2YF"},
+		  {"CABLE SUBTERRANEO 4 F.O","SFDTP-2YF"},
+		  {"CABLE AEREO 96 F.O","AFDTP-2YF"},
+		  {"CABLE AEREO 48 F.O","AFDTP-2YF"},
+		  {"CABLE AEREO 24 F.O","AFDTP-2YF"},
+		  {"CABLE AEREO 12 F.O","AFDTP-2YF"},
+		  {"CABLE AEREO 6 F.O","AFDTP-2YF"},
+		  {"No DE GAZAS","------"},
+		  {"INTERVENCION A CIERRE SUBTERRANEO","FOSC 350 C"},
+		  {"INTERVENCION A CIERRE SUBTERRANEO","FOSC 450 BS"},
+		  {"INTERVENCION A CIERRE SUBTERRANEO","LUCIERNAGA"},
+		  {"CIERRE DE EMPALME RECTO HASTA 36 F.O","FOSC 350 C"},
+		  {"CIERRE DE EMPALME RECTO ENTRE 37 Y 108 F.O","FOSC 350 C"},
+		  {"CIERRE DE EMPALME RECTO MAYOR A 108","FOSC 450 BS"},
+		  {"CIERRE DE EMPALME 1E/2S ENTRE 37 Y 108","FOSC 350 C"},
+		  {"CIERRE DE EMPALME 1E/2S MAYOR A 108","FOSC 450 BS"},
+		  {"CIERRE DE EMPALME 1E/3S MAYOR A 37","FOSC"},
+		  {"CIERRE DE EMPALME 1E/4S HASTA 36","FOSC"},
+		  {"CIERRE DE EMPALME 1E/4S MAYOR A 37","FOSC 450 BS"},
+		  {"CONEXIONES POR FUSION POR FIBRA","------"},
+		  {"PLACAS DE IDENTIFICACION","ALUMINIO"},
+		  {"TAPA PARA SUBDIVISION DE VIAS","------"},
+		  {"FLEXODUCTO DE 35 MM MTS","------"},
+		  {"TUBO RANURADO DE PVC","------"},	
+		  {"COLOCACION DE SOPORTES","------"},	
+		  {"INSTALACION DE VIA OCUPADA","------"},	
+		  {"CAPUCHON TERMOCONTRACTIL","------"},	
+		  {"CABLE ENGRAPADO","------"},	
+		  {"QUITAR GUIA","------"},	
+		  {"INSTALACION DE CABLE EN ESCALERILLA","------"},	
+		  {"INSTALACION DE ESCALERILLA DE ALUMINIO", "------"}	}
+	
+	
+	>> _super.new_with(property_list.new_from_gathered ( args ))
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.defined_attributes
+	
+		attribs << rope.new_from (_super.defined_attributes)
+		attribs.add(layout_attribute_definition.new(:longitud_tramo,     :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:longitud_total_ruta,:string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:derivaciones,:string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_pre144,:string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_pre96, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_pre48, :string,:default_value,"",:description, "" ))
+		
+		attribs.add(layout_attribute_definition.new(:cable_sub144,:string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_sub96, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_sub48, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_sub24, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_sub12, :string,:default_value,"",:description, "" ))	
+		attribs.add(layout_attribute_definition.new(:cable_sub6,  :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_sub4,  :string,:default_value,"",:description, "" ))
+		
+		attribs.add(layout_attribute_definition.new(:cable_aer96, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_aer48, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_aer24, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_aer12, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_aer6,  :string,:default_value,"",:description, "" ))
+		
+		attribs.add(layout_attribute_definition.new(:Num_gazas ,  :string,:default_value,"",:description, "" ))
+
+		attribs.add(layout_attribute_definition.new(:int_cierresub350,  :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:int_cierresub450,  :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:int_cierresluci,   :string,:default_value,"",:description, "" ))
+
+		attribs.add(layout_attribute_definition.new(:cierre_empr36_350 ,     :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cierre_empr37_108_350,  :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cierre_empr_108_450,    :string,:default_value,"",:description, "" ))
+
+		attribs.add(layout_attribute_definition.new(:cierre_emp_1_2_108_350, :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cierre_emp_1_2_108_450, :string,:default_value,"",:description, "" ))
+		
+		attribs.add(layout_attribute_definition.new(:cierre_emp_1_3_m_37,    :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cierre_emp_1_4_36,      :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cierre_emp_1_4_m_37,    :string,:default_value,"",:description, "" ))
+
+		
+		attribs.add(layout_attribute_definition.new(:fusion_por_fibra,       :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:placas_identificacion,  :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:tapa_para_subdivision,  :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:flexoductos,            :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:tubo_ranurado,          :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:soportes,               :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:via_ocupada,            :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:capuchon,               :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_engrapado,        :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:quitar_guia,            :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:cable_escalerilla,      :string,:default_value,"",:description, "" ))
+		attribs.add(layout_attribute_definition.new(:escalerill_aluminio,    :string,:default_value,"",:description, "" ))
+		
+		>> attribs
+			
+_endmethod
+$
+c_resumen_del_proyecto.define_attributes()
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.configura_tabla()
+	##Define la estructura del sello de la lista de materiales
+
+	.o_color_linea <<  {1.0, 0.0, 0.0}
+		
+	  _self.obten_lista_materiales()
+	
+	renglones_agregar << .loDesc.size ##.ht.size    + 
+
+	_if .ht _isnt _unset
+	_then
+		lo_tabla << .o_tablas.crea_tabla(2+renglones_agregar,4,:tbl_lista_materiales)
+	_else
+		lo_tabla << .o_tablas.crea_tabla(2,4,:tbl_lista_materiales)
+	_endif
+
+	# coordenada donde inicia la tabla
+	lo_tabla.ocoordenada_origen << .o_coord_inicio
+
+	# longitud de los renglones de la tabla, dada en mm 
+	_for n_reng _over range(1,2+renglones_agregar)
+	_loop
+		lo_tabla.orenglones.elemento(n_reng).nlongitud << 6
+	_endloop
+
+	# longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 6
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 80
+	lo_tabla.ocolumnas.elemento(3).nlongitud  << 20
+	lo_tabla.ocolumnas.elemento(4).nlongitud  << 20
+		
+	# se ocultan bordes de celdas
+	oculta << rope.new_with({1,1},{1,2},{1,3},{1,4})
+	
+	_for e _over oculta.fast_elements()
+	_loop
+	lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Sup? << _false
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false 
+	_endloop
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.obten_lista_materiales()
+	#---------------------------------------------------
+	##  Objetivo  : obtener la lista de materiales.
+	##
+	 _self.elementos_de_proyecto()
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.asigna_celdas_a_colorear()
+	_local lst_celdas_color << rope.new()
+	_local ren_tbl << _self.o_tablas.elemento(:tbl_lista_materiales).oceldas.sys!slot(:nnumren)
+		
+	lst_celdas_color.add({:tbl_lista_materiales,1,2,.o_color_linea})
+
+	_for  iterIndice   _over 3.upto(ren_tbl)
+		_loop
+			lst_celdas_color.add({:tbl_lista_materiales,iterIndice,1,.o_color_linea})
+			lst_celdas_color.add({:tbl_lista_materiales,iterIndice,2,.o_color_linea})
+			lst_celdas_color.add({:tbl_lista_materiales,iterIndice,3,.o_color_linea})
+			lst_celdas_color.add({:tbl_lista_materiales,iterIndice,4,.o_color_linea})			
+		_endloop
+
+	_return lst_celdas_color
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.buscar_elementos_en_mapa()
+	## Busca los cables proyectados
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view 
+	Lovp << mv.get_geometry_set()
+	_if Lovp _is _unset
+	_then _return _endif
+	_if Lovp.world _is _unset 
+	_then _return _unset 
+	_endif
+	gset << Lovp.world.geometry_set()
+
+	elementos << rope.new()
+	
+	_for geom _over gset.fast_elements()
+	_loop
+		 reg_gis << geom.rwo.source_rwo_records().an_element()
+		 
+		_if reg_gis _isnt _unset _andif
+		    reg_gis.responds_to?(:construction_status) _andif 
+		    reg_gis.rwo_type _isnt  :sheath
+		_then
+			_if reg_gis.construction_status = "PROYECTADO"
+			_then
+				elementos.add ( reg_gis )				 
+			_endif
+		_endif
+	_endloop
+	
+	_return elementos
+		
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.consultar_Lista_materiales()
+        ## Potype--> :ocanalizacion, PoCriterioGrupo-->  :user!_tipo_obra_co 
+	
+	mm << hash_table.new()
+
+	lista << swg_dsn_admin_engine.active_design.scan_geometries
+	selmap << _self.buscar_elementos_en_mapa() 
+	_if selmap _isnt _unset 
+	_then
+		lista.add_all(selmap)		
+	_endif
+
+	
+	_for k _over lista.elements()
+	_loop
+		
+
+		_if k.responds_to?(:source_collection) _andif
+		    k.responds_to?(:construction_status)  _andif
+		    k.source_collection.name _isnt :sheath  _andif
+		    k.source_collection.name _isnt :aerial_route  _andif
+		    k.construction_status =  "PROYECTADO"
+		_then
+                       _if k.responds_to?(:spec_id) 
+		       _then	       
+                                mkey << (k.source_collection.external_name.write_string + "|"  + k.spec_id).as_symbol()
+		       _else
+			        mkey << (k.source_collection.external_name.write_string + "|"  ).as_symbol()
+		       _endif
+			
+			_if mm[mkey] _is _unset 
+			_then		
+				mm[mkey] << equality_set.new()			
+			_endif
+
+		#	write(:mkey, mkey)
+			
+			mm[mkey].add(k)				
+		_endif
+	_endloop	
+
+		
+	_return mm
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.elementos_de_proyecto()
+	#---------------------------------------------------
+	##  Objetivo  : Hacer una lista de todos los materiales del
+	## proyecto.
+	##
+
+	LoElementos << rope.new()
+	ht  << hash_table.new()
+         
+	
+	.ht << _self.consultar_Lista_materiales( _unset  ,_unset )	
+	
+	#genera una lista de todos los elementos.
+	
+	_if .ht.size > 0 
+      _then
+	      _for iterObjetoName,lista _over ht.keys_and_elements()  
+	      _loop
+		      _for LoOBjeto _over lista.elements()
+		      _loop
+			     LoElementos.add(LoObjeto )
+		      _endloop
+	      _endloop
+	      
+	_endif
+
+	.LoElemResumen  << LoElementos
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.etiqueta_celdas()
+	## Titulos de la lista de materiales
+
+	titulo << "RESUMEN DEL PROYECTO"
+
+
+	
+	_self.asigna_texto_celda(:tbl_lista_materiales,1,2,titulo,35,:centre_right)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,1,"No",30,_unset)
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,2,"DESCRIPCION",30, _unset )
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,3,"MATERIAL",30,_unset) 
+	_self.asigna_texto_celda(:tbl_lista_materiales,2,4,"TOTAL",30,_unset)
+
+	_self.etiqueta_celdas_desc()
+_endmethod
+$
+
+_method c_resumen_del_proyecto.actualiza_datos()
+        ## actualiza la informacion de las celdas.
+	_self.llena_datos_celdas()
+#	_self.draw_content_on(.window)
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.draw_content_on(window)
+	
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << _self.o_tablas.area_total()
+
+        .o_tablas.Despliega(window)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.llena_datos_celdas_old()
+	## Obtiene la lista de materiales y asigna los valores.
+	##	
+	LoFormato << float_format.new(:float_decimal_places,2)
+
+	v <<  mit_manager.modelit_dataset
+	material << property_list.new()
+
+	##(LoElementoss,ht) << _self.obten_lista_materiales()
+
+	#Cantidad de renglones de la tabla actual
+	_local ren_tbl << _self.o_tablas.elemento(:tbl_lista_materiales).oceldas.sys!slot(:nnumren)
+	
+	_if .ht.size > 0
+	_then
+		
+		cont << 2
+	      keys_o << _self.keys_Order(.ht )
+	      
+#		_for Iterkey,values _over .ht.keys_and_elements()
+		_for  Iterkeyc _over keys_o.elements()
+		_loop
+
+			Iterkey	<< Iterkeyc.as_symbol()
+			values << .ht[Iterkey.as_symbol()]
+			
+			cont+<<1
+			IterObject << values.an_element() 
+			material[:cantidad] << values.size.write_string
+			material[:desc_uc] << IterObject.source_collection.external_name.write_string
+			material[:desc_mat] << ""
+
+                        _if IterObject.responds_to?(:primary_geometry)   _andif
+			    IterObject.primary_geometry _is :route
+			_then
+				material[:desc_unidad] << "metros"
+                                material[:cantidad] << 0
+				
+				_for record _over values.fast_elements()
+				_loop
+					cable? << record.source_collection.name _is :sheath
+					
+					_if cable?
+					_then
+						Longitud << record.measured_length.value_in(:m)
+
+						_if Longitud <=0
+						_then
+							longitud << record.calculated_fiber_length.value_in(:m)
+						_endif
+					_else
+						Longitud << record.measured_length.value_in(:m)
+					_endif
+					
+					material[:cantidad] +<<  longitud
+	
+				_endloop
+				
+				material[:cantidad] << material[:cantidad].as_fixed_string(5,2)
+				
+			_else
+				material[:desc_unidad] << "pzas"
+			_endif 
+			
+			_if   IterObject.source_collection.name _is :sheath
+			_then
+			        mspec  << IterObject.get_spec_record()
+				desc <<  mspec.user!_clase.write_string + %space +
+					 mspec.fiber_quantity.write_string
+				
+				material[:desc_mat] <<  IterObject.source_collection.external_name +   desc
+				material[:desc_uc] << ""
+	
+			_elif IterObject.responds_to?(:spec_id)
+			_then
+				material[:desc_mat]  << IterObject.spec_id.write_string
+				
+			_elif IterObject.responds_to?(:user!_tipo_conexion)
+			_then
+				material[:desc_mat]  << IterObject.user!_tipo_conexion.write_string
+				
+			_elif IterObject.source_collection.name _is :underground_route 
+			_then				
+				# (15/08/13 bautistaja) : Modified.
+				rpmaterial << Iterkey.write_string.split_by("|")
+				_if rpmaterial.size > 1
+				_then
+					material[:desc_mat]  << Iterkey.write_string.split_by("|")[2]
+				_else
+					material[:desc_mat] << Iterkey.write_string.split_by("|")[1]
+				_endif
+				
+                        _elif  IterObject.source_collection.name _is :figure_eight 
+			_then
+				# (15/08/13 bautistaja) : Modified.
+				rpmaterial << Iterkey.write_string.split_by("|")
+				_if rpmaterial.size > 1
+				_then
+					material[:desc_mat]  << Iterkey.write_string.split_by("|")[2]
+				_else
+					material[:desc_mat]  << Iterkey.write_string.split_by("|")[1]
+				_endif
+			        material[:desc_uc] << ""
+			_else
+				material[:desc_mat]  << ""
+			_endif
+
+			material[:desc_uc] +<<  %space  +  material[:desc_mat]				 
+
+			#(10/02/15 bautistaja): Se valida la cantidad de renglones de
+			# la tabla actual.
+			_if ren_tbl >= cont
+			_then
+				_self.asigna_texto_celda(:tbl_lista_materiales,cont,1,cont-2                ,18,_unset)
+				_self.asigna_texto_celda(:tbl_lista_materiales,cont,2,material[:desc_uc]    ,18,:centre_left )
+			##	_self.asigna_texto_celda(:tbl_lista_materiales,cont,3,material[:desc_unidad],18,_unset )
+				_self.asigna_texto_celda(:tbl_lista_materiales,cont,3,material[:cantidad]   ,18,_unset )
+			_endif
+				     
+		_endloop
+		
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.llena_datos_celdas()
+
+
+	valores << _self.calcula_datos()
+	
+	LoFormato << float_format.new(:float_decimal_places,2)
+	
+	v <<  mit_manager.modelit_dataset
+	material << property_list.new()
+	cont << 2
+	
+	#Cantidad de renglones de la tabla actual
+	_local ren_tbl << _self.o_tablas.elemento(:tbl_lista_materiales).oceldas.sys!slot(:nnumren)
+	
+#	_for  Iterkeyc _over  .LoDesc.elements()
+#	_loop
+#		
+#		show(:Iterkeyc, Iterkeyc)
+#		cont+<<1		
+#
+#		material[:desc_uc] <<  Iterkeyc[1]
+#		material[:desc_mat] << Iterkeyc[2]
+#		material[:cantidad] << "0"
+#			
+#		#(10/02/15 bautistaja): Se valida la cantidad de renglones de
+#		# la tabla actual.
+#		_if ren_tbl >= cont
+#		_then
+#			_self.asigna_texto_celda(:tbl_lista_materiales,cont,1, cont-2                ,25,_unset)
+#			_self.asigna_texto_celda(:tbl_lista_materiales,cont,2,material[:desc_uc]     ,25,:centre_left )
+#			_self.asigna_texto_celda(:tbl_lista_materiales,cont,3,material[:desc_mat]    ,25,_unset )
+#			_self.asigna_texto_celda(:tbl_lista_materiales,cont,4,material[:cantidad]    ,25,_unset )
+#		_endif
+#		
+#	_endloop
+	
+
+	cont << 2
+	_for iterk,itervalue _over valores.keys_and_elements()
+	_loop
+		cont+<<1
+		#show(cont,iterk, itervalue )
+		_self.asigna_texto_celda(:tbl_lista_materiales,cont,4, itervalue   ,25,_unset )
+	_endloop
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.etiqueta_celdas_desc()
+	
+	LoFormato << float_format.new(:float_decimal_places,2)
+	
+	v <<  mit_manager.modelit_dataset
+	material << property_list.new()
+	cont << 2
+	
+	#Cantidad de renglones de la tabla actual
+	_local ren_tbl << _self.o_tablas.elemento(:tbl_lista_materiales).oceldas.sys!slot(:nnumren)
+	
+	_for  Iterkeyc _over  .LoDesc.elements()
+	_loop
+		
+		
+		cont+<<1		
+
+		material[:desc_uc] <<  Iterkeyc[1]
+		material[:desc_mat] << Iterkeyc[2]
+		material[:cantidad] << "0"
+			
+		#(10/02/15 bautistaja): Se valida la cantidad de renglones de
+		# la tabla actual.
+		_if ren_tbl >= cont
+		_then
+			_self.asigna_texto_celda(:tbl_lista_materiales,cont,1, cont-2                ,25,_unset)
+			_self.asigna_texto_celda(:tbl_lista_materiales,cont,2,material[:desc_uc]     ,25,:centre_left )
+			_self.asigna_texto_celda(:tbl_lista_materiales,cont,3,material[:desc_mat] ,25,_unset )
+			_self.asigna_texto_celda(:tbl_lista_materiales,cont,4,material[:cantidad]    ,25,_unset )
+		_endif
+		
+	_endloop
+	
+
+_endmethod
+$
+
+
+
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.contar_fusiones()
+	#---------------------------------------------------
+	##  Objetivo  : Obtener el numero de fusiones proyectadas en
+	## los elementos CEDO, Empalme, y Terminal.
+	## esta consulta se basa en los elementos de la red en el
+	## recorrido de la genración del plano de detalles.
+
+	paf << smallworld_product.pni_application()
+	generador_planos <<paf.plugin(:gen_Planos)
+        Lista <<  generador_planos.obtener_registros_de(:oelementos)
+	ht  << hash_table.new()
+	ht[:mit_internal_connection] << rope.new()
+       _for IterObject _over lista.fast_elements()
+       _loop
+	      # w(:IterObject,IterObject)
+	       
+	       _if IterObject.responds_to?(:mit_internal_connections)
+	       _then
+                  _for iterMit _over IterObject.mit_internal_connections.fast_elements()
+		  _loop
+			  _if iterMit.user!_tipo_conexion.uppercase = "FUSION" _andif
+			      iterMit.construction_status = "PROYECTADO"
+			  _then						
+				 ht[:mit_internal_connection].add(iterMit) 
+			  _else
+				  
+			  _endif
+		  _endloop		    		 
+	       _endif
+       _endloop
+
+       _return ht
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.keys_Order(Loelementos )
+	#---------------------------------------------------
+	##  Objetivo  : Ordenar los keys de un hash_table
+	##
+	
+	_local snproc << sorted_collection.figure_order_proc (
+			:strings_with_numbers )
+
+	order_proc << _proc ( d1, d2 )
+			      _import snproc
+			      >> snproc ( d1,d2 )
+		      _endproc 
+	
+	lista << sorted_collection.new ( _unset, order_proc )
+
+	
+	 keys_order  << Loelementos.keys
+
+	 _for iterKey  _over keys_order.fast_elements()
+	 _loop	
+		 lista.add(iterKey.write_string)
+	 _endloop
+
+	 _return lista
+		
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.elementos_en_secundarios()
+   ## Se obtienen los elementos de Red en nivel de secundarios.
+   ##
+	
+  _local LoListaObjetosSec << rope.new()
+  _local LoDisenoActivo
+  _local LoOei
+   LoDisenoActivo << swg_dsn_admin_engine.active_scheme
+
+   #LoOei << LoDisenoActivo.user!_oei_locals.an_element()
+   
+   ##_if LoOei _isnt _unset _andif
+   ##    LoOei.user!_oe_locals.size > 0
+   ##_then
+       ##BUSCAMOS POR CADA OE LOS ELEMENTOS y esto es por conectividad
+       ## desde el CEDO HACIA "afuera"
+	    LoCedos << swg_dsn_admin_engine.active_scheme.distrito_optico.cedos_fo
+	    
+	    _for cedo _over LoCedos.fast_elements()
+	    _loop
+		 LoDivisores <<  cedo.obtener_divisores_conectados()
+		 _for Divisor  _over LoDivisores.fast_elements()
+		 _loop
+		     _for pto_salida _over Divisor.output_ports().fast_elements()
+		     _loop
+			pc << c_path_connectivity.new(pto_salida, _true)
+			pc.set_oPto  << pto_salida
+			LoConect     << pc.run_get_connectivity_network(pto_salida)			
+			LoNetwork    << pc.build_tree_network_base(LoConect)
+			_if LoNetwork _isnt _unset 
+			_then
+			   _for j,k  _over LoNetwork.fast_keys_and_trees()
+			   _loop
+			      _if j.responds_to?(:construction_status) # _andif
+				  #j.construction_status = "PROYECTADO"
+			      _then
+				      LoListaObjetosSec.add(j)
+			      _endif
+			   _endloop   
+			_endif 
+			
+			LoStructures << pc.build_tree_structure_network_base(LoConect)
+			_if LoStructures _isnt _unset 
+			_then
+			  _for l,m _over LoStructures.fast_keys_and_trees() 
+			  _loop
+				  _if l.responds_to?(:construction_status) _andif
+				      l.construction_status = "PROYECTADO"
+				  _then
+					  LoListaObjetosSec.add(l) 
+				  _endif 
+			  _endloop 			      
+			_endif			  
+		     _endloop	 		   
+		 _endloop
+	    _endloop   
+##   _endif
+    
+   _return LoListaObjetosSec
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.descripcionObj(obj)
+
+		
+	_if obj.is_kind_of?(splice_closure)
+	_then
+		desc_uc  <<  "CIERRE DE EMPALME "  + obj.user!_capacidad.write_string
+		desc_mat <<  obj.spec_id.write_string.substitute_string("CIERRE","").trim_left_spaces()
+		
+	_endif
+
+	_if obj.is_kind_of?(sheath)
+	_then
+                spec_sheath << obj.get_spec_record()
+		
+		desc <<  spec_sheath.fiber_quantity.write_string + " F.O."
+		
+		_if obj.spec_id.matches?("FOSUB")
+		_then
+		     des1 << "CABLE SUBTERRANEO " 
+		_elif obj.spec_id.matches?("FOAER")
+		_then 
+			desc1 << "CABLE AEREO "
+		_elif obj.spec_id.matches?("PRECON")
+		_then 
+			desc1 << "CABLE PRECON CON/SCUPC"
+		_else
+			desc1 << obj.spec_id.write_string
+		_endif
+		
+		desc_uc  <<    desc1 + desc
+		desc_mat <<   spec_sheath.user!_clase.write_string
+		
+	_else
+		desc_uc  <<    obj.spec_id.write_string
+		desc_mat <<   ""
+		
+	_endif
+	
+	_return desc_uc, desc_mat
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.llena_datos_celdas_hk()
+	# (22/10/06 des_aaron) : auxiliar llenar los datos del sello
+	
+	_for  iterO,values  _over .ht.keys_and_elements()
+	_loop
+		write(itero, values)
+		
+	_endloop
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.calcula_datos()
+
+	lo_valores << property_list.new()
+		
+        _self.info_sello_propiedades(lo_valores)
+
+	_return  lo_valores
+	
+_endmethod
+$
+
+
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.info_sello_propiedades(Lo_valores)
+
+	
+	lo_valores[:longitud_tramo]               <<  _self.valor_propiedad(:longitud_tramo,Lo_valores[:longitud_tramo])
+	lo_valores[:longitud_total_ruta]         <<  _self.valor_propiedad(:longitud_total_ruta,Lo_valores[:longitud_total_ruta])
+	lo_valores[:derivaciones]                 <<  _self.valor_propiedad(:derivaciones,Lo_valores[:derivaciones])
+	
+	lo_valores[:cable_pre144]                 <<  _self.valor_propiedad(:cable_pre144,Lo_valores[:cable_pre144])	
+	lo_valores[:cable_pre96]                  <<  _self.valor_propiedad(:cable_pre96,Lo_valores[:cable_pre96])	
+	lo_valores[:cable_pre48]                  <<  _self.valor_propiedad(:cable_pre48,Lo_valores[:cable_pre48])
+
+	lo_valores[:cable_sub144]                <<  _self.valor_propiedad(:cable_sub144,Lo_valores[:cable_sub144])
+	lo_valores[:cable_sub96]                 <<  _self.valor_propiedad(:cable_sub96, Lo_valores[:cable_sub96])
+	lo_valores[:cable_sub48]                 <<  _self.valor_propiedad(:cable_sub48, Lo_valores[:cable_sub48])
+	lo_valores[:cable_sub24]                 <<  _self.valor_propiedad(:cable_sub24, Lo_valores[:cable_sub24])
+	lo_valores[:cable_sub12]                 <<  _self.valor_propiedad(:cable_sub12, Lo_valores[:cable_sub12])
+	lo_valores[:cable_sub6]                  <<  _self.valor_propiedad(:cable_sub6,  Lo_valores[:cable_sub6])	
+	lo_valores[:cable_sub4]                  <<  _self.valor_propiedad(:cable_sub4,  Lo_valores[:cable_sub4])
+
+	lo_valores[:cable_aer96]                 <<  _self.valor_propiedad(:cable_aer96,Lo_valores[:cable_aer96])
+	lo_valores[:cable_aer48]                 <<  _self.valor_propiedad(:cable_aer48,Lo_valores[:cable_aer48])
+	lo_valores[:cable_aer24]                 <<  _self.valor_propiedad(:cable_aer24,Lo_valores[:cable_aer24])
+	lo_valores[:cable_aer12]                 <<  _self.valor_propiedad(:cable_aer12,Lo_valores[:cable_aer12])
+	lo_valores[:cable_aer6]                  <<  _self.valor_propiedad(:cable_aer6, Lo_valores[:cable_aer6])
+
+	lo_valores[:Num_gazas]                  <<  _self.valor_propiedad(:Num_gazas, Lo_valores[:Num_gazas])
+	lo_valores[:int_cierresub350]           <<  _self.valor_propiedad(:int_cierresub350, Lo_valores[:int_cierresub350])
+	lo_valores[:int_cierresub450]           <<  _self.valor_propiedad(:int_cierresub450, Lo_valores[:int_cierresub450])
+	lo_valores[:int_cierresluci]            <<  _self.valor_propiedad(:int_cierresluci,  Lo_valores[:int_cierresluci])
+
+	lo_valores[:cierre_empr36_350]            <<  _self.valor_propiedad(:cierre_empr36_350,  Lo_valores[:cierre_empr36_350])
+	lo_valores[:cierre_empr37_108_350]        <<  _self.valor_propiedad(:cierre_empr37_108_350,  Lo_valores[:cierre_empr37_108_350])
+	lo_valores[:cierre_empr_108_450]          <<  _self.valor_propiedad(:cierre_empr_108_450,  Lo_valores[:cierre_empr_108_450])
+	lo_valores[:cierre_emp_1_2_108_350]       <<  _self.valor_propiedad(:cierre_emp_1_2_108_350,  Lo_valores[:cierre_emp_1_2_108_350])
+	lo_valores[:cierre_emp_1_2_108_450]       <<  _self.valor_propiedad(:cierre_emp_1_2_108_450,  Lo_valores[:cierre_emp_1_2_108_450])
+	lo_valores[:cierre_emp_1_3_m_37]            <<  _self.valor_propiedad(:cierre_emp_1_3_m_37,  Lo_valores[:cierre_emp_1_3_m_37])
+	lo_valores[:cierre_emp_1_4_36]              <<  _self.valor_propiedad(:cierre_emp_1_4_36,    Lo_valores[:cierre_emp_1_4_36])
+	lo_valores[:cierre_emp_1_4_m_37]            <<  _self.valor_propiedad(:cierre_emp_1_4_m_37,  Lo_valores[:cierre_emp_1_4_m_37])
+	
+	lo_valores[:fusion_por_fibra]            <<  _self.valor_propiedad(:fusion_por_fibra ,  Lo_valores[:fusion_por_fibra])
+	lo_valores[:placas_identificacion]       <<  _self.valor_propiedad(:placas_identificacion,  Lo_valores[:placas_identificacion])
+	lo_valores[:tapa_para_subdivision]       <<  _self.valor_propiedad(:tapa_para_subdivision ,  Lo_valores[:tapa_para_subdivision])
+	lo_valores[:flexoductos]                 <<  _self.valor_propiedad(:flexoductos,  Lo_valores[:flexoductos])
+	lo_valores[:tubo_ranurado]               <<  _self.valor_propiedad(:tubo_ranurado,  Lo_valores[:tubo_ranurado])
+	lo_valores[:soportes]                    <<  _self.valor_propiedad(:soportes,  Lo_valores[:soportes])
+
+	lo_valores[:via_ocupada]                 <<  _self.valor_propiedad(:via_ocupada,  Lo_valores[:via_ocupada])
+	lo_valores[:capuchon]                    <<  _self.valor_propiedad(:capuchon,  Lo_valores[:capuchon])
+	lo_valores[:cable_engrapado]             <<  _self.valor_propiedad(:cable_engrapado,  Lo_valores[:cable_engrapado])
+	lo_valores[:quitar_guia]                 <<  _self.valor_propiedad(:quitar_guia,  Lo_valores[:quitar_guia])
+	lo_valores[:cable_escalerilla]           <<  _self.valor_propiedad(:cable_escalerilla,  Lo_valores[:cable_escalerilla])
+	lo_valores[:escalerill_aluminio]         <<  _self.valor_propiedad(:escalerill_aluminio,  Lo_valores[:escalerill_aluminio])
+	
+	
+	_return lo_valores
+	
+	
+_endmethod
+$
+
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_del_proyecto.valor_propiedad(Propiedad, dato_actual)
+
+	LoPropiedad << ""
+
+	_if dato_actual _is _unset 
+	_then
+		dato_actual << ""	
+	_endif
+
+	
+	_if _self.attributes[Propiedad]  _isnt _unset  _andif
+	    _self.attributes[Propiedad].value _isnt _unset _andif
+	    _self.attributes[Propiedad].value.size > 0
+	_then
+	
+		LoPropiedad << _self.attributes[Propiedad].value.write_string
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+		
+_endmethod
+

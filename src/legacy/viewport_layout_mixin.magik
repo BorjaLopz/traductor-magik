@@ -1,0 +1,49 @@
+_package sw
+$
+#----------------------------------------------------------------
+# viewport_layout_mixin.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: ahernan
+#
+# Date: 05/02/07
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_pragma(classify_level=advanced, topic={plotting})
+_method viewport_layout_mixin.connect_to_viewport_on_page ( a_layout_page, PoVp)
+# Objetivo: Conectar SELF al viewport PoVP, en caso de que SELF
+#           no haya sido conectado a algun viewport
+# Parametros de Entrada:
+#    a_layout_page:   Pagina actual en el Layout Designer.
+#    PoVp:            Viewport con el que se desea conectar a SELF.
+# Parametros de Salida: Ninguno
+# Regresa: Ninguno.
+# Fecha de ultima modificacion: 7/Ene./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Metodo nuevo.
+#
+# Fecha de ultima modificacion: 10/Ene./2005
+# Autor de la modificacion: rbsaldan
+# Descripcion de la modificacion: Documentacion.
+	
+
+	# Solo conectar si no ha sido ya conectado.
+	_if ( id << _self.viewport_id ) _isnt _unset _andif
+	    ( id > 0 )
+	_then
+		_return
+	_endif
+
+	# Conectar SELF al viewport PoVp.
+        _if PoVp _isnt _unset
+        _then
+                _self.viewport << PoVp
+        _endif
+        
+_endmethod
+$

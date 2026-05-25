@@ -1,0 +1,1238 @@
+_package user
+$
+def_slotted_exemplar(:c_sello_red_secundaria,
+{
+	{:pl_terminal_1,       _unset,  :writable},
+	{:pl_terminal_2,       _unset,  :writable},
+	{:pl_terminal_esp,     _unset,  :writable},
+	{:pl_num_terminal,     _unset,  :writable},
+	{:pl_nse,              _unset,  :writable},
+	{:nota_tipo_empalme,   _unset,  :writable},
+	{:nota_tipo_terminal,   _unset,  :writable},
+	{:nota_tipo_cable,     _unset,  :writable},
+	{:notas_fijas,         _unset,  :writable}
+}, :c_base_sello_cobre)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.asigna_celdas_a_colorear()
+## Asigna las celdas que van en color diferente
+## vbluna(17-nov-2006)
+
+	_local lst_celdas_color << rope.new()
+
+	lst_celdas_color.add({:tbl_Ocupacion,4,4,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_1,2,1,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_1,2,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_1,2,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,2,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,3,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,4,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,2,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,3,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,4,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,6,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,7,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_Ocupacion,3,4,.o_color_linea})
+	lst_celdas_color.add({:tbl_Red_Datos,2,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_Red_Datos,2,4,.o_color_linea})
+	lst_celdas_color.add({:tbl_Red_Datos,3,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_Red_Datos,3,4,.o_color_linea})
+	lst_celdas_color.add({:tbl_Red_Datos,4,3,.o_color_linea})
+	lst_celdas_color.add({:tbl_Red_Datos,4,4,.o_color_linea})
+	lst_celdas_color.add({:tbl_Ocupacion,3,5,.o_color_linea})
+	lst_celdas_color.add({:tbl_Ocupacion,4,5,.o_color_linea})
+	lst_celdas_color.add({:tbl_Ocupacion,4,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_2,8,3,.o_color_linea})
+
+	_return lst_celdas_color
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.configura_tabla()
+
+	.o_color_linea << {1.0, 0.0, 0.0}
+	
+	_local lo_tabla
+	_local ln_desp_x
+	_local ln_desp_y
+	_local pl_tab_en_x << property_list.new()
+	_local pl_tab_en_y << property_list.new()
+	
+	_local pl_cfg_corte_caja << property_list.new()		
+	_local pl_cfg_et_red_sec << property_list.new()
+	_local pl_cfg_inf_adm_1 << property_list.new()
+	_local pl_cfg_responsables << property_list.new()
+	_local pl_cfg_inf_adm_2 << property_list.new()
+	_local pl_cfg_ocupacion << property_list.new()
+	_local pl_cfg_notas << property_list.new()
+	_local pl_cfg_inventario << property_list.new()
+	_local pl_cfg_inv_tipo << property_list.new()
+	_local pl_cfg_inv_datos << property_list.new()
+	_local pl_cfg_publicos << property_list.new()
+	_local pl_cfg_pslt << property_list.new()
+	_local pl_cfg_distancia << property_list.new()
+	_local pl_cfg_et_red << property_list.new()
+	_local pl_cfg_red_datos << property_list.new()
+	
+	pl_cfg_corte_caja[:ren] << {5,5,5,5,5,5,5,5,5,5,5,5}
+	pl_cfg_corte_caja[:col] << {7,7,7,7,7,7,13,12,12}
+	pl_cfg_corte_caja[:borde_der_izq] << rope.new_with({1,2},{1,3},{1,4},{1,5},{1,6},
+							   {1,7},{1,8})
+	pl_cfg_corte_caja[:borde_der] << rope.new_with({1,1},{2,8})
+	pl_cfg_corte_caja[:borde_izq] << rope.new_with({2,9})
+
+	pl_cfg_et_red_sec[:ren] << {8}
+	pl_cfg_et_red_sec[:col] << {159}
+
+	pl_cfg_inf_adm_1[:ren] << {6,4}
+	pl_cfg_inf_adm_1[:col] << {24,22,31}
+
+	pl_cfg_responsables[:ren] << {4,13}
+	pl_cfg_responsables[:col] << {24,22,31}
+
+	pl_cfg_inf_adm_2[:ren] << {6,4,4,4,5,4,4,4}
+	pl_cfg_inf_adm_2[:col] << {26,15,41}
+	pl_cfg_inf_adm_2[:borde_der] << rope.new_with({1,1},{5,1},{6,1},{7,1},{8,1})
+
+	pl_cfg_ocupacion[:ren] << {4,3,3,3}
+	pl_cfg_ocupacion[:col] << {10,14,22,14,17}
+	
+	pl_cfg_notas[:ren] << {5,46.9992,5,4,4,4,4,4,4,4,4,4,4,4,4,4}
+	pl_cfg_notas[:col] << {16,50,16}
+	pl_cfg_notas[:borde_der] << rope.new_with({1,1},{2,1},{3,1},{1,2},{2,2},{3,2})
+
+	pl_cfg_inventario[:ren] << {5}
+	pl_cfg_inventario[:col] << {77}
+	
+	pl_cfg_inv_tipo[:ren] << {27,12,12,4}
+	pl_cfg_inv_tipo[:col] << {4}
+	pl_cfg_inv_tipo[:borde_der] << rope.new_with({4,1})
+
+	pl_cfg_inv_datos[:ren] << {7,4,4,4,4,4,4,4,4,4,4,4,4}
+	pl_cfg_inv_datos[:col] << {5,8,7,8,7,8,7,8,7,8}
+	pl_cfg_inv_datos[:borde_izq] << rope.new_with({13,1})
+	
+	pl_cfg_publicos[:ren] << {4}
+	pl_cfg_publicos[:col] << {24,53}
+
+	pl_cfg_pslt[:ren] << {4,4,4,4,4,4,4,4,4}
+	pl_cfg_pslt[:col] << {17,7,45,8}
+
+	pl_cfg_distancia[:ren] << {4}
+	pl_cfg_distancia[:col] << {50,27}
+
+	pl_cfg_et_red[:ren] << {5}
+	pl_cfg_et_red[:col] << {97,62}
+
+	pl_cfg_red_datos[:ren] << {5,4,4,4,4,4,4,6}
+	pl_cfg_red_datos[:col] << {30,24,23,20,34,28}
+	pl_cfg_red_datos[:borde_der_izq] << rope.new_with({6,2},{6,3},{6,4},{6,5},
+						 {7,2},{7,3},{7,4},{7,5},{8,2},{8,3})
+	pl_cfg_red_datos[:borde_der] << rope.new_with({1,5},{5,1},{5,3},{6,1},{7,1},{8,1},{8,5})
+	pl_cfg_red_datos[:borde_izq] << rope.new_with({1,6},{5,2},{5,4},{6,6},{7,6},{8,4},{8,6})
+	
+	#-----------------------------------------------------------
+	#  Tabla Corte de Caja 1
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(12,9,:tbl_Corte_Caja_1)
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_corte_caja)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_corte_caja)
+
+	#-----------------------------------------------------------
+	#  Tabla Corte de Caja 2
+	#-----------------------------------------------------------
+	pl_cfg_corte_caja[:ren] << {5,5,5,5,5,5,5,5,5,5,10}
+
+	lo_tabla << .o_tablas.crea_tabla(11,9,:tbl_Corte_Caja_2)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_Corte_Caja_1}) + 10
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x, .o_coord_inicio.y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_corte_caja)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_corte_caja)
+
+	pl_cfg_corte_caja[:borde_der_izq] << rope.new_with({1,2},{1,3},{1,4})
+	pl_cfg_corte_caja[:borde_der] << rope.new_with({11,1},{11,2},{11,3},{11,4})
+	pl_cfg_corte_caja[:borde_izq] << rope.new_with({11,5})
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_corte_caja)
+
+	#-----------------------------------------------------------
+	#Tabla Etiqueta Red Secundaria
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_etiq_red_sec)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1}) + 20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_et_red_sec)
+
+	#-----------------------------------------------------------
+	#Tabla Información Administrativa 1
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(2,3,:tbl_inf_adm_1)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec}) + 20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_inf_adm_1)
+
+	#-----------------------------------------------------------
+	#Tabla Responsables
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(2,3,:tbl_responsables)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							   :tbl_inf_adm_1}) +20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,.o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_responsables)
+
+	#-----------------------------------------------------------
+	#Tabla Información Administrativa 2
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(8,3,:tbl_inf_adm_2)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec}) +20
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_responsables})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+ 						      .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_inf_adm_2)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_inf_adm_2)
+
+	#-----------------------------------------------------------
+	#Tabla Ocupacion
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(4,5,:tbl_Ocupacion)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+						          :tbl_inf_adm_1,:tbl_responsables}) +20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_ocupacion)
+
+	#-----------------------------------------------------------
+	#Tabla Notas
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(16,3,:tbl_Notas)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							  :tbl_inf_adm_2}) +20
+	ln_desp_x <<  .o_tablas.Longitud_total_Columnas({:tbl_Ocupacion})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_notas)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_notas)
+
+	#-----------------------------------------------------------
+	#Tabla Etiqueta Inventario
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_etiq_Inventario)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							 :tbl_inf_adm_1,:tbl_responsables,
+							 :tbl_Ocupacion}) +20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,.o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_inventario)
+
+	#-----------------------------------------------------------
+	#Tabla Inventario_Tipo
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(4,1,:tbl_Inventario_Tipo)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							 :tbl_inf_adm_1,:tbl_responsables,
+							 :tbl_Ocupacion,:tbl_etiq_Inventario}) +20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_inv_tipo)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_inv_tipo)
+
+	#-----------------------------------------------------------
+	#Tabla Inventario_Datos
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(13,10,:tbl_Inventario_Datos)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							 :tbl_inf_adm_1,:tbl_responsables,
+							 :tbl_Ocupacion,:tbl_etiq_Inventario}) +20
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_Inventario_Tipo})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_inv_datos)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_inv_datos)
+	
+	#-----------------------------------------------------------
+	#Tabla Publicos
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,2,:tbl_Publicos)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							 :tbl_inf_adm_1,:tbl_responsables,
+							 :tbl_Ocupacion,:tbl_etiq_Inventario,
+							 :tbl_Inventario_Tipo}) + 20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_publicos)
+
+	#-----------------------------------------------------------
+	#Tabla PSLT
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(9,4,:tbl_PSLT)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							 :tbl_inf_adm_1,:tbl_responsables,
+							 :tbl_Ocupacion,:tbl_etiq_Inventario,
+							 :tbl_Inventario_Tipo,:tbl_Publicos}) + 20 
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_pslt)
+
+	#-----------------------------------------------------------
+	#Tabla Distancia
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,2,:tbl_Distancia)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							 :tbl_inf_adm_1,:tbl_responsables,
+							 :tbl_Ocupacion,:tbl_etiq_Inventario,
+							 :tbl_Inventario_Tipo,
+							 :tbl_Publicos,:tbl_PSLT}) + 20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_distancia)
+
+	#-----------------------------------------------------------
+	#Tabla Red_Titulo
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,2,:tbl_Red_Titulo)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							 :tbl_inf_adm_1,:tbl_responsables,
+							 :tbl_Ocupacion,:tbl_etiq_Inventario,
+							 :tbl_Inventario_Tipo,
+							 :tbl_Publicos,:tbl_PSLT,:tbl_Distancia}) +20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_et_red)
+
+	#-----------------------------------------------------------
+	#Tabla Red_Datos
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(8,6,:tbl_Red_Datos)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_Corte_Caja_1,:tbl_etiq_red_sec,
+							 :tbl_inf_adm_1,:tbl_responsables,
+							 :tbl_Ocupacion,:tbl_etiq_Inventario,
+							 :tbl_Inventario_Tipo,
+							 :tbl_Publicos,:tbl_PSLT,
+							 :tbl_Distancia,:Tbl_Red_Titulo}) + 20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_red_datos)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_red_datos)
+
+#------------------------------------------------------------
+#    TACHADO DE CELDAS
+#------------------------------------------------------------
+	_local lo_tacha << c_tachado_grafico.new()
+
+	_local lo_tabla_celdas << property_list.new()
+	lo_tabla_celdas[:tbl_Inventario_Datos] << rope.new_with({13,9})
+	lo_tabla_celdas[:tbl_Ocupacion] << rope.new_with({1,1},{1,2})
+	lo_tabla_celdas[:tbl_Publicos] << rope.new_with({1,2})
+	lo_tabla_celdas[:tbl_PSLT] << rope.new_with({1,3},{2,3},{3,3},{4,3},{5,3},{6,3},{7,3},{8,3},{9,3},
+					             {1,4},{2,4},{3,4},{6,4},{7,4},{8,4},{9,4})
+
+	_for tabla, celdas _over lo_tabla_celdas.fast_keys_and_elements()
+	_loop
+		_for celda _over celdas.fast_elements()
+		_loop
+			lo_celda << .o_tablas.elemento(tabla).oCeldas.Celda(celda[1],celda[2]).oElementos
+			lo_celda.Agregar_elemento(lo_tacha,:t_X)
+		_endloop
+	_endloop
+
+_endmethod
+$
+_method c_sello_red_secundaria.defined_attributes
+	attribs << rope.new_from (_super.defined_attributes)
+	attribs.add(layout_attribute_definition.new(:canalizacion,    :string,
+		                                    :description,     "canalizacion",
+						    :enum_method,     :enum_pep_cobre))
+	attribs.add(layout_attribute_definition.new(:principal,       :string,
+		                                    :description,     "principal",
+						    :enum_method,     :enum_pep_cobre))
+	attribs.add(layout_attribute_definition.new(:pisa,            :string,
+		                                    :description,     "pisa"))
+	attribs.add(layout_attribute_definition.new(:|tipo empalme|,  :string,
+		                                    :description,     "tipo_empalmes"))
+	attribs.add(layout_attribute_definition.new(:|tipo terminal|, :string,
+		                                    :description,     "tipo_terminales"))
+	attribs.add(layout_attribute_definition.new(:|tipo cable|,    :string,
+		                                    :description,     "tipo_cable"))
+	attribs.add(layout_attribute_definition.new(:observaciones,   :string,
+		                                    :description,     "observaciones"))
+	attribs.add(layout_attribute_definition.new(:hoja,   :string,
+		                                    :description,     "hoja"))
+	attribs.add(layout_attribute_definition.new(:|total hojas|,   :string,
+		                                    :description,     "total hojas"))
+	attribs.add(layout_attribute_definition.new(:|direccion CD|,   :string,
+		                                    :description,     "total hojas"))
+	attribs.add(layout_attribute_definition.new(:|numero manzanas|,   :string,
+		                                    :description,     "total hojas"))
+	>> attribs
+	
+_endmethod
+$
+c_sello_red_secundaria.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_red_secundaria.defined_attributes
+
+	
+	attribs << rope.new_from (_super.defined_attributes)
+
+		attribs.add(layout_attribute_definition.new(:opb,    :string,
+		                                    :description,     "Opbs",
+			                            :default_value,"" ))
+
+	       attribs.add(layout_attribute_definition.new(:oeis,     :string,
+		                                    :description,     "Oeis",
+						    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:oe_cons,    :string,
+		                                    :description,     "OE construccion",
+						    :default_value,"" ))
+
+		attribs.add(layout_attribute_definition.new(:oe_desm,    :string,
+		                                    :description,     "OE Desmontaje",
+						    :default_value,"" ))
+
+		attribs.add(layout_attribute_definition.new(:oe_reco,    :string,
+		                                    :description,     "OE reconcentracion",
+						    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:pep_cons_sec,    :string,
+		                                    :description,     "Pep canal",
+						    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:pep_desm_sec,    :string,
+	 	                                    :description,     "Pep desm"))
+
+		attribs.add(layout_attribute_definition.new(:pep_reco_sec,    :string,
+		                                    :description,     "Pep rec",
+						    :default_value,"" ))
+
+
+		
+		attribs.add(layout_attribute_definition.new(:canalizacion,    :string,
+							    :description,     "canalizacion",
+							    :default_value,   ""))
+		
+		attribs.add(layout_attribute_definition.new(:principal,       :string,
+							    :description,     "principal",
+							    :default_value,   ""))
+
+		
+		attribs.add(layout_attribute_definition.new(:pisa,            :string,
+							    :description,     "pisa",
+							    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:tipo_empalme,    :string,
+							    :description,     "tipo_empalmes",
+							    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:tipo_terminal,   :string,
+							    :description,     "tipo_terminales",
+							    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:tipo_cable,      :string,
+							    :description,     "tipo_cable",
+							    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:observaciones,   :string,
+							    :description,     "observaciones",
+							    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:hoja,            :string,
+							    :description,     "hoja",
+							    :default_value,   1))
+		
+		attribs.add(layout_attribute_definition.new(:total_hojas,     :string,
+							    :description,     "total_hojas",
+							    :default_value,   2))
+		
+		attribs.add(layout_attribute_definition.new(:direccion_cd,    :string,
+							    :description,     "direccion_cd",
+							    :default_value,"" ))
+		
+		attribs.add(layout_attribute_definition.new(:numero_manzanas, :string,
+							    :description,     "numero_manzanas",
+							    :default_value,"" ))
+		>> attribs
+		
+_endmethod
+$
+c_sello_red_secundaria.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.escala()
+
+	_local lo_viewports
+	_local lo_viewport
+	
+        _try
+		lo_viewports << _self.layout_page.all_elements_of(c_viewport_layout_sigc)
+		
+		_for view _over lo_viewports.fast_elements()
+		_loop
+			# se obtiene el viewport que tiene asignado algún valor en
+			# .sTipoPlano, asegurando que no se tome la escala del croquis
+			_if view.sTipoPlano _isnt _unset
+			_then
+				lo_viewport << view
+			_endif
+		_endloop
+		
+		lo_escala << lo_viewport.view_scale.rounded
+		ls_escala << "1:" + lo_escala.write_string
+		
+		_return ls_escala
+		
+	_when does_not_understand
+		_return "F/E"
+	_endtry
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.etiqueta_celdas()
+
+	_local lrope_textos
+
+	_self.asigna_texto_celda(:tbl_Corte_Caja_1,1,1,"Distrito:",40,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_1,1,7,"Tipo:",40,:centre_left)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,1,1,"Dirección:",40,:centre_left,1)
+
+	_for n_ren,s_txt _over .pl_terminal_1.fast_keys_and_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_Corte_Caja_1,n_ren+2,1,s_txt.default("").write_string,33)
+	_endloop
+
+	_for n_ren,s_txt _over .pl_terminal_2.fast_keys_and_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_Corte_Caja_2,n_ren+2,1,s_txt.default("").write_string,33)
+	_endloop
+
+	_for n_col,s_txt _over .pl_num_terminal.fast_keys_and_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_Corte_Caja_1,2,n_col+1,s_txt.default("").write_string,33)
+		_self.asigna_texto_celda(:tbl_Corte_Caja_2,2,n_col+1,s_txt.default("").write_string,33)
+	_endloop
+
+	_self.asigna_texto_celda(:tbl_Corte_Caja_1,2,8,"STRIPS",33,_unset,10)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,2,8,"STRIPS",33,_unset,10)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_1,3,8,"Número",27)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,3,8,"Número",27)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_1,3,9,"Ocupación",27)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,3,9,"Ocupación",27)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,11,1,"FECHA:",35,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,11,6,"Total:",25)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,11,8,"Total:",30)
+
+	_self.asigna_texto_celda(:tbl_etiq_red_sec,1,1,"RED SECUNDARIA",60)
+	_self.asigna_texto_celda(:tbl_inf_adm_1,1,1,"TIPO O.P.B",40)
+	_self.asigna_texto_celda(:tbl_inf_adm_1,1,2,"O.P.B",40)
+	_self.asigna_texto_celda(:tbl_inf_adm_1,1,3,"O.E.I",40)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,1,1,"O.E.'S",40,:centre_right)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,1,3,"P.E.P.'S",40)
+
+	_self.asigna_texto_celda(:tbl_inf_adm_2,2,1,"CONSTRUCCION",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,3,1,"DESMONTAJE",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,4,1,"RECONCENTRACION",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,5,1,"REFERENCIAS",40,:centre_centre,14)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,6,1,"CANALIZACION",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,7,1,"PRINCIPALES",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,8,1,"PISA",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,5,3,"P.E.P.'S",40)
+
+	_self.asigna_texto_celda(:tbl_responsables,1,1,"PROYECTO",25)	
+	_self.asigna_texto_celda(:tbl_responsables,1,2,"SUPERVISO",25)	
+	_self.asigna_texto_celda(:tbl_responsables,1,3,"Vo. Bo. TELMEX",25)	
+
+	_self.asigna_texto_celda(:tbl_Ocupacion,1,3,"OCUP. DE RED",25)
+	_self.asigna_texto_celda(:tbl_Ocupacion,1,4,"CLIENTES",25)
+	_self.asigna_texto_celda(:tbl_Ocupacion,1,5,"% DE OCUP.",25)
+	_self.asigna_texto_celda(:tbl_Ocupacion,2,3,"INICIAL",18)
+	_self.asigna_texto_celda(:tbl_Ocupacion,3,3,"FINAL",18)
+	_self.asigna_texto_celda(:tbl_Ocupacion,4,3,"SATURACION",18)
+	_self.asigna_texto_celda(:tbl_Ocupacion,2,1,"K.M.P.S.M.",18)
+	_self.asigna_texto_celda(:tbl_Ocupacion,3,1,"K.M.P.S.E.",18)
+	_self.asigna_texto_celda(:tbl_Ocupacion,4,1,"K.M.P.S.P.",18)
+
+	_self.asigna_texto_celda(:tbl_etiq_Inventario,1,1,"INVENTARIO",40)
+	_self.asigna_texto_celda(:tbl_Inventario_Tipo,1,1,"RESIDENCIAL",18,:centre_left,1.5)
+	_self.asigna_texto_celda(:tbl_Inventario_Tipo,2,1,"COMER",18,:centre_left,1.5)
+	_self.asigna_texto_celda(:tbl_Inventario_Tipo,3,1,"INDUST",18,:centre_left,1.5)
+	_self.asigna_texto_celda(:tbl_Inventario_Tipo,4,1,"SUBTOTAL",15,:centre_left,0.5)
+	.o_tablas.elemento(:tbl_Inventario_Tipo).oCeldas.Celda(1,1).oElemento.sOrientacion << :top_bottom
+	.o_tablas.elemento(:tbl_Inventario_Tipo).oCeldas.Celda(2,1).oElemento.sOrientacion << :top_bottom
+	.o_tablas.elemento(:tbl_Inventario_Tipo).oCeldas.Celda(3,1).oElemento.sOrientacion << :top_bottom
+
+	lrope_textos << rope.new()
+	lrope_textos.add("NIVEL")
+	lrope_textos.add("VIVIENDAS" + character.newLine + "Y" + character.newLine + "LOCALES")
+	lrope_textos.add("LINEAS")
+	lrope_textos.add("LINEAS" + character.newLine + "CON MULTI-" + character.newLine + "PLICADOR")
+	lrope_textos.add("LINEAS" + character.newLine + "COMPE-" + character.newLine + "TENCIA")
+	lrope_textos.add("LINEAS" + character.newLine + "INALAM-" + character.newLine + "BRICAS")
+	lrope_textos.add("SOLICI-" + character.newLine + "TUDES")
+	lrope_textos.add("VIV. SIN" + character.newLine + "SERVICIO")
+	lrope_textos.add("FACTOR" + character.newLine + "DE PENET." + character.newLine + "AUTORIZ.")
+	lrope_textos.add("LINEAS" + character.newLine + "A SATU-" + character.newLine + "RACION")
+
+	_for n_col, valor _over lrope_textos.fast_keys_and_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,1,n_col,valor.default("").write_string,14,:top_centre)
+		.o_tablas.elemento(:tbl_Inventario_Datos).oCeldas.Celda(1,n_col).oElemento.nmargen_sup << 1
+	_endloop
+
+	_for n_ren,s_txt _over .pl_nse.fast_keys_and_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,n_ren+1,1,s_txt.default("").write_string,23)
+	_endloop
+
+	_self.asigna_texto_celda(:tbl_Publicos,1,1,"PUBLICOS",17)
+
+	_self.asigna_texto_celda(:tbl_PSLT,1,1,"PSLT",17,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_PSLT,2,1,"TPTC",17,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_PSLT,3,1,"LTC",17,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_PSLT,7,1,"ESCUELAS",17,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_PSLT,8,1,"IGLESIAS",17,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_PSLT,9,1,"BALDIOS",17,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_PSLT,4,1,"TOTAL",20,:centre_left,0.5)
+	_self.asigna_texto_celda(:tbl_PSLT,5,1,"TOTAL TELMEX",20,:centre_left,0.5)
+	_self.asigna_texto_celda(:tbl_PSLT,6,1,"TOTAL",20,:centre_left,0.5)
+
+	lo_tabla << .o_tablas.elemento(:tbl_PSLT)
+	
+	lo_texto << c_texto_grafico.new("TEL. PUBLICOS" + character.newLine + "TELMEX")
+	lo_texto.nTamanio    << 12
+	lo_texto.nMargen_Izq << 6.5
+	lo_texto.nMargen_Inf << 2
+	lo_texto.sAlineacion << :centre_centre	
+	lo_tabla.oCeldas.Celda(4,1).oElementos.Agregar_elemento(lo_texto,:t_TextoPSLT2) 
+
+	lo_texto  << c_texto_grafico.new_from(lo_texto,"TEL. PUBLICOS" + character.newLine + "OPERTEL")
+	lo_texto.nMargen_Izq << 6.5
+	lo_texto.nMargen_Inf << 2
+	lo_tabla.oCeldas.Celda(6,1).oElementos.Agregar_elemento(lo_texto,:t_TextoPSLT5)
+
+	_self.asigna_texto_celda(:tbl_Distancia,1,1,"DISTANCIA DE C.D. A O.C. EN KM. :",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Notas,1,2,"NOTAS DE PROYECTO",38)
+	_self.asigna_texto_celda(:tbl_Notas,3,2,"FALTAS  Y  DAÑOS  EN  LA  RED",38)
+	_self.asigna_texto_celda(:tbl_Notas,4,1,"CLAVE",25)
+	_self.asigna_texto_celda(:tbl_Notas,4,2,"DESCRIPCION",25)
+	_self.asigna_texto_celda(:tbl_Notas,4,3,"CANTIDAD",25)
+
+
+	_local ls_notas << .nota_tipo_empalme + character.newline + character.newline +
+			   .nota_tipo_terminal + character.newline + character.newline +
+			   .nota_tipo_cable + character.newline +
+			   .notas_fijas
+	
+	_self.asigna_texto_celda(:tbl_Notas,2,1,ls_notas.default("").write_string,19,:top_left,9)
+	
+	_self.asigna_texto_celda(:tbl_Red_Titulo,1,1,"DATOS DE LA RED",35)
+	_self.asigna_texto_celda(:tbl_Red_Titulo,1,2,"DATOS DEL AREA",35)
+	
+	_self.asigna_texto_celda(:tbl_Red_Datos,1,1,"SECUNDARIOS",30)
+	_self.asigna_texto_celda(:tbl_Red_Datos,1,2,"ACTUAL",30)
+	_self.asigna_texto_celda(:tbl_Red_Datos,1,3,"AUMENTO",30)
+	_self.asigna_texto_celda(:tbl_Red_Datos,1,4,"TOTAL",30)
+	_self.asigna_texto_celda(:tbl_Red_Datos,2,1,"PARES CONECTADOS",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,2,5,"SUPERFICIE EN KM",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,3,1,"PARES EN RESERVA",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,3,5,"TAM. LTE. PROM. EN MTS.",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,4,1,"TOTAL DE PARES",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,4,5,"NUMERO DE LOTES",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,5,1,"REALIZO INVENTARIO:",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,5,3,"FECHA INVENTARIO:",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,5,5,"NUMERO DE MANZANAS",20,:centre_left,1)
+	_self.asigna_texto_celda(:tbl_Red_Datos,6,1,"OBSERVACIONES :",30,:centre_left,1)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_red_secundaria.inicializa( properties )
+
+	# vbluna(23-feb-07)
+	# - Se agrega el parámetro: properties como resultado de las
+	#   modificaciones para almacenar los valores del sello
+	#   en archivo .xml
+
+	.pl_terminal_1 << {:|A|,:|B|,:|C|,:|D|,:|E|,:|F|,:|G|,:|H|,:|J|,:|K|}
+	.pl_terminal_2 << {:|L|,:|M|,:|O|,:|P|,:|R|,:|S|}
+	.pl_terminal_esp << {:|T|,:|U|,:|V|,:|X|,:|Y|,:|Z|}
+	.pl_num_terminal << {:|1|,:|2|,:|3|,:|4|,:|5|,:|SUMA|}
+	.pl_nse << {:|A|,:|B|,:|C|,:|D|,:|E|,:|C1|,:|C2|,:|C3|,:|IP|,:|IM|,:|IL|}
+
+	.nota_tipo_empalme <<  character.newline + "TODOS LOS EMPALMES PROYECTADOS SON "
+	.nota_tipo_terminal << "TODAS LAS TERMINALES PROYECTADAS SON TIPO "
+	.nota_tipo_cable << "TODO EL CABLE PROYECTADO SERA "
+	.notas_fijas << "CALIBRE (0.4) EXCEPTO EL MARCADO." + character.newline +
+			 character.newline +
+			 "EN TODOS LOS FINALES DE CORRIDA MULTISERVICIO SE" + character.newline +
+			 "CORTARAN LOS PARES MUERTOS SOBRANTES AL RAS DEL CABLE" + character.newline +
+			 character.newline +
+			 "TODOS LOS BAJANTES EN MAL ESTADO, CON UNIONES O" + character.newline +
+			 "APOYADOS EN CABLES Y/O POSTES AJENOS, O QUE SALEN DE SU" + character.newline +
+			 "AREA DE INFLUENCIA, SE DEBEN CAMBIAR Y/O RECONCENTRAR." + character.newline +
+			 character.newline +
+			 "TODO POSTE EXISTENTE Y PROYECTADO ES DE 25'', EXCEPTO " + character.newline +
+			 "LOS MARCADOS." + character.newline +
+			 character.newline +
+			 "EL CONTRATISTA RECTIFICARA O RATIFICARA LAS DISTANCIAS" + character.newline +
+			 "INTERPOSTALES Y LONGITUDES DE CENTRO A CENTRO DE POZO" + character.newline +
+			 "LAS SECCIONES TRANSVERSALES Y SU OCUPACION"
+
+	_super.inicializa( properties )
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_corte_caja_princ(p_pl_datos)
+
+	_local ln_reng_ini << 4
+	_local s_strip
+	_local s_valor
+
+	_for n_strip, n_valor _over p_pl_datos[:corte_caja_princ].fast_keys_and_elements()
+	_loop
+		s_strip << n_strip.default("").write_string
+		s_valor << n_valor.default("").write_string
+		
+		_if n_strip = :|Total|
+		_then
+			_self.asigna_texto_celda(:tbl_Corte_Caja_2,11,9,s_valor,25)
+		_else 
+			_if ln_reng_ini <= 11
+			_then
+				_self.asigna_texto_celda(:tbl_Corte_Caja_1,ln_reng_ini,8,s_strip,25)
+				_self.asigna_texto_celda(:tbl_Corte_Caja_1,ln_reng_ini,9,s_valor,25)
+			_else	
+				_self.asigna_texto_celda(:tbl_Corte_Caja_2,ln_reng_ini-8,8,s_strip,25)
+				_self.asigna_texto_celda(:tbl_Corte_Caja_2,ln_reng_ini-8,9,s_valor,25)
+			_endif
+			ln_reng_ini +<< 1
+		_endif
+	_endloop
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_corte_caja_sec(p_pl_datos)
+
+     _local pl_datos << p_pl_datos[:corte_caja_sec]
+
+     _if pl_datos.size <> 0
+     _then
+	_local ln_reng_ini
+	_local ln_num_col
+	_local ls_valor
+	_local etiq_term_esp << equality_set.new()
+
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,11,7,pl_datos[:|Total|,:|Total|].default("").write_string,25)
+
+	_for n_t _over .pl_num_terminal.fast_elements()
+	_loop
+		n_term << n_t.as_symbol()
+		ln_reng_ini << 3
+
+		_if n_term = :|SUMA|
+		_then
+			ln_num_col << 7
+		_else
+			ln_num_col << n_term.default(0).as_number() + 1
+		_endif
+
+		_for t _over .pl_terminal_1.fast_elements()
+		_loop
+			term << t.as_symbol()
+			ls_valor << pl_datos[term,n_term]
+			_self.asigna_texto_celda(:tbl_Corte_Caja_1,ln_reng_ini,ln_num_col,ls_valor.default("").write_string,25)
+			ln_reng_ini +<< 1
+		_endloop
+
+		ln_reng_ini << 3
+		
+		_for t _over .pl_terminal_2.fast_elements()
+		_loop
+			term << t.as_symbol()
+			ls_valor << pl_datos[term,n_term]
+			_self.asigna_texto_celda(:tbl_Corte_Caja_2,ln_reng_ini,ln_num_col,ls_valor.default("").write_string,25)
+			ln_reng_ini +<< 1
+		_endloop
+
+		#Llena la parte de las terminales especiales
+		
+		ln_reng_ini << 9
+		_for t _over .pl_terminal_esp.fast_elements()
+		_loop
+			term << t.as_symbol()
+			_if ln_reng_ini < 11
+			_then
+				_if pl_datos.includes_key?({term,n_term})
+				_then
+					etiq_term_esp.add(term.default("").write_string)
+					ls_valor << pl_datos[term,n_term]
+					_self.asigna_texto_celda(:tbl_Corte_Caja_2,ln_reng_ini,
+								 ln_num_col,ls_valor.default("").write_string,25)
+					ln_reng_ini +<< 1
+				_endif
+			_endif
+		_endloop
+	_endloop
+
+	ln_reng_ini << 9
+	
+	#Asigna las etiquetas correspondientes a las terminales especiales
+	_for te _over etiq_term_esp.fast_elements()
+	_loop
+		term_esp << te.as_symbol()
+		_self.asigna_texto_celda(:tbl_Corte_Caja_2,ln_reng_ini,1,term_esp,33)
+		ln_reng_ini +<< 1
+	_endloop
+    _endif
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_datos_celdas()
+
+	_local pl_datos << _self.obten_registros()
+
+	_self.asigna_texto_celda(:tbl_corte_caja_2,11,4,pl_datos[:fecha],25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,5,4,pl_datos[:fecha],25)
+
+	_self.llena_corte_caja_princ(pl_datos)
+	_self.llena_corte_caja_sec(pl_datos)
+	_self.llena_informacion_dto(pl_datos)
+	_self.llena_viv_lin(pl_datos)
+	_self.llena_factor_pen(pl_datos)
+	_self.llena_tipo_lote(pl_datos)
+	_self.llena_datos_proyecto(pl_datos)
+	_self.llena_tel_publicos(pl_datos)
+	_self.llena_datos_superficie(pl_datos)
+	_self.llena_ocupacion_red(pl_datos)
+	_self.llena_faltas_danios(pl_datos)
+	_self.llena_km_cable(pl_datos)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_datos_dinamicos()
+	
+	_local ls_fecha << c_traductor.mes(date_now().month_number) + " / " + date_now().year.write_string
+	_local ls_num_hoja << "PLANO: " + _self.attributes[:hoja].value.default("").write_string
+	_local ls_num_tot_hojas << "DE: " + _self.attributes[:total_hojas].value.default("").write_string
+	_local ls_observaciones << _self.attributes[:observaciones].value.default("").write_string
+	_local ls_pisa << _self.attributes[:pisa].value.default("").write_string
+	_local ls_tipo_empalme << _self.attributes[:tipo_empalme].value.default("").write_string
+	_local ls_tipo_terminal << _self.attributes[:tipo_terminal].value.default("").write_string
+	_local ls_tipo_cable << _self.attributes[:tipo_cable].value.default("").write_string
+	_local ls_direccion <<  _self.attributes[:direccion_cd].value.default("").write_string
+	_local ls_manzanas <<  _self.attributes[:numero_manzanas].value.default("").write_string
+	_local ls_oeis << _self.attributes[:oeis].value.default("").write_string
+
+	_local ls_notas
+
+	_if ls_observaciones.size > 65
+	_then
+		ls_obs1 << ls_observaciones.slice(1,65)
+		ls_obs2 << ls_observaciones.slice(66,ls_observaciones.size)
+	_else
+		ls_obs1 << ls_observaciones
+	_endif
+
+	_self.asigna_texto_celda(:tbl_Red_Datos,5,6,ls_manzanas,25)
+	_self.asigna_texto_celda(:tbl_Corte_Caja_2,1,4,ls_direccion,30,:centre_left)
+	_self.asigna_texto_celda(:tbl_corte_caja_2,11,4,ls_fecha,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,5,4,ls_fecha,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,8,5,ls_num_hoja,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,8,6,ls_num_tot_hojas,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,6,2,ls_obs1,30,:centre_left)
+	_self.asigna_texto_celda(:tbl_Red_Datos,7,1,ls_obs2,30,:centre_left,1)
+	
+	_self.asigna_texto_celda(:tbl_inf_adm_2,8,3,ls_pisa,25, _unset , _unset , {1,0,0}  )
+	
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(8,3).oElemento.sEstilo << "Bold"
+
+	lo_texto << c_texto_grafico.new(ls_tipo_empalme)
+	lo_texto.nTamanio    << 20
+	lo_texto.sEstilo     << "Bold"
+	_if _self.attributes[:blanco_negro].value = "SI"
+	_then
+	   lo_texto.sColor << colour.new_rgb(0.0,0.0,0.0)
+	_else
+	   lo_texto.sColor << colour.new_rgb(.o_color_linea[1],.o_color_linea[2],.o_color_linea[3])
+	_endif
+	lo_texto.sAlineacion << :top_left
+	lo_texto.nmargen_izq  << 34
+	lo_texto.nmargen_sup  << 2
+	.o_tablas.elemento(:tbl_Notas).oCeldas.Celda(2,2).oElementos.Agregar_elemento(lo_texto,:tipo_emp) 
+
+	lo_texto << c_texto_grafico.new_from(lo_texto,ls_tipo_terminal)
+	lo_texto.nmargen_izq  << 40
+	lo_texto.nmargen_sup  << 6.5
+	.o_tablas.elemento(:tbl_Notas).oCeldas.Celda(2,2).oElementos.Agregar_elemento(lo_texto,:tipo_term) 
+
+	lo_texto << c_texto_grafico.new_from(lo_texto,ls_tipo_cable)
+	lo_texto.nmargen_izq  << 27
+	lo_texto.nmargen_sup  << 10.9
+	.o_tablas.elemento(:tbl_Notas).oCeldas.Celda(2,2).oElementos.Agregar_elemento(lo_texto,:tipo_cab) 
+
+	txt_oies << c_texto_grafico.new_from(lo_texto, ls_oeis)
+	txt_oies.sAlineacion << :centre_centre
+	txt_oies.nTamanio    << 25
+	
+	.o_tablas.elemento(:tbl_inf_adm_1).oCeldas.Celda(2,3).oElementos.Agregar_elemento(txt_oies,:oeis)
+
+
+	# START CHANGE
+	# (12/11/23 fhramire) : 
+	#
+	
+	_local ls_opb             <<   _self.valor_propiedad(:opb,    ""  )
+	_local ls_oe_cons         <<   _self.valor_propiedad(:oe_cons, "")
+	_local ls_oe_desm         <<   _self.valor_propiedad(:oe_desm, "")
+	_local ls_oe_reco         <<   _self.valor_propiedad(:oe_reco, "" )
+	_local ls_pep_cons_sec    <<   _self.valor_propiedad(:pep_cons_sec, "" )
+	_local ls_pep_desm_sec    <<   _self.valor_propiedad(:pep_desm_sec, "" )
+	_local ls_pep_reco_sec    <<   _self.valor_propiedad(:pep_reco_sec, "" )
+	_local ls_numero_manzanas <<   _self.valor_propiedad(:numero_manzanas, "")
+	_local ls_canalizacion    <<   _self.valor_propiedad(:canalizacion, "")
+	_local ls_principal       <<   _self.valor_propiedad(:principal, "")
+
+	_self.asigna_texto_celda(:tbl_inf_adm_1,2,2, ls_opb ,25, _unset , _unset , {1,0,0}  )
+	_self.asigna_texto_celda(:tbl_inf_adm_2,2,2, ls_oe_cons ,25      , _unset , _unset , {1,0,0}  )	
+	_self.asigna_texto_celda(:tbl_inf_adm_2,3,2, ls_oe_desm ,25      , _unset , _unset , {1,0,0} )
+	_self.asigna_texto_celda(:tbl_inf_adm_2,4,2, ls_oe_desm, 25      , _unset , _unset , {1,0,0} )
+	_self.asigna_texto_celda(:tbl_inf_adm_2,2,3, ls_pep_cons_sec,25  , _unset , _unset , {1,0,0})
+	_self.asigna_texto_celda(:tbl_inf_adm_2,3,3, ls_pep_desm_sec,25  , _unset , _unset , {1,0,0})
+	_self.asigna_texto_celda(:tbl_inf_adm_2,4,3, ls_pep_reco_sec,25  , _unset , _unset , {1,0,0})
+	_self.asigna_texto_celda(:tbl_inf_adm_2,6,3,ls_canalizacion, 25  , _unset , _unset , {1,0,0})
+	_self.asigna_texto_celda(:tbl_inf_adm_2,7,3, ls_principal , 25   , _unset , _unset , {1,0,0})
+
+
+	.o_tablas.elemento(:tbl_inf_adm_1).oCeldas.Celda(2,2).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(2,2).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(3,2).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(4,2).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(2,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(3,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(4,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(6,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(7,3).oElemento.sEstilo << "Bold"
+	
+	#
+	# END CHANGE
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_datos_proyecto(p_pl_datos)
+
+	_self.asigna_texto_celda(:tbl_inf_adm_1,2,1,p_pl_datos[:tipo_operacion].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_inf_adm_1,2,2,p_pl_datos[:opb].default("").write_string,25)
+	.o_tablas.elemento(:tbl_inf_adm_1).oCeldas.Celda(2,1).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_1).oCeldas.Celda(2,2).oElemento.sEstilo << "Bold"
+
+	_self.asigna_texto_celda(:tbl_inf_adm_2,2,2,p_pl_datos[:oe_cons].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,3,2,p_pl_datos[:oe_desm].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,4,2,p_pl_datos[:oe_reco].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,2,3,p_pl_datos[:pep_cons_sec].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,3,3,p_pl_datos[:pep_desm_sec].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,4,3,p_pl_datos[:pep_reco_sec].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,6,3,p_pl_datos[:canalizacion].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_inf_adm_2,7,3,p_pl_datos[:principal].default("").write_string,25)
+
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(2,2).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(3,2).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(4,2).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(2,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(3,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(4,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(6,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_inf_adm_2).oCeldas.Celda(7,3).oElemento.sEstilo << "Bold"
+
+	_self.asigna_texto_celda(:tbl_Red_Datos,5,2,p_pl_datos[:realizo_inv].default("").write_string,25)
+
+	_self.asigna_texto_celda(:tbl_responsables,2,1,p_pl_datos[:proyectista].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_responsables,2,2,p_pl_datos[:supervisor].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_responsables,2,3,p_pl_datos[:supervisor_tmx].default("").write_string,25)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_datos_superficie(p_pl_datos)
+
+	_self.asigna_texto_celda(:tbl_Red_Datos,2,6,p_pl_datos[:superficie_km].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,3,6,p_pl_datos[:lote_promedio].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,4,6,p_pl_datos[:cantidad_lotes].default("").write_string,25)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_factor_pen(p_pl_datos)
+
+	_local col_factor_pen << p_pl_datos[:factor_pen]
+	_local ln_reng_ini << 2
+
+	col_factor_pen.default_value << 0.0
+
+	_for nse _over .pl_nse.elements()
+	_loop
+		ls_value << col_factor_pen[nse].default("").write_string
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,9,ls_value,25)
+		ln_reng_ini +<< 1
+	_endloop
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_faltas_danios(p_pl_datos)
+
+
+	_local lcol_faltas << p_pl_datos[:faltas_danios]
+	_local ln_reng_ini << 5
+
+	_for key, value _over lcol_faltas.fast_keys_and_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_Notas,ln_reng_ini,1,key.write_string,25,:centre_left)
+		_self.asigna_texto_celda(:tbl_Notas,ln_reng_ini,2,value[1].default("").write_string,25,:centre_left)
+		_self.asigna_texto_celda(:tbl_Notas,ln_reng_ini,3,value[2].default("").write_string,25,:centre_left)
+		ln_reng_ini +<< 1
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_informacion_dto(p_pl_datos)
+
+_self.asigna_texto_celda(:tbl_Corte_Caja_1,1,4,p_pl_datos[:ctl_dto].default("").write_string,30,:centre_left)
+_self.asigna_texto_celda(:tbl_Corte_Caja_1,1,8,p_pl_datos[:tipo_dto].default("").write_string,25,:centre_left, -2)
+_self.asigna_texto_celda(:tbl_Corte_Caja_2,1,5,p_pl_datos[:direccion_cd].default("").write_string,25,:centre_left, -2)
+_self.asigna_texto_celda(:tbl_Distancia,1,2,p_pl_datos[:distancia_oc].default("").write_string,30,:centre_left,1)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_km_cable(p_pl_datos)
+
+
+	_local lht_km_cable << p_pl_datos[:km_cable]
+
+#	_self.asigna_texto_celda(:tbl_Ocupacion,2,2,lht_km_cable[:km_ps_muertos].default("").write_string,18)
+	_self.asigna_texto_celda(:tbl_Ocupacion,3,2,lht_km_cable[:km_ps_exis].default("").write_string,18)
+	_self.asigna_texto_celda(:tbl_Ocupacion,4,2,lht_km_cable[:km_ps_proy].default("").write_string,18)
+
+	.o_tablas.elemento(:tbl_Ocupacion).oCeldas.Celda(4,2).oElemento.sEstilo << "Bold"
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_ocupacion_red(p_pl_datos)
+
+	_local lcol_resumen_pares << p_pl_datos[:resumen_pares]
+	_local lcol_ocupacion << p_pl_datos[:ocupacion]
+
+	_self.asigna_texto_celda(:tbl_Red_Datos,2,2,lcol_resumen_pares[:|Con|,:|Act|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,2,3,lcol_resumen_pares[:|Con|,:|Aum|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,2,4,lcol_resumen_pares[:|Con|,:|Tot|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,3,2,lcol_resumen_pares[:|Res|,:|Act|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,3,3,lcol_resumen_pares[:|Res|,:|Aum|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,3,4,lcol_resumen_pares[:|Res|,:|Tot|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,4,2,lcol_resumen_pares[:|Tot|,:|Act|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,4,3,lcol_resumen_pares[:|Tot|,:|Aum|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Red_Datos,4,4,lcol_resumen_pares[:|Tot|,:|Tot|].default("").write_string,25)
+
+	_self.asigna_texto_celda(:tbl_Ocupacion,2,5,lcol_ocupacion[:|Inicial|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Ocupacion,3,5,lcol_ocupacion[:|Final|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Ocupacion,4,5,lcol_ocupacion[:|Saturacion|].default("").write_string,25)
+
+	.o_tablas.elemento(:tbl_Red_Datos).oCeldas.Celda(2,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_Red_Datos).oCeldas.Celda(2,4).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_Red_Datos).oCeldas.Celda(3,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_Red_Datos).oCeldas.Celda(3,4).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_Red_Datos).oCeldas.Celda(4,3).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_Red_Datos).oCeldas.Celda(4,4).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_Ocupacion).oCeldas.Celda(3,5).oElemento.sEstilo << "Bold"
+	.o_tablas.elemento(:tbl_Ocupacion).oCeldas.Celda(4,5).oElemento.sEstilo << "Bold"
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_tel_publicos(p_pl_datos)
+
+
+	_local lcol_tel << p_pl_datos[:tel_publicos]
+
+	_self.asigna_texto_celda(:tbl_PSLT,1,2,lcol_tel[:|PSLT|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,2,2,lcol_tel[:|TPTC|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,3,2,lcol_tel[:|LTC|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,4,2,lcol_tel[:|Total_Tmx|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,4,4,lcol_tel[:|Total_Tmx|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,5,2,p_pl_datos[:lineas_tmx].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,6,2,lcol_tel[:|OPERT|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Ocupacion,2,4,p_pl_datos[:lineas_tmx].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Ocupacion,3,4,p_pl_datos[:lineas_tmx].default("").write_string,25)
+
+	.o_tablas.elemento(:tbl_Ocupacion).oCeldas.Celda(3,4).oElemento.sEstilo << "Bold"
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_tipo_lote(p_pl_datos)
+
+	_self.asigna_texto_celda(:tbl_PSLT,7,2,p_pl_datos[:num_escuelas].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,8,2,p_pl_datos[:num_iglesias].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,9,2,p_pl_datos[:num_baldios].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,7,2,p_pl_datos[:num_escuelas].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,8,2,p_pl_datos[:num_iglesias].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,9,2,p_pl_datos[:num_baldios].default("").write_string,25)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_red_secundaria.llena_viv_lin(p_pl_datos)
+
+	_local lp_datos_viv_lin << p_pl_datos[:viv_lin]
+	_local lp_datos_lin_satura << p_pl_datos[:lin_satura]
+	_local lp_datos_tot_viv_lin << p_pl_datos[:tot_viv_lin]
+	_local tot_lin_distrito << p_pl_datos[:tot_lin_dto].default("")
+	_local ln_reng_ini << 2
+
+	_for nse _over .pl_nse.fast_elements()
+	_loop
+		ls_value_viv << lp_datos_viv_lin[nse][:viviendas].default("").write_string
+		ls_value_lin << lp_datos_viv_lin[nse][:abonados].default("").write_string
+		ls_value_lin_multi << lp_datos_viv_lin[nse][:lineas_multiplicador].default("").write_string
+		ls_value_lin_compe << lp_datos_viv_lin[nse][:lineas_competencia].default("").write_string
+		ls_value_lin_inal << lp_datos_viv_lin[nse][:lineas_inalambricas].default("").write_string
+		ls_value_solicitud << lp_datos_viv_lin[nse][:solicitudes].default("").write_string
+		ls_viv_sin_serv << lp_datos_viv_lin[nse][:viv_sin_servicio].default("").write_string
+		ls_lin_satura << lp_datos_lin_satura[nse].default("").write_string
+
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,2,ls_value_viv,25)
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,3,ls_value_lin,25)
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,4,ls_value_lin_multi,25)
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,5,ls_value_lin_compe,25)
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,6,ls_value_lin_inal,25)
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,7,ls_value_solicitud,25)
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,8,ls_viv_sin_serv,25)
+		_self.asigna_texto_celda(:tbl_Inventario_Datos,ln_reng_ini,10,ls_lin_satura,25)
+
+		ln_reng_ini +<< 1
+	_endloop
+
+	#Asigna los totales del inventario
+	_self.asigna_texto_celda(:tbl_Inventario_Datos,13,2,
+				 lp_datos_tot_viv_lin[:viviendas].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Inventario_Datos,13,3,
+				 lp_datos_tot_viv_lin[:abonados].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Inventario_Datos,13,4,
+				 lp_datos_tot_viv_lin[:lineas_multiplicador].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Inventario_Datos,13,5,
+				 lp_datos_tot_viv_lin[:lineas_competencia].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Inventario_Datos,13,6,
+				 lp_datos_tot_viv_lin[:lineas_inalambricas].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Inventario_Datos,13,7,
+				 lp_datos_tot_viv_lin[:solicitudes].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Inventario_Datos,13,8,
+				 lp_datos_tot_viv_lin[:viv_sin_servicio].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_Inventario_Datos,13,10,lp_datos_lin_satura[:|Total|].default("").write_string,25)
+	_self.asigna_texto_celda(:tbl_PSLT,5,4,tot_lin_distrito.write_string,25)
+	_self.asigna_texto_celda(:tbl_Ocupacion,4,4,tot_lin_distrito.write_string,25)
+
+	.o_tablas.elemento(:tbl_Ocupacion).oCeldas.Celda(4,4).oElemento.sEstilo << "Bold"
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_red_secundaria.obten_registros()
+
+
+	pl_datos << property_list.new()
+
+	.o_distrito.col_lin_sat      << hash_table.new()
+	.o_distrito.o_format_float   << float_format.new(:float_decimal_places, 2)
+	.o_distrito.inventario       << hash_table.new()
+	.o_distrito.col_viv_lin      << hash_table.new()
+	.o_distrito.col_tel_publicos << hash_table.new()
+	.o_distrito.col_lotes        << rope.new()
+	.o_distrito.col_lin_sat      << hash_table.new()
+	.o_distrito.dto_nse_pred     << ""
+	.o_distrito.asigna_distrito( .o_proyecto.distrito)
+
+	pl_datos[:opb]             <<  _self.valor_propiedad(:opb,     .o_distrito.opb  )
+	pl_datos[:oeis]           <<   _self.valor_propiedad(:oeis,    .o_distrito.oei  )
+	pl_datos[:oe_cons]        <<   _self.valor_propiedad(:oe_cons, .o_distrito.oe(:construccion))
+	pl_datos[:oe_desm]        <<   _self.valor_propiedad(:oe_desm, .o_distrito.oe(:desmontaje))
+	pl_datos[:oe_reco]        <<   _self.valor_propiedad(:oe_reco, .o_distrito.oe(:reconcentracion))
+	pl_datos[:pep_cons_sec]   <<   _self.valor_propiedad(:pep_cons_sec, .o_proyecto.pep_cons_sec )
+	pl_datos[:pep_desm_sec]   <<   _self.valor_propiedad(:pep_desm_sec, .o_proyecto.pep_desm_sec )
+	pl_datos[:pep_reco_sec]   <<   _self.valor_propiedad(:pep_reco_sec, .o_proyecto.pep_reco_sec )
+	pl_datos[:numero_manzanas] <<  _self.valor_propiedad(:numero_manzanas, .o_distrito.cantidad_manzanas.write_string)
+	
+	_if .o_distrito.cajas_existentes.size > 1 _andif
+	    _self.attributes[:observaciones].value.write_string.size = 0
+	_then
+		_self.attributes[:observaciones].value << "El Distrito tiene más de una CD Existente, "+
+			"por lo tanto los datos de Tipo y Distancia a O.C. se toman de la primera CD"
+	_endif
+
+         lcol_attrib << {:canalizacion,:principal}
+ 
+         # se obtienen las PEPs de referencias
+	_for att _over lcol_attrib.fast_elements()
+	_loop
+		pl_datos[att] << " "
+		ls_pep << _self.attributes[att].value.write_string
+		l_cad << ls_pep.split_by("--")
+		_if l_cad.size > 0
+		_then
+			pl_datos[att] << " " + l_cad[1]
+		_endif		
+	_endloop
+
+	pl_datos[:corte_caja_princ] << .o_distrito.corte_caja_red_princ
+	pl_datos[:corte_caja_sec]   << .o_distrito.corte_caja_red_sec
+	pl_datos[:ctl_dto]          << .o_distrito.nombre_cd
+	pl_datos[:tipo_dto]         << .o_distrito.tipo_caja
+	pl_datos[:distancia_oc]     << .o_distrito.distancia_cd_oc
+	pl_datos[:viv_lin]          << .o_distrito.viviendas_lineas
+	pl_datos[:lin_satura]       << .o_distrito.lineas_saturacion
+	pl_datos[:tot_viv_lin]      << .o_distrito.total_viv_lin
+	pl_datos[:tot_lin_dto]      << .o_distrito.total_lineas_distrito
+	pl_datos[:factor_pen]       << .o_distrito.factor_pen_nse
+	pl_datos[:num_escuelas]     << .o_distrito.numero_escuelas
+	pl_datos[:num_iglesias]     << .o_distrito.numero_iglesias
+	pl_datos[:num_baldios]      << .o_distrito.numero_baldios
+	pl_datos[:tipo_operacion]   << .o_proyecto.tipo_operacion	
+	pl_datos[:realizo_inv]      << .o_proyecto.realizo_inventario
+	pl_datos[:proyectista]      << .o_proyecto.proyectista_disenio
+	pl_datos[:supervisor]       << .o_proyecto.supervisor_disenio
+	pl_datos[:supervisor_tmx]   << .o_proyecto.supervisor_telmex_disenio
+	pl_datos[:tel_publicos]     << .o_distrito.telefonos_publicos
+	pl_datos[:lineas_tmx]       << .o_distrito.total_lineas_telmex
+	pl_datos[:superficie_km]    << .o_distrito.superficie_km
+	pl_datos[:lote_promedio]    << .o_distrito.o_format_float.format(.o_distrito.tam_lote_promedio_m)
+	pl_datos[:cantidad_lotes]   << .o_distrito.cantidad_lotes
+	pl_datos[:resumen_pares]    << .o_distrito.resumen_pares
+	pl_datos[:ocupacion]        << .o_distrito.ocupacion
+	pl_datos[:faltas_danios]    << .o_distrito.faltas_y_danios
+	pl_datos[:km_cable]         << .o_distrito.resumen_km_cable()
+	pl_datos[:fecha]            << c_traductor.mes(date_now().month_number) + " / " +
+				       date_now().year.write_string
+	_return pl_datos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_red_secundaria.valor_propiedad(Propiedad, dato_actual)
+	## 
+	##
+
+	LoPropiedad << ""
+	
+	_if _self.attributes[Propiedad]  _isnt _unset  _andif
+	    _self.attributes[Propiedad].value _isnt _unset _andif
+	    _self.attributes[Propiedad].value.size > 0
+	_then
+	
+		LoPropiedad << _self.attributes[Propiedad].value.write_string
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+	
+	
+_endmethod
+$

@@ -1,0 +1,241 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos - estudio de transmisison
+# Objetivo: 
+#           
+# Autor: dsanchez
+# Fecha de creacion: 31-03-2005
+#
+# ---------------- Revision History -----------------
+# Ult Mod.
+#  05/04/05 DSB - 10:50 Se agrego una etiqueta para el nombre
+#                 de la derivada
+#  05/04/05 DSB - No se muueven el mar izq y der
+#  01/04/05 DSB - 22:00 Se creo
+#
+# Reviso.
+# dsb
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_elemento_empalme_derivacion_g)
+
+$
+def_slotted_exemplar(:c_elemento_empalme_derivacion_g,
+    {
+       {:sNombre_derivada,     _unset } # Nombre de la derivacion
+    }
+    ,:c_elemento_empalme_g
+)
+$
+
+c_elemento_empalme_derivacion_g.define_slot_access(:sNombre_derivada,    :writable, :private)
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_empalme_derivacion_g.new(RoObjeto)
+
+## Objetivo: Crear una instancia de la clase c_elemento_entidad_g
+## Parámetros de entrada:
+##     Entidad - RoObjeto:  Objeto entidad que va a representar
+##                   graficamente
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+
+   _super.new(RoObjeto)
+
+   _self.sNombre_Simbolo << "empalme_derivacion"
+   _self.sDescripcion    << "ED-" + _self.oEntidad.user!_num_empalme.write_string
+   _self.nLong_Grafica << 40#150 * 1
+
+   _self.sNombre_derivada << _self.oEntidad.user!_nom_deriva.write_string
+   _return  _clone
+   
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_empalme_derivacion_g.configurar_elementos()
+
+## Objetivo: Configura los elementos graficos creados, con los
+## datos recibidos de RoObjeto 
+## Parámetros de entrada:
+##     Entidad - RoObjeto:  Objeto del cual se van a tomar los 
+## datos para mostrar 
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+	
+   _super.configurar_elementos()
+
+
+   LoLbl << _self.oElementos.obten_elemento(:Etiqueta_2)
+   LoLbl.sTexto << _self.sNombre_derivada
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_empalme_derivacion_g.dfn_ubicacion_elementos_internos()
+
+## Objetivo: define la ubicacion dentro del area (bounding_box)
+## de los elementos graficos que lo componen
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se creo
+
+ _local LnNumRenDiv << 20 # Numero de renglones que se divide el area (bulding)
+	
+   # obtienen la latura en mm de la altura del area y la divide en
+   # 20 renglones
+   LnAltEnMM << (_self.oArea.YMax - _self.oArea.yMin) 
+   LnAltRen <<  LnAltEnMM / LnNumRenDiv
+	
+   #-- Etiqueta 1
+	
+   # Obtiene la pos de la etiqueta_1 para saber donde debe desplegarse
+   # calcula los numero de renglones que se debe de mover, la etiqueta
+   LnNumRenSup << _self.pos_etiqueta(:Etiqueta_1).as_integer()
+   LnNumrenInf << LnNumRenDiv - 2 -  _self.pos_etiqueta(:Etiqueta_1).as_integer()
+
+   # asigna el margen sup e inf de acuerdo a los num de ren que se
+   # debe desplazar la etiqueta
+   LoLbl << _self.oElementos.obten_elemento(:Etiqueta_1)
+   LoLbl.nMargen_Sup << LnAltRen * (LnNumRenSup / 10)
+   LoLbl.nMargen_Inf << LnAltRen * (LnNumRenInf / 10)
+
+
+   #-- Etiqueta 2
+	
+   # Obtiene la pos de la etiqueta_1 para saber donde debe desplegarse
+   # calcula los numero de renglones que se debe de mover, la etiqueta
+   LnNumRenSup << _self.pos_etiqueta(:Etiqueta_2).as_integer()
+   LnNumrenInf << LnNumRenDiv - 2 -  _self.pos_etiqueta(:Etiqueta_2).as_integer()
+
+   # asigna el margen sup e inf de acuerdo a los num de ren que se
+   # debe desplazar la etiqueta
+   LoLbl << _self.oElementos.obten_elemento(:Etiqueta_2)
+   LoLbl.nMargen_Sup << LnAltRen * (LnNumRenSup / 10)
+   LoLbl.nMargen_Inf << LnAltRen * (LnNumRenInf / 10)
+
+   
+   #-- Simbolo 1
+	
+   # Obtiene la pos de la etiqueta_1 para saber donde debe desplegarse
+   # calcula los numero de renglones que se debe de mover, la etiqueta
+
+#   # asigna el margen sup e inf de acuerdo a los num de ren que se
+#   # debe desplazar la etiqueta
+   LoSim << _self.oElementos.obten_elemento(:Simbolo_1)
+
+   # El 552 es la altura aprox del simbolo teniendo un ancho de 300
+   #   LV << (63 / 300 ) * _self.nLong_grafica
+   LnAlturaSim << (300 / 552 ) * _self.nLong_grafica
+
+   # 150+80 espara que la punta de la flecha empate con el pto de contacto
+   LV << ((150+80) / 552) * LnAlturaSim
+   
+   LoSim.nMargen_Sup << LV / 10
+   LoSim.nMargen_Inf << (LV * -1) /10
+
+   # 1/2 es la distancia a la que se encuentra el centro de la
+   # flecha del margen izq
+   #   LV << (1 / 2) * _self.nLong_grafica
+   #LoSim.nMargen_Izq << (LV * -1) /10   
+   #LoSim.nMargen_Der << LV / 10
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_elemento_empalme_derivacion_g.Crea_elementos_internos()
+
+## Objetivo: Crea los elementos que conforman a la
+## seccion graficamente
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   12/02/05 DSB Se creo
+## Notas:
+##  :Etiqueta_1 - Arriba - Longitud calculada de la fibra. calculated_fiber_length
+##  :Simbolo_1  - En medio - Linea
+## Nota: Cuando se crea un elemento, tambian se debe de ir a
+##        modificar el metodo: dfn_ubicacion_elementos_internos
+	
+	
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   # Creacion de los elementos internos Etiquetas
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -	
+
+   #-- Etiqueta que almacena el nombre del nodo
+   LoLbl1  << c_texto_grafico.new("ER")
+   LoLbl1.nTamanio << 25
+   LoLbl1.sAlineacion << :centre_centre
+   # Se agrega a la coleccion de etiquetas, esto se debe de hacer
+   # con las etiquetas 
+   _self.collEtiquetas[:Etiqueta_1] << 14
+   
+   _self.oElementos.Agregar_elemento(LoLbl1,:Etiqueta_1)
+
+
+   #-- Etiqueta que almacena el nombre del nodo
+   LoLbl2  << c_texto_grafico.new("Localidad")
+   LoLbl2.nTamanio << 30
+   LoLbl2.sAlineacion << :centre_centre
+   # Se agrega a la coleccion de etiquetas, esto se debe de hacer
+   # con las etiquetas 
+   _self.collEtiquetas[:Etiqueta_2] << 19
+   
+   _self.oElementos.Agregar_elemento(LoLbl2,:Etiqueta_2)
+
+   write("crea elemento internos emp derivac ")
+   
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   # Creacion de los elementos internos Simbolos
+   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   
+   LoSim  << c_simbolo_grafico.new(_self.sNombre_Simbolo)
+   _self.oElementos.Agregar_elemento(LoSim,:Simbolo_1)
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_elemento_empalme_derivacion_g.reposicionar_Area(RoArea)
+	
+## Objetivo: Calcular la nueva posicion del area (bounding_box)
+##           de acuerdo al punto de contacto
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa: NA	
+## Fecha de última modificación:
+##   01/04/05 DSB Se creo
+
+
+   # Calcular las distancias del pto de contacto interior a las
+   # coordenadas inferior y a la superior
+
+   LnAlturaArea << ( RoArea.YMax - RoArea.YMin )
+
+	
+   LnDistEnXInf << 0
+   LnDistEnYInf << LnAlturaArea / 2
+
+   LnDistEnXSup << _self.nLong_grafica
+   LnDistEnYSup << LnAlturaArea / 2
+
+   _return  bounding_box.new( _self.oPto_Contacto.X + LnDistEnXInf,
+                              _self.oPto_Contacto.Y - _self.nLong_grafica / 2, 
+                              _self.oPto_Contacto.X + _self.nLong_grafica, 
+                              _self.oPto_Contacto.Y + _self.nLong_grafica / 2  )
+	
+_endmethod
+$

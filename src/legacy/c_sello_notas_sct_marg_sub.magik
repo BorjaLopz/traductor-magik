@@ -1,0 +1,124 @@
+_package user
+#remex(:c_sello_notas_sct_marg_sub)
+$
+def_slotted_exemplar(:c_sello_notas_sct_marg_sub, {}, :c_sello_notas_sct)
+$
+c_sello_notas_sct_marg_sub.define_shared_constant(:allowed_on_menu?, _false  , :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_notas_sct_marg_sub.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblTitulo # Tabla que almacena el título de la tabla
+
+	LoTblTitulo << _self.oTablas.crea_tabla(2,1,:tbl_notas_grales)
+
+	# Coordenada donde iniciara la tabla
+	LoTblTitulo.oCoordenada_Origen << RoCoord
+
+	# Longitud de los renglones de la tabla, esta dada en mm
+	LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+	LoTblTitulo.oRenglones.elemento(2).nLongitud << 265
+
+	# Longitud de las columnas, esta dada en mm 
+	LoTblTitulo.oColumnas.elemento(1).nLongitud  << 170
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_notas_sct_marg_sub.prvAsignaTexto()
+
+	_super.prvAsignaTexto()
+_local LsTexto << character.newLine
+     LsTexto +<<" 5.- LA UBICACIÓN DE LA INSTALACIÓN MARGINAL "+ .s_instalacion +" CON CABLE DE " 
+     LsTexto +<< .s_tipo_cable + character.newLine
+     LsTexto +<<" INDICADA EN ESTE PROYECTO DEBERÁ SER VERIFICADO Y PRECISADO EN EL LUGAR POR LA RESIDENCIA"
+     LsTexto +<< character.newLine
+     LsTexto +<<" GENERAL DE CONSERVACIÓN DE CARRETERAS EN EL ESTADO DE "+ .s_estado + "."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 6.- LA INSTALACIÓN MARGINAL "+ .s_instalacion +" CON CABLE DE "+ .s_tipo_cable
+     LsTexto +<< character.newLine
+     LsTexto +<<" QUE SE INDICA EN ESTE PROYECTO DEBERÁ EFECTUARSE CONFORME A LAS INDICACIONES ADICIONALES "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE LA RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS, ASÍ COMO LAS RECOMENDACIONES QUE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" SEAN DERIVADAS DE LAS INSPECCIONES EN CAMPO."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 7.- LA INSTALACIÓN MARGINAL "+ .s_instalacion +" CON POSTES Y CABLE DE "
+     LsTexto +<< .s_tipo_cable + character.newLine
+     LsTexto +<<" QUE SE INDICA EN ESTE PROYECTO DENTRO DEL ÁREA DEL DERECHO DE VÍA, DEBERÁ EFECTUARSE EN "
+     LsTexto +<< character.newLine
+     LsTexto +<<" UNA FRANJA PARALELA AL EJE DEL CAMINO CON UN ANCHO NO MAYOR DE 2.50 M. MEDIDOS A PARTIR "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DEL LIMITE DEL DERECHO DE VÍA, SALVO EN LOS CASOS EN QUE LA PRESENCIA DE OBSTÁCULOS NA- "
+     LsTexto +<< character.newLine
+     LsTexto +<<" TURALES IMPIDAN CUMPLIR CON ESTA ESPECIFICACIÓN. "
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 8.- DENTRO DEL DERECHO DE VÍA, LA DISTANCIA ENTRE LA PARTE NATURAL DEL TERRENO O DE LA "
+     LsTexto +<< character.newLine
+     LsTexto +<<" PARTE MAS BAJA DE LA SECCIÓN DEL CAMINO, SOBRE EL CABLE DE "+ .s_tipo_cable
+     LsTexto +<<" SERÁ DE 1.20 M. " + character.newLine
+     LsTexto +<<" COMO MÍNIMO Y 1.50 M.  A PARTIR DEL FONDO DE LAS CUNETAS."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 9.- LAS CUNETAS QUE SEAN AFECTADAS POR LA EXCAVACIÓN DE LA ZANJA PARA LA COLOCACIÓN DEL "
+     LsTexto +<< character.newLine
+     LsTexto +<<" CABLE DE "+ .s_tipo_cable +" SERÁN RECONSTRUIDAS Y ZAMPEADAS, AÚN EN EL CASO EN QUE NO "
+     LsTexto +<< character.newLine
+     LsTexto +<<" ESTEN ANTES DE SU AFECTACIÓN, PREVIAMENTE EL FILTRO AFECTADO DEBERÁ RESTITUIRSE CON LA "
+     LsTexto +<< character.newLine
+     LsTexto +<<" GRANULOMETRIA ORIGINAL O LA INDICADA POR LA RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRE-"
+     LsTexto +<< character.newLine
+     LsTexto +<<" TERAS EN ESA ENTIDAD."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 10.- EL RELLENO DE LA EXCAVACIÓN DEBERÁ HACERSE DE TAL MANERA QUE  EL TERRENO QUEDE EN "
+     LsTexto +<< character.newLine
+     LsTexto +<<" CONDICIONES SEMEJANTES A LAS ORIGINALES."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 11.- CUALQUIER DAÑO QUE SE OCASIONE AL PAVIMENTO, ACOTAMIENTO, CUNETA Y/O SEÑALAMIENTO, "
+     LsTexto +<< character.newLine
+     LsTexto +<<" DEBERÁ SER REPARADO DE INMEDIATO, POR CUENTA DE TELÉFONOS DE MÉXICO, S.A. DE C.V. DE A- "
+     LsTexto +<< character.newLine
+     LsTexto +<<" CUERDO A LAS INDICACIONES DE LA RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS EN ESA "
+     LsTexto +<< character.newLine
+     LsTexto +<<" ENTIDAD."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 12.- PARA EVITAR ACCIDENTES DURANTE LA CONSTRUCCIÓN DE LA OBRA TELÉFONOS DE MÉXICO, S.A."
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE C.V. COLOCARA Y CONSERVARA PERMANENTEMENTE EN EL CAMINO LAS SEÑALES PREVENTIVAS, RES-"
+     LsTexto +<< character.newLine
+     LsTexto +<<" TRICTIVAS E INFORMATIVAS QUE INDIQUE LA RESIDENCIA GENERAL DE CONSERVACIÓN DE CARRETERAS"
+     LsTexto +<< character.newLine
+     LsTexto +<<" CON BASE EN LO ESTABLECIDO EN EL 'MANUAL DE DISPOSITIVOS PARA EL CONTROL DEL TRANSITO EN"
+     LsTexto +<< character.newLine
+     LsTexto +<<" CALLES Y CARRETERAS' EDITADO POR LA SCT EDICIÓN 1986; CON EL FIN DE EVITAR ACCIDENTES --"
+     LsTexto +<< character.newLine
+     LsTexto +<<" NOCTURNOS, SE INSTALARA Y CONSERVARA PERMANENTEMENTE DURANTE TODA LA NOCHE, EL SEÑALA --"
+     LsTexto +<< character.newLine
+     LsTexto +<<" MIENTO LUMINOSO CONSISTENTE EN LAMPARAS DE DESTELLO Y OTROS DISPOSITIVOS LUMINOSOS."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 13.- UNA VEZ TERMINADOS LOS TRABAJOS DE ESTA OBRA, DEBERÁN RETIRARSE FUERA DE LOS LIMITES"
+     LsTexto +<< character.newLine
+     LsTexto +<<" DEL DERECHO DE VÍA, TODOS LOS MATERIALES SOBRANTES DE LA EXCAVACIÓN Y LOS DE CONSTRUCCIÓN"
+     LsTexto +<< character.newLine
+     LsTexto +<<" DE LA OBRA, INCLUYENDO EL SEÑALAMIENTO DE MODO QUE LA CARRETERA Y LA ZONA DEL DERECHO DE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" VÍA QUEDEN EN SUS CONDICIONES ORIGINALES."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 14.- LOS CRUZAMIENTOS SUBTERRÁNEOS CON CABLE DE "+ .s_tipo_cable +" QUE SE PRETENDAN E-"
+     LsTexto +<< character.newLine
+     LsTexto +<<" FECTUAR DERIVADOS DE ESTA INSTALACIÓN MARGINAL "+ .s_instalacion +", DEBERÁN SOLI-"
+     LsTexto +<< character.newLine
+     LsTexto +<<" CITARSE POR SEPARADO, PRESENTANDO PLANO DETALLADO DEL PROYECTO DE LOS CRUZAMIENTOS."
+     LsTexto +<< character.newLine + character.newLine
+     LsTexto +<<" 15.- LAS INSTALACIONES LATERALES CON CABLE DE "+ .s_tipo_cable +" ADOSADAS A LOS PUENTES"
+     LsTexto +<< character.newLine
+     LsTexto +<<" Y ALCANTARILLAS QUE TELÉFONOS DE MÉXICO, S.A. DE C.V. PRETENDA O REQUIERA ESTABLECER EN -"
+     LsTexto +<< character.newLine
+     LsTexto +<<" EL TRAYECTO DE ESTA INSTALACIÓN MARGINAL "+ .s_instalacion+", DEBERÁN SOLICITARSE "
+     LsTexto +<< character.newLine
+     LsTexto +<<" POR SEPARADO, PRESENTANDO PLANO DETALLADO DE LA INSTALACIÓN."
+     
+_self.oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+	
+_endmethod
+$

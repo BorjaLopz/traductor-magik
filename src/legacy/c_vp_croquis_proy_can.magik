@@ -1,0 +1,177 @@
+#----------------------------------------------------------------
+# c_vp_croquis_proy_can.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rbsaldan
+#
+# Date: 06/03/13
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+#remex(:c_vp_croquis_proy_can)
+$
+
+def_slotted_exemplar(:c_vp_croquis_proy_can,
+		     {
+			     {:oGeometria,_unset,:writable,:public},
+			     {:oWindows,_unset,:writable,:public}
+		     },:viewport_layout)
+$
+c_vp_croquis_proy_can.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_croquis_proy_can.defined_attributes
+	## 
+	## 
+	attribs << rope.new_from(_super.defined_attributes)
+	## Propiedad que indica si el viewport se ajusta al marco.
+	attribs.add(layout_attribute_definition.new(:ajusta_al_marco, :string,
+						    :description, "Ajustar al Marco",
+						    :default_value, "Si",
+						    :allowed_on_properties_page?, _true,
+						    :enum_method, :val_falso_verdadero,
+						    :editor, _unset))
+	attribs.add(layout_attribute_definition.new(:oGeomCanalizacion, :sector,
+						    :description, "Tramo de canalizacion",
+						    :default_value, _unset,
+						    :allowed_on_properties_page?, _true,
+						    :editor, _unset))
+	
+	>> attribs
+_endmethod
+$
+c_vp_croquis_proy_can.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_croquis_proy_can.val_falso_verdadero
+## Objetivo: Regresar un arreglo con los  valores "Si", "No"
+## Parametros de Salida: Ninguno
+## Regresa: LasSiNo
+## Fecha de ultima modificacion: 18/Nov./2004
+## Autor de la modificacion: rbsaldan
+## Descripcion de la modificacion: Metodo nuevo.
+
+_local LasSiNo    ##Arreglo con los valores "Si", "No"
+	LasSiNo<<rope.new()
+
+	## Agrega los valores "Si", "No"
+	LasSiNo.add("Si")
+	LasSiNo.add("No")
+
+	>> LasSiNo
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_croquis_proy_can.geometry_set_for_render
+	## 
+	## Returns the geometry set which is used in the rendering
+	## code. Based the the visibility attribute the geometry set
+	## needs to get its own TableControl from either the Ace, the
+	## CurrentObjectControl or it has one already.
+	##	
+	result_set<<_super.geometry_set_for_render
+        _if result_set _isnt _unset 
+	_then
+		result_set<<_self.objetos_visibles(result_set)
+	_endif
+	>> result_set
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_croquis_proy_can.objetos_visibles(PcollResultSet)
+	## 
+	##
+_local LoResultSet
+_local LoBuffer
+
+        LcollResultSet<<PcollResultSet
+	_dynamic !current_coordinate_system! << _unset
+	_if .oGeometria _isnt _unset _and _self.mapped?
+	_then
+		LoAppPNI<<smallworld_product.pni_application()
+		
+		# Crear un buffer a 50 mts.
+		LoBuffer<<.oGeometria.buffer(50*100)
+		#LoBuffer<<LoBuffer.transformed(_self.transform)
+		#LoBuffer.draw_on(.oWindows,colour.called(:red))
+		
+		LoPseudoChain<<pseudo_chain.new(.oGeometria)
+		#LoPseudoChain<<LoPseudoChain.transformed(_self.transform)
+		#LoPseudoChain.draw_on(.oWindows,colour.called(:yellow))
+
+		# Elementos que deben aparecer en el croquis.
+		LoPredMan<<predicate.interacts(:user!_limite, {LoBuffer})
+		LoPredUub<<predicate.interacts(:location, {LoPseudoChain})
+		LoPredUgr<<predicate.overlays(:route,{LoPseudoChain})
+		LoPredTer<<predicate.within(:location,{LoBuffer})
+		LoPredCll<<predicate.interacts(:user!_posicion,{LoBuffer})
+		LoPredDto<<predicate.interacts(:user!_limite,{LoBuffer})
+		
+		LoResultSet<<LcollResultSet.select(:predicate,{:user!_manzana,LoPredMan,
+							       :mit_terminal_enclosure,LoPredTer,
+							       :uub,LoPredUub,
+							       :user!_eje_calle,LoPredCll,
+							       :user!_distrito,LoPredDto,
+							       :underground_route, LoPredUgr})
+		LcollResultSet<< LoResultSet
+	_endif
+	>>LcollResultSet
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_croquis_proy_can.initialise_for_page(a_layout_page)
+	## 
+	## 
+	_self.selection<<_false
+	_self.trail<<_false
+	_self.set_fill_colour(_unset)
+	_self.outline_style<<_unset
+	_if .oGeometria _is _unset
+	_then
+		_dynamic !current_coordinate_system! << _unset
+		.oGeometria<<sector.new_from(_self.oGeomCanalizacion.sectors.as_sector())
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_croquis_proy_can.draw_content_on(windows)
+	## 
+	##
+_local LoBoundTrans
+_local LsMsg<<"CROQUIS DE LOCALIZACION"
+_local LoOE
+_local LoTramoCobre
+_local LcollCanalizacion
+_local LoSector
+
+	.oWindows<<windows
+
+	_if .oGeometria _is _unset
+	_then
+		_dynamic !current_coordinate_system! << _unset
+		.oGeometria<<sector.new_from(_self.oGeomCanalizacion.sectors.as_sector())
+	_endif
+	
+	 _super.draw_content_on(windows)
+	
+	LoFontBold << font.new_with_properties(:type,:logical,
+					       :name,"bold",
+					       :point_size,50,
+					       :orientation,:left_right)
+
+	LoTextStyle<<text_style.new_with_properties(:colour,colour.new_from_dec("175,175,93"),
+						    :font,LoFontBold)
+
+	.oWindows.draw_vtext_transform(LoTextStyle,_self.bounds.centre.x,_self.bounds.ymin-75,LsMsg,
+				       _unset, _unset, _unset, _unset, :bottom_centre )
+_endmethod
+$
+
+

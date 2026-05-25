@@ -1,0 +1,64 @@
+#----------------------------------------------------------------
+# Nombre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Proporcionar la clase que representa a un elemento
+#           que contiene texto y lineas para llenar el interior
+#           de una celda
+# Autor: dsanchez
+# Fecha de creacion: 27-Octtubre-2004
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#
+# Reviso.
+# dsanchez
+# -------------- end revision history ---------------
+
+_package user
+#remex(:c_texto_linea_grafico)
+
+$
+def_slotted_exemplar(:c_texto_linea_grafico,
+		     {
+		     },
+		     :c_texto_grafico
+)
+
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_texto_linea_grafico.Despliega()
+## Objetivo: Desplegar un texto con una línea debajo de el
+## Parámetros de entrada: NA
+## Parámetros de salida:  NA
+## Regresa:  NA
+## Fecha de última modificación : 28 / Octubre / 2004
+## Autor de la modificación fdiaz
+## Descripción de la modificación : Creación
+
+_local LoEstilo_Linea # Objeto Line_Style, se utilizara para el dibujo
+_local LoCoordenada   # Almacenara una coordenada
+
+# Se establecen los margenes por default
+_Local LnMargIzq << 1
+_local LnMargDer << 10
+_Local LnMargInf << 10
+
+	# Se despliega el texto
+	_super.Despliega()
+
+	# Se crea un estilo de linea
+         LoEstilo_Linea << line_style.new_with_properties(
+                  :foreground_colour, colour.called("black"), 
+                  :width, 2)
+	
+	# Se crea una coordenada
+	LoCoordenada << coords_vector.new(2)
+	
+	LoCoordenada[1] << coordinate.new(_self.oArea.Xmin + LnMargIzq,_self.oArea.Ymin + LnMargInf)
+	LoCoordenada[2] << coordinate.new(_self.oArea.Xmax - LnMargDer,_self.oArea.YMin + LnMargInf)
+	
+	# Se dibuja la línea
+	_self.oVentana.draw_line_transform( LoEstilo_Linea, LoCoordenada) 
+	
+_endmethod
+$

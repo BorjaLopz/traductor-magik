@@ -1,0 +1,167 @@
+#----------------------------------------------------------------
+# Nobre de la empresa: Sigma Tao
+# Traza: Planos
+# Objetivo: Proporcionar la clase que dibuje textos, graficos y simbolos
+# Autor: fdiaz
+# Fecha de creacion: 01-Noviembre-2004
+# 
+# ---------------- Revision History -----------------
+# Ult Mod.
+#
+# Reviso.
+#  fdiaz
+# -------------- end revision history ---------------
+#
+
+_package user
+#remex(:c_dibuja)
+
+$
+def_slotted_exemplar (:c_dibuja,
+        {
+	  {:oLayout, _unset }, # Objeto Layout
+	  {:oVentana, _unset}  # Objeto Window
+        } )
+$
+c_dibuja.define_slot_access( :oLayout,  :writable, :private )
+c_dibuja.define_slot_access( :oVentana, :writable, :private )
+$
+#  Objetivo: Crear una instancia de la clase Dibuja
+#  Parámetros de entrada: NA
+#
+#  Parámetros de salida:   NA
+# 
+#  Regresa: c_dibuja - Un objeto de la clase c:dibuja
+# Fecha de última modificación: 28/10/2004
+# Autor de la modificación : fdiaz
+# Descripción de la modificación: Se documento
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dibuja.new() 
+	## 
+	## 
+	_return _clone
+_endmethod
+$
+#  Objetivo: Asignar el objeto windows al slot oVentana
+#  Parámetros de entrada:
+#     window - RoVentana - Objeto window    
+#  Parámetros de salida:   NA
+# 
+#  Regresa: c_celda - regresa un objeto celda
+# Fecha de última modificación: 28/10/2004
+# Autor de la modificación : fdiaz
+# Descripción de la modificación: Se documento
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dibuja.oVentana << RoVentana
+	## 
+	## 
+	.oVentana << RoVentana
+_endmethod
+$
+#  Objetivo: Obtener el objeto windows del slot oVentana
+#  Parámetros de entrada:
+#     
+#  Parámetros de salida:   
+#
+#  Regresa: window - RoVentana - Objeto window    
+# Fecha de última modificación: 28/10/2004
+# Autor de la modificación : fdiaz
+# Descripción de la modificación: Se documento
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dibuja.oVentana 
+	## 
+	## 
+	_return .oVentana 
+_endmethod
+$
+#  Objetivo: Asignar el objeto Layout al slot oLayout
+#  Parámetros de entrada:
+#     Layout - RoLay - Objeto  Layout 
+#     
+#  Parámetros de salida:   
+#
+#  Regresa: NA
+# Fecha de última modificación: 28/10/2004
+# Autor de la modificación : fdiaz
+# Descripción de la modificación: Se documento
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dibuja.oLayout << RoLay
+	## 
+	## 
+    .oLayout << RoLay
+_endmethod
+$
+#  Objetivo: Obtener el objeto Layout del slot oLayout
+#  Parámetros de entrada:
+#     
+#  Parámetros de salida:   
+#
+#  Regresa: Layout - RoLay - Objeto  Layout
+# Fecha de última modificación: 28/10/2004
+# Autor de la modificación : fdiaz
+# Descripción de la modificación: Se documento
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dibuja.oLayout 
+	## 
+	## 
+    _return .oLayout 
+_endmethod
+$
+#  Objetivo: Realizar el dibujo del los graficos 
+#  Parámetros de entrada: 
+#     property_list - oGrafico - Lista de elementos que forman el grafico
+#  Parámetros de salida:   
+#
+#  Regresa: NA
+# Fecha de última modificación: 28/10/2004
+# Autor de la modificación : fdiaz
+# Descripción de la modificación: Se documento
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_dibuja.Dibuja(oGrafico)
+	## 
+	## 
+	
+    _local LnAngle
+    _local LnScale
+    _local LnPagXini
+    _local LnPagYini
+
+    # Se inicializan las variables    
+    LnPagXini << _self.oLayout.bounds.xmin
+    LnPagYini << _self.oLayout.bounds.ymax
+    LnAngle << 0
+    LnScale << 1
+    
+    _for LoTrazo _over oGrafico.fast_elements ()
+    _loop
+
+        _local LoTrans   
+        _local LoElemento_Rotado     
+        
+        LoTrans   << transform.new()
+        LoTrans.rotate(LnAngle)
+	    
+	LoElemento_Rotado << LoTrazo[4].copy()
+	LoTrans.convert_all ( LoElemento_Rotado )
+
+	# Se mueve el eje coordenado :
+	# de la pagina al la parte superior izquierda del layout
+
+	# Se obtiene las coordenadas en la pagina del centro del layout
+	# _self.bounds.centre.x   y  _self.bounds.centre.y
+	_for LnRen, LnCol _over LoElemento_Rotado.fast_keys_and_elements ()
+	_loop
+	     LoElemento_Rotado [ LnRen ] << coordinate ( LnCol.x + LnPagXini, LnCol.y + LnPagYini )
+	_endloop
+	# **********************************
+	
+	# Se dibuja la figura
+        LoElemento_Rotado.fill_on ( _self.oVentana, fill_style.called (LoTrazo[2]) )
+        LoElemento_Rotado.draw_on ( _self.oVentana, line_style.called (LoTrazo[3]) )
+	# **********************************
+    _endloop	
+ _endmethod	      
+$
+
+
+

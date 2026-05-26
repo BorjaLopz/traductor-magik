@@ -1,0 +1,200 @@
+================================================================================
+  CLASE MIGRADA: CCelda
+  Fichero origen:  c_celda.magik
+  Fichero destino: CCelda.tsx
+  Jerarquía Magik: c_celda (clase raíz, sin parent)
+  Autor original:  dsanchez   (04/11/2004)
+  Modificaciones:  des_david  (22/07/2022 — métodos texto / bordes)
+================================================================================
+
+PROPÓSITO
+---------
+Utilería de tablas de sello: representa una celda (renglón, columna) con
+un elemento principal (oElemento — típicamente un c_texto_grafico) y dos
+colecciones de elementos:
+
+  · oElementos          — colección visible (incluye el sub-objeto
+                          :bordes_celda que controla los 4 bordes)
+  · oElementos_captura  — colección paralela para capa de captura/editable
+
+Expone API para texto (.texto / .texto <<), bordes (4 lados) y
+serialización (serial_slots / new_from_serial / serial_structure).
+
+
+SLOTS MIGRADOS (estado interno — todos :private :writable)
+-----------------------------------------------------------
+  :nRen               → _nRen: number | undefined
+  :nCol               → _nCol: number | undefined
+  :oElemento          → _oElemento: ElementoGrafico | undefined
+                        Elemento principal (texto, símbolo, etc.).
+  :oElementos         → _oElementos: CElementos | undefined
+                        Contiene el subobjeto :bordes_celda.
+  :oElementos_captura → _oElementos_captura: CElementos | undefined
+
+
+TIPOS DEFINIDOS
+----------------
+LadoBorde
+  'izquierda' | 'derecha' | 'superior' | 'inferior'
+
+CeldasGraficoBordes
+  { bBorde_izq, bBorde_der, bBorde_sup, bBorde_inf: boolean }
+  Stub mínimo de c_celdas_grafico almacenado bajo :bordes_celda.
+
+TextoGrafico
+  { kind: 'texto_grafico'; sTexto: string }
+  Stub de c_texto_grafico. La celda accede a sTexto via .texto getter.
+
+ElementoGrafico
+  TextoGrafico | { kind: 'otro'; sTexto?: string }
+  Unión que cubre los elementos que la celda puede albergar.
+
+CElementos (clase stub)
+  Wrapper sobre Map<string, ElementoGrafico | CeldasGraficoBordes>.
+  Métodos: Agregar_Elemento(elem, sym), obten_elemento(sym), entries().
+
+CCeldaProps
+  Shape parcial de slots usado en init_with / new_from_serial.
+
+
+MÉTODOS MIGRADOS (15)
+----------------------
+
+1.  constructor(rnRen, rnCol)
+    Magik: new(RnRen, RnCol) → crea oElementos, oElementos_captura, añade
+    c_celdas_grafico bajo :bordes_celda y asigna ren/col. _return _clone.
+    En TS: ctor estándar (regla D2 — no se emite new()/init() como método).
+
+2.  get/set nRen
+    Magik: getter `.nRen` + setter `.nRen << valor`. Privados.
+
+3.  get/set nCol
+    Idéntico patrón.
+
+4.  get/set oElemento
+    Magik setter: si valor _is _unset → NO asigna (silently ignore).
+    En TS: idéntico (silently ignore en setter).
+
+5.  get/set oElementos
+    Magik setter: si valor _is _unset → condition.raise(:warning, "El
+    objeto símbolo esta vacío.").
+    En TS: throw new Error con el mismo mensaje.
+
+6.  get/set oElementos_captura
+    Idéntica regla que oElementos.
+
+7.  get/set texto
+    Magik getter: si .oElemento _is _unset → _unset; en otro caso
+    .oElemento.sTexto.
+    Magik setter: si .oElemento _is _unset → crea c_texto_grafico.new(pVal);
+    en otro caso pone .oElemento.sTexto << pVal.
+    En TS: idéntico.
+
+8.  bordes()                  → CeldasGraficoBordes | undefined
+9.  bordes(lado: LadoBorde)   → boolean
+    Magik: 3 overloads del mismo método (sin parámetro, con :izq/:der/...,
+    y setter con `<< pVal`). En TS: overloads + setBorde(lado, val).
+
+10. setBorde(lado, val): void
+    Equivale al setter Magik `bordes(p) << val`.
+    Razón TS: la signatura `bordes(p) << val` no es expresable
+    directamente — se separa el setter para tipar sin ambigüedad.
+
+11. init_with(props)
+    Magik: itera props.fast_keys_and_elements() y llama
+    _self.perform_private(key.with_chevron, value) con
+    _try _when does_not_understand _endtry (silently ignora claves
+    desconocidas).
+    En TS: aplica las 5 claves conocidas; el resto se ignora
+    automáticamente al no estar en CCeldaProps.
+
+12. CCelda.new_from_serial(keys, xml_values) [static]
+    Magik: deserialización — empareja keys con xml_values y llama
+    _clone.init_with(props). Hace _clone (sin pasar por new) para
+    permitir reconstruir el objeto sin los slots auto-creados.
+    En TS: Object.create(CCelda.prototype) + init_with — equivale al
+    _clone sin invocar el ctor (regla D2 conservada). Inicializa los
+    contenedores vacíos antes de aplicar las claves serializadas.
+
+13. serial_slots()
+    Magik: devuelve rope(keys), rope(values) en multi-return.
+    En TS: devuelve { keys, values } (sin multi-return en JS).
+
+14. serial_structure
+    Magik: devuelve :slotted (símbolo).
+    En TS: devuelve la string literal 'slotted'.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (raíz)               → class CCelda
+  define_slot_access :private :writable     → private _campo + get/set
+  c_elementos.new()                         → new CElementos()
+  c_celdas_grafico.new()                    → newBordesCelda() (factory)
+  c_texto_grafico.new(pVal)                 → { kind:'texto_grafico', sTexto:pVal }
+  .Agregar_Elemento(e, :sym)                → CElementos.Agregar_Elemento(e, 'sym')
+  .obten_elemento(:sym)                     → CElementos.obten_elemento('sym')
+  símbolos Magik (:izquierda, :derecha…)    → unión literal LadoBorde
+  rope.new_with(...)                        → array literal
+  property_list.new()                       → CCeldaProps (objeto plano)
+  .fast_keys_and_elements()                 → Object.entries
+  perform_private(key.with_chevron, value)  → asignación condicional por nombre
+  _try _when does_not_understand            → claves desconocidas omitidas
+  _clone                                    → Object.create(CCelda.prototype)
+  _return _clone                            → return this (en ctor)
+  condition.raise(:warning, :string, …)     → throw new Error(...)
+  multi-return (k, v) << f()                → return { k, v }
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Dependencias c_elementos / c_celdas_grafico / c_texto_grafico /
+  c_elemento_grafico NO están migradas en el showcase. Se stubbean
+  con tipos/clases mínimas suficientes para reproducir el contrato.
+  Cuando se migren, cambiar imports.
+
+· La overload Magik `bordes(p) << val` no es expresable como setter
+  parametrizado en TS estándar. Se expone `setBorde(lado, val)`
+  como método dedicado. El getter `bordes()` / `bordes(lado)` mantiene
+  las 2 primeras overloads.
+
+· init_with del Magik usa perform_private + try/does_not_understand
+  para ignorar claves desconocidas. En TS basta con asignar solo las
+  5 claves reconocidas — el TypeChecker garantiza la lista cerrada.
+
+· new_from_serial usa Object.create(CCelda.prototype) en lugar de `new`
+  para replicar el `_clone.init_with(props)` del Magik (que evita
+  pasar por el ctor con (ren,col)). Antes de init_with, inicializa
+  oElementos / oElementos_captura vacíos para que el objeto sea
+  funcional aunque las claves no lleguen en la serialización.
+
+· :slotted (símbolo Magik en serial_structure) → string literal
+  'slotted' en TS — no hay símbolos en JS.
+
+· La UI añade:
+  · Inputs para nRen / nCol (recrea la celda en cada cambio — simula new())
+  · Input de texto (usa el setter — crea c_texto_grafico la primera vez)
+  · Toggle visual por cada lado del borde con preview gráfico de la celda
+    (lado activo = línea continua púrpura; lado inactivo = punteada gris)
+  · Demostración de round-trip serial_slots → new_from_serial: muestra
+    que el clonado es una instancia distinta pero conserva los slots
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CCeldaUI } from './migration/CCelda';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CCelda',
+    label: 'CCelda',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_celda.magik',
+    element: <CCeldaUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CCelda.txt
+================================================================================

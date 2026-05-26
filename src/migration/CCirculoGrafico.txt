@@ -1,0 +1,123 @@
+================================================================================
+  CLASE MIGRADA: CCirculoGrafico
+  Fichero origen:  c_circulo_grafico.magik
+  Fichero destino: CCirculoGrafico.tsx
+  Jerarquía Magik: c_circulo_grafico  extends  :c_elemento_grafico
+  Empresa:         Sigma Tao
+  Autor original:  fdiaz  (09/12/2004)
+================================================================================
+
+PROPÓSITO
+---------
+Elemento gráfico simple que dibuja un círculo centrado en el oArea del
+elemento, con estilo de línea negro grosor 2. Subclase trivial de
+c_elemento_grafico — solo añade el slot nRadio y el método Despliega().
+
+
+SLOTS MIGRADOS (estado interno — todos :private :writable)
+-----------------------------------------------------------
+  :sNombre_Grafico → _sNombre_Grafico: string | undefined
+                     Heredado conceptualmente — el Magik lo declara aunque
+                     no lo usa en Despliega().
+  :nRadio          → _nRadio: number = 10
+                     Radio del círculo en unidades del oArea.
+
+HEREDADOS (de CElementoGrafico stub):
+  oArea, oVentana, nMargen_izq/der/sup/inf
+
+
+TIPOS DEFINIDOS
+----------------
+LineStyle
+  { foreground_colour: string; width: number }
+  Stub mínimo de line_style.new_with_properties(...) del Magik.
+
+DrawCircleCall
+  Descriptor que Despliega() devuelve — { style, cx, cy, radius }.
+  En el Magik original el método invocaría
+  oVentana.draw_circle_transform(style, cx, cy, radius) directamente
+  sobre el canvas Smallworld.
+
+
+MÉTODOS MIGRADOS (5)
+---------------------
+
+1. constructor()
+   Magik: new() → _return _clone (sin parámetros, sin init).
+   En TS: ctor estándar vacío que llama super() (regla D2).
+
+2. get/set sNombre_Grafico
+   Magik: define_slot_access :writable :private.
+
+3. get nRadio
+   Magik: getter implícito.
+
+4. set nRadio
+   Magik: .nRadio << RnValor → asigna RnValor * 10.
+   En TS: setter multiplica el valor entrante por 10 — comportamiento
+   PRESERVADO. Es un quirk del Magik: para almacenar 50 hay que pasar 5.
+
+5. Despliega()
+   Magik:
+     LnX << oArea.Xmin + (oArea.Xmax - oArea.Xmin)/2
+     LnY << oArea.Ymin + (oArea.Ymax - oArea.Ymin)/2
+     LoEstiloLinea << line_style.new_with_properties(
+                       :foreground_colour, colour.called("black"),
+                       :width, 2)
+     oVentana.draw_circle_transform(LoEstiloLinea, LnX, LnY, nRadio)
+   En TS: calcula centro, crea LineStyle, devuelve DrawCircleCall —
+   la UI lo pinta como <circle> SVG.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar(:c_circulo_grafico, ..., :c_elemento_grafico)
+                                             → extends CElementoGrafico
+  define_slot_access :writable :private      → private _campo + get/set
+  oArea.Xmin / Xmax / Ymin / Ymax            → area.xmin / xmax / ymin / ymax
+  line_style.new_with_properties(...)        → newLineStyle(...)
+  colour.called("black")                     → 'black'
+  oVentana.draw_circle_transform(s,x,y,r)    → DrawCircleCall descriptor
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· c_elemento_grafico (padre) NO está migrado. Se reusa el stub
+  CElementoGrafico de CSimboloGrafico.tsx. Cuando se migre el padre
+  real, cambiar el import.
+
+· Despliega() no pinta sobre canvas Smallworld (no existe en navegador).
+  Devuelve un DrawCircleCall y la UI lo renderiza como <circle> SVG.
+
+· El setter `nRadio << v` aplica `v * 10`. NO es bug de la migración —
+  está en el Magik original. La UI lo expone visualmente: "setter
+  aplica ×10 → almacena N" para que el usuario sepa que el valor
+  que introduce no es el almacenado.
+
+· La UI añade:
+  · Input para oArea (cuadrado, xmax = ymax = areaSize)
+  · Input para el valor del setter (radio almacenado = input × 10)
+  · Preview SVG 220×220 con el oArea como rectángulo punteado y el
+    círculo centrado dibujado con el estilo resuelto.
+  · Marcadores en el centro y aviso si radio > area/2.
+  · Tarjeta explicativa del quirk del setter para evitar confusión.
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CCirculoGraficoUI } from './migration/CCirculoGrafico';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CCirculoGrafico',
+    label: 'CCirculoGrafico',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_circulo_grafico.magik',
+    element: <CCirculoGraficoUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CCirculoGrafico.txt
+================================================================================

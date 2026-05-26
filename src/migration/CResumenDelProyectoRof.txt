@@ -1,0 +1,204 @@
+================================================================================
+  CLASE MIGRADA: CResumenDelProyectoRof
+  Fichero origen:  c_resumen_del_proyecto_rof.magik
+  Fichero destino: CResumenDelProyectoRof.tsx
+  Jerarquía Magik: c_resumen_del_proyecto_rof  extends  :c_base_sello_fibra
+  Empresa:         Sigma Tao
+  Autor original:  ahernanram  (15/02/06)
+================================================================================
+
+PROPÓSITO
+---------
+Sello/layout que muestra la "Lista de materiales (resumen del proyecto)" en
+planos de Fibra Óptica. Pinta una tabla 4 columnas con:
+
+    No | DESCRIPCION | CANTIDAD | UNIDAD MED.
+
+El número de filas (2 + N) depende dinámicamente del contenido de
+LoElemResumen, una lista de tripletas [descripción, cantidad, unidad].
+
+El sello también define un atributo dinámico por cada descripción. Si el
+usuario edita ese atributo (a través del catálogo de atributos del layout),
+su valor sobrescribe la cantidad en la celda correspondiente. Esto permite
+ajustar manualmente cantidades sin tocar los datos de origen.
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  :tipo            → tipo: TipoResumen
+                     'ELEM_RED' | 'ESTRUCTURAS' | undefined
+                     Indica si el sello es de elementos de red o de
+                     estructuras. En el Magik original es informativo
+                     (no afecta la generación de la tabla).
+
+  :LoElemResumen   → LoElemResumen: ResumenRow[]
+                     Lista de tripletas [desc, cantidad, unidad_med].
+                     Define dinámicamente filas de la tabla y
+                     atributos dinámicos.
+
+  Heredados de c_base_sello_fibra (simulados para la demo):
+    o_color_linea  → [1.0, 0.0, 0.0]  (rojo)
+    o_coord_inicio → [0, 0]
+    attributes     → Record<string, AttributeDef>
+    o_tablas       → { tbl_lista_materiales?: TablaResumen }
+
+
+MÉTODOS MIGRADOS (10 en total)
+-------------------------------
+
+1. new_with(PoResumen)                                       [static]
+   Magik: c_resumen_del_proyecto_rof.new_with(PoResumen, _gather args)
+   En el original delega en _super.new_with(property_list…). En TS se simplifica
+   a un static factory que asigna LoElemResumen y devuelve la instancia.
+
+2. defined_attributes()
+   Magik: combina los atributos del padre con los dinámicos.
+   En TS: arranca array vacío (sin padre migrado) y llama
+   defined_attributes_dinamicos(attribs).
+
+3. defined_attributes_dinamicos(attribs)
+   Magik: itera LoElemResumen y por cada fila crea
+   layout_attribute_definition.new(name, :string, :default_value, _unset).
+   El name = descripción.lowercase.trim_spaces().as_symbol().
+   En TS: añade un AttributeDef {name, defaultValue:undefined, value:undefined}.
+
+4. define_attributes()
+   Magik: c_resumen_del_proyecto_rof.define_attributes() — invocación a nivel
+   de clase que materializa el diccionario attributes.
+   En TS: rellena this.attributes a partir de defined_attributes().
+
+5. configura_tabla()
+   Magik: crea c_tabla (2+N filas × 4 cols), fija longitudes:
+     · Anchos columnas (mm): 6 / 120 / 30 / 20
+     · Altura filas (mm):    6 (todas)
+   y oculta bordes sup/der/izq de las celdas de la fila 1 (título).
+   En TS: construye TablaResumen con celdas vacías y aplica los flags
+   bordeSup/bordeDer/bordeIzq = false en la fila 1.
+
+6. asigna_celdas_a_colorear()
+   Magik: devuelve rope con tuplas {tabla, row, col, color}.
+     · (1, 2)  →  título
+     · (3..N, 1..4)  →  filas de datos completas
+   En TS: devuelve Array<[id, row, col, color]>.
+
+7. etiqueta_celdas()
+   Magik: rellena fila 1 (título "RESUMEN DEL PROYECTO") y fila 2
+   (cabeceras "No", "DESCRIPCION", "CANTIDAD", "UNIDAD MED.") y delega
+   las filas de datos en etiqueta_celdas_desc().
+   Nota: el alineamiento Magik :centre_right del título se aproxima a
+   'center' en CSS (no hay equivalente exacto).
+
+8. actualiza_datos()
+   Magik: re-ejecuta etiqueta_celdas_desc() tras edición.
+   En TS: idéntico.
+
+9. calcula_datos()
+   Magik: instancia property_list, llama info_sello_propiedades(lo_valores)
+   y devuelve el resultado.
+   En TS: usa Record<string, unknown>.
+
+10. llena_datos_celdas()
+    Magik: cuerpo vacío en el original (hook reservado para subclases).
+    En TS: idéntico, comentado.
+
+11. etiqueta_celdas_desc()
+    Magik: itera LoElemResumen.elements() y para cada tripleta escribe:
+      · col 1: número de orden (cont-2)
+      · col 2: descripción en MAYÚSCULAS
+      · col 3: cantidad (con override de atributo dinámico si existe)
+                — fill_up_with(%space, 10) → right-pad con espacios
+      · col 4: unidad de medida
+    En TS: usa fillUpWith() helper local. Solo escribe si la fila existe
+    (tabla.rows >= cont).
+
+12. info_sello_propiedades(lo_valores)
+    Magik: hook para subclases — devuelve lo_valores sin tocar.
+    En TS: idéntico.
+
+13. valor_propiedad(Propiedad, dato_actual)
+    Magik: si this.attributes[Propiedad].value es no-vacío, lo devuelve;
+    en otro caso devuelve dato_actual (o "" si _unset).
+    En TS: idéntico, con typeof guards explícitos.
+
+
+TIPOS DEFINIDOS
+----------------
+ResumenRow      = [desc: string, cantidad: string|number, unidadMed: string]
+TipoResumen     = 'ELEM_RED' | 'ESTRUCTURAS' | undefined
+AttributeDef    = { name, defaultValue, value }
+CeldaTabla      = { texto, align, color?, bordeSup, bordeDer, bordeIzq, bordeInf }
+TablaResumen    = { id:'tbl_lista_materiales', rows, cols:4, colWidths,
+                    rowHeight, celdas: CeldaTabla[][] }
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (:c_base_sello_fibra) → class CResumenDelProyectoRof
+  property_list.new()                        → {} as Record<string, unknown>
+  rope.new() / rope.new_with({...})          → []
+  layout_attribute_definition.new(name,…)    → { name, defaultValue, value }
+  c_tabla.crea_tabla(rows, cols, :id)        → TablaResumen
+  .o_tablas.elemento(:id).oceldas…           → tabla.celdas[r-1][c-1]
+  .uppercase / .lowercase                    → toUpperCase() / toLowerCase()
+  .trim_spaces()                             → .trim()
+  .write_string                              → String(...)
+  .as_symbol()                               → string (no hay símbolos en JS)
+  .fill_up_with(%space, 10)                  → fillUpWith(s, 10, ' ')
+  range(1, N)                                → for (let n = 1; n <= N; n++)
+  iter.fast_elements() / .elements()         → for..of
+  _isnt _unset                               → !== undefined && !== null
+  bBorde_Sup? << _false                      → cel.bordeSup = false
+  condition.raise                            → throw new Error()
+  :centre_right                              → 'center' (aprox)
+  :centre_left                               → 'left'   (aprox)
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· c_base_sello_fibra (padre) NO está migrado. Los métodos heredados
+  (asigna_texto_celda, _super.new_with, _super.defined_attributes, etc.)
+  se simulan con un helper privado _asigna_texto_celda() y un array vacío.
+  Cuando c_base_sello_fibra se migre, esta clase deberá extenderla y
+  delegar realmente vía super.
+
+· Dimensiones en mm (configura_tabla) se conservan como metadatos en el
+  objeto TablaResumen pero no se aplican al render HTML — el componente
+  React usa proporciones relativas (porcentajes) en <colgroup>.
+
+· :centre_right (Magik) no tiene equivalente exacto en CSS text-align;
+  se mapea a 'center'. Si el rendering definitivo requiere alineación
+  exacta, habrá que añadir padding-right manual.
+
+· `fill_up_with(%space, 10)` se conserva en la lógica TS para mantener
+  fidelidad con el dato que llegaría al motor de plotting Magik, aunque
+  en HTML los espacios trailing son colapsados por el browser. Esto NO
+  rompe nada: la longitud del string sigue siendo la esperada para
+  exportaciones a PDF/SVG con fuentes monoespaciadas.
+
+· El componente UI añade:
+  · Selector :tipo (ELEM_RED / ESTRUCTURAS) con datasets mock distintos
+  · Botones inicializar / reset
+  · Panel de override de atributos dinámicos (input por cada descripción)
+  · Indicadores de slot (tipo, LoElemResumen.size, o_color_linea, dims tabla)
+  · Las celdas marcadas por asigna_celdas_a_colorear() se pintan con
+    el color o_color_linea (rojo) — texto, no fondo, para mantener legible.
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CResumenDelProyectoRofUI } from './migration/CResumenDelProyectoRof';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CResumenDelProyectoRof',
+    label: 'CResumenDelProyectoRof',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_resumen_del_proyecto_rof.magik',
+    element: <CResumenDelProyectoRofUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CResumenDelProyectoRof.txt
+================================================================================

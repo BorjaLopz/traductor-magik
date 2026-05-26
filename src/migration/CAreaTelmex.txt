@@ -1,0 +1,136 @@
+================================================================================
+  CLASE MIGRADA: CAreaTelmex
+  Fichero origen:  c_area_telmex.magik
+  Fichero destino: CAreaTelmex.tsx
+  Jerarquía Magik: c_area_telmex (clase raíz, sin parent)
+  Autor original:  vbluna
+================================================================================
+
+PROPÓSITO
+---------
+Modelo de dominio mínimo "Área Telmex" para sellos de plano. Dada el
+nombre de un área, consulta la colección :landbase :user!_area, navega
+hasta .infoadmin.an_element() y guarda el sub-registro en .objeto.
+
+Expone 3 getters que devuelven los campos del sub-registro:
+  · direccion()
+  · telefono()
+  · responsable()
+
+Todo el navegado del Magik está envuelto en `_try _when
+does_not_understand _endtry` — cualquier acceso fallido devuelve ''
+(getters) o write("Error al asignar el area") (objeto_area).
+
+
+SLOTS MIGRADOS
+---------------
+  :objeto  →  objeto: AreaInfoAdminRecord | undefined
+              :writable, público en Magik (vía slot_access implícito).
+              Almacena el resultado de .infoadmin.an_element().
+
+
+TIPOS DEFINIDOS (D5 — XxxRecord para campos user!_*)
+------------------------------------------------------
+AreaInfoAdminRecord
+  Sub-record almacenado en .infoadmin del registro :user!_area.
+  Campos:
+    'user!_direccion':   string
+    'user!_telefono':    string
+    'user!_responsable': string
+
+AreaRecord
+  { 'user!_nombre': string; infoadmin: AreaInfoAdminRecord[] }
+  Registro :user!_area. infoadmin es una colección Smallworld; en TS
+  se modela como Array. `.an_element()` se traduce a `[0]`.
+
+MockLandbaseAreaDB
+  { areas: AreaRecord[] }
+  Simula gis_program_manager.cached_dataset(:landbase)
+                              .collection(:user!_area).
+
+
+MÉTODOS MIGRADOS (5)
+---------------------
+
+1. constructor(psNombre, db)
+   Magik: new(PsNombre) → _clone.init(PsNombre) → objeto_area(PsNombre).
+   En TS: ctor estándar (regla D2). Inyecta MockLandbaseAreaDB y dispara
+   objeto_area(psNombre) inmediatamente.
+
+2. objeto_area(psNombre)
+   Magik:
+     LtbArea << gis_program_manager.cached_dataset(:landbase)
+                                    .collection(:user!_area)
+     LoPred  << predicate.eq(:user!_nombre, PsNombre)
+     .objeto << LtbArea.select(LoPred).an_element().infoadmin.an_element()
+   Envuelto en _try _when does_not_understand → write("Error...").
+   En TS: Array.find + .infoadmin[0]. try/catch → objeto = undefined.
+
+3. direccion(): string
+   Magik: _try _return .objeto.user!_direccion.write_string
+          _when does_not_understand _return ""
+   En TS: idéntico — devuelve '' si this.objeto es undefined o el
+   campo lanza al acceder.
+
+4. telefono(): string     — idéntico patrón sobre user!_telefono
+5. responsable(): string  — idéntico patrón sobre user!_responsable
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (raíz)               → class CAreaTelmex
+  slot {:objeto, _unset, :writable}         → objeto: T | undefined (public)
+  gis_program_manager.cached_dataset(:lb)   → MockLandbaseAreaDB inyectado
+  .collection(:user!_area)                  → _db.areas
+  predicate.eq(:user!_nombre, v)            → arr.find(x => x[k] === v)
+  .an_element()                             → arr[0]
+  .infoadmin.an_element()                   → record.infoadmin[0]
+  .user!_xxx.write_string                   → String(record['user!_xxx'])
+  _try _when does_not_understand            → try/catch
+  write("...")                              → (omitido — efecto lateral)
+  new(P) → _clone.init(P) → objeto_area(P)  → constructor consolidado
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· `gis_program_manager.cached_dataset(:landbase)` no existe en
+  navegador. Se inyecta MockLandbaseAreaDB con la forma mínima
+  necesaria. La firma del ctor cambia: ahora recibe (nombre, db).
+
+· `_try _when does_not_understand _endtry` Magik captura el error de
+  ".user!_xxx" sobre un objeto unset. En TS this.objeto puede ser
+  undefined; el acceso `this.objeto!['user!_xxx']` lanza
+  TypeError → catch → '' (mismo comportamiento observable).
+
+· Los `write("...")` del Magik son trazas a consola — se omiten en TS
+  (efecto lateral sin valor de migración). El estado resultante
+  (.objeto = unset/undefined) sigue siendo correcto.
+
+· La UI añade:
+  · Selector con 5 áreas: 3 con datos completos + 1 con infoadmin vacío
+    (forzando el camino unset) + 1 inexistente (predicate sin hits).
+  · Pill ".objeto resuelto / unset" para visualizar el resultado de
+    objeto_area().
+  · Tarjeta con los 3 getters mostrando el placeholder
+    "— (does_not_understand → \"\")" cuando devuelven cadena vacía.
+  · Tabla del dataset crudo con la fila seleccionada resaltada.
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CAreaTelmexUI } from './migration/CAreaTelmex';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CAreaTelmex',
+    label: 'CAreaTelmex',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Entidad/c_area_telmex.magik',
+    element: <CAreaTelmexUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CAreaTelmex.txt
+================================================================================

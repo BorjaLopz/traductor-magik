@@ -1,439 +1,665 @@
-// ================================================================================
-//  MIGRACIÓN: preview_symbol_plugin.magik → PreviewSymbolPlugin.tsx
-//  Clase origen : preview_symbol_plugin  (extends :plugin)
-//  Autor orig.  : — (sin fecha)
-// ================================================================================
+// =============================================================================
+// MIGRACIÓN: preview_symbol_plugin  →  PreviewSymbolPlugin.tsx
+// Jerarquía Magik: preview_symbol_plugin  extends  :plugin
+// Fuente: adiciones_layout/source/preview_symbol_plugin.magik
+// =============================================================================
+//
+// Plugin que aloja el diálogo c_preview_symbol_dialog y expone 4 acciones
+// sobre la BD :sigc_style_view:
+//   · activate_preview_symbol   → abrir/mostrar el diálogo de preview
+//   · open_style_sigc_app       → arrancar :sigc_style_symbol_editor
+//   · merge_style_sigc_view     → merge() de la view (requiere escritura)
+//   · post_style_sigc_view      → post()  de la view (requiere escritura)
+//
+// Las 3 últimas se habilitan solo cuando la view es writable Y current_writer
+// == "yourself" — lógica de manage_actions().
+//
+// Notas de migración:
+//   · gis_program_manager.databases[:sigc_style_view] → mock StyleViewMock.
+//   · :databus_producer_data_types {:symbol_name} → callback prop emitter.
+//   · sw_action.new(...) → ActionDef { id, label, image, enabled, description }.
+//   · _try ... _when error _endtry → try/catch con throw new Error(...).
+//   · Diálogo modal embebido auto-contenido (catálogo SVG, sin dependencias).
+// =============================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Tipos
+// ---------------------------------------------------------------------------
 
-/** :write | :readonly — .mode en Magik */
-type ViewMode = 'write' | 'readonly';
+export type ViewMode = 'write' | 'readonly';
 
-/** Mock de gis_program_manager.databases[:sigc_style_view] */
-export interface SigcStyleView {
-  writable: boolean;           // .writable?
-  mode: ViewMode;              // .mode → :write | :readonly
-  currentWriter: string | null; // gis_program_manager.databases[:sigc_style_view].current_writer
-  merge(): void;               // .merge() — consolida cambios (merge_style_sigc_view)
-  post(): void;                // .post() — propaga cambios (post_style_sigc_view)
+// Equivale a gis_program_manager.databases[:sigc_style_view]
+export interface StyleViewMock {
+  name: 'sigc_style_view';
+  mode: ViewMode;
+  writable: boolean;
+  current_writer: string | undefined; // _unset → undefined
 }
 
-/** Estado enabled/disabled de las 4 sw_action registradas en init_actions() */
-interface ActionState {
-  openStyleSigcApp:   boolean;  // :open_style_sigc_app
-  mergeStyleSigcView: boolean;  // :merge_style_sigc_view
-  postStyleSigcView:  boolean;  // :post_style_sigc_view
+// Magik: sw_action.new(:id, :engine, :image, :action_message)
+export interface ActionDef {
+  id: ActionId;
+  label: string;
+  image: string;          // descriptor de icono "module:nombre"
+  enabled: boolean;
+  description?: string;
 }
 
-// ─── Mock factory ─────────────────────────────────────────────────────────────
+export type ActionId =
+  | 'activate_preview_symbol'
+  | 'open_style_sigc_app'
+  | 'merge_style_sigc_view'
+  | 'post_style_sigc_view';
 
-function createMockSigcStyleView(writer: string | null): SigcStyleView {
-  return {
-    writable: writer !== null,
-    mode: 'write',
-    currentWriter: writer,
-    merge() { /* no-op mock */ },
-    post()  { /* no-op mock */ },
-  };
+// Magik :databus_producer_data_types {:symbol_name}
+export const DATABUS_PRODUCER_DATA_TYPES = ['symbol_name'] as const;
+
+// ---------------------------------------------------------------------------
+// Mensajes (resources/es_mx/messages/preview_symbol_plugin.msg)
+// ---------------------------------------------------------------------------
+
+const MESSAGES = {
+  frame_title:        'Preview Símbolo',
+  tab_title:          'Símbolo',
+  msg_db_updated:     'La base de datos de dibujos se ha actualizado',
+  err_no_merge:       'No ha sido posible consolidar la base de datos de dibujos',
+  err_no_post:        'No ha sido posible propagar la base de datos de dibujos',
+  err_try_later:      'Intente más tarde',
+  err_db_mode_prefix: 'La base de datos de dibujos esta en modo',
+} as const;
+
+// Magik: gis_program_manager.authorisation_view.current_user.name
+function getCurrentUser(): string {
+  return 'yourself';
 }
 
-// ─── PreviewSymbolPlugin ──────────────────────────────────────────────────────
-
-export class PreviewSymbolPlugin {
-  // Slot: .sigc_style_view — cargado en init()
-  private _sigcStyleView: SigcStyleView | null = null;
-
-  // def_property :x_offset / :y_offset — desplazamiento del diálogo
-  xOffset: number = 0;
-  yOffset: number = 0;
-
-  // databus_producer_data_types → { :symbol_name }
-  static readonly databusProsumerDataTypes = ['symbol_name'] as const;
-
-  // Estado interno de acciones (sw_action.enabled?)
-  actions: ActionState = {
-    openStyleSigcApp:   false,
-    mergeStyleSigcView: false,
-    postStyleSigcView:  false,
-  };
-
-  private _dialogOpen: boolean = false;
-  private _statusMessage: string = '';
-  private _onStateChange?: () => void;
-
-  constructor(onStateChange?: () => void) {
-    this._onStateChange = onStateChange;
-  }
-
-  // ── init(name, framework) ─────────────────────────────────────────────────
-  // Carga sigc_style_view desde gis_program_manager.databases o vía abre_style_sigc()
-  init(_name = 'preview_symbol_plugin'): this {
-    const dbView = this._getDbStyleView();
-    // gis_program_manager.databases[:sigc_style_view] _is _unset ?
-    this._sigcStyleView = dbView ?? this._abreStyleSigc();
-    return this;
-  }
-
-  get sigcStyleView(): SigcStyleView | null { return this._sigcStyleView; }
-
-  // Permite reemplazar la vista mock desde la UI
-  setSigcStyleView(v: SigcStyleView): void {
-    this._sigcStyleView = v;
-    this._notify();
-  }
-
-  // ── activate_preview_symbol() ─────────────────────────────────────────────
-  // Obtiene/crea c_preview_symbol_dialog y llama activate_relative_to()
-  activatePreviewSymbol(): void {
-    this._dialogOpen = true;
-    this._notify();
-  }
-
-  get dialogOpen(): boolean { return this._dialogOpen; }
-
-  closeDialog(): void {
-    this._dialogOpen = false;
-    this._notify();
-  }
-
-  // ── post_activation() ────────────────────────────────────────────────────
-  // Llamado tras activar el plugin; gestiona el estado de las acciones
-  postActivation(): void {
-    this.manageActions();
-  }
-
-  // ── manage_actions() ─────────────────────────────────────────────────────
-  // Habilita acciones si: sigcStyleView != null && writable? && writer = "yourself"
-  manageActions(): void {
-    const v = this._sigcStyleView;
-    const canWrite =
-      v !== null &&
-      v.writable &&
-      v.currentWriter === 'yourself'; // current_writer = "yourself" en Magik
-
-    this.actions = {
-      openStyleSigcApp:   canWrite,
-      mergeStyleSigcView: canWrite,
-      postStyleSigcView:  canWrite,
-    };
-    this._notify();
-  }
-
-  // ── merge_style_sigc_view() ───────────────────────────────────────────────
-  // Consolida cambios en la BD de símbolos sigc
-  // _try → try/catch; condition.raise(:user_error) → devuelve mensaje de error
-  mergeStyleSigcView(): string {
-    const v = this._sigcStyleView;
-    const modeLabel  = v?.mode === 'readonly' ? 'Solo lectura' : 'escritura';
-    const writerMsg  = v?.currentWriter
-      ? `El usuario ${v.currentWriter} se encuentra en escritura` : '';
-
-    try {
-      if (v !== null && v.writable && v.mode === 'write') {
-        v.merge();
-        return this._setStatus('La base de datos de dibujos se ha actualizado');
-      }
-      throw new Error('no_write');
-    } catch {
-      return this._setStatus(
-        ['No ha sido posible consolidar la base de datos de dibujos',
-         `La base de datos de dibujos esta en modo ${modeLabel}`,
-         writerMsg].filter(Boolean).join('\n'),
-        true
-      );
-    }
-  }
-
-  // ── post_style_sigc_view() ────────────────────────────────────────────────
-  // Propaga cambios en la BD de símbolos sigc
-  postStyleSigcView(): string {
-    const v = this._sigcStyleView;
-    const modeLabel  = v?.mode === 'readonly' ? 'Solo lectura' : 'escritura';
-    const writerMsg  = v?.currentWriter
-      ? `El usuario ${v.currentWriter} se encuentra en escritura` : '';
-
-    try {
-      if (v !== null && v.writable && v.mode === 'write') {
-        v.post();
-        return this._setStatus('La base de datos de dibujos se ha actualizado');
-      }
-      throw new Error('no_write');
-    } catch {
-      return this._setStatus(
-        ['No ha sido posible propagar la base de datos de dibujos',
-         `La base de datos de dibujos esta en modo ${modeLabel}`,
-         writerMsg].filter(Boolean).join('\n'),
-        true
-      );
-    }
-  }
-
-  // ── open_sigc_style_symbol_app() ──────────────────────────────────────────
-  // smallworld_product.application_definition(:sigc_style_symbol_editor).start/restart
-  openSigcStyleSymbolApp(): string {
-    return this._setStatus('[Mock] sigc_style_symbol_editor: aplicación iniciada/reiniciada');
-  }
-
-  get statusMessage(): string { return this._statusMessage; }
-  get statusIsError(): boolean {
-    return this._statusMessage.startsWith('No ha sido posible');
-  }
-
-  clearStatus(): void { this._statusMessage = ''; this._notify(); }
-
-  // ── privados ──────────────────────────────────────────────────────────────
-
-  // gis_program_manager.databases[:sigc_style_view]
-  private _getDbStyleView(): SigcStyleView | null {
-    return createMockSigcStyleView('yourself');
-  }
-
-  // user:abre_style_sigc() — fallback cuando el DB no está registrado
-  private _abreStyleSigc(): SigcStyleView {
-    return createMockSigcStyleView('yourself');
-  }
-
-  private _setStatus(msg: string, _isError = false): string {
-    this._statusMessage = msg;
-    this._notify();
-    return msg;
-  }
-
-  private _notify(): void { this._onStateChange?.(); }
-}
-
-// ─── Estilos ──────────────────────────────────────────────────────────────────
-
-const s = {
-  wrap:   { fontFamily: 'monospace', fontSize: 13, padding: 16,
-            background: '#1e1e2e', color: '#cdd6f4', borderRadius: 8 } as React.CSSProperties,
-  box:    { background: '#313244', padding: '10px 14px', borderRadius: 6,
-            marginBottom: 12 } as React.CSSProperties,
-  label:  { color: '#a6e3a1', fontWeight: 700, marginBottom: 6,
-            display: 'block', fontSize: 12 } as React.CSSProperties,
-  row:    { display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginBottom: 8 },
-  btn: (enabled: boolean): React.CSSProperties => ({
-    padding: '5px 12px', borderRadius: 4, border: 'none',
-    cursor: enabled ? 'pointer' : 'not-allowed', fontFamily: 'monospace', fontSize: 12,
-    background: enabled ? '#89b4fa' : '#45475a',
-    color: enabled ? '#1e1e2e' : '#6c7086',
-  }),
-  badge: (ok: boolean): React.CSSProperties => ({
-    display: 'inline-block', padding: '1px 7px', borderRadius: 10, fontSize: 10,
-    background: ok ? '#a6e3a1' : '#f38ba8', color: '#1e1e2e', marginLeft: 6,
-  }),
-  msg: (err: boolean): React.CSSProperties => ({
-    background: err ? '#45263a' : '#1e3a2a',
-    border: `1px solid ${err ? '#f38ba8' : '#a6e3a1'}`,
-    color: err ? '#f38ba8' : '#a6e3a1',
-    padding: '6px 12px', borderRadius: 4, whiteSpace: 'pre-wrap',
-  }),
-  modal:    { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.65)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-  modalBox: { background: '#313244', borderRadius: 8, padding: 24, width: 540,
-              maxHeight: '80vh', overflow: 'auto' } as React.CSSProperties,
-  grid:     { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 } as React.CSSProperties,
-  select:   { background: '#45475a', color: '#cdd6f4', border: 'none',
-              borderRadius: 4, padding: '2px 6px', fontFamily: 'monospace' } as React.CSSProperties,
-  input:    { background: '#45475a', color: '#cdd6f4', border: 'none',
-              borderRadius: 4, padding: '2px 6px', fontFamily: 'monospace', width: 110 } as React.CSSProperties,
-};
-
-// ─── Mini SVG para el catálogo de símbolos en el diálogo ─────────────────────
+// ---------------------------------------------------------------------------
+// Catálogo de símbolos del diálogo embebido (mock de sw_gis!gis_point_style)
+// ---------------------------------------------------------------------------
 
 const CATALOG_SYMBOLS = [
   'gis_point_circle', 'gis_point_square', 'gis_point_triangle',
   'gis_point_diamond', 'gis_point_cross',  'gis_point_arrow',
   'gis_point_star',   'gis_point_terminal','gis_point_hexagon',
-];
+] as const;
 
-function SymbolCell({ name, selected, onClick }: {
-  name: string; selected: boolean; onClick: () => void;
+type CatalogSymbol = typeof CATALOG_SYMBOLS[number];
+
+// ---------------------------------------------------------------------------
+// Clase principal
+// ---------------------------------------------------------------------------
+
+/**
+ * Migración de preview_symbol_plugin (subclase de :plugin).
+ * Expone estado y acciones. La GUI se delega en PreviewSymbolPluginUI.
+ */
+export class PreviewSymbolPlugin {
+  // ── Slot ─────────────────────────────────────────────────────────────────
+  sigc_style_view: StyleViewMock | undefined = undefined;
+
+  // ── def_property (Magik) ─────────────────────────────────────────────────
+  x_offset: number = 0;
+  y_offset: number = 0;
+
+  // Estado de acciones (resultado de init_actions + manage_actions)
+  private _actions: Record<ActionId, ActionDef> = {
+    activate_preview_symbol: {
+      id: 'activate_preview_symbol',
+      label: 'activate_preview_symbol',
+      image: 'activate:adiciones_layout',
+      enabled: true, // siempre disponible
+      description: 'Mostrar la interfaz de preview de símbolo',
+    },
+    open_style_sigc_app: {
+      id: 'open_style_sigc_app',
+      label: 'open_sigc_style_symbol_app',
+      image: 'app_dibujos:adiciones_layout',
+      enabled: false,
+      description: 'Arrancar :sigc_style_symbol_editor',
+    },
+    merge_style_sigc_view: {
+      id: 'merge_style_sigc_view',
+      label: 'merge_style_sigc_view',
+      image: 'merge:version_management_plugin',
+      enabled: false,
+      description: 'Consolidar cambios en la BD de símbolos',
+    },
+    post_style_sigc_view: {
+      id: 'post_style_sigc_view',
+      label: 'post_style_sigc_view',
+      image: 'post:version_management_plugin',
+      enabled: false,
+      description: 'Propagar cambios a la BD de símbolos',
+    },
+  };
+
+  private _dialogOpen = false;
+
+  // ── init(name, framework) ────────────────────────────────────────────────
+  // Magik: super.init + obtiene/abre :sigc_style_view → devuelve self.
+  init(_name?: string, _framework?: unknown, styleView?: StyleViewMock): this {
+    if (styleView) {
+      this.sigc_style_view = styleView;
+    } else if (this.sigc_style_view === undefined) {
+      // Magik: .sigc_style_view << user:abre_style_sigc()
+      this.sigc_style_view = {
+        name: 'sigc_style_view',
+        mode: 'write',
+        writable: true,
+        current_writer: 'yourself',
+      };
+    }
+    this.init_actions();
+    this.manage_actions();
+    return this;
+  }
+
+  // ── init_actions() ───────────────────────────────────────────────────────
+  // Magik: registra 4 sw_action. En TS las acciones se declaran en el campo
+  // _actions; este método se mantiene como hook idempotente.
+  init_actions(): void {
+    // no-op — registro estático
+  }
+
+  // ── manage_actions() ─────────────────────────────────────────────────────
+  // Magik: habilita merge/post/open_app solo si writable & writer=="yourself".
+  manage_actions(): void {
+    const view = this.sigc_style_view;
+    const enabled =
+      view !== undefined &&
+      view.writable &&
+      view.current_writer === 'yourself';
+
+    this._actions.open_style_sigc_app.enabled   = enabled;
+    this._actions.merge_style_sigc_view.enabled = enabled;
+    this._actions.post_style_sigc_view.enabled  = enabled;
+  }
+
+  // ── post_activation() ────────────────────────────────────────────────────
+  post_activation(): void {
+    this.manage_actions();
+  }
+
+  action(id: ActionId): ActionDef { return this._actions[id]; }
+  actions(): ActionDef[] { return Object.values(this._actions); }
+
+  // ── activate_preview_symbol() ────────────────────────────────────────────
+  // Magik: lazy-create + cache + activate_relative_to(...).
+  activate_preview_symbol(): { dialogId: 'c_preview_symbol_dialog'; x: number; y: number } {
+    this._dialogOpen = true;
+    return {
+      dialogId: 'c_preview_symbol_dialog',
+      x: this.x_offset,
+      y: this.y_offset,
+    };
+  }
+
+  isDialogOpen(): boolean { return this._dialogOpen; }
+  closeDialog(): void { this._dialogOpen = false; }
+
+  // ── build_gui(container) ─────────────────────────────────────────────────
+  // Magik: construye GUI embebida del diálogo. En TS devuelve el tab label.
+  build_gui(): { tabLabel: string } {
+    return { tabLabel: MESSAGES.tab_title };
+  }
+
+  // ── open_sigc_style_symbol_app() ─────────────────────────────────────────
+  // Magik: arranca o reinicia :sigc_style_symbol_editor.
+  open_sigc_style_symbol_app(appAlreadyStarted = false):
+    { app: 'sigc_style_symbol_editor'; restart: boolean }
+  {
+    return { app: 'sigc_style_symbol_editor', restart: appAlreadyStarted };
+  }
+
+  // ── merge_style_sigc_view() ──────────────────────────────────────────────
+  merge_style_sigc_view(): { ok: true; message: string } {
+    return this._writeOp('merge');
+  }
+
+  // ── post_style_sigc_view() ───────────────────────────────────────────────
+  post_style_sigc_view(): { ok: true; message: string } {
+    return this._writeOp('post');
+  }
+
+  // ── show_message(msg) ────────────────────────────────────────────────────
+  // Magik: _self.show_message(...) — hook que la UI puede observar.
+  show_message(msg: string): string { return msg; }
+
+  // Implementación común de merge/post — lanza Error si no se cumple la
+  // precondición (writable + mode=write). Imita condition.raise(:user_error,...).
+  private _writeOp(kind: 'merge' | 'post'): { ok: true; message: string } {
+    const view = this.sigc_style_view;
+    const modo = view?.mode === 'readonly' ? 'Solo lectura' : 'escritura';
+    const writerLine = view?.current_writer
+      ? `El usuario ${view.current_writer} se encuentra en escritura`
+      : '';
+    const errPrefix = kind === 'merge' ? MESSAGES.err_no_merge : MESSAGES.err_no_post;
+
+    if (!view || !view.writable || view.mode !== 'write') {
+      throw new Error(
+        `${errPrefix}\n${MESSAGES.err_db_mode_prefix} ${modo}\n${writerLine}`.trim(),
+      );
+    }
+
+    // Magik: .sigc_style_view.merge() / .post() — mock libera al escritor.
+    view.current_writer = undefined;
+    this.manage_actions();
+    return { ok: true, message: this.show_message(MESSAGES.msg_db_updated) };
+  }
+}
+
+// =============================================================================
+// Componente React — PreviewSymbolPluginUI
+// =============================================================================
+
+const styles = {
+  wrap: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    background: '#1e1e2e',
+    color: '#cdd6f4',
+    padding: 16,
+    borderRadius: 8,
+    minWidth: 760,
+  } as React.CSSProperties,
+  card: {
+    background: '#181825',
+    border: '1px solid #45475a',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+  } as React.CSSProperties,
+  cardTitle: {
+    color: '#f9e2af',
+    fontSize: 11,
+    marginBottom: 8,
+    letterSpacing: 1,
+  } as React.CSSProperties,
+  label: { color: '#89dceb', fontSize: 11, marginRight: 6 } as React.CSSProperties,
+  value: { color: '#a6e3a1', fontSize: 11 } as React.CSSProperties,
+  btn: {
+    padding: '5px 12px',
+    borderRadius: 4,
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    marginRight: 6,
+    marginBottom: 4,
+  } as React.CSSProperties,
+  select: {
+    background: '#313244',
+    color: '#cdd6f4',
+    border: '1px solid #45475a',
+    borderRadius: 4,
+    padding: '3px 6px',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    marginLeft: 4,
+  } as React.CSSProperties,
+  numberInput: {
+    background: '#313244',
+    color: '#cdd6f4',
+    border: '1px solid #45475a',
+    borderRadius: 4,
+    padding: '3px 6px',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    width: 60,
+    marginLeft: 4,
+  } as React.CSSProperties,
+  modal: {
+    position: 'fixed' as const,
+    inset: 0,
+    background: 'rgba(0,0,0,0.65)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  } as React.CSSProperties,
+  modalBox: {
+    background: '#181825',
+    border: '1px solid #45475a',
+    borderRadius: 8,
+    padding: 20,
+    width: 560,
+    maxHeight: '80vh',
+    overflow: 'auto',
+  } as React.CSSProperties,
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: 8,
+  } as React.CSSProperties,
+};
+
+const dot = (color: string): React.CSSProperties => ({
+  display: 'inline-block',
+  width: 8,
+  height: 8,
+  borderRadius: '50%',
+  background: color,
+  marginRight: 6,
+  verticalAlign: 'middle',
+});
+
+function ActionButton({
+  action,
+  onClick,
+}: {
+  action: ActionDef;
+  onClick: () => void;
 }) {
-  const c = selected ? '#89b4fa' : '#a6adc8';
-  const bg = selected ? '#1e3a5a' : '#181825';
   return (
-    <div onClick={onClick}
-      style={{ background: bg, border: `1px solid ${selected ? '#89b4fa' : '#45475a'}`,
-               borderRadius: 6, padding: 8, textAlign: 'center', cursor: 'pointer' }}>
+    <button
+      onClick={onClick}
+      disabled={!action.enabled}
+      title={action.description}
+      style={{
+        ...styles.btn,
+        background: action.enabled ? '#89b4fa' : '#313244',
+        color: action.enabled ? '#1e1e2e' : '#585b70',
+        cursor: action.enabled ? 'pointer' : 'not-allowed',
+      }}
+    >
+      <span style={dot(action.enabled ? '#a6e3a1' : '#f38ba8')} />
+      {action.label}
+    </button>
+  );
+}
+
+function SymbolCell({
+  name,
+  selected,
+  onClick,
+}: {
+  name: CatalogSymbol;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const stroke = selected ? '#89b4fa' : '#a6adc8';
+  const bg     = selected ? '#1e3a5a' : '#11111b';
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        background: bg,
+        border: `1px solid ${selected ? '#89b4fa' : '#45475a'}`,
+        borderRadius: 6,
+        padding: 8,
+        textAlign: 'center',
+        cursor: 'pointer',
+      }}
+    >
       <svg width={36} height={36} viewBox="-18 -18 36 36">
-        {name.includes('circle')   && <circle r="12" fill="none" stroke={c} strokeWidth="2"/>}
-        {name.includes('square')   && <rect x="-10" y="-10" width="20" height="20" fill="none" stroke={c} strokeWidth="2"/>}
-        {name.includes('triangle') && <polygon points="0,-13 11,8 -11,8" fill="none" stroke={c} strokeWidth="2"/>}
-        {name.includes('diamond')  && <polygon points="0,-13 13,0 0,13 -13,0" fill="none" stroke={c} strokeWidth="2"/>}
-        {name.includes('cross')    && <><line x1="-12" y1="0" x2="12" y2="0" stroke={c} strokeWidth="2"/><line x1="0" y1="-12" x2="0" y2="12" stroke={c} strokeWidth="2"/></>}
-        {name.includes('arrow')    && <polygon points="0,-13 13,8 0,2 -13,8" fill={c}/>}
-        {name.includes('star')     && <polygon points="0,-13 3,-4 12,-4 5,2 8,12 0,6 -8,12 -5,2 -12,-4 -3,-4" fill={c}/>}
-        {name.includes('terminal') && <><circle r="11" fill="none" stroke={c} strokeWidth="2"/><line x1="-7" y1="-7" x2="7" y2="7" stroke={c} strokeWidth="2"/><line x1="7" y1="-7" x2="-7" y2="7" stroke={c} strokeWidth="2"/></>}
-        {name.includes('hexagon')  && <polygon points="0,-13 11,-6 11,6 0,13 -11,6 -11,-6" fill="none" stroke={c} strokeWidth="2"/>}
+        {name.includes('circle')   && <circle r={12} fill="none" stroke={stroke} strokeWidth={2} />}
+        {name.includes('square')   && <rect x={-10} y={-10} width={20} height={20} fill="none" stroke={stroke} strokeWidth={2} />}
+        {name.includes('triangle') && <polygon points="0,-13 11,8 -11,8" fill="none" stroke={stroke} strokeWidth={2} />}
+        {name.includes('diamond')  && <polygon points="0,-13 13,0 0,13 -13,0" fill="none" stroke={stroke} strokeWidth={2} />}
+        {name.includes('cross')    && (
+          <>
+            <line x1={-12} y1={0} x2={12} y2={0} stroke={stroke} strokeWidth={2} />
+            <line x1={0} y1={-12} x2={0} y2={12} stroke={stroke} strokeWidth={2} />
+          </>
+        )}
+        {name.includes('arrow')    && <polygon points="0,-13 13,8 0,2 -13,8" fill={stroke} />}
+        {name.includes('star')     && <polygon points="0,-13 3,-4 12,-4 5,2 8,12 0,6 -8,12 -5,2 -12,-4 -3,-4" fill={stroke} />}
+        {name.includes('terminal') && (
+          <>
+            <circle r={11} fill="none" stroke={stroke} strokeWidth={2} />
+            <line x1={-7} y1={-7} x2={7} y2={7} stroke={stroke} strokeWidth={2} />
+            <line x1={7} y1={-7} x2={-7} y2={7} stroke={stroke} strokeWidth={2} />
+          </>
+        )}
+        {name.includes('hexagon')  && <polygon points="0,-13 11,-6 11,6 0,13 -11,6 -11,-6" fill="none" stroke={stroke} strokeWidth={2} />}
       </svg>
-      <div style={{ fontSize: 9, color: '#6c7086', marginTop: 2 }}>{name.replace('gis_point_', '')}</div>
+      <div style={{ fontSize: 9, color: '#6c7086', marginTop: 2 }}>
+        {name.replace('gis_point_', '')}
+      </div>
     </div>
   );
 }
 
-// ─── Componente principal UI ──────────────────────────────────────────────────
-
 export function PreviewSymbolPluginUI() {
-  const [tick, setTick] = useState(0);
-  const plugin = useMemo(() => {
-    const p = new PreviewSymbolPlugin(() => setTick(n => n + 1));
-    p.init();
-    p.postActivation(); // → manage_actions()
-    return p;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const [plugin] = useState(() => new PreviewSymbolPlugin().init());
+  const [, setTick] = useState(0);
+  const force = useCallback(() => setTick(t => t + 1), []);
+
+  const [log, setLog] = useState<string[]>([]);
+  const [emittedSymbol, setEmittedSymbol] = useState<CatalogSymbol | null>(null);
+  const [selectedSym, setSelectedSym] = useState<CatalogSymbol>('gis_point_circle');
+
+  const view = plugin.sigc_style_view;
+  const actions = plugin.actions();
+  const dialogOpen = plugin.isDialogOpen();
+
+  const pushLog = useCallback((msg: string) => {
+    setLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 24));
   }, []);
 
-  // Controles de la vista mock
-  const [viewMode,     setViewMode]     = useState<ViewMode>('write');
-  const [isWritable,   setIsWritable]   = useState(true);
-  const [writerInput,  setWriterInput]  = useState('yourself');
-  const [selectedSym,  setSelectedSym]  = useState('gis_point_circle');
+  // Controles de la view simulada
+  const setMode = (mode: ViewMode) => {
+    if (!plugin.sigc_style_view) return;
+    plugin.sigc_style_view.mode = mode;
+    plugin.sigc_style_view.writable = mode === 'write';
+    plugin.manage_actions();
+    pushLog(`view.mode = ${mode}  ·  writable = ${mode === 'write'}`);
+    force();
+  };
 
-  // Sincroniza estado mock → plugin cuando cambian los controles
-  useEffect(() => {
-    const v = plugin.sigcStyleView;
-    if (!v) return;
-    (v as any).mode          = viewMode;
-    (v as any).writable      = isWritable;
-    (v as any).currentWriter = writerInput.trim() || null;
-    plugin.manageActions();
-  }, [viewMode, isWritable, writerInput, plugin, tick]);
+  const setCurrentWriter = (writer: 'yourself' | 'other_user' | 'unset') => {
+    if (!plugin.sigc_style_view) return;
+    plugin.sigc_style_view.current_writer = writer === 'unset' ? undefined : writer;
+    plugin.manage_actions();
+    pushLog(`current_writer = ${writer}`);
+    force();
+  };
 
-  const { actions } = plugin;
+  const setOffset = (axis: 'x' | 'y', n: number) => {
+    if (axis === 'x') plugin.x_offset = n;
+    else plugin.y_offset = n;
+    force();
+  };
+
+  // Dispatcher de acciones (sw_action.action_message)
+  const dispatch = (id: ActionId) => {
+    try {
+      switch (id) {
+        case 'activate_preview_symbol': {
+          const r = plugin.activate_preview_symbol();
+          pushLog(`activate_preview_symbol → ${r.dialogId} @(${r.x},${r.y})`);
+          break;
+        }
+        case 'open_style_sigc_app': {
+          const r = plugin.open_sigc_style_symbol_app();
+          pushLog(`open_sigc_style_symbol_app → ${r.app} (restart=${r.restart})`);
+          break;
+        }
+        case 'merge_style_sigc_view': {
+          const r = plugin.merge_style_sigc_view();
+          pushLog(`merge → OK: ${r.message}`);
+          break;
+        }
+        case 'post_style_sigc_view': {
+          const r = plugin.post_style_sigc_view();
+          pushLog(`post → OK: ${r.message}`);
+          break;
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      pushLog(`ERROR ${id}: ${msg.split('\n')[0]}`);
+    }
+    force();
+  };
+
+  const tabLabel = useMemo(() => plugin.build_gui().tabLabel, [plugin]);
 
   return (
-    <div style={s.wrap}>
+    <div style={styles.wrap}>
+      {/* Cabecera */}
+      <div style={{ marginBottom: 12, borderBottom: '1px solid #45475a', paddingBottom: 8 }}>
+        <span style={{ color: '#cba6f7', fontWeight: 'bold', fontSize: 13 }}>
+          PreviewSymbolPlugin
+        </span>
+        <span style={{ color: '#585b70', marginLeft: 8, fontSize: 11 }}>
+          :plugin → orquesta c_preview_symbol_dialog + acciones sigc_style_view
+        </span>
+      </div>
 
-      {/* ── sigc_style_view: controles del estado mock ── */}
-      <div style={s.box}>
-        <span style={s.label}>sigc_style_view — estado de la vista de estilos GIS</span>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-          <label style={{ fontSize: 12 }}>
-            .mode:{' '}
-            <select value={viewMode} onChange={e => setViewMode(e.target.value as ViewMode)} style={s.select}>
-              <option value="write">:write</option>
-              <option value="readonly">:readonly</option>
-            </select>
-          </label>
-          <label style={{ fontSize: 12 }}>
-            <input type="checkbox" checked={isWritable} onChange={e => setIsWritable(e.target.checked)} />{' '}
-            .writable?
-          </label>
-          <label style={{ fontSize: 12 }}>
-            current_writer:{' '}
-            <input value={writerInput} onChange={e => setWriterInput(e.target.value)} style={s.input} />
-          </label>
+      {/* Estado de la view */}
+      <div style={styles.card}>
+        <div style={styles.cardTitle}>
+          gis_program_manager.databases[:sigc_style_view]
         </div>
-        <div style={{ fontSize: 11, color: '#6c7086', marginTop: 6 }}>
-          Condición <b>manage_actions</b>: writable &amp;&amp; mode=write &amp;&amp; current_writer="yourself"
-          {' → '}<b style={{ color: actions.openStyleSigcApp ? '#a6e3a1' : '#f38ba8' }}>
-            {actions.openStyleSigcApp ? 'acciones HABILITADAS' : 'acciones DESHABILITADAS'}
-          </b>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 8 }}>
+          <span><span style={styles.label}>mode:</span><span style={styles.value}>{view?.mode ?? '—'}</span></span>
+          <span><span style={styles.label}>writable:</span><span style={styles.value}>{String(view?.writable ?? false)}</span></span>
+          <span><span style={styles.label}>current_writer:</span><span style={styles.value}>{view?.current_writer ?? 'unset'}</span></span>
+          <span><span style={styles.label}>current_user:</span><span style={styles.value}>{getCurrentUser()}</span></span>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button onClick={() => setMode('write')}             style={{ ...styles.btn, background: '#a6e3a1', color: '#1e1e2e' }}>mode=write</button>
+          <button onClick={() => setMode('readonly')}          style={{ ...styles.btn, background: '#f38ba8', color: '#1e1e2e' }}>mode=readonly</button>
+          <button onClick={() => setCurrentWriter('yourself')} style={{ ...styles.btn, background: '#89b4fa', color: '#1e1e2e' }}>writer=yourself</button>
+          <button onClick={() => setCurrentWriter('other_user')} style={{ ...styles.btn, background: '#fab387', color: '#1e1e2e' }}>writer=other_user</button>
+          <button onClick={() => setCurrentWriter('unset')}    style={{ ...styles.btn, background: '#585b70', color: '#cdd6f4' }}>writer=unset</button>
         </div>
       </div>
 
-      {/* ── init_actions() — los 4 sw_action ── */}
-      <div style={s.box}>
-        <span style={s.label}>init_actions() — sw_action registradas</span>
-        <div style={s.row}>
-          {/* :activate_preview_symbol — siempre habilitada */}
-          <button style={s.btn(true)} onClick={() => plugin.activatePreviewSymbol()}>
-            activate_preview_symbol
-          </button>
+      {/* Propiedades x_offset / y_offset */}
+      <div style={styles.card}>
+        <div style={styles.cardTitle}>
+          def_property — x_offset / y_offset (posición del diálogo)
+        </div>
+        <label style={styles.label}>
+          x_offset:
+          <input
+            type="number"
+            value={plugin.x_offset}
+            onChange={e => setOffset('x', Number(e.target.value))}
+            style={styles.numberInput}
+          />
+        </label>
+        <label style={{ ...styles.label, marginLeft: 16 }}>
+          y_offset:
+          <input
+            type="number"
+            value={plugin.y_offset}
+            onChange={e => setOffset('y', Number(e.target.value))}
+            style={styles.numberInput}
+          />
+        </label>
+        <span style={{ ...styles.label, marginLeft: 16 }}>
+          build_gui() tab:
+        </span>
+        <span style={styles.value}>{tabLabel}</span>
+      </div>
 
-          {/* :open_style_sigc_app */}
-          <button style={s.btn(actions.openStyleSigcApp)}
-            disabled={!actions.openStyleSigcApp}
-            onClick={() => plugin.openSigcStyleSymbolApp()}>
-            open_sigc_style_symbol_app
-            <span style={s.badge(actions.openStyleSigcApp)}>
-              {actions.openStyleSigcApp ? 'ON' : 'OFF'}
-            </span>
-          </button>
-
-          {/* :merge_style_sigc_view */}
-          <button style={s.btn(actions.mergeStyleSigcView)}
-            disabled={!actions.mergeStyleSigcView}
-            onClick={() => plugin.mergeStyleSigcView()}>
-            merge_style_sigc_view
-            <span style={s.badge(actions.mergeStyleSigcView)}>
-              {actions.mergeStyleSigcView ? 'ON' : 'OFF'}
-            </span>
-          </button>
-
-          {/* :post_style_sigc_view */}
-          <button style={s.btn(actions.postStyleSigcView)}
-            disabled={!actions.postStyleSigcView}
-            onClick={() => plugin.postStyleSigcView()}>
-            post_style_sigc_view
-            <span style={s.badge(actions.postStyleSigcView)}>
-              {actions.postStyleSigcView ? 'ON' : 'OFF'}
-            </span>
-          </button>
+      {/* Acciones del plugin */}
+      <div style={styles.card}>
+        <div style={styles.cardTitle}>
+          init_actions() → 4 sw_action  ·  manage_actions() recalcula enabled?
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+          {actions.map(a => (
+            <ActionButton key={a.id} action={a} onClick={() => dispatch(a.id)} />
+          ))}
+        </div>
+        <div style={{ marginTop: 8, color: '#585b70', fontSize: 10 }}>
+          databus producer = {DATABUS_PRODUCER_DATA_TYPES.join(', ')}
         </div>
       </div>
 
-      {/* ── Propiedades del plugin ── */}
-      <div style={s.box}>
-        <span style={s.label}>def_property — x_offset / y_offset (posición del diálogo)</span>
-        <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
-          <label>
-            x_offset:{' '}
-            <input type="number" value={plugin.xOffset}
-              onChange={e => { plugin.xOffset = Number(e.target.value); setTick(n => n + 1); }}
-              style={{ ...s.input, width: 60 }} />
-          </label>
-          <label>
-            y_offset:{' '}
-            <input type="number" value={plugin.yOffset}
-              onChange={e => { plugin.yOffset = Number(e.target.value); setTick(n => n + 1); }}
-              style={{ ...s.input, width: 60 }} />
-          </label>
-        </div>
-      </div>
-
-      {/* ── show_message / condition.raise ── */}
-      {plugin.statusMessage && (
-        <div style={{ marginBottom: 12 }}>
-          <span style={s.label}>show_message / condition.raise(:user_error)</span>
-          <div style={s.msg(plugin.statusIsError)}>{plugin.statusMessage}</div>
-          <button style={{ ...s.btn(true), marginTop: 4 }} onClick={() => plugin.clearStatus()}>
-            Cerrar
-          </button>
+      {/* Salida databus consumer */}
+      {emittedSymbol && (
+        <div style={{ ...styles.card, borderColor: '#a6e3a1' }}>
+          <span style={styles.value}>
+            databus consumer recibió :symbol_name = <strong>{emittedSymbol}</strong>
+          </span>
         </div>
       )}
 
-      {/* ── Modal: c_preview_symbol_dialog ── */}
-      {plugin.dialogOpen && (
-        <div style={s.modal} onClick={() => plugin.closeDialog()}>
-          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h4 style={{ margin: '0 0 4px', color: '#89b4fa', fontSize: 15 }}>
-              c_preview_symbol_dialog
-            </h4>
-            <p style={{ fontSize: 11, color: '#6c7086', margin: '0 0 14px' }}>
-              activate_relative_to(frame_title, top_frame,
-              x_offset={plugin.xOffset}, y_offset={plugin.yOffset})
-            </p>
+      {/* Log */}
+      <div style={styles.card}>
+        <div style={styles.cardTitle}>Log de acciones</div>
+        {log.length === 0 ? (
+          <div style={{ color: '#585b70', fontSize: 11 }}>—</div>
+        ) : (
+          <div style={{ maxHeight: 160, overflowY: 'auto' }}>
+            {log.map((line, i) => (
+              <div
+                key={i}
+                style={{
+                  color: line.includes('ERROR') ? '#f38ba8' : '#bac2de',
+                  fontSize: 11,
+                }}
+              >
+                {line}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-            {/* build_embedded_gui: catálogo de símbolos */}
-            <span style={s.label}>Catálogo sw_gis!gis_point_style — databus: symbol_name</span>
-            <div style={s.grid}>
+      {/* Diálogo modal (c_preview_symbol_dialog embebido) */}
+      {dialogOpen && (
+        <div style={styles.modal} onClick={() => { plugin.closeDialog(); force(); }}>
+          <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ color: '#cba6f7', fontWeight: 'bold' }}>
+                {MESSAGES.frame_title}
+                <span style={{ color: '#585b70', fontWeight: 'normal', marginLeft: 8 }}>
+                  tab: {tabLabel}  ·  @({plugin.x_offset},{plugin.y_offset})
+                </span>
+              </span>
+              <button
+                onClick={() => { plugin.closeDialog(); pushLog('dialog closed'); force(); }}
+                style={{ ...styles.btn, background: '#f38ba8', color: '#1e1e2e', marginRight: 0 }}
+              >
+                cerrar
+              </button>
+            </div>
+
+            <div style={styles.cardTitle}>
+              Catálogo sw_gis!gis_point_style — databus: symbol_name
+            </div>
+            <div style={styles.grid}>
               {CATALOG_SYMBOLS.map(sym => (
-                <SymbolCell key={sym} name={sym} selected={selectedSym === sym}
-                  onClick={() => setSelectedSym(sym)} />
+                <SymbolCell
+                  key={sym}
+                  name={sym}
+                  selected={selectedSym === sym}
+                  onClick={() => setSelectedSym(sym)}
+                />
               ))}
             </div>
 
-            <div style={{ ...s.box, margin: '12px 0 0' }}>
-              <b style={{ fontSize: 12 }}>symbol_name publicado en databus:</b>{' '}
-              <span style={{ color: '#f9e2af' }}>{selectedSym}</span>
+            <div style={{ marginTop: 12, padding: '6px 10px', background: '#11111b', borderRadius: 4 }}>
+              <span style={styles.label}>symbol_name a publicar:</span>
+              <span style={styles.value}>{selectedSym}</span>
             </div>
 
-            <div style={{ ...s.row, marginTop: 12 }}>
-              <button style={s.btn(true)} onClick={() => plugin.closeDialog()}>Cerrar diálogo</button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button
+                onClick={() => {
+                  setEmittedSymbol(selectedSym);
+                  pushLog(`databus.make_data_available(:symbol_name, ${selectedSym})`);
+                  plugin.closeDialog();
+                  force();
+                }}
+                style={{ ...styles.btn, background: '#a6e3a1', color: '#1e1e2e' }}
+              >
+                Insertar (databus emit)
+              </button>
+              <button
+                onClick={() => { plugin.closeDialog(); pushLog('dialog closed'); force(); }}
+                style={{ ...styles.btn, background: '#585b70', color: '#cdd6f4' }}
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

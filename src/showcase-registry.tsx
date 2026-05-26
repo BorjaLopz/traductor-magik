@@ -44,6 +44,12 @@ import { CDtoPronosticoShowcase } from './components/CDtoPronosticoShowcase'
 import { LayoutManagerPluginShowcase } from './components/LayoutManagerPluginShowcase'
 import { CSectoresShowcase } from './components/CSectoresShowcase'
 import { LayoutElementShowcase } from './components/LayoutElementShowcase'
+import { CArbolCablesFoCedoShowcase } from './components/CArbolCablesFoCedoShowcase'
+import { CDistritoShowcase } from './components/CDistritoShowcase'
+import { CResumenOpticoShowcase } from './components/CResumenOpticoShowcase'
+import { CPreviewSymbolDialogShowcase } from './components/CPreviewSymbolDialogShowcase'
+import { CTablaShowcase } from './components/CTablaShowcase'
+import { CTablasShowcase } from './components/CTablasShowcase'
 
 export interface ShowcaseEntry {
   id: string
@@ -418,5 +424,53 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     nivel: 'COMPLEJO',
     magikSource: 'adiciones_layout/source/layout_element.magik',
     element: <LayoutElementShowcase />,
+  },
+  {
+    id: 'CArbolCablesFoCedo',
+    label: 'c_arbol_cables_fo_cedo',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_arbol_cables_fo_cedo.magik',
+    element: <CArbolCablesFoCedoShowcase />,
+  },
+  {
+    id: 'CDistrito',
+    label: 'c_distrito',
+    fase: 2,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/c_distrito.magik',
+    element: <CDistritoShowcase />,
+  },
+  {
+    id: 'CResumenOptico',
+    label: 'c_resumen_optico',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_resumen_optico.magik',
+    element: <CResumenOpticoShowcase />,
+  },
+  {
+    id: 'CPreviewSymbolDialog',
+    label: 'c_preview_symbol_dialog',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_preview_symbol_dialog.magik',
+    element: <CPreviewSymbolDialogShowcase />,
+  },
+  {
+    id: 'CTabla',
+    label: 'c_tabla',
+    fase: 2,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/c_Tabla.magik',
+    element: <CTablaShowcase />,
+  },
+  {
+    id: 'CTablas',
+    label: 'c_tablas',
+    fase: 2,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/c_tablas.magik',
+    element: <CTablasShowcase />,
   },
 ]

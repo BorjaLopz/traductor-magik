@@ -61,6 +61,12 @@ import { CPreviewSymbolDialogShowcase } from './components/CPreviewSymbolDialogS
 import { CTablaShowcase } from './components/CTablaShowcase'
 import { CTablasShowcase } from './components/CTablasShowcase'
 import { CCapturaTextoUI } from './migration/CCapturaTexto'
+import { CFibrasPorDistritoFalcUI } from './migration/CFibrasPorDistritoFalc'
+import { CElementoEmpalmeDerivacionGUI } from './migration/CElementoEmpalmeDerivacionG'
+import { CElementoEmpalmeGUI } from './migration/CElementoEmpalmeG'
+import { CSeccionamientoUI } from './migration/CSeccionamiento'
+import { CElementoGraficoUI } from './migration/CElementoGrafico'
+import { LayoutSeriesPluginUI } from './migration/LayoutSeriesPlugin'
 
 export interface ShowcaseEntry {
   id: string
@@ -571,5 +577,53 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     nivel: 'MODERADO',
     magikSource: 'adiciones_layout/source/Sellos/c_captura_texto.magik',
     element: <CCapturaTextoUI />,
+  },
+  {
+    id: 'CFibrasPorDistritoFalc',
+    label: 'CFibrasPorDistritoFalc',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_fibras_por_distrito_falc.magik',
+    element: <CFibrasPorDistritoFalcUI />,
+  },
+  {
+    id: 'CElementoEmpalmeDerivacionG',
+    label: 'CElementoEmpalmeDerivacionG',
+    fase: 2,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/Tramo/c_elemento_empalme_derivacion_g.magik',
+    element: <CElementoEmpalmeDerivacionGUI />,
+  },
+  {
+    id: 'CElementoEmpalmeG',
+    label: 'CElementoEmpalmeG',
+    fase: 2,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/Tramo/c_elemento_empalme_g.magik',
+    element: <CElementoEmpalmeGUI />,
+  },
+  {
+    id: 'CSeccionamiento',
+    label: 'CSeccionamiento',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_seccionamiento.magik',
+    element: <CSeccionamientoUI />,
+  },
+  {
+    id: 'CElementoGrafico',
+    label: 'CElementoGrafico',
+    fase: 1,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_elemento_grafico.magik',
+    element: <CElementoGraficoUI />,
+  },
+  {
+    id: 'LayoutSeriesPlugin',
+    label: 'LayoutSeriesPlugin',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/layout_series_plugin.magik',
+    element: <LayoutSeriesPluginUI />,
   },
 ]

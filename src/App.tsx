@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
-  Box, Chip, CssBaseline, Divider, List, ListItemButton,
-  ThemeProvider, Tooltip, Typography, createTheme,
+  Box, Chip, CssBaseline, Divider, InputAdornment, List, ListItemButton,
+  TextField, ThemeProvider, Tooltip, Typography, createTheme,
 } from '@mui/material'
+import SearchIcon from '@mui/icons-material/Search'
 import { SHOWCASE_REGISTRY, type ShowcaseEntry } from './showcase-registry'
 
 const theme = createTheme({ palette: { mode: 'light' } })
@@ -19,14 +20,22 @@ const NIVEL_COLOR: Record<ShowcaseEntry['nivel'], 'success' | 'info' | 'warning'
   'CRÍTICO':      'error',
 }
 
-const SIDEBAR_WIDTH = 240
+const SIDEBAR_WIDTH = 260
 
 export default function App() {
   const [selectedId, setSelectedId] = useState<string>(SHOWCASE_REGISTRY[0]?.id ?? '')
+  const [query, setQuery] = useState('')
 
   const selected = SHOWCASE_REGISTRY.find(e => e.id === selectedId)
 
-  const byFase = SHOWCASE_REGISTRY.reduce<Record<number, ShowcaseEntry[]>>((acc, entry) => {
+  const filtered = query.trim()
+    ? SHOWCASE_REGISTRY.filter(e =>
+        e.label.toLowerCase().includes(query.toLowerCase()) ||
+        e.id.toLowerCase().includes(query.toLowerCase())
+      )
+    : SHOWCASE_REGISTRY
+
+  const byFase = filtered.reduce<Record<number, ShowcaseEntry[]>>((acc, entry) => {
     ;(acc[entry.fase] ??= []).push(entry)
     return acc
   }, {})
@@ -51,47 +60,70 @@ export default function App() {
               Magik → TSX
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {SHOWCASE_REGISTRY.length} componente{SHOWCASE_REGISTRY.length !== 1 ? 's' : ''}
+              {filtered.length} / {SHOWCASE_REGISTRY.length} componente{SHOWCASE_REGISTRY.length !== 1 ? 's' : ''}
             </Typography>
+            <TextField
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Buscar clase…"
+              size="small"
+              fullWidth
+              sx={{ mt: 1.5 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
           </Box>
 
           <Box sx={{ overflowY: 'auto', flex: 1 }}>
-            {Object.entries(byFase).map(([fase, entries]) => (
-              <Box key={fase}>
-                <Typography variant="overline" sx={{
-                  px: 2, pt: 1.5, pb: 0.5, display: 'block', fontSize: 10,
-                  color: FASE_COLOR[Number(fase) as ShowcaseEntry['fase']],
-                }}>
-                  Fase {fase}
-                </Typography>
-                <List dense disablePadding>
-                  {entries.map(entry => (
-                    <Tooltip key={entry.id} title={entry.magikSource} placement="right" arrow>
-                      <ListItemButton
-                        selected={selectedId === entry.id}
-                        onClick={() => setSelectedId(entry.id)}
-                        sx={{ pl: 2 }}
-                      >
-                        <Box>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                            {entry.label}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {entry.nivel}
-                          </Typography>
-                        </Box>
-                      </ListItemButton>
-                    </Tooltip>
-                  ))}
-                </List>
-                <Divider />
-              </Box>
-            ))}
+            {Object.keys(byFase).length === 0 ? (
+              <Typography variant="caption" color="text.disabled" sx={{ p: 2, display: 'block' }}>
+                Sin resultados para "{query}"
+              </Typography>
+            ) : (
+              Object.entries(byFase).map(([fase, entries]) => (
+                <Box key={fase}>
+                  <Typography variant="overline" sx={{
+                    px: 2, pt: 1.5, pb: 0.5, display: 'block', fontSize: 10,
+                    color: FASE_COLOR[Number(fase) as ShowcaseEntry['fase']],
+                  }}>
+                    Fase {fase}
+                  </Typography>
+                  <List dense disablePadding>
+                    {entries.map(entry => (
+                      <Tooltip key={entry.id} title={entry.magikSource} placement="right" arrow>
+                        <ListItemButton
+                          selected={selectedId === entry.id}
+                          onClick={() => setSelectedId(entry.id)}
+                          sx={{ pl: 2 }}
+                        >
+                          <Box>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                              {entry.label}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {entry.nivel}
+                            </Typography>
+                          </Box>
+                        </ListItemButton>
+                      </Tooltip>
+                    ))}
+                  </List>
+                  <Divider />
+                </Box>
+              ))
+            )}
           </Box>
         </Box>
 
         {/* ── Main ── */}
-        <Box sx={{ flex: 1, overflowY: 'auto', p: 4 }}>
+        <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto', p: 3 }}>
           {selected ? (
             <>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>

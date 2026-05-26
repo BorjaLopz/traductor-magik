@@ -60,6 +60,7 @@ import { CResumenOpticoShowcase } from './components/CResumenOpticoShowcase'
 import { CPreviewSymbolDialogShowcase } from './components/CPreviewSymbolDialogShowcase'
 import { CTablaShowcase } from './components/CTablaShowcase'
 import { CTablasShowcase } from './components/CTablasShowcase'
+import { CCapturaTextoUI } from './migration/CCapturaTexto'
 
 export interface ShowcaseEntry {
   id: string
@@ -562,5 +563,13 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     nivel: 'COMPLEJO',
     magikSource: 'adiciones_layout/source/Sellos/c_pep.magik',
     element: <CPepShowcase />,
+  },
+  {
+    id: 'CCapturaTexto',
+    label: 'CCapturaTexto',
+    fase: 2,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_captura_texto.magik',
+    element: <CCapturaTextoUI />,
   },
 ]

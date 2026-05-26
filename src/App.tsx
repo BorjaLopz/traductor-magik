@@ -20,7 +20,7 @@ const NIVEL_COLOR: Record<ShowcaseEntry['nivel'], 'success' | 'info' | 'warning'
   'CRÍTICO':      'error',
 }
 
-const SIDEBAR_WIDTH = 260
+const SIDEBAR_WIDTH = 320
 
 export default function App() {
   const [selectedId, setSelectedId] = useState<string>(SHOWCASE_REGISTRY[0]?.id ?? '')

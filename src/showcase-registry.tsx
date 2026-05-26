@@ -61,6 +61,12 @@ import { CPreviewSymbolDialogShowcase } from './components/CPreviewSymbolDialogS
 import { CTablaShowcase } from './components/CTablaShowcase'
 import { CTablasShowcase } from './components/CTablasShowcase'
 import { CCapturaTextoUI } from './migration/CCapturaTexto'
+import { CInventarioDtoShowcase } from './components/CInventarioDtoShowcase'
+import { CElementoNodoGShowcase } from './components/CElementoNodoGShowcase'
+import { CGuiEditaSelloResumenProyectoShowcase } from './components/CGuiEditaSelloResumenProyectoShowcase'
+import { CTituloDelPlanoShowcase } from './components/CTituloDelPlanoShowcase'
+import { CResumenProyectoShowcase } from './components/CResumenProyectoShowcase'
+import { CSelloFibraOpticaAcometidaShowcase } from './components/CSelloFibraOpticaAcometidaShowcase'
 
 export interface ShowcaseEntry {
   id: string
@@ -571,5 +577,53 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     nivel: 'MODERADO',
     magikSource: 'adiciones_layout/source/Sellos/c_captura_texto.magik',
     element: <CCapturaTextoUI />,
+  },
+  {
+    id: 'CElementoNodoG',
+    label: 'CElementoNodoG',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_elemento_nodo_g.magik',
+    element: <CElementoNodoGShowcase />,
+  },
+  {
+    id: 'CInventarioDto',
+    label: 'CInventarioDto',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Sellos/c_inventario_dto.magik',
+    element: <CInventarioDtoShowcase />,
+  },
+  {
+    id: 'CSelloFibraOpticaAcometida',
+    label: 'CSelloFibraOpticaAcometida',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_sello_fibra_optica_acometida.magik',
+    element: <CSelloFibraOpticaAcometidaShowcase />,
+  },
+  {
+    id: 'CResumenProyecto',
+    label: 'CResumenProyecto',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_resumen_proyecto.magik',
+    element: <CResumenProyectoShowcase />,
+  },
+  {
+    id: 'CTituloDelPlano',
+    label: 'CTituloDelPlano',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/c_titulo_de_plano.magik',
+    element: <CTituloDelPlanoShowcase />,
+  },
+  {
+    id: 'CGuiEditaSelloResumenProyecto',
+    label: 'CGuiEditaSelloResumenProyecto',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_gui_edita_sello_resumen_proyecto.magik',
+    element: <CGuiEditaSelloResumenProyectoShowcase />,
   },
 ]

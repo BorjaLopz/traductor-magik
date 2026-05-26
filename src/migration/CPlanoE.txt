@@ -1,0 +1,119 @@
+================================================================================
+  CLASE MIGRADA: CPlanoE
+  Fichero origen:  c_plano_e.magik
+  Fichero destino: CPlanoE.tsx
+  Jerarquía Magik: c_plano_e (clase raíz, sin parent)
+  Empresa:         Sigma Tao
+  Autor original:  vbluna  (19/12/2005)
+================================================================================
+
+PROPÓSITO
+---------
+Modelo de dominio mínimo "Plano" — wrapper de solo lectura sobre un
+registro :user!_plano (campos user!_proyecto / _nombre / _tipo /
+_comentario). Construido con un PlanoRecord, expone 4 getters
+inmutables que los sellos consumen al pintar el bloque "datos del plano".
+
+
+SLOTS MIGRADOS (estado interno — todos :private en Magik)
+----------------------------------------------------------
+  :sProyecto   → _sProyecto:   string             (readonly)
+  :sNombre     → _sNombre:     string             (readonly)
+  :sTipo       → _sTipo:       string             (readonly)
+  :sComentario → _sComentario: string | undefined (readonly)
+
+Todos los slots están marcados :writable en Magik para permitir su
+asignación dentro de init(). En TS se preservan como readonly (regla
+D3) porque la API pública solo expone getters — no hay setters.
+
+
+TIPOS DEFINIDOS (D5)
+---------------------
+PlanoRecord
+  { 'user!_proyecto':   string;
+    'user!_nombre':     string;
+    'user!_tipo':       string;
+    'user!_comentario': string | undefined }
+
+  Replica el registro :user!_plano de la BD Smallworld. El campo
+  comentario se tipa como `string | undefined` porque el Magik
+  asigna `.sComentario << PoPlano.user!_comentario` sin validar
+  (puede llegar _unset).
+
+
+MÉTODOS MIGRADOS (5)
+---------------------
+
+1. constructor(poPlano: PlanoRecord)
+   Magik: new(PoPlano) → _clone.init(PoPlano)
+          + init(PoPlano) → asigna los 4 slots + return _self.
+   Las dos llamadas Magik se colapsan en el ctor TS (regla D2 —
+   no se emiten new()/init() como métodos de instancia).
+
+2. get Proyecto(): string
+   Magik: c_plano_e.Proyecto >> .sProyecto
+
+3. get Nombre(): string
+   Magik: c_plano_e.Nombre >> .sNombre
+
+4. get Tipo(): string
+   Magik: c_plano_e.Tipo >> .sTipo.uppercase
+   En TS: this._sTipo.toUpperCase() — aplicación de la regla D6
+   (todo .uppercase Magik → .toUpperCase() JS).
+
+5. get Comentario(): string | undefined
+   Magik: c_plano_e.Comentario >> .sComentario
+   Tipo unión con undefined porque el _unset Magik llega como tal.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (raíz)               → class CPlanoE
+  define_slot_access :writable :private     → private readonly _campo
+                                              (D3 — solo getter pública)
+  new(PoPlano) → _clone.init(PoPlano)       → constructor(poPlano)
+  init(PoPlano) → asigna slots              → ctor body
+  >> .campo                                  → get campo()
+  .sTipo.uppercase                           → toUpperCase()  (D6)
+  _unset                                     → undefined
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Ningún setter expuesto. Los slots son readonly tras la construcción
+  (regla D3) — el Magik los marca :writable pero la API pública solo
+  define getters de lectura.
+
+· El constructor consolida el patrón `new + init` del Magik en una
+  sola llamada TS (regla D2 — Nunca emitir new()/init() como métodos
+  de instancia).
+
+· `Tipo` aplica `toUpperCase()` siempre — incluso si el campo ya
+  viene en mayúsculas. Es comportamiento idéntico al Magik.
+
+· La UI añade:
+  · Selector con 3 PlanoRecord de ejemplo (uno con comentario
+    undefined para forzar el camino "— (undefined)").
+  · Demo en vivo de la regla D6: input libre para user!_tipo que
+    se ve transformado a uppercase por el getter.
+  · Inspector del PlanoRecord crudo bajo el card de getters.
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CPlanoEUI } from './migration/CPlanoE';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CPlanoE',
+    label: 'CPlanoE',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Entidad/c_plano_e.magik',
+    element: <CPlanoEUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CPlanoE.txt
+================================================================================

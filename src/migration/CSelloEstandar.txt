@@ -1,0 +1,143 @@
+================================================================================
+  CLASE MIGRADA: CSelloEstandar
+  Fichero origen:  c_sello_estandar.magik
+  Fichero destino: CSelloEstandar.tsx
+  Jerarquía Magik: c_sello_estandar (clase raíz, sin parent)
+  Empresa:         Sigma Tao
+  Autor original:  Alejandro Díaz  (02/02/2005)
+  Última mod.:     DSB              (06/05/2005)
+================================================================================
+
+PROPÓSITO
+---------
+Factory que crea instancias del sello apropiado según un nombre lógico.
+La clase base no almacena estado — solo expone el método
+`crea_sello(nombre, bounding)` que devuelve una de las 3 subclases
+concretas:
+
+  · "CONSTRUCCION"      → c_sello_estandar_construccion
+  · "DIAGRAMA_EMPALMES" → c_sello_estandar_diag_empal
+  · cualquier otro       → c_sello_estandar_ctl_edo  (default — estado/ctl)
+
+Cambio histórico (06/05/05 DSB): la rama default antes era el sello de
+localidad y se cambió al de estado/ctl. La migración respeta el
+comportamiento actual del Magik.
+
+
+SLOTS MIGRADOS
+---------------
+Ninguno. El def_slotted_exemplar declara `{}` vacío.
+
+
+CONSTANTES COMPARTIDAS (define_shared_constant)
+------------------------------------------------
+  :allowed_on_menu?  →  static allowed_on_menu = false
+                        Booleano público heredable por las subclases.
+                        Indica que el sello base no aparece en el menú
+                        del usuario.
+
+  En TS también se exporta como `ALLOWED_ON_MENU` para uso fuera de
+  la clase.
+
+
+TIPOS DEFINIDOS
+----------------
+Bounds
+  { xmin, ymin, xmax, ymax: number } — equivale al bounding_box Magik.
+
+NombreSello
+  'CONSTRUCCION' | 'DIAGRAMA_EMPALMES' | (string & {})
+  La unión literal cubre los 2 nombres reconocidos; (string & {}) deja
+  pasar cualquier otro string sin perder autocompletado en los conocidos.
+
+SelloNewWithOpts
+  { bounds: Bounds }
+  Equivale a las keys de Magik new_with(:bounds, RoBounding).
+
+SelloEstandar
+  Unión: CSelloEstandarConstruccion | CSelloEstandarDiagEmpal |
+         CSelloEstandarCtlEdo
+
+
+STUBS DE SUBCLASES CONCRETAS
+-----------------------------
+Las 3 clases concretas NO están migradas. Se incluyen como stubs
+mínimos en este mismo módulo:
+
+  SelloEstandarBase (abstract)
+    · tipo: string (readonly, identidad)
+    · bounds: Bounds
+    · constructor(opts: SelloNewWithOpts)
+
+  CSelloEstandarConstruccion  · tipo = 'c_sello_estandar_construccion'
+  CSelloEstandarDiagEmpal     · tipo = 'c_sello_estandar_diag_empal'
+  CSelloEstandarCtlEdo        · tipo = 'c_sello_estandar_ctl_edo'
+
+Cuando se migren las clases reales, sustituir los stubs por imports
+de los módulos correspondientes.
+
+
+MÉTODOS MIGRADOS (1)
+---------------------
+
+1. crea_sello(rsNomSello, roBounding)
+   Magik:
+     _if  RsNomSello = "CONSTRUCCION"      → c_sello_estandar_construccion.new_with(:bounds, RoBounding)
+     _elif RsNomSello = "DIAGRAMA_EMPALMES" → c_sello_estandar_diag_empal.new_with(:bounds, RoBounding)
+     _else                                  → c_sello_estandar_ctl_edo.new_with(:bounds, RoBounding)
+   En TS: idéntico if/else if/else con `new SubClase({ bounds: roBounding })`.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar(...{}...)           → class CSelloEstandar (sin slots)
+  define_shared_constant :allowed_on_menu? → static readonly allowed_on_menu
+  Clase.new_with(:bounds, b)               → new Clase({ bounds: b })
+  bounding_box                              → Bounds
+  símbolos Magik en strings ("CONSTRUCCION") → string literals
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Las 3 subclases (construccion, diag_empal, ctl_edo) NO están migradas.
+  Se reemplazan por stubs locales que solo almacenan bounds + tipo.
+  Cuando se migren las reales, importarlas y eliminar los stubs.
+
+· Magik new_with(:bounds, x) es un keyword constructor con property_list.
+  En TS se mapea a `new SubClase({ bounds: x })` — un objeto plano.
+
+· La rama default usa ctl_edo (cambio del 06/05/05 DSB). La UI lo
+  indica con un aviso naranja cuando el nombre introducido no
+  coincide con ninguno de los 2 conocidos.
+
+· `allowed_on_menu?` (con `?` Magik) se mapea a `allowed_on_menu`
+  (sin `?` — no es identificador JS).
+
+· La UI añade:
+  · 4 botones de nombre rápido (incluye 2 inválidos para mostrar default)
+  · Input libre para RsNomSello (permite probar cualquier string)
+  · 4 inputs numéricos para los bounds (xmin/ymin/xmax/ymax)
+  · Tarjeta de resultado con el tipo coloreado por subclase
+  · Indicador de cuál rama del if/elif/else se ejecutó
+  · Preview SVG del bounds con borde discontinuo si es default
+  · Tarjeta de la constante allowed_on_menu
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CSelloEstandarUI } from './migration/CSelloEstandar';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CSelloEstandar',
+    label: 'CSelloEstandar',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_estandar.magik',
+    element: <CSelloEstandarUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CSelloEstandar.txt
+================================================================================

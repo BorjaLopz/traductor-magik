@@ -1,0 +1,240 @@
+================================================================================
+  CLASE MIGRADA: CDistritoE
+  Fichero origen:  c_distrito_e.magik
+  Fichero destino: CDistritoE.tsx
+  Jerarquía Magik: c_distrito_e (clase raíz, sin parent)
+  Empresa:         Sigma Tao
+  Autor original:  dsanchez  (06/04/2005)
+  Revisor:         fdiaz
+================================================================================
+
+PROPÓSITO
+---------
+Modelo de dominio "Distrito" para planos de canalización Smallworld PNI.
+Lee datos de la BD landbase (mockeada en TS) y agrega por NSE
+(Nivel Socio-Económico):
+  · número de viviendas por NSE
+  · número de líneas por NSE
+  · NSE predominante
+  · totales de viviendas y líneas
+  · iniciales de cada NSE (A, B, IL, IM, 1ª, 2ª, LB, …)
+
+Se utiliza desde los sellos (c_distrito, sello_pep_dcs, etc.) que pintan
+las cifras del distrito en el plano.
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  :sDistrito           → _sDistrito: string | undefined
+                         Identificador del distrito (FK).
+  :sNSE_Predominante   → _sNSE_Predominante: string | undefined
+                         Cache del NSE con más viviendas (lazy).
+  :sTotal_Viviendas    → _sTotal_Viviendas: number | undefined
+  :sTotal_Lineas       → _sTotal_Lineas:    number | undefined
+                         Caches de totales (lazy).
+  :oDto                → _oDto: DistritoRecord | undefined  (PUBLIC en Magik)
+                         Registro de :user!_distrito.
+  :collLotes           → _collLotes: LoteRecord[] | undefined
+                         Lotes que caen dentro del :user!_limite del distrito.
+  :collNumViv          → _collNumViv: Map<NSE, number> | undefined
+  :collNumLin          → _collNumLin: Map<NSE, number> | undefined
+                         Vectores agregados por NSE.
+  :sValor_Defecto      → _sValor_Defecto: 'vacio' (readonly)
+                         Centinela cuando no hay distrito seleccionado.
+  :collDet_Lote        → _collDet_Lote: DetalleLoteRecord[] | undefined
+                         Colección de detalle_lote (para introspección del
+                         enumerador NSE).
+
+
+TIPOS DEFINIDOS (D5 — XxxRecord para campos user!_*)
+------------------------------------------------------
+NSE
+  Unión literal con los 12 niveles socio-económicos del enumerador
+  :user!_nivel_socio (RESIDENCIAL A..E, COMERCIAL 1..3, INDUSTRIAL
+  LIGERA/MEDIANA/PESADA, LOTE BALDÍO).
+
+NSE_SORTED  : readonly NSE[]
+  Equivale a .type.enumerator.sorted_values.elements().
+
+DistritoRecord
+  { 'user!_distrito': string; 'user!_limite': string }
+
+DetalleLoteRecord
+  { 'user!_nivel_socio': NSE; 'user!_cantidad_servicios': number }
+
+LoteRecord
+  { 'user!_lote': string;
+    'user!_distrito_ref': string;
+    'user!_limite': string;
+    'user!_detalle_lotes': DetalleLoteRecord[] }
+
+MockLandbaseDB
+  { distritos: DistritoRecord[];
+    lotes: LoteRecord[];
+    detalleLote?: DetalleLoteRecord[] }
+
+
+MÉTODOS MIGRADOS (15)
+----------------------
+
+1. version()                                                          [static]
+   Magik: c_distrito_e.version() → "version 1.00.00.04 08/04/05 22:45 ".
+
+2. constructor(db: MockLandbaseDB)
+   Magik: new() resetea slots y devuelve _clone. En TS los slots se
+   inicializan en su declaración; el constructor inyecta la BD mock
+   (sustituye smallworld_product.pni_application().database).
+   Nota D2: NO se emite un método new()/init() — se usa el constructor.
+
+3. get/set distrito
+   Magik: getter `_method c_distrito_e.distrito` (devuelve .sDistrito)
+   + setter `_method c_distrito_e.distrito << RsValor` que llama
+   prvLeer_Distrito_BdD() + prvObtener_NumViv_Lineas_por_Dto(collLotes).
+   En TS: setter encadena ambas privadas.
+
+4. existe (getter, equivale a .existe?)
+   Magik: _return _self.oDto _isnt _unset
+   En TS: this._oDto !== undefined
+
+5. sNSE_Predominante (getter)
+   Magik: si prvValida_Distrito() y .sNSE_predominante _is _unset
+   → prvGeneraNSE_predominante(). Devuelve .write_string.
+   En TS: idéntico.
+
+6. sTotal_Viviendas (getter)
+7. sTotal_Lineas (getter)
+   Magik: si valida y total_lineas unset → prvGeneraTotales_Viviendas_
+   Lineas(). Devuelve .write_string.
+   En TS: idéntico — conservamos la condición single-check sobre
+   _sTotal_Lineas que el original aplica también a sTotal_Viviendas
+   (ambos se generan simultáneamente).
+
+8. numero_Viviendas_NSE() : Map<NSE,number> | string
+9. numero_Lineas_NSE()    : Map<NSE,number> | string
+   Magik: si !valida → si collDet_Lote unset devuelve valor_defecto;
+   en otro caso devuelve crea_inicializa_vector(-1).
+   En TS: idéntico (unión Map | string para reflejar las dos ramas).
+
+10. crea_inicializa_vector(valor: number) : Map<NSE,number>
+    Magik: itera enumerador .field(:user!_nivel_socio).type.enumerator.
+    sorted_values y crea hash_table{NSE → valor}.
+    En TS: itera NSE_SORTED.
+
+11. obten_inicial_NSE(nse: string) : string
+    Magik: switch con 12 casos (_if/_elif).
+    En TS: lookup en NSE_INITIAL.
+
+12. prvValida_Distrito()                                            [private]
+    Magik: _return _self.oDto _isnt _unset.
+    En TS: idéntico.
+
+13. prvLeer_Distrito_BdD()                                          [private]
+    Magik:
+      LoPAF.database.collection(:landbase, :user!_distrito)
+        .select(predicate.eq(:user!_distrito, .sDistrito)).an_element()
+      → _self.oDto
+      Si oDto existe:
+        LoPAF.database.collection(:landbase, :user!_lote)
+          .select(predicate.within(:user!_limite, oDto.user!_limite))
+        → _self.collLotes
+      Siempre: _self.collDet_Lote << collection(:landbase, :user!_detalle_lote)
+    En TS: Array.prototype.find / filter sobre _db.distritos / _db.lotes,
+    comparando _limite por igualdad (mock determinista).
+
+14. prvObtener_NumViv_Lineas_por_Lote(lote)                          [private]
+    Magik: itera lote.user!_detalle_lotes y construye dos hash_tables.
+    En TS: devuelve { viv, lin } (objetos en lugar de multi-return).
+
+15. prvObtener_NumViv_Lineas_por_Dto(lotes)                          [private]
+    Magik: itera lotes y suma vectores con prvSumaVectores().
+    En TS: idéntico, con bucle for..of.
+
+[helpers privados]
+16. prvSumaVectores(r1, r2)                                          [private]
+    Magik: condition.raise(:warning,...) si tamaños difieren.
+    En TS: throw new Error(...).
+
+17. prvGeneraNSE_predominante()                                      [private]
+    Magik: busca el máximo en collNumViv.
+    En TS: itera entries del Map y guarda el máximo.
+
+18. prvGeneraTotales_Viviendas_Lineas()                              [private]
+    Magik: suma valores de collNumViv y collNumLin.
+    En TS: idéntico, con reduce-style for..of.
+
+[getters de inspección — solo UI, no en Magik]
+    collNumViv / collNumLin / collLotes
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (raíz)                → class CDistritoE
+  define_slot_access :writable :private      → private _campo + getter/setter
+  define_slot_access :writable :public       → public getter/setter
+  _self / _clone                             → this / new constructor()
+  _unset                                     → undefined
+  smallworld_product.pni_application()       → MockLandbaseDB inyectado
+  .database.collection(:landbase, :user!_x)  → _db.distritos | _db.lotes | ...
+  predicate.eq(:k, v)                        → arr.find(x => x[k] === v)
+  predicate.within(:limite, p_limite)        → arr.filter(x => x.limite === p_limite)
+  rope / hash_table                          → Array / Map
+  .an_element() / .a_key()                   → .next() del iterador / primera clave
+  .field(:k).type.enumerator.sorted_values   → NSE_SORTED constante
+  .write_string.as_symbol()                  → string (no hay símbolos)
+  .write_string                              → String(...)
+  condition.raise(:warning, …)               → throw new Error(...)
+  multi-return (a, b) << f(...)              → return { a, b }
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· La BD landbase Smallworld no existe en navegador. Se modela con
+  MockLandbaseDB en memoria. Inyectable por constructor para tests.
+
+· predicate.within(:user!_limite, oDto.user!_limite) se reduce a una
+  comparación literal sobre el string "POLY-NNN" (mock). En el original
+  es contención geométrica real.
+
+· `_self.collDet_Lote` se rellena en prvLeer_Distrito_BdD() incluso si
+  el distrito no existe (igual que el Magik). Si la BD mock no expone
+  `detalleLote` explícito, se construye flat-mapping todos los lotes.
+
+· La clase no se instancia con `new()`/`init()` (regla D2 del CLAUDE.md
+  global). Se usa constructor TS estándar. El método estático version()
+  se conserva.
+
+· Bug del Magik: sTotal_Viviendas chequea `.sTotal_Lineas _is _unset`
+  en lugar de `.sTotal_Viviendas _is _unset`. Se preserva el chequeo
+  (ambos totales se rellenan a la vez, así que es equivalente funcional).
+
+· Multi-return Magik (LcollViv, LcollLin) → objeto { viv, lin } en TS.
+
+· numero_Viviendas_NSE / numero_Lineas_NSE devuelven una unión
+  Map<NSE,number> | string. La UI hace `instanceof Map` para discriminar.
+
+· La UI añade:
+  · Selector con 3 distritos válidos + 1 inválido (DTO-INEXISTENTE)
+  · Pill "existe? / no existe" para visualizar prvValida_Distrito()
+  · Tabla "viviendas / líneas por NSE" filtrada a NSE con datos
+  · Listado de lotes con detalle (NSE×servicios) y suma
+  · Cabecera con CDistritoE.version()
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CDistritoEUI } from './migration/CDistritoE';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CDistritoE',
+    label: 'CDistritoE',
+    fase: 1,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/Entidad/c_distrito_e.magik',
+    element: <CDistritoEUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CDistritoE.txt
+================================================================================

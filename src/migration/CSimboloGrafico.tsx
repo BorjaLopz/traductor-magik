@@ -1,637 +1,528 @@
-/**
- * Migración: c_simbolo_grafico.magik
- * fdiaz / DSB — 28/10/2004, 03/11/2004, 25/01/2005
- * Clase Magik: c_simbolo_grafico — extiende c_elemento_grafico
- *
- * Elemento gráfico de símbolo puntual para el motor de planos Smallworld.
- * Busca el símbolo en la tabla de estilos GIS (sw_gis!gis_point_style),
- * lo renderiza aplicando rotación y volteos horizontal/vertical.
- *
- * Métodos migrados:
- *   new(RsNombre)                    → constructor(nombre?)
- *   new_from(RoObjeto, RsNombre?)    → static fromInstance(origen, nombre?)
- *   init_with(props)                 → initWith(props)
- *   bVoltear_H? getter/setter        → get/set bVoltearH
- *   bVoltear_V? getter/setter        → get/set bVoltearV
- *   nGrados getter/setter            → get/set nGrados
- *   sNombre_Grafico getter/setter    → get/set sNombreGrafico
- *   grupo_estilos getter/setter      → get/set grupoEstilos
- *   Despliega()                      → despliega() → SimboloRenderProps
- *   serial_slots()                   → serialSlots()
- *
- * Equivalencias clave:
- *   def_slotted_exemplar → class CSimboloGrafico
- *   _self.sNombre_Grafico << RsNombre; _return _clone → constructor + props
- *   gis_program_manager.databases[:sigc_style_view]  → SYMBOL_CATALOG (mock)
- *   syb_table.new_detached_record()                  → new CSimboloGrafico()
- *   LoSym.symbol_name << ...; LoSym.realise(...)     → catalog lookup
- *   draw_sample(:rotate, :flipped?, :mirror?)        → SVG transform="rotate scale"
- *   :flipped? → scale(-1, 1)  (volteo horizontal)
- *   :mirror?  → scale( 1,-1)  (volteo vertical)
- *   condition.raise(:warning, ...)                   → throw TypeError
- *   _super.serial_slots() + add_all_last(...)        → spread + own slots
- *   RoObjeto.nMargen* / 10                           → división ×10 (mm→décimas mm)
- */
-
-import React, { useState, useMemo } from 'react';
-
 // =============================================================================
-// CATÁLOGO DE SÍMBOLOS — mock de sw_gis!gis_point_style
-// Magik: syb_table << sty_view.collections[:sw_gis!gis_point_style]
-//        LoSym.symbol_name << .sNombre_Grafico ; LoSym.realise(...)
+// MIGRACIÓN: c_simbolo_grafico  →  CSimboloGrafico.tsx
+// Jerarquía Magik: c_simbolo_grafico  extends  :c_elemento_grafico
+// Fuente: adiciones_layout/source/Sellos/Utilerias/c_simbolo_grafico.magik
+// Autor: fdiaz / dsanchez  ·  03/11/2004
+// =============================================================================
+//
+// Elemento gráfico que dibuja un símbolo del catálogo de estilos
+// (:sw_gis!gis_point_style) sobre un área del sello. Soporta:
+//   · nombre del símbolo (sNombre_Grafico)
+//   · flip horizontal / vertical (bVoltear_H, bVoltear_V)
+//   · rotación en grados (nGrados)
+//   · grupo de estilos (o_sty_view) — :default usa el style_view global
+//
+// El padre c_elemento_grafico NO está migrado. Aquí se incluye un stub
+// CElementoGrafico con las primitivas mínimas (oArea, oVentana, márgenes,
+// init_with, serial_slots) suficientes para no romper la subclase.
 // =============================================================================
 
-/** Función que renderiza el cuerpo SVG del símbolo (centrado en 0,0) */
-type SymbolRenderFn = (fill: string, stroke: string) => React.ReactElement;
+import React, { useMemo, useState } from 'react';
 
-interface SymbolDef {
-  label      : string;
-  render     : SymbolRenderFn;
+// ---------------------------------------------------------------------------
+// Stub mínimo del padre c_elemento_grafico
+// ---------------------------------------------------------------------------
+
+// Magik: bounding_box.new(xmin, ymin, xmax, ymax) — equivalente a Extent OL.
+export interface Area {
+  xmin: number; ymin: number; xmax: number; ymax: number;
 }
 
-/** Equivale a la colección sw_gis!gis_point_style en Smallworld */
-export const SYMBOL_CATALOG: Record<string, SymbolDef> = {
-  'gis_point_circle': {
-    label : 'Círculo',
-    render: (f, s) => <circle cx={0} cy={0} r={10} fill={f} stroke={s} strokeWidth={1.5} />,
-  },
-  'gis_point_square': {
-    label : 'Cuadrado',
-    render: (f, s) => <rect x={-10} y={-10} width={20} height={20} fill={f} stroke={s} strokeWidth={1.5} />,
-  },
-  'gis_point_triangle': {
-    label : 'Triángulo',
-    render: (f, s) => <polygon points="0,-12 11,8 -11,8" fill={f} stroke={s} strokeWidth={1.5} />,
-  },
-  'gis_point_diamond': {
-    label : 'Rombo',
-    render: (f, s) => <polygon points="0,-13 10,0 0,13 -10,0" fill={f} stroke={s} strokeWidth={1.5} />,
-  },
-  'gis_point_cross': {
-    label : 'Cruz',
-    render: (f, s) => (
-      <>
-        <line x1={0} y1={-12} x2={0} y2={12} stroke={s} strokeWidth={2.5} />
-        <line x1={-12} y1={0} x2={12} y2={0} stroke={s} strokeWidth={2.5} />
-      </>
-    ),
-  },
-  'gis_point_arrow': {
-    label : 'Flecha',
-    render: (f, s) => (
-      <>
-        <polygon points="14,0 2,-8 2,8" fill={f} stroke={s} strokeWidth={1.5} />
-        <line x1={-12} y1={0} x2={2} y2={0} stroke={s} strokeWidth={2} />
-      </>
-    ),
-  },
-  'gis_point_star': {
-    label : 'Estrella',
-    render: (f, s) => {
-      const pts: string[] = [];
-      for (let i = 0; i < 10; i++) {
-        const r = i % 2 === 0 ? 13 : 5;
-        const a = (i * Math.PI * 2) / 10 - Math.PI / 2;
-        pts.push(`${(r * Math.cos(a)).toFixed(2)},${(r * Math.sin(a)).toFixed(2)}`);
-      }
-      return <polygon points={pts.join(' ')} fill={f} stroke={s} strokeWidth={1.2} />;
+// Magik: ventana de dibujo (canvas/window). En TS basta con un id opaco.
+export interface VentanaDibujo {
+  id: string;
+}
+
+export interface ElementoGraficoProps {
+  oArea?:        Area;
+  oVentana?:     VentanaDibujo;
+  nMargen_izq?:  number;
+  nMargen_der?:  number;
+  nMargen_sup?:  number;
+  nMargen_inf?:  number;
+}
+
+export class CElementoGrafico {
+  // Slots base que cualquier subclase espera tener.
+  oArea:        Area | undefined        = undefined;
+  oVentana:     VentanaDibujo | undefined = undefined;
+  nMargen_izq:  number = 0;
+  nMargen_der:  number = 0;
+  nMargen_sup:  number = 0;
+  nMargen_inf:  number = 0;
+
+  init_with(props: ElementoGraficoProps): this {
+    if (props.oArea       !== undefined) this.oArea       = props.oArea;
+    if (props.oVentana    !== undefined) this.oVentana    = props.oVentana;
+    if (props.nMargen_izq !== undefined) this.nMargen_izq = props.nMargen_izq;
+    if (props.nMargen_der !== undefined) this.nMargen_der = props.nMargen_der;
+    if (props.nMargen_sup !== undefined) this.nMargen_sup = props.nMargen_sup;
+    if (props.nMargen_inf !== undefined) this.nMargen_inf = props.nMargen_inf;
+    return this;
+  }
+
+  serial_slots(): { keys: string[]; values: unknown[] } {
+    return {
+      keys:   ['oArea', 'oVentana', 'nMargen_izq', 'nMargen_der', 'nMargen_sup', 'nMargen_inf'],
+      values: [this.oArea, this.oVentana, this.nMargen_izq, this.nMargen_der, this.nMargen_sup, this.nMargen_inf],
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stub del catálogo de estilos (:sw_gis!gis_point_style)
+// ---------------------------------------------------------------------------
+
+// Magik: sty_view.collections[:sw_gis!gis_point_style].new_detached_record()
+// + .symbol_name << ... + .realise(unset, unset) + .draw_sample(...)
+export interface SymbolStyleRecord {
+  symbol_name: string;
+  realise(_a?: unknown, _b?: unknown): void;
+  draw_sample(
+    ventana:    VentanaDibujo,
+    area:       Area,
+    opts:       { rotate: number; flipped: boolean; mirror: boolean },
+  ): void;
+}
+
+export interface StyleViewLike {
+  collections: { 'sw_gis!gis_point_style': { new_detached_record(): SymbolStyleRecord } };
+}
+
+// gpm.databases[:sigc_style_view] / gpm.style_view simulados
+export interface GisProgramManagerMock {
+  databases:  { sigc_style_view?: StyleViewLike };
+  style_view: StyleViewLike;
+}
+
+// Magik: :default o el grupo nombrado por el slot o_sty_view
+export type GrupoEstilos = ':default' | string | undefined;
+
+// ---------------------------------------------------------------------------
+// Símbolos disponibles (mock de sw_gis!gis_point_style.enumerate)
+// ---------------------------------------------------------------------------
+
+export const SYMBOL_NAMES = [
+  'gis_point_circle',
+  'gis_point_square',
+  'gis_point_triangle',
+  'gis_point_diamond',
+  'gis_point_cross',
+  'gis_point_arrow',
+  'gis_point_star',
+  'gis_point_terminal',
+  'gis_point_hexagon',
+] as const;
+
+export type SymbolName = typeof SYMBOL_NAMES[number] | (string & {});
+
+// Mock de gpm con dos style_views diferenciables (default vs sigc)
+const GPM_MOCK: GisProgramManagerMock = {
+  databases: {
+    sigc_style_view: {
+      collections: {
+        'sw_gis!gis_point_style': {
+          new_detached_record() {
+            const rec: SymbolStyleRecord = {
+              symbol_name: '',
+              realise() {},
+              draw_sample() {},
+            };
+            return rec;
+          },
+        },
+      },
     },
   },
-  'gis_point_terminal': {
-    label : 'Terminal óptica',
-    render: (f, s) => (
-      <>
-        <circle cx={0} cy={0} r={10} fill={f} stroke={s} strokeWidth={1.5} />
-        <line x1={-7} y1={-7} x2={7}  y2={7}  stroke={s} strokeWidth={1.5} />
-        <line x1={7}  y1={-7} x2={-7} y2={7}  stroke={s} strokeWidth={1.5} />
-      </>
-    ),
-  },
-  'gis_point_hexagon': {
-    label : 'Hexágono',
-    render: (f, s) => {
-      const pts = Array.from({ length: 6 }, (_, i) => {
-        const a = (i * Math.PI) / 3;
-        return `${(11 * Math.cos(a)).toFixed(2)},${(11 * Math.sin(a)).toFixed(2)}`;
-      }).join(' ');
-      return <polygon points={pts} fill={f} stroke={s} strokeWidth={1.5} />;
+  style_view: {
+    collections: {
+      'sw_gis!gis_point_style': {
+        new_detached_record() {
+          const rec: SymbolStyleRecord = {
+            symbol_name: '',
+            realise() {},
+            draw_sample() {},
+          };
+          return rec;
+        },
+      },
     },
   },
 };
 
-export const DEFAULT_SYMBOL = 'gis_point_circle';
+// ---------------------------------------------------------------------------
+// Tipos de props para init_with / new_from
+// ---------------------------------------------------------------------------
 
-// =============================================================================
-// TIPOS
-// =============================================================================
-
-/** Resultado de despliega() — props necesarias para el renderer SVG */
-export interface SimboloRenderProps {
-  nombre   : string;   // símbolo a buscar en el catálogo
-  grados   : number;   // :rotate
-  voltearH : boolean;  // :flipped?
-  voltearV : boolean;  // :mirror?
+export interface SimboloGraficoProps extends ElementoGraficoProps {
+  sNombre_Grafico?: string;
+  bVoltear_H?:      boolean;
+  bVoltear_V?:      boolean;
+  nGrados?:         number;
+  grupo_estilos?:   GrupoEstilos;
 }
 
-/** Props serializables — equivale a serial_slots() */
-export interface SimboloSerialData {
-  sNombre_grafico: string | null;
-  bVoltear_H     : boolean;
-  bVoltear_V     : boolean;
-  nGrados        : number;
-  grupo_estilos  : string | null;
-}
+// ---------------------------------------------------------------------------
+// Clase principal
+// ---------------------------------------------------------------------------
 
-// =============================================================================
-// CLASE PRINCIPAL — c_simbolo_grafico  extends c_elemento_grafico
-// =============================================================================
+/**
+ * Migración de c_simbolo_grafico. Subclase de CElementoGrafico (stub).
+ * El método Despliega() resuelve la style_view a usar (sigc o default) y
+ * registra los parámetros que el catálogo invocaría sobre el record
+ * temporal (sin canvas real — devuelve un descriptor que la UI pinta).
+ */
+export class CSimboloGrafico extends CElementoGrafico {
+  // ── Slots (todos :private :writable en Magik) ────────────────────────────
+  private _sNombre_Grafico: string | undefined = undefined;
+  private _bVoltear_H:      boolean = false;
+  private _bVoltear_V:      boolean = false;
+  private _nGrados:         number  = 0;
+  private _o_sty_view:      GrupoEstilos = undefined;
 
-export class CSimboloGrafico {
-
-  // Magik: {:sNombre_Grafico, _unset}
-  private _sNombreGrafico: string | null = null;
-  // Magik: {:bVoltear_H, _false}  — volteo horizontal (:flipped?)
-  private _bVoltearH: boolean = false;
-  // Magik: {:bVoltear_V, _false}  — volteo vertical (:mirror?)
-  private _bVoltearV: boolean = false;
-  // Magik: {:nGrados, 0}          — ángulo de rotación
-  private _nGrados: number = 0;
-  // Magik: {:o_sty_view, _unset}  — grupo de estilos
-  private _oStyView: string | null = null;
-
-  // Slots heredados de c_elemento_grafico (márgenes en décimas de mm)
-  nMargenIzq: number = 0;
-  nMargenDer: number = 0;
-  nMargenSup: number = 0;
-  nMargenInf: number = 0;
-
-  // ---------------------------------------------------------------------------
-  // new(RsNombre)
-  // Magik: _self.sNombre_Grafico << RsNombre ; _return _clone
-  // Constructor equivalente a new() en Magik — asigna nombre y devuelve instancia.
-  // ---------------------------------------------------------------------------
-  constructor(nombre?: string) {
-    if (nombre !== undefined) this._sNombreGrafico = nombre;
+  // ── Magik: new(RsNombre) ─────────────────────────────────────────────────
+  constructor(rsNombre?: string) {
+    super();
+    if (rsNombre !== undefined) this._sNombre_Grafico = rsNombre;
   }
 
-  // ---------------------------------------------------------------------------
-  // sNombre_Grafico getter / setter
-  // Magik: _return .sNombre_Grafico  /  .sNombre_Grafico << RsValor
-  // ---------------------------------------------------------------------------
-  get sNombreGrafico(): string | null { return this._sNombreGrafico; }
-  set sNombreGrafico(v: string | null) { this._sNombreGrafico = v; }
+  // ── new_from(RoObjeto, RsNombre_Grafico?) — constructor de copia ────────
+  // Magik: si RoObjeto NO es kind_of c_simbolo_grafico → condition.raise.
+  // Si lo es: copia atributos y DIVIDE márgenes entre 10 (bug histórico
+  // conservado: nota 25/01/05 DSB).
+  static new_from(roObjeto: unknown, rsNombre_Grafico?: string): CSimboloGrafico {
+    if (!(roObjeto instanceof CSimboloGrafico)) {
+      throw new Error('El objeto que se proporcionó, no es de tipo c_símbolo_grafico');
+    }
+    const c = new CSimboloGrafico();
+    c._sNombre_Grafico = rsNombre_Grafico ?? roObjeto._sNombre_Grafico;
+    c._bVoltear_H      = roObjeto._bVoltear_H;
+    c._bVoltear_V      = roObjeto._bVoltear_V;
+    c.nMargen_izq      = roObjeto.nMargen_izq / 10;
+    c.nMargen_der      = roObjeto.nMargen_der / 10;
+    c.nMargen_sup      = roObjeto.nMargen_sup / 10;
+    c.nMargen_inf      = roObjeto.nMargen_inf / 10;
+    c._nGrados         = roObjeto._nGrados;
+    return c;
+  }
 
-  // ---------------------------------------------------------------------------
-  // bVoltear_H? getter / setter
-  // Magik: _return .bVoltear_H  /  .bVoltear_H << RbValor
-  // ---------------------------------------------------------------------------
-  get bVoltearH(): boolean { return this._bVoltearH; }
-  set bVoltearH(v: boolean) { this._bVoltearH = v; }
+  // ── sNombre_Grafico (getter / setter) ────────────────────────────────────
+  get sNombre_Grafico(): string | undefined { return this._sNombre_Grafico; }
+  set sNombre_Grafico(v: string) { this._sNombre_Grafico = v; }
 
-  // ---------------------------------------------------------------------------
-  // bVoltear_V? getter / setter
-  // Magik: _return .bVoltear_V  /  .bVoltear_V << RbValor
-  // ---------------------------------------------------------------------------
-  get bVoltearV(): boolean { return this._bVoltearV; }
-  set bVoltearV(v: boolean) { this._bVoltearV = v; }
+  // ── bVoltear_H? (getter / setter) ────────────────────────────────────────
+  // Magik usa nombre `bVoltear_H?` — en TS se mapea a bVoltear_H.
+  get bVoltear_H(): boolean { return this._bVoltear_H; }
+  set bVoltear_H(v: boolean) { this._bVoltear_H = v; }
 
-  // ---------------------------------------------------------------------------
-  // nGrados getter / setter
-  // Magik: _return .nGrados  /  .nGrados << RnValor
-  // ---------------------------------------------------------------------------
+  // ── bVoltear_V? (getter / setter) ────────────────────────────────────────
+  get bVoltear_V(): boolean { return this._bVoltear_V; }
+  set bVoltear_V(v: boolean) { this._bVoltear_V = v; }
+
+  // ── nGrados (getter / setter) ────────────────────────────────────────────
   get nGrados(): number { return this._nGrados; }
   set nGrados(v: number) { this._nGrados = v; }
 
-  // ---------------------------------------------------------------------------
-  // grupo_estilos getter / setter
-  // Magik: _return .o_sty_view  /  .o_sty_view << sValor
-  // ---------------------------------------------------------------------------
-  get grupoEstilos(): string | null { return this._oStyView; }
-  set grupoEstilos(v: string | null) { this._oStyView = v; }
+  // ── grupo_estilos (getter / setter) ──────────────────────────────────────
+  // Magik: slot :o_sty_view. Si vale :default → usa gpm.style_view global.
+  get grupo_estilos(): GrupoEstilos { return this._o_sty_view; }
+  set grupo_estilos(v: GrupoEstilos) { this._o_sty_view = v; }
 
-  // ---------------------------------------------------------------------------
-  // new_from(RoObjeto, RsNombre_Grafico?)
-  //
-  // Magik:
-  //   _if RoObjeto.is_kind_of?(c_simbolo_grafico)
-  //     _self.sNombre_grafico << RsNombre_Grafico ?? RoObjeto.sNombre_Grafico
-  //     _self.bVoltear_H? << RoObjeto.bVoltear_H?
-  //     _self.bVoltear_V? << RoObjeto.bVoltear_V?
-  //     _self.nMargen* << RoObjeto.nMargen* / 10   ← conversión décimas→mm
-  //     _self.nGrados  << RoObjeto.nGrados
-  //     _return _clone
-  //   _else condition.raise(:warning, ...)
-  //
-  // Los márgenes se dividen entre 10 al copiar (décimas de mm → mm).
-  // ---------------------------------------------------------------------------
-  static fromInstance(origen: CSimboloGrafico, nombre?: string): CSimboloGrafico {
-    // Magik: _if RoObjeto.is_kind_of?(c_simbolo_grafico)
-    if (!(origen instanceof CSimboloGrafico)) {
-      // Magik: condition.raise(:warning, :string, "El objeto que se proporcionó, no es de tipo c_símbolo_grafico")
-      throw new TypeError('El objeto proporcionado no es de tipo CSimboloGrafico');
-    }
-    const copy = new CSimboloGrafico(nombre ?? origen._sNombreGrafico ?? undefined);
-    copy._bVoltearH = origen._bVoltearH;
-    copy._bVoltearV = origen._bVoltearV;
-    // Magik: _self.nMargen* << RoObjeto.nMargen* / 10
-    copy.nMargenIzq = origen.nMargenIzq / 10;
-    copy.nMargenDer = origen.nMargenDer / 10;
-    copy.nMargenSup = origen.nMargenSup / 10;
-    copy.nMargenInf = origen.nMargenInf / 10;
-    copy._nGrados   = origen._nGrados;
-    return copy;
-  }
-
-  // ---------------------------------------------------------------------------
-  // init_with(props)
-  //
-  // Magik:
-  //   _super.init_with(props)
-  //   _self.bvoltear_h? << props[:bVoltear_H]
-  //   _self.bvoltear_v? << props[:bVoltear_V]
-  //   >> _self
-  //
-  // Inicializa desde un property_list — extiende init del padre con los slots propios.
-  // ---------------------------------------------------------------------------
-  initWith(props: Partial<SimboloSerialData>): this {
-    if (props.sNombre_grafico !== undefined) this._sNombreGrafico = props.sNombre_grafico;
-    // Magik: _self.bvoltear_h? << props[:bVoltear_H]
-    if (props.bVoltear_H     !== undefined) this._bVoltearH      = props.bVoltear_H;
-    // Magik: _self.bvoltear_v? << props[:bVoltear_V]
-    if (props.bVoltear_V     !== undefined) this._bVoltearV      = props.bVoltear_V;
-    if (props.nGrados        !== undefined) this._nGrados        = props.nGrados;
-    if (props.grupo_estilos  !== undefined) this._oStyView       = props.grupo_estilos;
+  // ── init_with(props) ─────────────────────────────────────────────────────
+  // Magik: _super.init_with(props) + asigna bVoltear_H/V desde props.
+  init_with(props: SimboloGraficoProps): this {
+    super.init_with(props);
+    if (props.bVoltear_H      !== undefined) this._bVoltear_H      = props.bVoltear_H;
+    if (props.bVoltear_V      !== undefined) this._bVoltear_V      = props.bVoltear_V;
+    if (props.sNombre_Grafico !== undefined) this._sNombre_Grafico = props.sNombre_Grafico;
+    if (props.nGrados         !== undefined) this._nGrados         = props.nGrados;
+    if (props.grupo_estilos   !== undefined) this._o_sty_view      = props.grupo_estilos;
     return this;
   }
 
-  // ---------------------------------------------------------------------------
-  // serial_slots()
-  //
-  // Magik:
-  //   (keys, values) << _super.serial_slots()
-  //   keys.add_all_last( rope.new_with(:sNombre_grafico,:bVoltear_H,:bVoltear_V,:nGrados,:grupo_estilos))
-  //   values.add_all_last( rope.new_with(.sNombre_grafico,.bVoltear_H,.bVoltear_V,.nGrados,_self.grupo_estilos))
-  //   _return keys, values
-  //
-  // Extiende la serialización del padre con los slots propios de este exemplar.
-  // ---------------------------------------------------------------------------
-  serialSlots(): SimboloSerialData {
-    return {
-      sNombre_grafico: this._sNombreGrafico,
-      bVoltear_H     : this._bVoltearH,
-      bVoltear_V     : this._bVoltearV,
-      nGrados        : this._nGrados,
-      grupo_estilos  : this._oStyView,
-    };
+  // ── serial_slots() ───────────────────────────────────────────────────────
+  // Magik: _super.serial_slots() + añade 5 claves (sNombre, voltear_H,
+  // voltear_V, nGrados, grupo_estilos).
+  override serial_slots(): { keys: string[]; values: unknown[] } {
+    const base = super.serial_slots();
+    base.keys.push('sNombre_grafico', 'bVoltear_H', 'bVoltear_V', 'nGrados', 'grupo_estilos');
+    base.values.push(
+      this._sNombre_Grafico,
+      this._bVoltear_H,
+      this._bVoltear_V,
+      this._nGrados,
+      this.grupo_estilos,
+    );
+    return base;
   }
 
-  // ---------------------------------------------------------------------------
-  // Despliega()
-  //
-  // Magik:
-  //   LoAreaSimbolo << _self.oArea
-  //   sty_view << gpm.databases[:sigc_style_view]
-  //   syb_table << sty_view.collections[:sw_gis!gis_point_style]
-  //   LoSym << syb_table.new_detached_record()
-  //   LoSym.symbol_name << _self.sNombre_Grafico
-  //   LoSym.realise(_unset, _unset)
-  //   LoSym.draw_sample(_self.oVentana, LoAreaSimbolo,
-  //                     :rotate,   _self.nGrados,
-  //                     :flipped?, _self.bVoltear_H?,
-  //                     :mirror?,  _self.bVoltear_V?)
-  //
-  // En TS devuelve los props de renderizado; el componente React aplica los transforms.
-  // ---------------------------------------------------------------------------
-  despliega(): SimboloRenderProps {
-    // Magik: LoSym.symbol_name << _self.sNombre_Grafico → lookup en catálogo
-    const nombre = this._sNombreGrafico ?? DEFAULT_SYMBOL;
+  // ── Despliega() ──────────────────────────────────────────────────────────
+  // Magik: resuelve sty_view (sigc o default), crea record temporal,
+  // .symbol_name << ..., .realise(unset, unset), .draw_sample(ventana,
+  // area, :rotate, :flipped?, :mirror?).
+  // En TS: devuelve un descriptor "DrawCall" que la UI puede renderizar.
+  Despliega(gpm: GisProgramManagerMock = GPM_MOCK): DrawCall | undefined {
+    if (this._sNombre_Grafico === undefined || this.oArea === undefined) return undefined;
+
+    const stySigc = gpm.databases.sigc_style_view;
+    const useSigc = stySigc !== undefined && this._o_sty_view !== ':default';
+    const sybTable = (useSigc ? stySigc! : gpm.style_view).collections['sw_gis!gis_point_style'];
+
+    const rec = sybTable.new_detached_record();
+    rec.symbol_name = this._sNombre_Grafico;
+    rec.realise(undefined, undefined);
+    rec.draw_sample(
+      this.oVentana ?? { id: 'default' },
+      this.oArea,
+      { rotate: this._nGrados, flipped: this._bVoltear_H, mirror: this._bVoltear_V },
+    );
+
     return {
-      nombre  : SYMBOL_CATALOG[nombre] ? nombre : DEFAULT_SYMBOL,
-      grados  : this._nGrados,
-      voltearH: this._bVoltearH,
-      voltearV: this._bVoltearV,
+      symbol_name: this._sNombre_Grafico,
+      area:        this.oArea,
+      ventana:     this.oVentana?.id ?? 'default',
+      rotate:      this._nGrados,
+      flipped:     this._bVoltear_H,
+      mirror:      this._bVoltear_V,
+      source:      useSigc ? 'sigc_style_view' : 'gpm.style_view (default)',
     };
   }
 }
 
-// =============================================================================
-// RENDERER SVG — equivale a draw_sample() en el window de Smallworld
-// Aplica los tres transforms: rotate, flipped? (:flipped? → scale(-1,1)), mirror? (scale(1,-1))
-// =============================================================================
-
-interface SymbolSVGProps {
-  nombre  : string;
-  grados  : number;
-  voltearH: boolean;
-  voltearV: boolean;
-  size   ?: number;
-  fill   ?: string;
-  stroke ?: string;
-}
-
-export function SymbolSVG({
-  nombre,
-  grados,
-  voltearH,
-  voltearV,
-  size   = 60,
-  fill   = '#d0e8ff',
-  stroke = '#1a237e',
-}: SymbolSVGProps) {
-  const sym  = SYMBOL_CATALOG[nombre] ?? SYMBOL_CATALOG[DEFAULT_SYMBOL];
-  // Magik: :flipped? → scale(-1,1)  (espejo horizontal)
-  const sX   = voltearH ? -1 : 1;
-  // Magik: :mirror?  → scale(1,-1)  (espejo vertical)
-  const sY   = voltearV ? -1 : 1;
-  // Magik: draw_sample(..., :rotate, nGrados, :flipped?, ..., :mirror?, ...)
-  // En SVG los transforms se aplican de derecha a izquierda:
-  //   → primero scale (volteos), luego rotate. Equivale a voltear el símbolo y rotarlo.
-  const xform = `rotate(${grados}) scale(${sX},${sY})`;
-
-  return (
-    <svg
-      width={size} height={size}
-      viewBox="-20 -20 40 40"
-      style={{ overflow: 'visible', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 3 }}
-    >
-      {/* Ejes de referencia — ayuda visual, no están en Magik */}
-      <line x1={-18} y1={0} x2={18} y2={0} stroke="#e8e8e8" strokeWidth={0.5} />
-      <line x1={0} y1={-18} x2={0} y2={18} stroke="#e8e8e8" strokeWidth={0.5} />
-      {/* Símbolo con transforms aplicados */}
-      <g transform={xform}>
-        {sym.render(fill, stroke)}
-      </g>
-    </svg>
-  );
+// Descriptor del draw_sample resuelto — útil para la UI.
+export interface DrawCall {
+  symbol_name: string;
+  area:        Area;
+  ventana:     string;
+  rotate:      number;
+  flipped:     boolean;
+  mirror:      boolean;
+  source:      string;
 }
 
 // =============================================================================
-// COMPONENTE REACT — demo interactivo de CSimboloGrafico
+// Componente React — CSimboloGraficoUI
 // =============================================================================
 
-export function CSimboloGraficoUI() {
-  const [simbolo  , setSimboloNombre] = useState(DEFAULT_SYMBOL);
-  const [grados   , setGrados       ] = useState(0);
-  const [voltearH , setVoltearH     ] = useState(false);
-  const [voltearV , setVoltearV     ] = useState(false);
-  const [sty      , setSty          ] = useState('');
-  const [copyError, setCopyError    ] = useState<string | null>(null);
+const styles = {
+  wrap: {
+    fontFamily: 'monospace', fontSize: 12, background: '#1e1e2e',
+    color: '#cdd6f4', padding: 16, borderRadius: 8, minWidth: 760,
+  } as React.CSSProperties,
+  card: {
+    background: '#181825', border: '1px solid #45475a', borderRadius: 6,
+    padding: 10, marginBottom: 12,
+  } as React.CSSProperties,
+  title: { color: '#f9e2af', fontSize: 11, marginBottom: 8, letterSpacing: 1 } as React.CSSProperties,
+  row:   { display: 'grid', gridTemplateColumns: '180px 1fr', gap: 4, fontSize: 11, padding: '2px 0' } as React.CSSProperties,
+  k:     { color: '#89dceb' } as React.CSSProperties,
+  v:     { color: '#a6e3a1' } as React.CSSProperties,
+  btn:   {
+    padding: '5px 12px', borderRadius: 4, border: 'none', cursor: 'pointer',
+    fontFamily: 'monospace', fontSize: 12, marginRight: 6, marginBottom: 4,
+  } as React.CSSProperties,
+  input: {
+    background: '#313244', color: '#cdd6f4', border: '1px solid #45475a',
+    borderRadius: 4, padding: '3px 6px', fontFamily: 'monospace', fontSize: 12,
+    marginLeft: 4,
+  } as React.CSSProperties,
+};
 
-  // Instancia activa — equivale a new(RsNombre) + asignación de props
-  const instancia = useMemo(() => {
-    const s = new CSimboloGrafico(simbolo);
-    s.bVoltearH     = voltearH;
-    s.bVoltearV     = voltearV;
-    s.nGrados       = grados;
-    s.grupoEstilos  = sty || null;
-    s.nMargenIzq    = 5;  // décimas de mm — demo
-    s.nMargenDer    = 5;
-    s.nMargenSup    = 3;
-    s.nMargenInf    = 3;
-    return s;
-  }, [simbolo, grados, voltearH, voltearV, sty]);
-
-  const renderProps = instancia.despliega();
-  const serial      = instancia.serialSlots();
-
-  // Simulación de fromInstance() — new_from(RoObjeto)
-  const handleCopy = () => {
-    try {
-      const copy = CSimboloGrafico.fromInstance(instancia);
-      setCopyError(`OK → copia: "${copy.sNombreGrafico}", grados=${copy.nGrados}, margenIzq=${copy.nMargenIzq}`);
-    } catch (e) {
-      setCopyError((e as Error).message);
-    }
-  };
-
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={st.frame}>
-      <h3 style={st.title}>c_simbolo_grafico</h3>
-      <p style={st.meta}>
-        Elemento gráfico de símbolo puntual. Busca el símbolo en{' '}
-        <code>sw_gis!gis_point_style</code> (catálogo mock) y lo renderiza
-        aplicando <code>:rotate</code>, <code>:flipped?</code> y{' '}
-        <code>:mirror?</code> via SVG transform.
-      </p>
-
-      {/* ── Controles ── */}
-      <div style={st.control}>
-        <span style={st.badge}>new(RsNombre) + props</span>
-
-        <label style={st.lbl}>
-          sNombre_Grafico:
-          <select
-            value={simbolo}
-            onChange={e => setSimboloNombre(e.target.value)}
-            style={st.select}
-          >
-            {Object.entries(SYMBOL_CATALOG).map(([k, v]) => (
-              <option key={k} value={k}>{v.label} ({k})</option>
-            ))}
-          </select>
-        </label>
-
-        <label style={st.lbl}>
-          nGrados:
-          <input
-            type="range" min={0} max={359} step={5} value={grados}
-            onChange={e => setGrados(Number(e.target.value))}
-            style={{ width: 80 }}
-          />
-          <span style={{ fontFamily:'monospace', width:36, display:'inline-block' }}>{grados}°</span>
-        </label>
-
-        <label style={{ ...st.lbl, gap: 4 }}>
-          <input type="checkbox" checked={voltearH} onChange={e => setVoltearH(e.target.checked)} />
-          bVoltear_H? (:flipped?)
-        </label>
-
-        <label style={{ ...st.lbl, gap: 4 }}>
-          <input type="checkbox" checked={voltearV} onChange={e => setVoltearV(e.target.checked)} />
-          bVoltear_V? (:mirror?)
-        </label>
-
-        <label style={st.lbl}>
-          grupo_estilos:
-          <input
-            type="text" value={sty} placeholder="sigc_style_view"
-            onChange={e => setSty(e.target.value)}
-            style={{ ...st.numInput, width: 120 }}
-          />
-        </label>
-      </div>
-
-      {/* ── Vista principal + info ── */}
-      <div style={{ display:'flex', gap:24, flexWrap:'wrap', marginTop:12, alignItems:'flex-start' }}>
-
-        {/* Preview grande — draw_sample() */}
-        <div style={{ textAlign:'center' }}>
-          <p style={{ ...st.meta, marginBottom:4, fontWeight:'bold' }}>
-            Despliega() — draw_sample()
-          </p>
-          <SymbolSVG
-            nombre={renderProps.nombre}
-            grados={renderProps.grados}
-            voltearH={renderProps.voltearH}
-            voltearV={renderProps.voltearV}
-            size={120}
-          />
-          <p style={{ ...st.meta, fontFamily:'monospace', marginTop:4 }}>
-            rotate({grados}°) scale({voltearH ? -1 : 1},{voltearV ? -1 : 1})
-          </p>
-        </div>
-
-        {/* Matriz 2×2 de transforms */}
-        <div>
-          <p style={{ ...st.meta, fontWeight:'bold', marginBottom:6 }}>Combinaciones de volteo</p>
-          <table style={{ borderCollapse:'collapse' }}>
-            <thead>
-              <tr>
-                <th style={st.th}></th>
-                <th style={st.th}>Sin volteo H</th>
-                <th style={st.th}>Volteo H (flipped)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[false, true].map(vV => (
-                <tr key={String(vV)}>
-                  <td style={{ ...st.td, fontWeight:'bold', fontSize:10 }}>
-                    {vV ? 'Volteo V (mirror)' : 'Sin volteo V'}
-                  </td>
-                  {[false, true].map(vH => (
-                    <td key={String(vH)} style={{ ...st.td, textAlign:'center' }}>
-                      <SymbolSVG
-                        nombre={simbolo} grados={grados}
-                        voltearH={vH} voltearV={vV}
-                        size={52} fill="#d0e8ff" stroke="#1a237e"
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Catálogo de símbolos */}
-        <div>
-          <p style={{ ...st.meta, fontWeight:'bold', marginBottom:6 }}>Catálogo (sw_gis!gis_point_style)</p>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:6 }}>
-            {Object.entries(SYMBOL_CATALOG).map(([k, v]) => (
-              <div
-                key={k}
-                onClick={() => setSimboloNombre(k)}
-                style={{
-                  cursor:'pointer', textAlign:'center', padding:4,
-                  border: k === simbolo ? '2px solid #1565c0' : '1px solid #ddd',
-                  borderRadius:4, background: k === simbolo ? '#e3f2fd' : '#fff',
-                }}
-              >
-                <SymbolSVG nombre={k} grados={0} voltearH={false} voltearV={false}
-                  size={38} fill="#d0e8ff" stroke="#1a237e" />
-                <div style={{ fontSize:9, marginTop:2, color:'#555' }}>{v.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── serialSlots() ── */}
-      <div style={{ marginTop:14 }}>
-        <p style={{ ...st.meta, fontWeight:'bold', marginBottom:4 }}>
-          serialSlots() — keys + values
-        </p>
-        <table style={st.table}>
-          <thead>
-            <tr>
-              <th style={st.th}>Key (Magik: rope slot)</th>
-              <th style={st.th}>Valor</th>
-              <th style={st.th}>Tipo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(Object.entries(serial) as [string, unknown][]).map(([k, v], i) => (
-              <tr key={k} style={{ background: i%2===0?'#f8f9fa':'#fff' }}>
-                <td style={{ ...st.td, fontFamily:'monospace', fontSize:10 }}><code>{k}</code></td>
-                <td style={{ ...st.td, fontFamily:'monospace', color: v === null ? '#aaa' : '#1a1a1a' }}>
-                  {v === null ? '_unset' : String(v)}
-                </td>
-                <td style={{ ...st.td, fontSize:11, color:'#555' }}>{typeof v}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ── new_from() / fromInstance() ── */}
-      <div style={st.control}>
-        <span style={st.badge}>new_from(RoObjeto)</span>
-        <button onClick={handleCopy} style={st.btn}>fromInstance(instancia)</button>
-        {copyError && (
-          <span style={{ fontSize:11, fontFamily:'monospace',
-            color: copyError.startsWith('OK') ? '#2e7d32' : '#c62828' }}>
-            {copyError}
-          </span>
-        )}
-      </div>
-
-      {/* ── Tabla de equivalencias ── */}
-      <EquivalenciasTable />
+    <div style={styles.row}>
+      <span style={styles.k}>{label}</span>
+      <span style={styles.v}>{value}</span>
     </div>
   );
 }
 
-// Tabla de equivalencias Magik ↔ TypeScript
-function EquivalenciasTable() {
-  const rows = [
-    { m: 'def_slotted_exemplar(:c_simbolo_grafico, {...}, :c_elemento_grafico)', t: 'class CSimboloGrafico extends (base simulada)', n: 'Herencia TS' },
-    { m: '_self.sNombre_Grafico << RsNombre ; _return _clone',                   t: 'constructor(nombre?) → new CSimboloGrafico(n)', n: 'new() Magik' },
-    { m: '_if RoObjeto.is_kind_of?(c_simbolo_grafico)',                          t: 'if (!(origen instanceof CSimboloGrafico))',      n: 'Type guard' },
-    { m: 'condition.raise(:warning, :string, "...")',                            t: 'throw new TypeError("...")',                    n: 'Error Magik' },
-    { m: '_self.nMargen* << RoObjeto.nMargen* / 10',                            t: 'copy.nMargen* = origen.nMargen* / 10',          n: 'Conversión ×10' },
-    { m: 'gpm.databases[:sigc_style_view].collections[:sw_gis!gis_point_style]',t: 'SYMBOL_CATALOG (objeto mock)',                  n: 'BD de estilos' },
-    { m: 'LoSym.symbol_name << ...; LoSym.realise(_unset,_unset)',               t: 'SYMBOL_CATALOG[nombre].render()',               n: 'Lookup símbolo' },
-    { m: 'draw_sample(..., :rotate, nGrados, :flipped?, bH, :mirror?, bV)',      t: 'SVG transform="rotate(g) scale(sX,sY)"',        n: 'Renders símbolo' },
-    { m: ':flipped? (volteo horizontal)',                                        t: 'scale(-1, 1)',                                  n: 'Espejo eje Y' },
-    { m: ':mirror?  (volteo vertical)',                                          t: 'scale( 1,-1)',                                  n: 'Espejo eje X' },
-    { m: '_super.serial_slots() + add_all_last(rope.new_with(...))',             t: 'return { ...superSlots, ...ownSlots }',         n: 'Serialización' },
-    { m: '_super.init_with(props) + props[:bVoltear_H/V]',                      t: 'initWith(props: Partial<SimboloSerialData>)',   n: 'init desde props' },
-    { m: '_return _clone',                                                       t: 'return this / return new CSimboloGrafico()',    n: 'Clon Magik' },
-  ];
+// SVG canónico por símbolo — equivale al draw_sample del catálogo.
+function SymbolSVG({ name }: { name: string }) {
+  const stroke = '#cba6f7';
   return (
-    <table style={{ ...st.table, marginTop:14 }}>
-      <thead>
-        <tr>{['Magik','TypeScript','Notas'].map(h=><th key={h} style={st.th}>{h}</th>)}</tr>
-      </thead>
-      <tbody>
-        {rows.map(({ m, t, n }, i) => (
-          <tr key={m} style={{ background: i%2===0?'#f8f9fa':'#fff' }}>
-            <td style={{ ...st.td, fontFamily:'monospace', fontSize:10 }}><code>{m}</code></td>
-            <td style={{ ...st.td, fontFamily:'monospace', fontSize:10 }}><code>{t}</code></td>
-            <td style={{ ...st.td, color:'#555', fontSize:11 }}>{n}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <svg width="100%" height="100%" viewBox="-18 -18 36 36">
+      {name.includes('circle')   && <circle r={13} fill="none" stroke={stroke} strokeWidth={2} />}
+      {name.includes('square')   && <rect x={-11} y={-11} width={22} height={22} fill="none" stroke={stroke} strokeWidth={2} />}
+      {name.includes('triangle') && <polygon points="0,-14 12,9 -12,9" fill="none" stroke={stroke} strokeWidth={2} />}
+      {name.includes('diamond')  && <polygon points="0,-14 14,0 0,14 -14,0" fill="none" stroke={stroke} strokeWidth={2} />}
+      {name.includes('cross')    && (
+        <>
+          <line x1={-13} y1={0} x2={13} y2={0} stroke={stroke} strokeWidth={2} />
+          <line x1={0}   y1={-13} x2={0} y2={13} stroke={stroke} strokeWidth={2} />
+        </>
+      )}
+      {name.includes('arrow')    && <polygon points="0,-14 13,9 0,3 -13,9" fill={stroke} />}
+      {name.includes('star')     && <polygon points="0,-14 4,-4 13,-4 6,2 9,12 0,6 -9,12 -6,2 -13,-4 -4,-4" fill={stroke} />}
+      {name.includes('terminal') && (
+        <>
+          <circle r={12} fill="none" stroke={stroke} strokeWidth={2} />
+          <line x1={-8} y1={-8} x2={8} y2={8} stroke={stroke} strokeWidth={2} />
+          <line x1={8}  y1={-8} x2={-8} y2={8} stroke={stroke} strokeWidth={2} />
+        </>
+      )}
+      {name.includes('hexagon')  && <polygon points="0,-14 12,-7 12,7 0,14 -12,7 -12,-7" fill="none" stroke={stroke} strokeWidth={2} />}
+    </svg>
   );
 }
 
-// =============================================================================
-// Estilos
-// =============================================================================
-const st: Record<string, React.CSSProperties> = {
-  frame   : { display:'flex', flexDirection:'column', gap:10, fontFamily:'sans-serif', fontSize:13 },
-  title   : { margin:'0 0 4px', fontSize:14, fontWeight:'bold' },
-  meta    : { color:'#666', fontSize:12, margin:'2px 0' },
-  control : { display:'flex', alignItems:'center', gap:10, padding:'8px 12px', background:'#f0f4f8', borderRadius:4, border:'1px solid #dde', flexWrap:'wrap' },
-  lbl     : { fontSize:11, display:'flex', alignItems:'center', gap:6 },
-  numInput: { padding:'2px 6px', fontSize:11, border:'1px solid #b0bec5', borderRadius:3 },
-  select  : { padding:'2px 6px', fontSize:11, border:'1px solid #b0bec5', borderRadius:3 },
-  btn     : { padding:'4px 12px', fontSize:11, borderRadius:3, border:'1px solid #1565c0', background:'#1565c0', color:'#fff', cursor:'pointer' },
-  badge   : { fontSize:10, background:'#2E4057', color:'#fff', borderRadius:3, padding:'2px 7px', fontFamily:'monospace' },
-  table   : { borderCollapse:'collapse' as const, width:'100%' },
-  th      : { background:'#2E4057', color:'#fff', padding:'5px 10px', textAlign:'left' as const, fontSize:11 },
-  td      : { padding:'5px 10px', borderBottom:'1px solid #eee', fontSize:11 },
-};
+export function CSimboloGraficoUI() {
+  const [nombre,     setNombre]     = useState<SymbolName>('gis_point_arrow');
+  const [voltearH,   setVoltearH]   = useState(false);
+  const [voltearV,   setVoltearV]   = useState(false);
+  const [grados,     setGrados]     = useState(0);
+  const [grupo,      setGrupo]      = useState<GrupoEstilos>(undefined);
 
-export default CSimboloGraficoUI;
+  // Crear/actualizar instancia con cada cambio
+  const simbolo = useMemo(() => {
+    const s = new CSimboloGrafico(nombre);
+    s.oArea       = { xmin: 0, ymin: 0, xmax: 100, ymax: 100 };
+    s.oVentana    = { id: 'demo-canvas' };
+    s.bVoltear_H  = voltearH;
+    s.bVoltear_V  = voltearV;
+    s.nGrados     = grados;
+    s.grupo_estilos = grupo;
+    return s;
+  }, [nombre, voltearH, voltearV, grados, grupo]);
+
+  const drawCall = simbolo.Despliega();
+  const { keys, values } = simbolo.serial_slots();
+
+  // Demo de new_from con márgenes /10
+  const copiaMargen = useMemo(() => {
+    const proto = new CSimboloGrafico('gis_point_square');
+    proto.nMargen_izq = 50; proto.nMargen_der = 50;
+    proto.nMargen_sup = 50; proto.nMargen_inf = 50;
+    proto.bVoltear_H  = true;
+    proto.nGrados     = 45;
+    return CSimboloGrafico.new_from(proto, 'gis_point_star');
+  }, []);
+
+  // CSS transform que replica rotate + flip
+  const transform = useMemo(() => {
+    const sx = voltearH ? -1 : 1;
+    const sy = voltearV ? -1 : 1;
+    return `rotate(${grados}deg) scale(${sx}, ${sy})`;
+  }, [voltearH, voltearV, grados]);
+
+  return (
+    <div style={styles.wrap}>
+      {/* Cabecera */}
+      <div style={{ marginBottom: 12, borderBottom: '1px solid #45475a', paddingBottom: 8 }}>
+        <span style={{ color: '#cba6f7', fontWeight: 'bold', fontSize: 13 }}>CSimboloGrafico</span>
+        <span style={{ color: '#585b70', marginLeft: 8, fontSize: 11 }}>
+          c_elemento_grafico → símbolo del catálogo gis_point_style
+        </span>
+      </div>
+
+      {/* Controles */}
+      <div style={styles.card}>
+        <div style={styles.title}>new(RsNombre) · slots editables</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+          <label>
+            <span style={styles.k}>sNombre_Grafico:</span>
+            <select
+              value={nombre}
+              onChange={e => setNombre(e.target.value)}
+              style={styles.input}
+            >
+              {SYMBOL_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+          <label>
+            <span style={styles.k}>nGrados:</span>
+            <input
+              type="number"
+              value={grados}
+              onChange={e => setGrados(Number(e.target.value))}
+              style={{ ...styles.input, width: 70 }}
+              step={15}
+            />
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={voltearH}
+              onChange={e => setVoltearH(e.target.checked)}
+            />
+            <span style={styles.k}> bVoltear_H?</span>
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={voltearV}
+              onChange={e => setVoltearV(e.target.checked)}
+            />
+            <span style={styles.k}> bVoltear_V?</span>
+          </label>
+          <label>
+            <span style={styles.k}>grupo_estilos:</span>
+            <select
+              value={grupo ?? ''}
+              onChange={e => setGrupo(e.target.value === '' ? undefined : e.target.value as GrupoEstilos)}
+              style={styles.input}
+            >
+              <option value="">unset (usa sigc_style_view si existe)</option>
+              <option value=":default">:default (gpm.style_view global)</option>
+              <option value="sigc">sigc (vista nombrada)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {/* Preview gráfico */}
+      <div style={styles.card}>
+        <div style={styles.title}>Despliega() — draw_sample(ventana, area, :rotate, :flipped?, :mirror?)</div>
+        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+          <div style={{
+            width: 180, height: 180, background: '#11111b',
+            border: '1px solid #45475a', borderRadius: 4,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{
+              width: 130, height: 130, transform, transformOrigin: 'center',
+              transition: 'transform 0.25s ease-out',
+            }}>
+              <SymbolSVG name={nombre} />
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <Field label="draw.symbol_name"  value={drawCall?.symbol_name ?? '—'} />
+            <Field label="draw.rotate"       value={`${drawCall?.rotate ?? 0}°`} />
+            <Field label="draw.flipped (H)"  value={String(drawCall?.flipped ?? false)} />
+            <Field label="draw.mirror  (V)"  value={String(drawCall?.mirror  ?? false)} />
+            <Field label="draw.source"       value={drawCall?.source ?? '—'} />
+            <Field label="draw.area"         value={drawCall ? `[${drawCall.area.xmin},${drawCall.area.ymin}]→[${drawCall.area.xmax},${drawCall.area.ymax}]` : '—'} />
+            <Field label="draw.ventana"      value={drawCall?.ventana ?? '—'} />
+          </div>
+        </div>
+      </div>
+
+      {/* serial_slots() — herencia */}
+      <div style={styles.card}>
+        <div style={styles.title}>serial_slots() — super + 5 claves propias</div>
+        {keys.map((k, i) => (
+          <Field key={k} label={k} value={String(values[i] ?? '—')} />
+        ))}
+      </div>
+
+      {/* new_from + reglas / 10 */}
+      <div style={styles.card}>
+        <div style={styles.title}>
+          new_from(otro, nombre?) — copia con márgenes ÷ 10
+          <span style={{ color: '#fab387', marginLeft: 8 }}>
+            (bug histórico preservado — nota DSB 25/01/05)
+          </span>
+        </div>
+        <Field label="origen.sNombre"  value="gis_point_square (margenes 50/50/50/50, voltear_H=true, 45°)" />
+        <Field label="copia.sNombre"   value={copiaMargen.sNombre_Grafico ?? '—'} />
+        <Field label="copia.bVoltear_H" value={String(copiaMargen.bVoltear_H)} />
+        <Field label="copia.nGrados"   value={`${copiaMargen.nGrados}°`} />
+        <Field
+          label="copia.margenes"
+          value={`izq=${copiaMargen.nMargen_izq}  der=${copiaMargen.nMargen_der}  sup=${copiaMargen.nMargen_sup}  inf=${copiaMargen.nMargen_inf}`}
+        />
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,137 @@
+================================================================================
+  CLASE MIGRADA: CSelloNotasSctInstPuenteTn
+  Fichero origen:  c_sello_notas_sct_inst_puente_tn.magik
+  Fichero destino: CSelloNotasSctInstPuenteTn.tsx
+  Jerarquía Magik: c_sello_notas_sct_inst_puente_tn
+                     extends :c_sello_notas_sct
+================================================================================
+
+PROPÓSITO
+---------
+Sello SCT especializado para "Instalación Lateral en Puente con Tubo
+Negro" (TN). Subclase final que:
+
+  · Configura la tabla `:tbl_notas_grales` con 2 renglones × 1 columna,
+    alturas 10 mm (cabecera) y 160 mm (cuerpo), ancho col 170 mm.
+  · Añade las notas 5–11 al texto producido por el padre, parametrizadas
+    con .s_tipo_cable y .s_estado.
+
+
+SLOTS MIGRADOS
+---------------
+No declara slots propios (def_slotted_exemplar con `{}`).
+Hereda del padre c_sello_notas_sct:
+  :s_tipo_cable → s_tipo_cable: string
+  :s_estado     → s_estado:     string
+  :oTablas      → oTablas:      TablasCollection
+
+
+CONSTANTES COMPARTIDAS
+-----------------------
+  :allowed_on_menu? → static allowed_on_menu = false
+
+
+MÉTODOS MIGRADOS (2)
+---------------------
+
+1. prvCrea_Cfg_Tbl_Notas_Grales(roCoord) [private]
+   Magik:
+     LoTblTitulo << oTablas.crea_tabla(2, 1, :tbl_notas_grales)
+     LoTblTitulo.oCoordenada_Origen << RoCoord
+     LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+     LoTblTitulo.oRenglones.elemento(2).nLongitud << 160
+     LoTblTitulo.oColumnas.elemento(1).nLongitud  << 170
+   En TS: idéntico (índices 1-based preservados).
+
+2. prvAsignaTexto() [override]
+   Magik:
+     _super.prvAsignaTexto()
+     _local LsTexto << character.newLine
+     LsTexto +<< " 5.- LA UBICACIÓN DE LA INSTALACIÓN LATERAL ..."
+     ...
+     oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+   En TS: super.prvAsignaTexto() + 7 notas (5–11) concatenadas con +=
+   y volcadas en cel.oElemento.sTexto.
+
+   Sustituciones de parámetros en el texto:
+     · .s_tipo_cable aparece 4 veces (notas 5, 6, 7 y referencia en 5)
+     · .s_estado aparece 1 vez (nota 5)
+
+
+DEPENDENCIAS REUSADAS
+----------------------
+Importa de ./CSelloNotasSctCruzSubPte:
+  · CSelloNotasSct  — stub abstract del padre con slots y prvAsignaTexto()
+                       base que produce las notas 1–4
+  · Coord            — tipo del parámetro RoCoord
+
+Esto evita duplicar el stub del padre y la cadena de tipos
+TablaSello / TablasCollection / etc. Cuando el padre real se migre,
+los dos sellos cambian a importar la versión real con un solo cambio.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar(...{} :c_sello_notas_sct)
+                                             → extends CSelloNotasSct
+  define_shared_constant :allowed_on_menu?   → static readonly allowed_on_menu
+  _super.method()                             → super.method()
+  character.newLine                           → '\n'
+  +<<  (concat-asignación)                    → += (string concat)
+  oTablas.crea_tabla(r, c, :id)               → oTablas.crea_tabla(r, c, 'id')
+  oCeldas.Celda(r, c) [1-indexed]             → preservado
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Padre c_sello_notas_sct no migrado — se reusa el stub local
+  introducido por CSelloNotasSctCruzSubPte.tsx.
+
+· Acentos: el Magik original almacenaba caracteres en Latin-1 con
+  bytes rotos. La migración los restaura a UTF-8 correctos (Á, É, Ñ,
+  etc.).
+
+· Comillas tipográficas ('Manual de dispositivos...') se sustituyen
+  por comillas dobles ASCII para evitar problemas con TS source.
+
+· La UI añade:
+  · Botones preset para s_tipo_cable (4 cables comunes) + input libre
+  · Botones preset para s_estado (5 estados mexicanos) + input libre
+  · Inputs para coord.x / coord.y
+  · Tarjeta con la configuración resultante de la tabla (dimensiones)
+  · Tarjeta comparativa con las diferencias respecto a la familia
+    SCT (alturas/ancho/número de notas)
+  · Render del texto generado en <pre> scrollable
+  · Contador de chars/líneas para validar el resultado
+
+
+DIFERENCIAS RESPECTO A c_sello_notas_sct_cruz_sub_pte
+------------------------------------------------------
+| campo               | cruz_sub_pte | inst_puente_tn    |
+|---------------------|--------------|-------------------|
+| altura renglón 2    | 150 mm       | 160 mm            |
+| ancho columna 1     | 165 mm       | 170 mm            |
+| notas añadidas      | 5–10 (6)     | 5–11 (7)          |
+| dominio             | cruzamiento  | instalación       |
+|                     | subterráneo  | lateral en puente |
+|                     | bajo puente  | con tubo negro    |
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CSelloNotasSctInstPuenteTnUI } from './migration/CSelloNotasSctInstPuenteTn';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CSelloNotasSctInstPuenteTn',
+    label: 'CSelloNotasSctInstPuenteTn',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_notas_sct_inst_puente_tn.magik',
+    element: <CSelloNotasSctInstPuenteTnUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CSelloNotasSctInstPuenteTn.txt
+================================================================================

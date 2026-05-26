@@ -1,0 +1,241 @@
+================================================================================
+  CLASE MIGRADA: CProyectoRed
+  Fichero origen:  c_proyecto_red.magik
+  Fichero destino: CProyectoRed.tsx
+  Jerarquía Magik: c_proyecto_red (clase raíz, sin parent)
+  Empresa:         Sigma Tao
+  Autor original:  dsanchez  (27/10/2004)
+  Revisor:         fdiaz
+================================================================================
+
+PROPÓSITO
+---------
+Modelo de dominio "Proyecto de Red" para los sellos de planos GIS (PNI).
+Encapsula la lectura del active_scheme de Smallworld y agrega información
+de 3 bases de datos para mostrarla en los sellos de plano:
+
+  · :design_admin :swg_dsn_scheme       → collScheme   (datos del diseño)
+  · :design_admin :swg_dsn_project      → collProyecto (datos del proyecto)
+  · :catalogos    :user!_cat_nodos_cm   → collCentral  (datos de la central)
+  · :landbase     :user!_distrito       → oDto (vía CDistritoE)
+  · :design_admin :user!_plano          → oPlano (lazy)
+
+Expone +30 getters string que devuelven el campo correspondiente del record
+o sValor_Defecto ('') cuando no hay scheme activo (prvValida_proyecto() falla).
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  :yTabla / :yBdD         → yTabla = ':user!_proyecto_red'
+                            yBdD   = ':design_admin'   (metadata fija)
+  :collScheme             → collScheme:   SchemeRecord[]    | undefined
+  :collProyecto           → collProyecto: ProjectRecord[]   | undefined
+  :collCentral            → collCentral:  CentralCatRecord[]| undefined
+  :oDto       (PUBLIC)    → oDto: CDistritoE | undefined
+  :oCtl       (private)   → _oCtl:      CentralLite | undefined  (lazy)
+  :oPlano     (private)   → _oPlano:    PlanoLite   | undefined  (lazy)
+  :oScheme    (private)   → _oScheme:   ActiveSchemeRef | undefined
+  :oTramo_fo  (private)   → _oTramo_fo: CTramoFoE | undefined
+  :sValor_Defecto         → _sValor_Defecto: '' (readonly)
+
+
+TIPOS DEFINIDOS (D5 — XxxRecord para campos user!_*)
+------------------------------------------------------
+SchemeRecord
+  Campos `user!_*` del registro :swg_dsn_scheme (colonia, calles, cp,
+  distrito, numero_ruta, dtos_afectados, refs, aprobo). + id +
+  swg_dsn_project_id (FK al proyecto padre).
+
+ProjectRecord
+  Campos `user!_*` del registro :swg_dsn_project (direccion_divisional,
+  responsable, supervisor, programa, oficinas, fechas, …). + name + id.
+  `user!_central` es un sub-objeto CentralCatRecord (puede ser undefined).
+
+CentralCatRecord
+  { 'user!_siglas', 'user!_central', 'user!_nom_nodo' }
+  Registro :user!_cat_nodos_cm en :catalogos.
+
+PlanoRecord
+  { id, 'user!_nombre', 'user!_tipo', 'user!_observ' }
+  Versión simplificada del :user!_plano de :design_admin.
+
+ActiveSchemeRef
+  Stub mínimo de swg_dsn_admin_engine.active_scheme — { id }.
+
+MockProyectoDB
+  Contenedor con las 3 BDs Smallworld + el active_scheme + landbase
+  para el CDistritoE anidado.
+
+CentralLite / PlanoLite / CTramoFoE
+  Stubs ligeros para Central(), Plano(id) y obten_tramo() — sin
+  acoplar a las clases hermanas todavía sin migrar.
+
+
+MÉTODOS MIGRADOS (38 públicos + 2 privados + 1 helper)
+-------------------------------------------------------
+
+[ctor / static]
+1.  constructor(db: MockProyectoDB)
+    Magik: new() asigna .oDto unset y devuelve _clone. En TS los slots
+    se inicializan en su declaración; el ctor inyecta la BD mock.
+2.  CProyectoRed.version() [static]
+    Magik: "version 1.0.0.8 27/04/05 17:30 "
+
+[bootstrap]
+3.  identificador_proyecto(valor)
+    Magik: pone .oDto unset y llama prvLeer_Proyecto_BdD(valor).
+4.  prvLeer_Proyecto_BdD(id_proyecto, id_schema?) [private]
+    Magik: lee active_scheme, predicados eq(:id) sobre schemes/projects,
+    eq(:user!_siglas) sobre :catalogos :user!_cat_nodos_cm, y crea
+    SIEMPRE un CDistritoE (con o sin scheme).
+    En TS: Array.find/filter sobre las colecciones mockeadas.
+5.  prvValida_proyecto() [private]
+    Magik: _self.oScheme = _unset → _false; else _true.
+
+[getters de PROYECTO — collProyecto]
+6-21. direccion_divisional, direccion, tel_responsable, responsable,
+     localidad, municipio_delegacion, supervisor, programa, subdireccion,
+     gerencia, fecha_aprobacion, nombre_proyecto, empresa_proyecto,
+     empresa_constructora, oficina_constructora, estado, cve_central, central
+     · Algunos llevan fallback constante específico ('_OFI CONSTR_',
+       '_EMP CONSTR_', '_EDO_', '_ABC_', '_NOMBRE_') usado cuando el
+       campo del record está unset, replicando la rama _else interna.
+
+[getters de SCHEME — collScheme]
+22-34. colonia, calles, cp, distrito, cve_distrito, dtos_afectados,
+      aprobo, reviso, numero_ruta, referencia_desmontaje,
+      referencia_reconcentracion, referencia_canalizacion,
+      referencia_principales, referencia_secundarios
+     · cp() lleva fallback '_123_' si el campo está unset.
+     · reviso() = aprobo() en el Magik (idéntico campo).
+
+[campos comentados en Magik — devuelven sValor_Defecto en ambas ramas]
+35. pep(), oei(), oe(), opb()
+    Se preserva el comportamiento del Magik (el código real fue
+    comentado por DSB el 25/05/05).
+
+[lógica derivada]
+36. NSE_predominante()
+    Magik: oDto.Obten_Inicial_NSE(oDto.sNSE_Predominante)
+    En TS: idéntico, con guards para oDto undefined.
+37. existe?
+    Magik: si valida && collProyecto.size > 0 → true.
+    En TS: this.collProyecto?.length > 0 si valida.
+38. obten_tramo(cveTramo, cveRuta?)
+    Magik: lazy-create CTramoFoE; si el tramo/ruta solicitados difieren
+    de los actuales, recalcula asigna_num_tramo(); ruta cae a
+    .numero_ruta del scheme si no se pasa.
+    En TS: idéntico, sin write() (los Magik write se omiten).
+39. mes_anio(RsFecha)
+    Magik: "dd/mm/yyyy" → "MMM/yy" usando .subseq(4,2) y .subseq(9,2)
+    (1-indexed). condition.raise(:warning) si fecha inválida.
+    En TS: substring(3,5)/(8,10). throw new Error si length != 10 o
+    mes fuera de [1,12]. Devuelve sValor_Defecto si fecha == unset o
+    == sValor_Defecto.
+
+[acceso lazy a clases hermanas — stubs ligeros]
+40. Central(): CentralLite | undefined
+    Magik: lazy-create c_central_e con .siglas =
+    collProyecto.user!_central.user!_central.
+41. Plano(idPlano): PlanoLite | undefined
+    Magik: lazy-create c_plano_e desde
+    smallworld_product.pni_application().database.dataset(:design_admin)
+    .collection(:user!_plano).select(predicate.eq(:id, idPlano)).
+
+[helper privado interno — no en Magik]
+*. _fromProyecto<K>(key, fallback?) / _fromScheme<K>(key, fallback?)
+   Reemplaza la receta repetida 25× en el Magik:
+       _local LbTodoBien << _self.prvValida_proyecto()
+       _if LbTodoBien _then return .coll...write_string
+       _else return _self.sValor_defecto _endif
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (raíz)               → class CProyectoRed
+  define_slot_access :public                → public field + getter/setter
+  define_slot_access :private               → private _campo
+  swg_dsn_admin_engine.active_scheme        → MockProyectoDB.active_scheme
+  smallworld_product.pni_application()      → MockProyectoDB inyectado
+  .database.collection(:design_admin, :id)  → _db.schemes / _db.projects
+  .database.collection(:catalogos, :id)     → _db.centrals
+  predicate.eq(:id, v) / .select(...)       → arr.filter(x => x[k] === v)
+  collX.an_element()                        → arr[0]
+  rec.user!_x.write_string                  → String(rec['user!_x'])
+  field(:k) <> _unset                       → rec[k] !== undefined
+  _self.collX.field(:k) <> _unset           → null-safe access en TS
+  c_distrito_e.new()                        → new CDistritoE(landbase)
+  c_central_e.new() / c_plano_e.new()       → CentralLite / PlanoLite stubs
+  c_Tramo_fo_e.new() + asigna_num_tramo     → class CTramoFoE
+  condition.raise(:warning, …)              → throw new Error(...)
+  write("…")                                → omitido (lateral)
+  .subseq(start, len) [1-indexed]           → .substring(start-1, start-1+len)
+  _optional PsCve_ruta                      → cveRuta?: string
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Las 3 BDs (design_admin / catalogos / landbase) no existen en navegador.
+  Se modela un MockProyectoDB inyectable por constructor.
+
+· `swg_dsn_admin_engine.active_scheme` se simula con
+  MockProyectoDB.active_scheme — un ActiveSchemeRef { id } o undefined.
+
+· `collProyecto.field(:user!_xxx) <> _unset` se traduce al chequeo
+  `rec[key] !== undefined`. El Magik distingue "campo no existe en
+  schema" vs "campo unset"; en TS se colapsa a undefined.
+
+· Los `write("Se tomó el número de ruta …")` del Magik se omiten —
+  son trazas de consola sin valor en migración.
+
+· Los métodos pep / oei / oe / opb se conservan devolviendo el valor
+  por defecto en ambas ramas (el código original que accedía a
+  collScheme.user!_operacion / _oei / _oe está comentado desde
+  el 25/05/05).
+
+· Bug preservado: `reviso()` devuelve el campo `user!_aprobo` (igual
+  que en el Magik) — no es typo de la migración.
+
+· mes_anio: las posiciones .subseq(4,2) → mes y .subseq(9,2) → año
+  asumen formato exacto "dd/mm/yyyy". Si llega "dd/mm/yy" o similar,
+  el resultado es incorrecto (mismo comportamiento que el Magik).
+
+· obten_tramo: se omiten los write() de traza pero la lógica de
+  recálculo (`cveRuta || cveTramo distintos del actual`) es idéntica.
+
+· Central() y Plano() devuelven stubs ligeros (CentralLite / PlanoLite)
+  en lugar de instanciar c_central_e / c_plano_e — esas clases no
+  están migradas en el showcase actual y crear acoplamiento sería
+  prematuro. Las interfaces ligeras exponen las propiedades que el
+  Magik consumiría.
+
+· La UI añade:
+  · Selector de active_scheme (3 valores: 1001 / 1002 / unset)
+  · Pill prvValida_proyecto / existe?
+  · 3 tarjetas con los +30 getters agrupados (PROYECTO / SCHEME / Distrito)
+  · Controles para obten_tramo (cveTramo + cveRuta opcional)
+  · Selector de Plano(id) y test de Central()
+  · Probador de mes_anio con varios presets incluyendo uno inválido
+    para visualizar el throw new Error
+  · Resaltado naranja sobre los valores que son fallback "_XYZ_" para
+    distinguirlos del dato real
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CProyectoRedUI } from './migration/CProyectoRed';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CProyectoRed',
+    label: 'CProyectoRed',
+    fase: 1,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Sellos/Entidad/c_proyecto_red.magik',
+    element: <CProyectoRedUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CProyectoRed.txt
+================================================================================

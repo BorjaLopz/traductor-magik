@@ -40,6 +40,10 @@ import { LayoutAttributeDefinitionShowcase } from './components/LayoutAttributeD
 import { CServiciosEstilosShowcase } from './components/CServiciosEstilosShowcase'
 import { CSimbologiaOcupacionDeDuctosShowcase } from './components/CSimbologiaOcupacionDeDuctosShowcase'
 import { RutaOpbsPluginShowcase } from './components/RutaOpbsPluginShowcase'
+import { CDtoPronosticoShowcase } from './components/CDtoPronosticoShowcase'
+import { LayoutManagerPluginShowcase } from './components/LayoutManagerPluginShowcase'
+import { CSectoresShowcase } from './components/CSectoresShowcase'
+import { LayoutElementShowcase } from './components/LayoutElementShowcase'
 
 export interface ShowcaseEntry {
   id: string
@@ -246,7 +250,7 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     nivel: 'SIMPLE',
     magikSource: 'adiciones_layout/source/viewport_layout_mixin.magik',
     element: <ViewportLayoutMixinUI />,
-  }
+  },
   {
     id: 'PlotFilter',
     label: 'plot_filter',
@@ -382,5 +386,37 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     nivel: 'SIMPLE',
     magikSource: 'adiciones_layout/source/ruta_opbs_plugin.magik',
     element: <RutaOpbsPluginShowcase />,
+  },
+  {
+    id: 'CDtoPronostico',
+    label: 'c_dto_pronostico',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_dto_pronostico.magik',
+    element: <CDtoPronosticoShowcase />,
+  },
+  {
+    id: 'LayoutManagerPlugin',
+    label: 'layout_manager_plugin',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/layout_manager_plugin.magik',
+    element: <LayoutManagerPluginShowcase />,
+  },
+  {
+    id: 'CSectores',
+    label: 'c_sectores',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_sectores.magik',
+    element: <CSectoresShowcase />,
+  },
+  {
+    id: 'LayoutElement',
+    label: 'layout_element',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/layout_element.magik',
+    element: <LayoutElementShowcase />,
   },
 ]

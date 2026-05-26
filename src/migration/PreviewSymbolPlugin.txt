@@ -1,0 +1,207 @@
+================================================================================
+  CLASE MIGRADA: PreviewSymbolPlugin
+  Fichero origen:  preview_symbol_plugin.magik
+  Fichero destino: PreviewSymbolPlugin.tsx
+  Jerarquía Magik: preview_symbol_plugin  extends  :plugin
+  Empresa:         —
+  Autor original:  Steve Hall (Ten Sails Consulting), 17/01/06
+================================================================================
+
+PROPÓSITO
+---------
+Plugin de la aplicación GIS que aloja el diálogo c_preview_symbol_dialog
+(catálogo de símbolos sw_gis!gis_point_style) y expone 4 acciones sobre la
+vista de BD :sigc_style_view:
+
+  · activate_preview_symbol   → abrir/mostrar el diálogo de preview
+  · open_style_sigc_app       → arrancar la app :sigc_style_symbol_editor
+  · merge_style_sigc_view     → merge() de la view (requiere escritura)
+  · post_style_sigc_view      → post()  de la view (requiere escritura)
+
+Las 3 últimas se habilitan SOLO cuando la view es writable Y current_writer
+== "yourself" — lógica de manage_actions(). activate_preview_symbol está
+siempre disponible.
+
+Como productor de databus, declara :symbol_name (los consumidores recibirán
+el nombre del símbolo seleccionado/insertado en el diálogo embebido).
+
+
+SLOTS MIGRADOS (estado interno)
+---------------------------------
+  :sigc_style_view → sigc_style_view: StyleViewMock | undefined
+                     Vista de BD con campos { name, mode, writable,
+                     current_writer }. Cargada en init() desde
+                     gis_program_manager.databases[:sigc_style_view] o, si
+                     no existe, mediante el fallback user:abre_style_sigc().
+
+PROPIEDADES (def_property)
+---------------------------
+  :x_offset → x_offset: number  (default 0)
+  :y_offset → y_offset: number  (default 0)
+
+Ambos se usan en activate_relative_to(...) para posicionar el diálogo
+respecto a top_frame.
+
+
+CONSTANTES COMPARTIDAS (define_shared_constant)
+------------------------------------------------
+  :databus_producer_data_types → DATABUS_PRODUCER_DATA_TYPES = ['symbol_name']
+
+
+MÉTODOS MIGRADOS (10 + 1 helper)
+---------------------------------
+
+1. init(name, framework, styleView?)
+   Magik: super.init(name, framework). Si gis_program_manager.databases
+   [:sigc_style_view] _is _unset → asigna user:abre_style_sigc(); en otro
+   caso usa la view de databases. Devuelve _self.
+   En TS: idéntica lógica, con styleView opcional para inyección desde
+   tests/UI. Además llama init_actions() + manage_actions() para dejar el
+   plugin listo (equivale al post_activation() implícito).
+
+2. init_actions()
+   Magik: añade 4 sw_action (activate_preview_symbol, open_style_sigc_app,
+   merge_style_sigc_view, post_style_sigc_view) con :engine, :image y
+   :action_message.
+   En TS: las 4 acciones se declaran estáticamente en el campo _actions
+   (label, image, enabled, description). El método queda como hook
+   idempotente.
+
+3. manage_actions()
+   Magik: si .sigc_style_view _isnt _unset Y .writable? Y
+   current_writer = "yourself" → habilita open_style_sigc_app /
+   merge_style_sigc_view / post_style_sigc_view. En otro caso las
+   deshabilita.
+   En TS: actualiza la propiedad .enabled de cada ActionDef.
+
+4. post_activation()
+   Magik: llama _self.manage_actions().
+   En TS: idéntico.
+
+5. activate_preview_symbol()
+   Magik: get_dialog(:c_preview_symbol_dialog). Si no existe, lo crea
+   con c_preview_symbol_dialog.new_dialog(top_frame), le asigna
+   owner_plugin = _self y lo cachea. Luego llama activate_relative_to(
+   message(:frame_title), top_frame, x_offset, y_offset) y devuelve d.
+   En TS: marca _dialogOpen = true y devuelve descriptor
+   { dialogId, x, y }. La UI usa isDialogOpen() para renderizar el modal.
+
+6. build_gui(container)
+   Magik: c_preview_symbol_dialog.new().build_embedded_gui(container).
+   Asigna gui.tab_label = message(:tab_title). Devuelve gui.
+   En TS: devuelve { tabLabel } — el contenedor JSX vive en el padre.
+
+7. open_sigc_style_symbol_app(appAlreadyStarted?)
+   Magik: smallworld_product.application_definition(
+     :sigc_style_symbol_editor). Si .application _is _unset → start();
+     en otro caso → restart().
+   En TS: devuelve { app, restart } — la lógica de start/restart la
+   delega el host.
+
+8. merge_style_sigc_view()  /  post_style_sigc_view()
+   Magik: estructura idéntica con _try ... _when error _endtry:
+   · Calcula modo ("Solo lectura" / "escritura")
+   · Calcula LoCurrentwriter (string con el writer si lo hay)
+   · Si writable + mode = :write → .merge() / .post() + show_message OK
+   · En otro caso → condition.raise(:user_error, :string, …)
+   En TS: delega en _writeOp(kind: 'merge' | 'post'). Lanza Error con el
+   mismo formato narrativo (mensaje + modo + writerLine).
+
+9. show_message(msg)
+   Magik: _self.show_message(...) — hook UI heredado de :plugin.
+   En TS: devuelve el mensaje (las consumidoras lo loguean / muestran).
+
+10. action(id) / actions()
+    Magik: _self.action(:id).enabled? — acceso a las acciones registradas.
+    En TS: getters para ActionDef y arrays de ActionDef.
+
+[helper privado]
+11. _writeOp(kind)
+    Implementación común de merge/post. Si la precondición falla, throw
+    new Error con el mismo formato del condition.raise(:user_error,...)
+    Magik. Si la operación procede, libera el writer y llama
+    manage_actions() (mock — la BD real no es accesible desde el browser).
+
+
+TIPOS DEFINIDOS
+----------------
+ViewMode               = 'write' | 'readonly'
+StyleViewMock          = { name:'sigc_style_view', mode, writable,
+                           current_writer }
+ActionId               = 'activate_preview_symbol' | 'open_style_sigc_app'
+                       | 'merge_style_sigc_view' | 'post_style_sigc_view'
+ActionDef              = { id, label, image, enabled, description }
+CatalogSymbol          = (subset de sw_gis!gis_point_style mockeado)
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar (:plugin)             → class PreviewSymbolPlugin
+  def_property :x_offset, :integer, 0        → x_offset: number = 0
+  define_slot_access :sigc_style_view :read  → getter público
+  define_shared_constant :databus_…          → export const DATABUS_…
+  sw_action.new(:id, :engine, …)             → ActionDef
+  _self.message(:frame_title)                → MESSAGES.frame_title
+  _self.top_frame                            → contenedor React padre
+  _self.get_dialog(:id) / cache_dialog       → _dialogOpen flag
+  activate_relative_to(title, parent, x, y)  → modal con offsets
+  _self.show_message(s)                      → return s (hook UI)
+  condition.raise(:user_error, :string, …)   → throw new Error(...)
+  _try _with LoError … _when error _endtry   → try/catch
+  gis_program_manager.databases[:k]          → StyleViewMock (inyectado)
+  .writable?                                 → .writable: boolean
+  .mode _is :write                           → .mode === 'write'
+  smallworld_product.application_definition  → mock { app, restart }
+  rope.new() / property_list.new()           → [] / {}
+  _unset                                     → undefined
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· :plugin (padre) NO está migrado. super.init / show_message / get_dialog /
+  cache_dialog / add_action / message(...) se simulan con state local
+  (_actions, _dialogOpen) y diccionario MESSAGES.
+
+· gis_program_manager.databases[:sigc_style_view] no existe en navegador.
+  Se modela como StyleViewMock; init() permite inyectar una view real
+  desde tests.
+
+· smallworld_product.application_definition no aplica — open_sigc_style_
+  symbol_app() devuelve un descriptor { app, restart }, dejando al host la
+  decisión real (lanzar otra ventana, abrir tab, etc.).
+
+· El catálogo de símbolos del diálogo está hardcoded en CATALOG_SYMBOLS
+  (9 símbolos SVG generados inline). En el Magik original viene de
+  sw_gis!gis_point_style enumerado dinámicamente.
+
+· condition.raise(:user_error, :string, ...) → throw new Error(...). El
+  texto multilinea conserva: <título> \n <modo BD> \n <writer line>.
+
+· La UI añade:
+  · Controles para mutar view.mode / writable / current_writer
+  · Inputs para x_offset / y_offset
+  · 4 botones con dot indicador (verde=enabled / rojo=disabled)
+  · Modal con catálogo SVG y botón "Insertar (databus emit)" que dispara
+    onSymbolNameProduced (mock del databus.make_data_available)
+  · Log scrollable con últimos 24 eventos
+  · Tarjeta con el último symbol_name emitido (consumidor de databus)
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { PreviewSymbolPluginUI } from './migration/PreviewSymbolPlugin';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'PreviewSymbolPlugin',
+    label: 'PreviewSymbolPlugin',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/preview_symbol_plugin.magik',
+    element: <PreviewSymbolPluginUI />,
+  }
+
+
+================================================================================
+  Fin del documento — PreviewSymbolPlugin.txt
+================================================================================

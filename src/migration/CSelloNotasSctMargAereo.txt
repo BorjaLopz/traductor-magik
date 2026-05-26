@@ -1,0 +1,121 @@
+================================================================================
+  CLASE MIGRADA: CSelloNotasSctMargAereo
+  Fichero origen:  c_sello_notas_sct_marg_aereo.magik
+  Fichero destino: CSelloNotasSctMargAereo.tsx
+  Jerarquía Magik: c_sello_notas_sct_marg_aereo
+                     extends :c_sello_notas_sct
+================================================================================
+
+PROPÓSITO
+---------
+Sello SCT especializado para "Instalación Marginal Aérea con postes y
+cable" en planos de derecho de vía. Subclase final que:
+
+  · Configura `:tbl_notas_grales` con 2 renglones × 1 columna,
+    alturas 10 mm (cabecera) y 120 mm (cuerpo), ancho col 160 mm.
+  · Añade las notas 5–8 (4 notas) al texto del padre, parametrizadas
+    con .s_tipo_cable y .s_estado.
+
+
+SLOTS MIGRADOS
+---------------
+No declara slots propios (def_slotted_exemplar con `{}`).
+Hereda del padre c_sello_notas_sct:
+  :s_tipo_cable → s_tipo_cable: string
+  :s_estado     → s_estado:     string
+  :oTablas      → oTablas:      TablasCollection
+
+
+CONSTANTES COMPARTIDAS
+-----------------------
+  :allowed_on_menu? → static allowed_on_menu = false
+
+
+MÉTODOS MIGRADOS (2)
+---------------------
+
+1. prvCrea_Cfg_Tbl_Notas_Grales(roCoord) [private]
+   Magik:
+     LoTblTitulo << oTablas.crea_tabla(2, 1, :tbl_notas_grales)
+     LoTblTitulo.oCoordenada_Origen << RoCoord
+     LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+     LoTblTitulo.oRenglones.elemento(2).nLongitud << 120
+     LoTblTitulo.oColumnas.elemento(1).nLongitud  << 160
+   En TS: idéntico (índices 1-based preservados).
+
+2. prvAsignaTexto() [override]
+   Magik: _super.prvAsignaTexto() + concatenación (con +<<) de las
+   notas 5–8 sobre instalación marginal aérea con postes.
+
+   Sustituciones de parámetros:
+     · .s_tipo_cable aparece 4 veces (notas 5, 6, 7 y 8)
+     · .s_estado aparece 1 vez (nota 5)
+
+
+DEPENDENCIAS REUSADAS
+----------------------
+Importa de ./CSelloNotasSctCruzSubPte:
+  · CSelloNotasSct  — stub abstract del padre con slots y prvAsignaTexto()
+                       base (notas 1–4)
+  · Coord           — tipo del parámetro RoCoord
+
+Tercera subclase de la familia que reusa el stub. Cuando el padre
+real se migre, basta cambiar el import en este archivo (y los otros
+dos sellos hermanos: cruz_sub_pte e inst_puente_tn).
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar(...{} :c_sello_notas_sct)
+                                             → extends CSelloNotasSct
+  define_shared_constant :allowed_on_menu?   → static readonly allowed_on_menu
+  _super.method()                             → super.method()
+  character.newLine                           → '\n'
+  +<<                                         → +=
+  oTablas.crea_tabla(r, c, :id)               → oTablas.crea_tabla(r, c, 'id')
+  oCeldas.Celda(r, c) [1-indexed]             → preservado
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Padre c_sello_notas_sct no migrado — se reusa stub local.
+
+· Acentos: Latin-1 rotos del Magik restaurados a UTF-8 (Á, É, Í, Ó,
+  Ú, Ñ).
+
+· La UI añade:
+  · Botones preset para s_tipo_cable (4 presets comunes) + input libre
+  · Botones preset para s_estado (5 estados) + input libre
+  · Inputs coord.x / coord.y
+  · Tarjeta de configuración resultante de la tabla
+  · Tarjeta comparativa con las otras 2 variantes de la familia SCT
+  · Render del texto en <pre> scrollable + contador chars/líneas
+
+
+COMPARATIVA — FAMILIA c_sello_notas_sct_*
+------------------------------------------
+| variante               | R2 (mm) | C1 (mm) | notas | dominio              |
+|------------------------|---------|---------|-------|----------------------|
+| marg_aereo (ESTA)      | 120     | 160     | 5–8 (4) | marginal aérea       |
+| cruz_sub_pte           | 150     | 165     | 5–10 (6)| cruzam. subt. puente |
+| inst_puente_tn         | 160     | 170     | 5–11 (7)| inst. puente TN      |
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CSelloNotasSctMargAereoUI } from './migration/CSelloNotasSctMargAereo';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CSelloNotasSctMargAereo',
+    label: 'CSelloNotasSctMargAereo',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_notas_sct_marg_aereo.magik',
+    element: <CSelloNotasSctMargAereoUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CSelloNotasSctMargAereo.txt
+================================================================================

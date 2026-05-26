@@ -1,0 +1,163 @@
+================================================================================
+  CLASE MIGRADA: CSelloNotasSctCruzSubPte
+  Fichero origen:  c_sello_notas_sct_cruz_sub_pte.magik
+  Fichero destino: CSelloNotasSctCruzSubPte.tsx
+  Jerarquía Magik: c_sello_notas_sct_cruz_sub_pte
+                     extends :c_sello_notas_sct
+================================================================================
+
+PROPÓSITO
+---------
+Sello SCT especializado para planos con "Cruzamiento Subterráneo bajo
+Puente" con cable de FO/cobre. Subclase final que:
+
+  · Configura la tabla `:tbl_notas_grales` con dimensiones específicas
+    (2 renglones × 1 columna, alturas 10 mm / 150 mm, ancho col 165 mm).
+  · Concatena las notas 5–10 al texto del padre, parametrizadas con
+    .s_tipo_cable (FO/cobre) y .s_estado (estado mexicano).
+
+El padre c_sello_notas_sct se stubbea aquí con los slots/tablas
+mínimos y un prvAsignaTexto() base que produce las notas 1–4. Al
+migrar el padre real, sustituir el stub por su import.
+
+
+SLOTS MIGRADOS
+---------------
+Esta clase NO declara slots propios (def_slotted_exemplar con `{}`).
+Hereda del padre:
+
+  :s_tipo_cable → s_tipo_cable: string  ('FIBRA OPTICA' por defecto)
+  :s_estado     → s_estado:     string  ('JALISCO' por defecto)
+  :oTablas      → oTablas:      TablasCollection
+
+
+CONSTANTES COMPARTIDAS (define_shared_constant)
+------------------------------------------------
+  :allowed_on_menu? → static allowed_on_menu = false
+                      No aparece en el menú del usuario (solo se
+                      instancia desde la fábrica).
+
+
+TIPOS DEFINIDOS (stubs del padre)
+-----------------------------------
+Coord
+  { x: number; y: number }
+
+CeldaContenido
+  { oElemento: { sTexto: string } }
+  Representa la celda donde vive el texto editable.
+
+RowOrCol
+  { nLongitud: number }
+  Renglón / columna con longitud en mm.
+
+TablaSello
+  { id, oCoordenada_Origen, oRenglones, oColumnas, oCeldas,
+    _renglones, _columnas, _celdas }
+  Réplica de c_tabla con la API que la subclase utiliza.
+
+TablasCollection
+  { crea_tabla(rows, cols, id), elemento(id), all() }
+  Equivale al slot .oTablas del padre.
+
+CSelloNotasSct (stub abstract padre)
+  Contiene los slots heredados + prvAsignaTexto() base con notas 1–4
+  que la subclase amplía con +<<.
+
+
+MÉTODOS MIGRADOS (2 propios + 1 override)
+-------------------------------------------
+
+1. prvCrea_Cfg_Tbl_Notas_Grales(roCoord) [private]
+   Magik:
+     LoTblTitulo << oTablas.crea_tabla(2, 1, :tbl_notas_grales)
+     LoTblTitulo.oCoordenada_Origen << RoCoord
+     LoTblTitulo.oRenglones.elemento(1).nLongitud << 10
+     LoTblTitulo.oRenglones.elemento(2).nLongitud << 150
+     LoTblTitulo.oColumnas.elemento(1).nLongitud  << 165
+   En TS: idéntico, con índices 1-based para preservar la API Magik.
+
+2. prvAsignaTexto() [override]
+   Magik:
+     _super.prvAsignaTexto()
+     _local LsTexto << character.newLine
+     LsTexto +<< " 5.- ..."
+     ...
+     oTablas.elemento(:tbl_notas_grales).oCeldas.Celda(2,1).oElemento.sTexto +<< LsTexto
+   En TS:
+     super.prvAsignaTexto()
+     construye LsTexto con NL = '\n' y operador += (equiv. a +<<)
+     cel.oElemento.sTexto += LsTexto
+   Las 6 notas (5–10) están parametrizadas con this.s_tipo_cable y
+   this.s_estado en los puntos donde el Magik usa .s_tipo_cable y
+   .s_estado.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar(... :c_sello_notas_sct)
+                                            → extends CSelloNotasSct
+  define_shared_constant :allowed_on_menu?  → static readonly allowed_on_menu
+  _super.method()                            → super.method()
+  oTablas.crea_tabla(r, c, :id)              → oTablas.crea_tabla(r, c, 'id')
+  oRenglones.elemento(n) [1-indexed]         → oRenglones.elemento(n) preservado
+  oCeldas.Celda(r, c) [1-indexed]            → oCeldas.Celda(r, c) preservado
+  +<<  (operador concat-asignación)          → += (string concat)
+  character.newLine                          → '\n'
+  símbolos (:tbl_notas_grales)               → 'tbl_notas_grales' (string)
+  _unset                                     → undefined
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· c_sello_notas_sct (clase padre) NO está migrado. Se incluye un stub
+  abstract CSelloNotasSct local con los slots (s_tipo_cable, s_estado,
+  oTablas) y un prvAsignaTexto() base que produce notas 1–4 con
+  estructura similar. Al migrar el padre real, importar y eliminar el
+  stub.
+
+· Magik character.newLine se mapea a '\n'. Algunos sistemas Magik usan
+  '\r\n' en Windows; el original usa la primitiva del lenguaje sin
+  preocuparse — '\n' es el equivalente moderno.
+
+· Magik usa índices 1-based en oRenglones.elemento(n) y oCeldas.
+  Celda(r,c). El stub TS los preserva (resta -1 internamente al
+  acceder al array). Mantiene la firma del Magik.
+
+· Caracteres acentuados (Á, É, Í, Ó, Ú, Ñ): el Magik original los
+  almacenaba en codificación Latin-1 con caracteres rotos (Ó, ñ…).
+  En TS se restauran a UTF-8 correctos. El texto resultante es el
+  que el Magik PRETENDÍA producir.
+
+· Las comillas tipográficas Magik ('') del texto sobre el "MANUAL DE
+  DISPOSITIVOS..." se sustituyen por comillas dobles ASCII para
+  evitar problemas con TS y JSON. No hay cambio de significado.
+
+· La UI añade:
+  · Inputs editables para s_tipo_cable y s_estado (cambia el texto
+    generado en vivo al ver las sustituciones).
+  · Inputs para coord.x / coord.y de oCoordenada_Origen.
+  · Tarjeta con la configuración de la tabla (dimensiones en mm).
+  · Render de la celda (2,1) con el texto completo en un <pre>
+    scrollable.
+  · Muestra contador de caracteres y líneas del texto generado.
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CSelloNotasSctCruzSubPteUI } from './migration/CSelloNotasSctCruzSubPte';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CSelloNotasSctCruzSubPte',
+    label: 'CSelloNotasSctCruzSubPte',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_notas_sct_cruz_sub_pte.magik',
+    element: <CSelloNotasSctCruzSubPteUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CSelloNotasSctCruzSubPte.txt
+================================================================================

@@ -1,0 +1,138 @@
+================================================================================
+  MIXIN MIGRADO:  ViewportLayoutMixin
+  Fichero origen:  viewport_layout_mixin.magik
+  Fichero destino: ViewportLayoutMixin.tsx
+  Jerarquía Magik: mixin (sin slots — añade método al consumidor)
+  Empresa:         GE Network Solutions
+  Autor original:  ahernan  (05/02/2007)
+  Doc:             rbsaldan (10/01/2005)
+================================================================================
+
+PROPÓSITO
+---------
+Mixin de un solo método (connect_to_viewport_on_page) usado por los
+layout elements de Smallworld PNI. Permite conectar el elemento a un
+viewport recibido por parámetro, SIEMPRE QUE no estuviera ya conectado
+a otro viewport previamente.
+
+Magik mixin equivalent en TS: function mixin (patrón estándar TypeScript).
+La migración expone DOS formas de consumirlo:
+
+  1) Como mixin function — composición sobre una clase base:
+       class MiClase extends applyViewportLayoutMixin(BaseClass) { ... }
+
+  2) Como helper standalone — llamada directa sobre cualquier `self`
+     que cumpla la interfaz ViewportConsumer:
+       connect_to_viewport_on_page(self, page, vp);
+
+
+SLOTS MIGRADOS
+---------------
+Ninguno propios. El mixin asume que la clase consumidora expone:
+  · viewport_id: number | undefined  (read — slot heredado del padre)
+  · viewport:    Viewport | undefined (write)
+
+Estas dos propiedades constituyen la interfaz ViewportConsumer.
+
+
+TIPOS DEFINIDOS
+----------------
+Viewport
+  Stub mínimo del viewport Smallworld: { id, name? }.
+
+LayoutPage
+  Stub mínimo de a_layout_page: { id, name? }.
+
+ViewportConsumer
+  Contrato que toda clase que use el mixin debe cumplir:
+    { viewport_id: number | undefined; viewport: Viewport | undefined }
+
+Constructor<T>
+  Helper interno para mixin function: `new (...args: never[]) => T`.
+
+
+MÉTODO MIGRADO (1)
+-------------------
+
+connect_to_viewport_on_page(a_layout_page, PoVp)
+  Magik:
+    _if (id << _self.viewport_id) _isnt _unset _andif (id > 0)
+    _then _return _endif
+
+    _if PoVp _isnt _unset
+    _then _self.viewport << PoVp _endif
+
+  En TS:
+    const id = self.viewport_id;
+    if (id !== undefined && id > 0) return false;
+    if (PoVp !== undefined) {
+      self.viewport = PoVp;
+      return true;
+    }
+    return false;
+
+  Diferencia menor: la versión TS devuelve un boolean (true si conectó,
+  false si fue no-op). El Magik original no devuelve nada (_return sin
+  valor → unset). Es útil para que la UI registre si la operación tuvo
+  efecto. El primer parámetro a_layout_page nunca se consume en el
+  cuerpo Magik — se preserva en la firma TS por fidelidad.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  _pragma topic={plotting}                   → (sin equivalente — solo metadata)
+  _self                                       → self (parámetro) / this (método)
+  (id << _self.viewport_id)                   → const id = self.viewport_id
+  _isnt _unset                                → !== undefined
+  _andif                                      → && (con cortocircuito)
+  _return  (sin valor)                        → return false (no-op)
+  _self.viewport << PoVp                      → self.viewport = PoVp
+  mixin Magik                                 → mixin function + helper standalone
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· Magik permite mixins "abiertos" — añade métodos sobre cualquier
+  clase. TS no tiene mixins nativos; se replica con
+  applyViewportLayoutMixin(Base): TBase pattern y el helper
+  standalone como fallback.
+
+· El método Magik retorna implícitamente _unset. En TS se devuelve
+  boolean para que la UI sepa si conectó o fue no-op. Si en el futuro
+  se requiere el comportamiento exacto void, basta cambiar el tipo
+  de retorno a `void` y omitir los return values.
+
+· El argumento `a_layout_page` del Magik no se consume en el cuerpo.
+  Se conserva en la firma TS por fidelidad (prefijo `_a_layout_page`
+  en el helper para indicar no-uso al linter).
+
+· La UI añade:
+  · 4 casos iniciales: sin conexión / id=0 / id=-1 (negativo) / ya conectado
+  · 3 viewports preset + opción "PoVp = undefined" para testar la
+    segunda guarda del _if
+  · Estado actual del elemento (viewport_id, viewport) con pill
+    CONECTADO / SIN CONEXIÓN
+  · Botón ejecutar + log de las últimas 12 acciones (verde si
+    conectó, rojo si fue no-op)
+  · Bloques `<pre>` con el pseudo-código del método y un ejemplo de
+    uso del helper standalone
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { ViewportLayoutMixinUI } from './migration/ViewportLayoutMixin';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'ViewportLayoutMixin',
+    label: 'ViewportLayoutMixin',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/viewport_layout_mixin.magik',
+    element: <ViewportLayoutMixinUI />,
+  }
+
+
+================================================================================
+  Fin del documento — ViewportLayoutMixin.txt
+================================================================================

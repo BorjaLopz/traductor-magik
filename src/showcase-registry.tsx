@@ -1,5 +1,28 @@
 import type { ReactNode } from 'react'
-import { CPlanoEShowcase } from './components/CPlanoEShowcase'
+import { CPlanoEUI } from './migration/CPlanoE'
+import { CResumenDelProyectoRofUI } from './migration/CResumenDelProyectoRof'
+import { PreviewSymbolPluginUI } from './migration/PreviewSymbolPlugin'
+import { CDistritoEUI } from './migration/CDistritoE'
+import { CProyectoRedUI } from './migration/CProyectoRed'
+import { CCeldaUI } from './migration/CCelda'
+import { CSimboloGraficoUI } from './migration/CSimboloGrafico'
+import { CAreaTelmexUI } from './migration/CAreaTelmex'
+import { CCirculoGraficoUI } from './migration/CCirculoGrafico'
+import { CSelloEstandarUI } from './migration/CSelloEstandar'
+import { CSelloNotasSctCruzSubPteUI } from './migration/CSelloNotasSctCruzSubPte'
+import { CSelloNotasSctInstPuenteTnUI } from './migration/CSelloNotasSctInstPuenteTn'
+import { CSelloNotasSctMargAereoUI } from './migration/CSelloNotasSctMargAereo'
+import { ViewportLayoutMixinUI } from './migration/ViewportLayoutMixin'
+import { CSelloReconcentracionShowcase } from './components/CSelloReconcentracionShowcase'
+import { CTramoCanShowcase } from './components/CTramoCanShowcase'
+import { CFilasShowcase } from './components/CFilasShowcase'
+import { CCuadroResumenDistritoShowcase } from './components/CCuadroResumenDistritoShowcase'
+import { CCuadroResumenUsuariosTelcelShowcase } from './components/CCuadroResumenUsuariosTelcelShowcase'
+import { CResumenDelProyectoShowcase } from './components/CResumenDelProyectoShowcase'
+import { CResumenDelProyectoAcometidaShowcase } from './components/CResumenDelProyectoAcometidaShowcase'
+import { CTblCfgMixinShowcase } from './components/CTblCfgMixinShowcase'
+import { CSelloCompetenciaTelmexShowcase } from './components/CSelloCompetenciaTelmexShowcase'
+import { CSelloNotasSctCruzAereoShowcase } from './components/CSelloNotasSctCruzAereoShowcase'
 import { PlotFilterShowcase } from './components/PlotFilterShowcase'
 import { CuadroDeNotasPluginShowcase } from './components/CuadroDeNotasPluginShowcase'
 import { CTablaSimbologiaShowcase } from './components/CTablaSimbologiaShowcase'
@@ -38,8 +61,192 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     fase: 1,
     nivel: 'SIMPLE',
     magikSource: 'adiciones_layout/source/Sellos/Entidad/c_plano_e.magik',
-    element: <CPlanoEShowcase />,
+    element: <CPlanoEUI />,
   },
+  {
+    id: 'CResumenDelProyectoRof',
+    label: 'CResumenDelProyectoRof',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_resumen_del_proyecto_rof.magik',
+    element: <CResumenDelProyectoRofUI />,
+  },
+  {
+    id: 'PreviewSymbolPlugin',
+    label: 'PreviewSymbolPlugin',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/preview_symbol_plugin.magik',
+    element: <PreviewSymbolPluginUI />,
+  },
+  {
+    id: 'CSelloReconcentracion',
+    label: 'CSelloReconcentracion',
+    fase: 1,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_reconcentracion.magik',
+    element: <CSelloReconcentracionShowcase />,
+  },
+  {
+    id: 'CTramoCan',
+    label: 'CTramoCan',
+    fase: 1,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Construccion/c_tramo_can.magik',
+    element: <CTramoCanShowcase />,
+  },
+  {
+    id: 'CFilas',
+    label: 'CFilas / CFila',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_filas.magik',
+    element: <CFilasShowcase />,
+  },
+  {
+    id: 'CCuadroResumenUsuariosTelcel',
+    label: 'CCuadroResumenUsuariosTelcel',
+    fase: 1,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_cuadro_resumen_usuarios_telcel.magik',
+    element: <CCuadroResumenUsuariosTelcelShowcase />,
+  },
+  {
+    id: 'CCuadroResumenDistrito',
+    label: 'CCuadroResumenDistrito',
+    fase: 1,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_cuadro_resumen_distrito.magik',
+    element: <CCuadroResumenDistritoShowcase />,
+  },
+  {
+    id: 'CResumenDelProyecto',
+    label: 'CResumenDelProyecto',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_resumen_del_proyecto.magik',
+    element: <CResumenDelProyectoShowcase />,
+  },
+  {
+    id: 'CSelloCompetenciaTelmex',
+    label: 'CSelloCompetenciaTelmex',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/planos/plano_construccion_interno/c_sello_competencia_telmex.magik',
+    element: <CSelloCompetenciaTelmexShowcase />,
+  },
+  {
+    id: 'CTblCfgMixin',
+    label: 'CTblCfgMixin',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_tbl_cfg_mixin.magik',
+    element: <CTblCfgMixinShowcase />,
+  },
+  {
+    id: 'CResumenDelProyectoAcometida',
+    label: 'CResumenDelProyectoAcometida',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_resumen_del_proyecto_acometida.magik',
+    element: <CResumenDelProyectoAcometidaShowcase />,
+  },
+  {
+    id: 'CSelloNotasSctCruzAereo',
+    label: 'CSelloNotasSctCruzAereo',
+    fase: 2,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_notas_sct_cruz_aereo.magik',
+    element: <CSelloNotasSctCruzAereoShowcase />,
+  },
+  {
+    id: 'CDistritoE',
+    label: 'CDistritoE',
+    fase: 1,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/Entidad/c_distrito_e.magik',
+    element: <CDistritoEUI />,
+  },
+  {
+    id: 'CProyectoRed',
+    label: 'CProyectoRed',
+    fase: 1,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Sellos/Entidad/c_proyecto_red.magik',
+    element: <CProyectoRedUI />,
+  },
+  {
+    id: 'CCelda',
+    label: 'CCelda',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_celda.magik',
+    element: <CCeldaUI />,
+  },
+  {
+    id: 'CSimboloGrafico',
+    label: 'CSimboloGrafico',
+    fase: 1,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_simbolo_grafico.magik',
+    element: <CSimboloGraficoUI />,
+  },
+  {
+    id: 'CAreaTelmex',
+    label: 'CAreaTelmex',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Entidad/c_area_telmex.magik',
+    element: <CAreaTelmexUI />,
+  },
+  {
+    id: 'CCirculoGrafico',
+    label: 'CCirculoGrafico',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_circulo_grafico.magik',
+    element: <CCirculoGraficoUI />,
+  },
+  {
+    id: 'CSelloEstandar',
+    label: 'CSelloEstandar',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_estandar.magik',
+    element: <CSelloEstandarUI />,
+  },
+  {
+    id: 'CSelloNotasSctCruzSubPte',
+    label: 'CSelloNotasSctCruzSubPte',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_notas_sct_cruz_sub_pte.magik',
+    element: <CSelloNotasSctCruzSubPteUI />,
+  },
+  {
+    id: 'CSelloNotasSctInstPuenteTn',
+    label: 'CSelloNotasSctInstPuenteTn',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_notas_sct_inst_puente_tn.magik',
+    element: <CSelloNotasSctInstPuenteTnUI />,
+  },
+  {
+    id: 'CSelloNotasSctMargAereo',
+    label: 'CSelloNotasSctMargAereo',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_notas_sct_marg_aereo.magik',
+    element: <CSelloNotasSctMargAereoUI />,
+  },
+  {
+    id: 'ViewportLayoutMixin',
+    label: 'ViewportLayoutMixin',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/viewport_layout_mixin.magik',
+    element: <ViewportLayoutMixinUI />,
+  }
   {
     id: 'PlotFilter',
     label: 'plot_filter',

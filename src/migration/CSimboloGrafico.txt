@@ -1,0 +1,217 @@
+================================================================================
+  CLASE MIGRADA: CSimboloGrafico
+  Fichero origen:  c_simbolo_grafico.magik
+  Fichero destino: CSimboloGrafico.tsx
+  Jerarquía Magik: c_simbolo_grafico  extends  :c_elemento_grafico
+  Autor original:  fdiaz / dsanchez  (03/11/2004)
+================================================================================
+
+PROPÓSITO
+---------
+Elemento gráfico que dibuja un símbolo del catálogo
+:sw_gis!gis_point_style sobre un área dada de un sello. Soporta flip
+horizontal/vertical, rotación en grados y selección entre la
+sigc_style_view (vista de proyecto) o la style_view global.
+
+
+SLOTS MIGRADOS (estado interno — todos :private :writable)
+-----------------------------------------------------------
+  :sNombre_Grafico → _sNombre_Grafico: string | undefined
+                     Nombre del símbolo del catálogo (gis_point_circle,
+                     gis_point_arrow, etc.).
+  :bVoltear_H      → _bVoltear_H: boolean = false
+                     Espejado horizontal (flipped en draw_sample).
+  :bVoltear_V      → _bVoltear_V: boolean = false
+                     Espejado vertical (mirror en draw_sample).
+  :nGrados         → _nGrados: number = 0
+                     Ángulo de rotación en grados (default 0°).
+  :o_sty_view      → _o_sty_view: ':default' | string | undefined
+                     Grupo de estilos. ':default' fuerza style_view global.
+
+HEREDADOS (stub CElementoGrafico — clase padre no migrada):
+  oArea:    Area | undefined
+  oVentana: VentanaDibujo | undefined
+  nMargen_izq / nMargen_der / nMargen_sup / nMargen_inf : number
+
+
+TIPOS DEFINIDOS
+----------------
+Area
+  { xmin, ymin, xmax, ymax: number } — equivale a bounding_box Magik.
+
+VentanaDibujo
+  { id: string } — descriptor opaco de la ventana de dibujo.
+
+SymbolStyleRecord
+  Stub del record temporal devuelto por new_detached_record() del
+  catálogo. Tiene symbol_name, realise(), draw_sample().
+
+StyleViewLike
+  { collections: { 'sw_gis!gis_point_style': { new_detached_record() } } }
+
+GisProgramManagerMock
+  { databases: { sigc_style_view? }, style_view }
+  Replica gpm.databases[:sigc_style_view] y gpm.style_view.
+
+GrupoEstilos
+  ':default' | string | undefined
+
+SymbolName
+  Unión literal con los 9 símbolos mockeados + (string & {}) para
+  permitir nombres arbitrarios.
+
+DrawCall
+  Descriptor que devuelve Despliega() — útil para la UI sin canvas
+  Smallworld real.
+
+SimboloGraficoProps
+  Extiende ElementoGraficoProps con sNombre_Grafico, bVoltear_H/V,
+  nGrados, grupo_estilos.
+
+
+MÉTODOS MIGRADOS (12)
+----------------------
+
+[ctor / static]
+1.  constructor(rsNombre?)
+    Magik: new(RsNombre) → asigna .sNombre_Grafico y devuelve _clone.
+    En TS: ctor estándar (regla D2). RsNombre es opcional para
+    permitir _clone sin nombre en new_from.
+
+2.  CSimboloGrafico.new_from(roObjeto, rsNombre_Grafico?) [static]
+    Magik: constructor de copia. Si RoObjeto !is_kind_of c_simbolo_
+    grafico → condition.raise(:warning, "El objeto que se proporcionó,
+    no es de tipo c_símbolo_grafico"). Si lo es: copia los slots y
+    DIVIDE márgenes entre 10 (bug histórico — nota 25/01/05 DSB).
+    En TS: throw new Error con el mismo mensaje. Conserva la división
+    /10 — la migración no corrige bugs salvo petición expresa.
+
+[getters / setters]
+3.  get/set sNombre_Grafico
+4.  get/set bVoltear_H   (Magik: bVoltear_H?, en TS sin el '?')
+5.  get/set bVoltear_V
+6.  get/set nGrados
+7.  get/set grupo_estilos    (alias del slot o_sty_view)
+
+[init_with — override]
+8.  init_with(props: SimboloGraficoProps)
+    Magik: _super.init_with(props) + asigna bVoltear_H/V desde props.
+    En TS: llama super.init_with y luego aplica las 5 claves propias
+    (sNombre, voltear_H/V, nGrados, grupo_estilos). El Magik solo
+    extrae bVoltear_H/V — aquí se aprovecha para inicializar todas
+    las claves de la subclase.
+
+[serial_slots — override]
+9.  serial_slots()
+    Magik: (keys, values) << _super.serial_slots(); keys/values.
+    add_all_last(rope.new_with(:sNombre_grafico, :bVoltear_H,
+    :bVoltear_V, :nGrados, :grupo_estilos)).
+    En TS: append a los arrays de super.
+
+[Despliega — método principal]
+10. Despliega(gpm?)
+    Magik:
+      sty_view << gpm.databases[:sigc_style_view]
+      _if sty_view _is _unset _orif grupo_estilos = :default _then
+         syb_table << gpm.style_view.collections[:sw_gis!gis_point_style]
+      _else
+         syb_table << sty_view.collections[:sw_gis!gis_point_style]
+      _endif
+      LoSym << syb_table.new_detached_record()
+      LoSym.symbol_name << sNombre_Grafico
+      LoSym.realise(unset, unset)
+      LoSym.draw_sample(oVentana, oArea,
+                        :rotate, nGrados,
+                        :flipped?, bVoltear_H?,
+                        :mirror?,  bVoltear_V?)
+    En TS: misma resolución de sty_view; en lugar de pintar sobre un
+    canvas Smallworld, devuelve un DrawCall que la UI usa para pintar
+    con SVG + CSS transform (rotate + scaleX/Y).
+    El parámetro gpm es opcional — por defecto usa GPM_MOCK.
+
+
+MAPEO MAGIK → TYPESCRIPT
+--------------------------
+  def_slotted_exemplar(:c_simbolo_grafico, ..., :c_elemento_grafico)
+                                             → class CSimboloGrafico
+                                               extends CElementoGrafico
+  define_slot_access :writable :private      → private _campo + get/set
+  _super.init_with(props)                    → super.init_with(props)
+  _super.serial_slots()                      → super.serial_slots()
+  gis_program_manager                        → GisProgramManagerMock
+  gpm.databases[:sigc_style_view]            → gpm.databases.sigc_style_view
+  gpm.style_view.collections[:sw_gis!…]      → gpm.style_view.collections['sw_gis!gis_point_style']
+  new_detached_record()                      → factory de SymbolStyleRecord
+  .realise(unset, unset)                     → rec.realise(undefined, undefined)
+  .draw_sample(ventana, area, :rotate, …)    → rec.draw_sample(ventana, area, { rotate, flipped, mirror })
+  bounding_box                               → Area { xmin, ymin, xmax, ymax }
+  is_kind_of?(c_simbolo_grafico)             → instanceof CSimboloGrafico
+  condition.raise(:warning, :string, …)      → throw new Error(...)
+  símbolos Magik (:default, :sigc_style_…)   → string literals
+  rope.new_with(...)                         → array literal
+  add_all_last(rope.new_with(...))           → arr.push(...)
+
+
+DIFERENCIAS RESPECTO AL MAGIK ORIGINAL
+----------------------------------------
+· c_elemento_grafico (clase padre) NO está migrado en el showcase.
+  Se incluye un stub CElementoGrafico con los slots y métodos
+  mínimos (oArea, oVentana, márgenes, init_with, serial_slots) que
+  la subclase necesita. Cuando se migre, importarlo de su módulo.
+
+· Despliega() en el Magik dibuja directamente sobre la ventana
+  Smallworld (.oVentana). En TS no hay canvas Magik — el método
+  devuelve un DrawCall con todos los parámetros resueltos y la UI
+  lo pinta con SVG + CSS transform (rotate Z + scaleX para flipped,
+  scaleY para mirror). Es la representación más fiel sin acoplar
+  a un renderer concreto.
+
+· :flipped? Magik se mapea a "scaleX(-1)" (espejado horizontal).
+  :mirror? se mapea a "scaleY(-1)" (espejado vertical). En Magik
+  Smallworld el catálogo decide la aplicación final; aquí se hace
+  composición simple — el orden de transformaciones puede diferir
+  para símbolos asimétricos.
+
+· new_from divide los márgenes entre 10. Es un bug histórico
+  documentado en el propio Magik (DSB 25/01/05). Se PRESERVA porque
+  la migración no corrige bugs salvo petición expresa — si en una
+  pasada futura se decide eliminar, basta con suprimir las cuatro
+  divisiones.
+
+· `bVoltear_H?` y `bVoltear_V?` Magik (con ? final) se mapean a
+  bVoltear_H / bVoltear_V — el ? no es válido en identificadores JS.
+
+· Símbolos Magik (:default, :sigc_style_view) se convierten en
+  strings literales (no hay símbolos en JS). Esto significa que
+  ':default' en TS es una string que empieza por ':' — coincide
+  visualmente con el Magik pero es comparable como string normal.
+
+· La UI añade:
+  · Selector de los 9 símbolos del catálogo mock
+  · Toggles bVoltear_H? / bVoltear_V?
+  · Input numérico nGrados con step=15° para rotaciones cómodas
+  · Selector grupo_estilos: unset / :default / "sigc"
+  · Preview SVG 180×180 con CSS transform animado
+  · Tarjeta con todas las claves de serial_slots (heredadas + propias)
+  · Demo new_from con un símbolo prototipo de márgenes 50 — visible
+    que se reducen a 5 tras la copia (validando la regla /10)
+
+
+USO DESDE App.tsx / showcase-registry.tsx
+------------------------------------------
+  import { CSimboloGraficoUI } from './migration/CSimboloGrafico';
+
+  // En SHOWCASE_REGISTRY:
+  {
+    id: 'CSimboloGrafico',
+    label: 'CSimboloGrafico',
+    fase: 1,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_simbolo_grafico.magik',
+    element: <CSimboloGraficoUI />,
+  }
+
+
+================================================================================
+  Fin del documento — CSimboloGrafico.txt
+================================================================================

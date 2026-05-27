@@ -67,6 +67,17 @@ import { CElementoEmpalmeGUI } from './migration/CElementoEmpalmeG'
 import { CSeccionamientoUI } from './migration/CSeccionamiento'
 import { CElementoGraficoUI } from './migration/CElementoGrafico'
 import { LayoutSeriesPluginUI } from './migration/LayoutSeriesPlugin'
+import { CSelloProyectoCanalizacionUI } from './migration/CSelloProyectoCanalizacion'
+import { CResumenMaterialesUI } from './migration/CResumenMateriales'
+import { CCableFoShowcase } from './components/CCableFoShowcase'
+import { CCableFoGraficoShowcase } from './components/CCableFoGraficoShowcase'
+import { CCentralGraficoShowcase } from './components/CCentralGraficoShowcase'
+import { CClienteGraficoShowcase } from './components/CClienteGraficoShowcase'
+import { CConexionEmpalmeShowcase } from './components/CConexionEmpalmeShowcase'
+import { CCuadroSimbologiaPlanosFoShowcase } from './components/CCuadroSimbologiaPlanosFoShowcase'
+import { CDatosDeRedShowcase } from './components/CDatosDeRedShowcase'
+import { CDfoGraficoShowcase } from './components/CDfoGraficoShowcase'
+import { CDiagramaConexionEmpalmeShowcase } from './components/CDiagramaConexionEmpalmeShowcase'
 
 export interface ShowcaseEntry {
   id: string
@@ -625,5 +636,93 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     nivel: 'COMPLEJO',
     magikSource: 'adiciones_layout/source/layout_series_plugin.magik',
     element: <LayoutSeriesPluginUI />,
+  },
+  {
+    id: 'CResumenMateriales',
+    label: 'CResumenMateriales',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_resumen_materiales.magik',
+    element: <CResumenMaterialesUI />,
+  },
+  {
+    id: 'CSelloProyectoCanalizacion',
+    label: 'CSelloProyectoCanalizacion',
+    fase: 4,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_proyecto_canalizacion.magik',
+    element: <CSelloProyectoCanalizacionUI />,
+  },
+  {
+    id: 'CCableFo',
+    label: 'CCableFo',
+    fase: 2,
+    nivel: 'MODERADO',
+    magikSource: 'planos_fo/source/montaje_tba/factory/c_cable_fo.magik',
+    element: <CCableFoShowcase />,
+  },
+  {
+    id: 'CCableFoGrafico',
+    label: 'CCableFoGrafico',
+    fase: 5,
+    nivel: 'MODERADO',
+    magikSource: 'planos_fo/source/detalles_construccion/sellos/estudio_transmision/c_cable_fo_grafico.magik',
+    element: <CCableFoGraficoShowcase />,
+  },
+  {
+    id: 'CCentralGrafico',
+    label: 'CCentralGrafico',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'planos_fo/source/detalles_construccion/sellos/estudio_transmision/c_central_grafico.magik',
+    element: <CCentralGraficoShowcase />,
+  },
+  {
+    id: 'CClienteGrafico',
+    label: 'CClienteGrafico',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'planos_fo/source/detalles_construccion/sellos/estudio_transmision/c_cliente_grafico.magik',
+    element: <CClienteGraficoShowcase />,
+  },
+  {
+    id: 'CConexionEmpalme',
+    label: 'CConexionEmpalme',
+    fase: 6,
+    nivel: 'CRÍTICO',
+    magikSource: 'planos_fo/source/montaje_tba/factory/c_conexion_empalme.magik',
+    element: <CConexionEmpalmeShowcase />,
+  },
+  {
+    id: 'CCuadroSimbologiaPlanosFo',
+    label: 'CCuadroSimbologiaPlanosFo',
+    fase: 4,
+    nivel: 'SIMPLE',
+    magikSource: 'planos_fo/source/ruta_cables/sellos/c_cuadro_simbologia_planos_fo.magik',
+    element: <CCuadroSimbologiaPlanosFoShowcase />,
+  },
+  {
+    id: 'CDatosDeRed',
+    label: 'CDatosDeRed',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'planos_fo/source/montaje_tba/sellos/c_datos_de_red.magik',
+    element: <CDatosDeRedShowcase />,
+  },
+  {
+    id: 'CDfoGrafico',
+    label: 'CDfoGrafico',
+    fase: 5,
+    nivel: 'MODERADO',
+    magikSource: 'planos_fo/source/detalles_construccion/sellos/estudio_transmision/c_dfo_grafico.magik',
+    element: <CDfoGraficoShowcase />,
+  },
+  {
+    id: 'CDiagramaConexionEmpalme',
+    label: 'CDiagramaConexionEmpalme',
+    fase: 5,
+    nivel: 'MUY COMPLEJO',
+    magikSource: 'planos_fo/source/detalles_construccion/sellos/estudio_transmision/c_diagrama_conexion_empalme.magik',
+    element: <CDiagramaConexionEmpalmeShowcase />,
   },
 ]

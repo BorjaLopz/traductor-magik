@@ -1,0 +1,691 @@
+_package user
+$
+#remex(:c_sello_estandar_base_fo)
+$
+def_slotted_exemplar(:c_sello_estandar_base_fo,
+{
+	{:oTipoEmpresaRazonS,      _unset }, # catalogo para empresa
+	{:valorEmpresaRazonS,      _unset }, # Valor para empresa
+	{:o_distrito,              _unset }, # Valor para empresa
+	{:o_proyecto,              _unset }, # Valor para empresa
+	{:oTipoNombre,             _unset }, # Valor para nombre
+	{:pl_datos,                _unset } # Valor para empresa
+	
+}, :c_base_sello_fibra)
+$
+c_sello_estandar_base_fo.define_shared_constant(:allowed_on_menu?, _true   , :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar_base_fo.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+
+	attribs.add(layout_attribute_definition.new(:razon_social, :string,
+						    :description, "RAZON SOCIAL",	    
+                                                    :enum_method, :enum_tipo_razon_social))
+
+	attribs.add(layout_attribute_definition.new(:nombre, :string,
+						    :description, "",	    
+                                                    :enum_method, :enum_tipo_nombre))	
+
+	attribs.add(layout_attribute_definition.new(:fecha, :string,
+						    :description, "",
+						    :default_value, _unset ))    
+
+
+	attribs.add(layout_attribute_definition.new(:proyecta_empresa, :string,
+						    :description, "",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:revisa_empresa, :string,
+						    :description, "",
+						    :default_value, _unset ))
+
+
+	attribs.add(layout_attribute_definition.new(:escala, :string,
+						    :description, "escala",
+						    :default_value, _unset ))    
+
+
+	attribs.add(layout_attribute_definition.new(:estado, :string,
+						    :description, "Municipio",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:municipio, :string,
+						    :description, "",
+						    :default_value, _unset ))
+
+
+	attribs.add(layout_attribute_definition.new(:colonia, :string,
+						    :description, "Colonia",
+	                                            :default_value, _unset ))    
+	
+
+	attribs.add(layout_attribute_definition.new(:codigo_postal, :string,
+						    :description, "Codigo Postal",
+						    :default_value, _unset ))
+	
+
+	attribs.add(layout_attribute_definition.new(:lonombrenco, :string,
+						    :description, "",
+						    :default_value, _unset ))	
+
+	attribs.add(layout_attribute_definition.new(:loncosiglas, :string,
+						    :description, "",
+						    :default_value, _unset ))	
+
+	attribs.add(layout_attribute_definition.new(:nombre_ctl, :string,
+						    :description, "",
+						    :default_value, _unset ))	
+
+	attribs.add(layout_attribute_definition.new(:nombre_ctl, :string,
+						    :description, "",
+						    :default_value, _unset ))	
+
+	attribs.add(layout_attribute_definition.new(:siglas_ctl, :string,
+						    :description, "",
+						    :default_value, _unset ))	
+	
+	attribs.add(layout_attribute_definition.new(:ubicacion_plano, :string,
+						    :description, "Ubicación del plano",
+						    :default_value, _unset ))
+
+	
+	>> attribs
+
+_endmethod
+$
+c_sello_estandar_base_fo.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar_base_fo.enum_tipo_razon_social
+	## 
+	## 
+	.oTipoEmpresaRazonS    << hash_table.new()
+	.oTipoEmpresaRazonS[3] <<  "TELEFONOS|DE MEXICO|S.A.B de C.V."
+	.oTipoEmpresaRazonS[1] <<   "RED|NACIONAL|ULTIMA MILLA" 
+	.oTipoEmpresaRazonS[2] <<   "RED|ULTIMA MILLA|DEL NOROESTE"
+	_return .oTipoEmpresaRazonS
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estandar_base_fo.enum_tipo_nombre
+	## 
+	## 
+	.oTipoNombre    << hash_table.new()
+	.oTipoNombre[1] << "RUTA DE CABLES"
+	.oTipoNombre[2] <<  "ESQUEMATICO DE PRINCIPALES" 
+	.oTipoNombre[3] <<  "PLANO DE DETALLES"
+	_return .oTipoNombre
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+ _method c_sello_estandar_base_fo.etiqueta_celdas()
+
+	_self.asigna_texto_celda(:tbl_compania,1,1,"RED NACIONAL",32)  
+	_self.asigna_texto_celda(:tbl_compania,2,1,"ÚLTIMA",32)
+	_self.asigna_texto_celda(:tbl_compania,3,1,"MILLA",32)
+		 
+	_self.asigna_texto_celda(:tbl_FecDibRev,1,1,"FECHA",32)
+	_self.asigna_texto_celda(:tbl_FecDibRev,2,1,"DIBUJO",32)
+	_self.asigna_texto_celda(:tbl_FecDibRev,3,1,"REVISO",32)
+	_self.asigna_texto_celda(:tbl_escala,1,1,"ESCALA",32)
+
+	_self.asigna_texto_celda(:tbl_del_mpo,1,1," ESTADO:",32,:top_left)
+	_self.asigna_texto_celda(:tbl_del_mpo,2,1," CODIGO POSTAL:",32,:top_left)
+	_self.asigna_texto_celda(:tbl_del_mpo,3,1," COLONIA:",32,:top_left)
+	_self.asigna_texto_celda(:tbl_del_mpo,4,1," DELEGACION O MPO.:",32,:top_left)
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.configura_tabla()
+
+	_local ln_desp_x
+	_local ln_desp_y
+	
+	# ----------------------------------------------------------
+	# Tabla que contiene la Ubicacion
+	# ----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_ubicacion)
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+	lo_tabla.orenglones.elemento(1).nlongitud << 274
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 15
+	lo_tabla.bDibuja_bordes? << _false
+	# ----------------------------------------------------------
+	# Tabla que contiene la compania
+	# ----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(3,1,:tbl_compania)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion})
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_ubicacion})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+	lo_tabla.orenglones.elemento(1).nlongitud << 5
+	lo_tabla.orenglones.elemento(2).nlongitud << 5
+	lo_tabla.orenglones.elemento(3).nlongitud << 5	
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 25
+	# ----------------------------------------------------------
+	# Tabla que contiene Fecha, Dibujo y Reviso
+	# ----------------------------------------------------------	
+	lo_tabla << .o_tablas.crea_tabla(3,2,:tbl_FecDibRev)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion,:tbl_compania})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	lo_tabla.orenglones.elemento(1).nlongitud << 5
+	lo_tabla.orenglones.elemento(2).nlongitud << 5
+	lo_tabla.orenglones.elemento(3).nlongitud << 5
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 15
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 20
+	# ----------------------------------------------------------
+	# Tabla que contiene la escala
+	# ----------------------------------------------------------	
+	lo_tabla << .o_tablas.crea_tabla(2,1,:tbl_escala)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion,:tbl_compania,:tbl_FecDibRev})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 150))
+	lo_tabla.orenglones.elemento(1).nlongitud << 5
+	lo_tabla.orenglones.elemento(2).nlongitud << 10
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 22
+	# ----------------------------------------------------------	
+	# Tabla que contiene el proyecto y la central
+	# ----------------------------------------------------------	
+	lo_tabla << .o_tablas.crea_tabla(2,1,:tbl_proy_ctl)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion, :tbl_compania, :tbl_FecDibRev,
+							:tbl_Escala})
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_ubicacion})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y -150))
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+	lo_tabla.orenglones.elemento(1).nlongitud << 7.5
+	lo_tabla.orenglones.elemento(2).nlongitud << 7.5
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 100
+	# ----------------------------------------------------------
+	# Tabla que contiene las siglas
+	# ----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_siglas)
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion, :tbl_compania, :tbl_FecDibRev,
+							:tbl_Escala,:tbl_proy_ctl})
+	
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_ubicacion}) 
+	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y -150))  
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+	lo_tabla.orenglones.elemento(1).nlongitud << 15
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 60
+	# ----------------------------------------------------------	
+	# Tabla que contiene la delegacion y municipio
+	# ----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(4,2,:tbl_del_mpo)
+	
+	ln_desp_x << .o_tablas.Longitud_total_Columnas({:tbl_ubicacion, :tbl_compania, :tbl_FecDibRev,
+							:tbl_Escala, :tbl_proy_ctl, :tbl_siglas})
+
+	
+	LoDesplazamiento << 100
+	ln_desp_x +<< LoDesplazamiento
+	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_x,
+						      .o_coord_inicio.y - (ln_desp_y - 300)) #150
+	lo_tabla.bDibuja_Columnas_Internas? << _false
+	lo_tabla.bDibuja_Renglones_Internos? << _false
+	lo_tabla.orenglones.elemento(1).nlongitud << 5  ##   7.5
+	lo_tabla.orenglones.elemento(2).nlongitud << 5  ##   7.5
+	
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 45
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 45
+
+	lo_tabla.orenglones.elemento(3).nlongitud << 5  ##  7.5
+	lo_tabla.orenglones.elemento(4).nlongitud << 5  ##  7.5
+
+	# (10/07/07 lgranados) : Se ocultan las lineas de la tabla a
+	# petición del usuario para que el contenido no salga de los limites.
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	
+	lo_celda.bBorde_Der? << _false 
+	lo_celda.bBorde_Izq? <<  _false 
+	lo_celda.bBorde_Inf? << _false 
+	lo_celda.bBorde_Sup? << _false 
+	
+	lo_celda << lo_tabla.oceldas.celda(1,2).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Inf? << _false
+	lo_celda.bBorde_Sup? << _false
+
+	lo_celda << lo_tabla.oceldas.celda(2,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Inf? << _false
+	lo_celda.bBorde_Sup? << _false
+
+	lo_celda << lo_tabla.oceldas.celda(2,2).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Inf? << _false
+	lo_celda.bBorde_Sup? << _false
+
+	# (22/10/14 des_aaron) :
+	lo_celda << lo_tabla.oceldas.celda(3,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Inf? << _false
+	lo_celda.bBorde_Sup? << _false
+
+	
+	lo_celda << lo_tabla.oceldas.celda(3,2).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Inf? << _false
+	lo_celda.bBorde_Sup? << _false
+
+	lo_celda << lo_tabla.oceldas.celda(4,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Inf? << _false
+	lo_celda.bBorde_Sup? << _false
+
+	
+	lo_celda << lo_tabla.oceldas.celda(4,2).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Inf? << _false
+	lo_celda.bBorde_Sup? << _false
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.get_page()
+	## 
+	## 
+
+	LoLayoutPlugin     << smallworld_product.pni_application().plugin(:layout_plugin)
+	LoLayoutDesigner   << LoLayoutPlugin.dialogs[:layout_designer]
+	LoViewMapperPlugin << LoLayoutDesigner.plugin(:viewport_mapper)
+	LoLayoutManager    << LoLayoutDesigner.layout_manager
+	LoPagina << LoLayoutManager.current_page
+	_return Lopagina
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.llena_datos_celdas()
+	#
+	#write(_self , :llena_datos_celdas)
+	
+	LoLayoutPlugin     << smallworld_product.pni_application().plugin(:layout_plugin)
+	LoLayoutDesigner   << LoLayoutPlugin.dialogs[:layout_designer]
+	LoViewMapperPlugin << LoLayoutDesigner.plugin(:viewport_mapper)
+	LoLayoutManager    << LoLayoutDesigner.layout_manager
+	LoDoc  << LoLayoutManager.current_document
+
+	division << ""
+	area     << ""
+	central  << ""
+	siglas   << ""
+	enlace   << ""
+	LoEtapa  << ""
+	LoFase   << ""
+	fecha    << ""
+	proyecta_empresa << ""
+	revisa_empresa   << ""
+	LsColoniaNombre<< " "
+	LoEstado << ""
+	LOcodigoPostal << ""
+	LoReferencia << ""
+
+
+	# START CHANGE
+	# (23/03/07 des_aaron) : 
+	#
+	_self.obten_registros()
+	#
+	# END CHANGE
+	
+	
+	idplano<<   LoDoc.identificador_de_plano(swg_dsn_admin_engine.active_scheme)
+
+	
+	  scheme << swg_dsn_admin_engine.active_design
+
+	 
+	  _if scheme  _isnt _unset 
+	  _then	
+		  mprj             << scheme.project
+		  division         << mprj.division
+		  area             << mprj.area
+		  enlace           << mprj.name
+		  LoEtapa          << mprj.user!_etapa
+		  proyecta_empresa << mprj.user!_empresa_proyecto
+		  revisa_empresa   << mprj.user!_empresa_revisora
+		  fecha            << mprj.planning_start	
+		  central          << mprj.user!_central.user!_nombre
+		  siglas           << mprj.user!_central.user!_central
+		  LoFase           << scheme.status
+	 	  
+	  _endif
+	  
+	
+	## agregar nombre de guardado del plano entre enlace y loetapa
+	  
+	ubicacion << division + " /  " +
+		     area + " / " +
+		     central + " / " +
+		     enlace +  " / " +
+		     %newline + idplano + " / "   ## +
+	##	     LoEtapa + " / " + LoFase
+
+	ubicacion2 << ""
+	
+	segmentos << ubicacion.split_by(" / ")
+
+	saltolinea? << _false
+	
+	_for segmento _over segmentos.elements()
+	_loop
+		_if (ubicacion2.size + segmento.size + 1) > 110 _andif
+		    saltolinea? _is _false
+		_then
+			ubicacion2 +<< %newline
+			saltolinea? << _true
+		_endif
+		_if ubicacion2.size > 2
+		_then
+			ubicacion2 +<< " / "+segmento
+		_else
+			ubicacion2 +<< segmento
+		_endif
+	_endloop
+	
+	
+
+	_self.asigna_texto_celda(:tbl_FecDibRev,1,2,.pl_datos[:fecha].uppercase,30)
+	_self.asigna_texto_celda(:tbl_FecDibRev,2,2,.pl_datos[:proyecta_empresa].uppercase,30)
+	_self.asigna_texto_celda(:tbl_FecDibRev,3,2,.pl_datos[:revisa_empresa].uppercase,30)
+
+	###  :bottom_left, :top_left, :centre_centre center_left, center_right
+
+	_self.asigna_texto_celda(:tbl_del_mpo,1,2,.pl_datos[:estado],        35,:top_left) ##:top_left
+	_self.asigna_texto_celda(:tbl_del_mpo,2,2,.pl_datos[:codigo_postal], 35,:top_left)
+	_self.asigna_texto_celda(:tbl_del_mpo,3,2,.pl_datos[:colonia],       35,:top_left)
+	_self.asigna_texto_celda(:tbl_del_mpo,4,2,.pl_datos[:municipio],     35,:top_left)
+
+	_self.asigna_texto_celda(:tbl_proy_ctl,1,1,.pl_datos[:nombre] + %newline + "NCO-" +
+				 .pl_datos[:Lonombrenco] +
+				 "(" + .pl_datos[:loncosiglas] +
+				 ")" , 35,:centre_centre,0,{1.0,0.2593,0.7})
+	
+	_self.asigna_texto_celda(:tbl_proy_ctl,2,1,"CTL-" +
+				 .pl_datos[:nombre_ctl] +
+				 "(" + .pl_datos[:loncosiglas] +
+				 ")"  ,  35,:centre_centre,0,{1.0,0.2593,0.7})
+	
+	_self.asigna_texto_celda(:tbl_siglas,1,1,"NCO - "   + .pl_datos[:loncosiglas], 60,:centre_centre,0,{1.0,0.2593,0.7}) 
+		
+	_self.asigna_texto_celda(:tbl_escala,2,1,.pl_datos[:escala] ,55)
+
+	##tira marginal de la ubicacion del plano#############################################
+	_self.asigna_texto_celda(:tbl_ubicacion,1,1,ubicacion2.write_string,45,:bottom_left,5)	
+	.o_tablas.elemento(:tbl_ubicacion).oCeldas.Celda(1,1).oElemento.nGrados << 90
+	######################################################################################
+	
+	##datos de la compañia
+	_if ( _self.attributes[:razon_social] _isnt _unset _andif
+	      _self.attributes[:razon_social].value) _isnt  _unset _andif
+	      _self.attributes[:razon_social].value.size > 0
+	_then		
+		.valorEmpresaRazonS <<   _self.attributes[:razon_social].value.write_string.uppercase
+
+		_if .valorEmpresaRazonS.uppercase.matches?("*TELEFONOS*")
+		_then
+				
+			         txts << .valorEmpresaRazonS.split_by("|")
+				 
+				_self.asigna_texto_celda(:tbl_compania,1,1, txts[1],35)
+				_self.asigna_texto_celda(:tbl_compania,2,1, txts[2],35)
+				_self.asigna_texto_celda(:tbl_compania,3,1, txts[3],35)			
+				_self.asigna_texto_celda(:tbl_FecDibRev,3,2,"TELMEX",30)
+
+		_elif .valorEmpresaRazonS.uppercase.matches?("*NACIONAL*")
+		_then
+							
+			         txts << .valorEmpresaRazonS.split_by("|")
+				 
+				_self.asigna_texto_celda(:tbl_compania,1,1, txts[1],23)
+				_self.asigna_texto_celda(:tbl_compania,2,1, txts[2],23)
+				_self.asigna_texto_celda(:tbl_compania,3,1, txts[3],23)
+				
+				_self.asigna_texto_celda(:tbl_FecDibRev,3,2,"RNUM",30)
+
+				
+		_elif .valorEmpresaRazonS.uppercase.matches?("*NOROESTE*")
+		_then 
+			txts << .valorEmpresaRazonS.split_by("|")
+				 
+			_self.asigna_texto_celda(:tbl_compania,1,1, txts[1],23)
+			_self.asigna_texto_celda(:tbl_compania,2,1, txts[2],23)
+			_self.asigna_texto_celda(:tbl_compania,3,1, txts[3],23)
+
+			_self.asigna_texto_celda(:tbl_FecDibRev,3,2,"RUMN",30)
+				
+		_endif		
+	_else
+		
+		_self.asigna_texto_celda(:tbl_compania,1,1,"RED NACIONAL",32)  
+		_self.asigna_texto_celda(:tbl_compania,2,1,"ÚLTIMA",32)
+		_self.asigna_texto_celda(:tbl_compania,3,1,"MILLA",32)
+		
+	_endif
+
+	_self.calcula_datos_cliente_RB()
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.llena_datos_dinamicos()
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.calcula_datos_cliente_RB()
+	# (22/10/14 des_aaron) : para planos de esquemas de acometida
+
+	_local nombre_cliente << ""
+	_local paf            << smallworld_product.pni_application()
+	_local scheme         << swg_dsn_admin_engine.active_design
+	_local ref_sisa       << scheme.project.user!_pep_reha_cana.write_string.default("")	
+	_local clientes       << paf.plugin(:gen_planos).o_ruta_sigp[:oelementos_hash][:user!_building]
+	
+		
+	_if clientes.responds_to?(:size) _andif
+	    (reg<<clientes.an_element())   _isnt _unset 
+	_then		
+		nombre_cliente << reg.name
+		(siglas,nombre,ctl)  << reg.location.coordinate.central_txt()
+		
+		_self.asigna_texto_celda(:tbl_proy_ctl,1,1,"CTL-" + nombre.write_string,50,:centre_centre,0,{1.0,0.2593,0.7})
+		_self.asigna_texto_celda(:tbl_proy_ctl,2,1, nombre_cliente.write_string ,50,:centre_centre,0,{1.0,0.2593,0.7})
+		_self.asigna_texto_celda(:tbl_siglas,1,1,"REFERENCIA SISA" + %newline +  ref_sisa   ,35,:centre_centre,0,{1.0,0.2593,0.7})   
+		
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.busca_bastidores_en_mapa()
+
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view
+	objs << mv.get_visible_geometry_set()
+	bastidores << equality_set.new()
+	
+	_if mv.ace_name _is :gs!schematic 
+	_then	
+		_for itergeom  _over objs.fast_elements()
+		_loop		
+			_if  (reg <<  itergeom.rwo.source_rwo_records().an_element()) _isnt _unset  _andif
+			     reg.source_collection.name _is :mit_bay
+			_then
+				bastidores.add(reg)
+			_endif
+		_endloop
+		
+	_endif
+	
+	>> bastidores
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.escala_del_mapa
+
+	LoLayoutPlugin    << smallworld_product.pni_application().plugin(:layout_plugin)
+	LoLayoutDesigner   << LoLayoutPlugin.dialogs[:layout_designer]
+	LoLayoutManager    << LoLayoutDesigner.plugin(:layout_manager)
+	sellos <<LoLayoutManager.current_document.current_page.elements
+	escala << ""
+
+	_for itersello _over sellos.elements()
+		_loop
+			_if (itersello.responds_to?(:name) _andif
+			    itersello.name _isnt _unset _andif 
+			    itersello.name.matches?("mapa*"))  _or itersello.class_name _is :c_vp_ruta_de_cables_fo
+			_then
+			         escala << "1:" + itersello.view_scale.write_string.numbers_and_strings[1].write_string
+			_endif
+		_endloop
+
+		_return escala
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.obten_registros()
+
+
+        .pl_datos << property_list.new() 
+
+	.o_distrito << c_distrito.new()
+	.o_proyecto << c_proyecto.new()
+	
+	.pl_datos[:nombre_plano]     <<  _self.nombre_plano()
+
+	 colonia                     <<  .o_proyecto.colonia_pral
+
+	 _if colonia _isnt _unset 
+	 _then
+		 .pl_datos[:colonia]      << colonia.user!_nombre
+	 _else
+		 .pl_datos[:colonia]      << ""
+	 _endif
+
+	 .pl_datos[:fecha]                << .o_proyecto.mes_anio
+	 .pl_datos[:municipio]            << .o_proyecto.Delegacion_Municipio
+	 .pl_datos[:estado]               << .o_proyecto.estado
+	 .pl_datos[:ciudad]               << .o_proyecto.ciudad
+	 .pl_datos[:nombre_ctl]           << .o_proyecto.nombre_central
+	 .pl_datos[:siglas_ctl]           << .o_proyecto.cve_central
+	 .pl_datos[:tipo_ctl]             << .o_proyecto.tipo_central
+	 .pl_datos[:ubicacion]            << .o_proyecto.ubicacion	 
+	 .pl_datos[:proyecta_empresa]     << .o_proyecto.proyecta_empresa
+	 .pl_datos[:revisa_empresa]       << .o_proyecto.revisa_empresa
+	 .pl_datos[:codigo_postal]        << .o_proyecto.cp_pral
+	 .pl_datos[:nombre]               << _self.tipo_nombre_plano
+	 
+         (.pl_datos[:Lonombrenco] ,.pl_datos[:loncosiglas])     << .o_proyecto.nco()
+
+
+	# (23/09/21 des_aaron) : Para planos de esquemas no se mostrara
+	# la escala a menos que se edite por el usuario
+	
+	_if _self.layout_document.user!_tipo_plano _is  :esquema_principales _orif
+	    _self.layout_document.user!_tipo_plano _is  :diagrama_empalmes_fo _orif
+	    _self.layout_document.user!_tipo_plano _is  :detalles_construccion
+	_then
+		.pl_datos[:escala]               << ""
+	_else
+		.pl_datos[:escala]               << _self.escala_del_mapa	 
+		
+	_endif
+	 
+	.pl_datos<< _self.info_sello_propiedades(.pl_datos)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.info_sello_propiedades(pl_datos)
+
+	pl_datos[:fecha]            <<   _self.valor_propiedad(:fecha,            pl_datos[:fecha])
+	pl_datos[:escala]           <<   _self.valor_propiedad(:escala,           pl_datos[:escala])
+	pl_datos[:estado]           <<   _self.valor_propiedad(:estado,           pl_datos[:estado] )
+	pl_datos[:municipio]        <<   _self.valor_propiedad(:municipio,        pl_datos[:municipio])
+	pl_datos[:ciudad]           <<   _self.valor_propiedad(:ciudad,           pl_datos[:ciudad] )
+	pl_datos[:colonia]          <<   _self.valor_propiedad(:colonia,          pl_datos[:colonia])
+	pl_datos[:codigo_postal]    <<   _self.valor_propiedad(:codigo_postal,    pl_datos[:codigo_postal])	
+	pl_datos[:proyecta_empresa] <<   _self.valor_propiedad(:proyecta_empresa, pl_datos[:proyecta_empresa])	
+	pl_datos[:revisa_empresa]   <<   _self.valor_propiedad(:revisa_empresa,   pl_datos[:revisa_empresa])	
+	pl_datos[:loNombrenco]      <<   _self.valor_propiedad(:lonombrenco,      pl_datos[:lonombrenco])
+	pl_datos[:loncosiglas]      <<   _self.valor_propiedad(:loncosiglas,      pl_datos[:loncosiglas])
+	pl_datos[:nombre_ctl]       <<   _self.valor_propiedad(:nombre_ctl,       pl_datos[:nombre_ctl])
+	pl_datos[:siglas_ctl]       <<   _self.valor_propiedad(:siglas_ctl,       pl_datos[:siglas_ctl])
+	pl_datos[:nombre]           <<   _self.valor_propiedad(:nombre,           pl_datos[:nombre])
+
+	
+	_return pl_datos
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.valor_propiedad(Propiedad, dato_actual)
+	## 
+	##
+
+	LoPropiedad << ""
+	
+	_if _self.attributes[Propiedad]  _isnt _unset  _andif
+	    _self.attributes[Propiedad].value _isnt _unset  _andif
+	    _self.attributes[propiedad].value.write_string.size > 0
+	_then
+		LoPropiedad << _self.attributes[Propiedad].value.write_string
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+		
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estandar_base_fo.tipo_nombre_plano
+
+
+	nombrel << _self.layout_page.layout_document.user!_tipo_plano
+	write(:nombre, nombre,  nombre _is :detalles_construccion)
+	nombre << "RUTA DE CABLES"
+	
+	_if nombrel _is :detalles_construccion
+	_then
+		nombre << "PLANO DE DETALLES"
+	_endif
+	
+	_if nombrel _is :ruta_cables
+	_then
+		nombre << "RUTA DE CABLES"
+	_endif
+
+	_if nombrel _is :esquema_principales
+	_then
+		nombre << "ESQUEMATICO DE PRINCIPALES"
+	_endif
+
+	 _return nombre
+
+_endmethod
+$
+

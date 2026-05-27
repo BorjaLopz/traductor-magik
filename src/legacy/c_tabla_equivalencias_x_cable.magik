@@ -1,0 +1,582 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Planos - Fibra Óptica 
+# Objetivo: mostrar un listado de los datos del cable de fo
+# Autor:    lgranados
+# Fecha de creacion: 20-Agosto-2008
+#
+#----------------------------------------------------------------
+
+_package user
+$
+#remex(:c_tabla_equivalencias_x_cable)
+$
+def_slotted_exemplar(:c_tabla_equivalencias_x_cable ,
+{
+	 {:LoCable,       _unset}, 	 # LOCable
+	 {:Lorme,       _unset},         #rme
+	 {:LoCableObjeto, _unset},	 # Instancia del objeto  c_cable_fo
+	 {:central, _unset},           #limite de central
+	 {:piso, _unset},                #piso
+	 {:sala, _unset},                #sala
+	 {:fila, _unset},                #fila
+         {:bastidor, _unset},            #posicion del bastidor
+         {:num_de_grupos, _unset},       #fo.getgrupos().size
+         {:numero_fibras, _unset},       #fo.getgrupos()[1][:fibras].size
+         {:capacidad_cable, _unset}     #num_de_grupos * numero_fibras
+	 
+}, :c_base_sello_fibra)
+$
+c_tabla_equivalencias_x_cable.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_tabla_equivalencias_x_cable.new_with(PoDatos, _gather args )
+	## Objetivo: Inicializar valores para el objeto
+	## Parametros de Entrada: args << argumentos para la super	
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:20/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo 
+
+
+	.LoCable << PoDatos[:Locable]
+	.LoRme   << PoDatos[:rme]
+	.LoCableObjeto <<   c_cable_fo.new( .Locable,_false)
+	.piso          <<   PoDatos[:piso] 
+	.sala          <<   PoDatos[:sala] 
+	.fila          <<   PoDatos[:fila] 
+	.bastidor      <<   PoDatos[:bastidor]
+	.Central       <<   PoDatos[:central]
+	.num_de_grupos <<   PoDatos[:num_de_grupos]  
+	.numero_fibras <<   PoDatos[:numero_fibras]  
+	.capacidad_cable << PoDatos[:capacidad_cable]
+	
+	# ejecutar la super
+	>> _super.new_with(property_list.new_from_gathered ( args ))
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_equivalencias_x_cable.draw_content_on(Powindow)
+	## 
+	##
+	_super.draw_content_on(Powindow)
+	_self.llena_datos_cable()
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_equivalencias_x_cable.etiqueta_celdas()
+
+	# -----------------------------
+	# etiquetas de la tabla
+	# -----------------------------
+	
+	texto1 << "DISTRIB." +%newline
+	texto1 +<< "SECC."
+
+	texto2 << "CABLE" +%newline
+	texto2 +<< "NO."
+
+	texto3 << "TUBO" +%newline
+	texto3 +<< "HOLGADO."
+
+	texto4 << "COLOR" +%newline
+	texto4 +<< "F.O."
+
+	texto5 << "FIBRA"+%newline
+	texto5 +<< "CTL."
+		
+	_self.asigna_texto_celda(:tbl_1,2,1,"TABLA DE EQUIVALENCIAS",30, _unset)
+	_self.asigna_texto_celda(:tbl_2,1,1,"CTL.",20,_unset)
+	_self.asigna_texto_celda(:tbl_2,1,2,texto1,20,_unset)
+	_self.asigna_texto_celda(:tbl_2,1,3,texto2,20,_unset)
+	_self.asigna_texto_celda(:tbl_2,1,4,texto3,20,_unset)
+	_self.asigna_texto_celda(:tbl_2,1,5,texto4,20,_unset)
+	_self.asigna_texto_celda(:tbl_2,1,6,"FIBRA",20,_unset)
+	_self.asigna_texto_celda(:tbl_2,1,7,"FIBRA",20,_unset)
+	_self.asigna_texto_celda(:tbl_2,1,8,"DTO.",20,_unset)
+	_self.asigna_texto_celda(:tbl_2,1,9,texto5,20,_unset)
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_equivalencias_x_cable.configura_tabla()
+
+
+	# START CHANGE
+	# (14/10/22 ahernan) : 
+	#
+	Locable         << .LoCable
+	fo              << .LoCableObjeto	
+	num_de_grupos   << .num_de_grupos      #fo.getgrupos().size
+	numero_fibras   << .numero_fibras      #fo.getgrupos()[1][:fibras].size
+	capacidad_cable << .capacidad_cable    #num_de_grupos * numero_fibras
+
+	#
+	# END CHANGE
+
+
+	# -----------------------------
+	# Configuracion de las tablas
+	# -----------------------------
+	_if capacidad_cable _isnt _unset 
+	_then
+		#--------------------------------------------------------
+		# Tabla 1
+		#--------------------------------------------------------
+			
+		lo_tabla << .o_tablas.crea_tabla(3,1, :tbl_1)
+		
+		lo_tabla.oCoordenada_Origen << .o_coord_inicio
+		
+		lo_tabla.orenglones.elemento(1).nlongitud << 6
+	
+		lo_tabla.orenglones.elemento(2).nlongitud << 6
+		
+		lo_tabla.orenglones.elemento(3).nlongitud << 6
+		
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 99
+		
+		#---------------------------------------------------------
+		# Tabla 2
+		#---------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla(1,9, :tbl_2)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,
+							      .o_coord_inicio.y - 180)
+		lo_tabla.orenglones.elemento(1).nlongitud << 8
+		lo_tabla.ocolumnas.elemento(1).nlongitud << 8
+		lo_tabla.ocolumnas.elemento(2).nlongitud << 18
+		lo_tabla.ocolumnas.elemento(3).nlongitud << 10
+		lo_tabla.ocolumnas.elemento(4).nlongitud << 13
+		lo_tabla.ocolumnas.elemento(5).nlongitud << 13
+		lo_tabla.ocolumnas.elemento(6).nlongitud << 8
+		lo_tabla.ocolumnas.elemento(7).nlongitud << 8
+		lo_tabla.ocolumnas.elemento(8).nlongitud << 13
+		lo_tabla.ocolumnas.elemento(9).nlongitud << 8
+		
+		#---------------------------------------------------------
+		# Tabla 3
+		#---------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla(1,1, :tbl_3)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,
+							      .o_coord_inicio.y - 260)
+		lo_tabla.orenglones.elemento(1).nlongitud << capacidad_cable * 5
+		lo_tabla.ocolumnas.elemento(1).nlongitud << 8
+		#-----------------------------------------------------------
+		#  Tabla 4
+		#-----------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla(1, 1, :tbl_4)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 80,
+							      .o_coord_inicio.y - 260)
+		lo_tabla.orenglones.elemento(1).nlongitud << capacidad_cable * 5
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 18
+		#-----------------------------------------------------------
+		#  Tabla 5
+		#-----------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla(1, 1, :tbl_5)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 260,
+							      .o_coord_inicio.y - 260)
+		lo_tabla.orenglones.elemento(1).nlongitud << capacidad_cable * 5
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 10
+		#-----------------------------------------------------------
+		#  Tabla 6
+		#-----------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla(num_de_grupos, 1, :tbl_6)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 360,
+							      .o_coord_inicio.y - 260)
+		_for n_reng _over range(1,num_de_grupos)
+		_loop
+			lo_tabla.orenglones.elemento(n_reng).nlongitud << numero_fibras * 5
+		_endloop
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 13
+		#-----------------------------------------------------------
+		#  Tabla 7
+		#-----------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla( capacidad_cable, 1, :tbl_7)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 490,
+							      .o_coord_inicio.y - 260)
+	
+		_for n_reng _over range(1,capacidad_cable)
+		_loop
+			lo_tabla.orenglones.elemento(n_reng).nlongitud << 5
+		_endloop
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 13
+		#-----------------------------------------------------------
+		#  Tabla 8
+		#-----------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla( capacidad_cable, 1, :tbl_8)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 620,
+							      .o_coord_inicio.y - 260)
+		
+		_for n_reng _over range(1,capacidad_cable)
+		_loop
+			lo_tabla.orenglones.elemento(n_reng).nlongitud << 5
+		_endloop
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 8
+		#-----------------------------------------------------------
+		#  Tabla 9
+		#-----------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla( capacidad_cable, 1, :tbl_9)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 700,
+							      .o_coord_inicio.y - 260)
+		
+		_for n_reng _over range(1,capacidad_cable)
+		_loop
+			lo_tabla.orenglones.elemento(n_reng).nlongitud << 5
+		_endloop
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 8
+		#-----------------------------------------------------------
+		#  Tabla 10
+		#-----------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla( capacidad_cable, 1, :tbl_10)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 780,
+							      .o_coord_inicio.y - 260)
+		
+		_for n_reng _over range(1,capacidad_cable)
+		_loop
+			lo_tabla.orenglones.elemento(n_reng).nlongitud << 5
+		_endloop
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 13
+		#-----------------------------------------------------------
+		#  Tabla 11
+		#-----------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla( capacidad_cable, 1, :tbl_11)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 910,
+							      .o_coord_inicio.y - 260)
+		
+		_for n_reng _over range(1,capacidad_cable)
+		_loop
+			lo_tabla.orenglones.elemento(n_reng).nlongitud << 5
+		_endloop
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 8
+		
+	_else
+		#--------------------------------------------------------
+		# Tabla 1
+		#--------------------------------------------------------
+			
+		lo_tabla << .o_tablas.crea_tabla(3,1, :tbl_1)
+		
+		lo_tabla.oCoordenada_Origen << .o_coord_inicio
+		
+		lo_tabla.orenglones.elemento(1).nlongitud << 6
+	
+		lo_tabla.orenglones.elemento(2).nlongitud << 6
+		
+		lo_tabla.orenglones.elemento(3).nlongitud << 6
+		
+		lo_tabla.ocolumnas.elemento(1).nlongitud  << 99
+		
+		#---------------------------------------------------------
+		# Tabla 2
+		#---------------------------------------------------------
+		lo_tabla << .o_tablas.crea_tabla(1,9, :tbl_2)
+		lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,
+							      .o_coord_inicio.y - 180)
+		lo_tabla.orenglones.elemento(1).nlongitud << 8
+		lo_tabla.ocolumnas.elemento(1).nlongitud << 8
+		lo_tabla.ocolumnas.elemento(2).nlongitud << 18
+		lo_tabla.ocolumnas.elemento(3).nlongitud << 10
+		lo_tabla.ocolumnas.elemento(4).nlongitud << 13
+		lo_tabla.ocolumnas.elemento(5).nlongitud << 13
+		lo_tabla.ocolumnas.elemento(6).nlongitud << 8
+		lo_tabla.ocolumnas.elemento(7).nlongitud << 8
+		lo_tabla.ocolumnas.elemento(8).nlongitud << 13
+		lo_tabla.ocolumnas.elemento(9).nlongitud << 8
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_equivalencias_x_cable.llena_datos_cable()
+	## 
+	##
+	
+	(Locable,fo,l_bay) << _self.obten_datos()
+
+	l_bay << .loRME
+	
+	colores_fibra << rope.new()
+	colores_fibra.add("NATURAL")
+	colores_fibra.add("AZUL")
+	colores_fibra.add("AMARILLO")
+	colores_fibra.add("ROJO")
+	colores_fibra.add("VERDE")
+	colores_fibra.add("NARANJA")
+	colores_fibra.add("VIOLETA")
+	colores_fibra.add("CAFE")
+	colores_fibra.add("GRIS")
+	colores_fibra.add("NEGRO")
+	colores_fibra.add("ROSA")
+	colores_fibra.add("BLANCO")
+
+	# obtener datos del bastidor
+	piso << "---"
+	sala << "---"
+	fila << "---"
+	bastidor << "---"
+	tipo_cable<< "---"
+	nom_cable<< "---"
+
+
+	cable_no << Locable.user!_numero_cable
+	num_de_grupos << fo.getgrupos().size
+	numero_fibras << fo.getgrupos()[1][:fibras].size
+	capacidad_cable << num_de_grupos * numero_fibras
+
+
+	
+	_if l_bay  _isnt _unset 
+	_then
+                central  << l_bay.user!_central
+
+		_if central _isnt _unset 
+		_then
+			siglas_ctl << central.user!_central
+			nombre_ctl << central.user!_nombre
+			nom_cable << "CABLE_" + central.user!_central + "_" + cable_no.write_string
+		_else
+			siglas_ctl << "____"
+			nombre_ctl << "____"
+			nom_cable << "CABLE_" + "___" + "_" + cable_no.write_string
+		_endif
+		
+		
+		piso << l_bay.ObtenerNumeroDePiso()
+		sala << l_bay.ObtenerTipoSala()
+		fila << l_bay.ObtenerFila()
+		bastidor << l_bay.ObtenerPosBastidor()
+	_endif	
+
+	
+	
+	
+	#tipo del cable
+	tipo_cable << Locable.spec_id
+	
+	#w(:tabla1)
+	# ------------------------------------
+	# Tabla 1
+	# ------------------------------------
+	# nombre del cable
+	_self.asigna_texto_celda(:tbl_1,1,1,nom_cable,30, _unset)
+	# llena tipo cable
+	_self.asigna_texto_celda(:tbl_1,3,1,tipo_cable,30, _unset)
+	
+	#w(:tabla2)
+	# ------------------------------------
+	# Tabla 3
+	# ------------------------------------
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_3]
+	
+	# llena la columna CTL	
+	ren <<  tab.oceldas.sys!slot(:collceldas)[1].nren
+	col <<  tab.oceldas.sys!slot(:collceldas)[1].ncol
+       _self.asigna_texto_celda(:tbl_3,ren,col,nombre_ctl ,40, _unset)
+        tab.oceldas.sys!slot(:collceldas)[1].oElemento.nGrados << 90
+	# ------------------------------------
+	# Tabla 4
+	# ------------------------------------
+	#w(:tabla4)
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_4]
+	no_piso << "PISO:" + piso 
+	no_sala << "SALA:" + sala 
+	no_fila << "FILA:" + fila 
+	no_bast << "BASTIDOR:" + bastidor
+	
+	# llena la columna DIST. SECC.
+
+	ren <<  tab.oceldas.sys!slot(:collceldas)[1].nren
+	col << tab.oceldas.sys!slot(:collceldas)[1].ncol
+	
+	_self.asigna_texto_celda(:tbl_4,ren,col, no_piso + %newline + no_sala +  %newline + no_fila + %newline +  no_bast  ,20, _unset)
+	
+	# ------------------------------------
+	# Tabla 5
+	# ------------------------------------
+	#w(:tabla5)
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_5]
+	# llena la columna CABLE NO.
+	ren <<  tab.oceldas.sys!slot(:collceldas)[1].nren
+	col << tab.oceldas.sys!slot(:collceldas)[1].ncol
+	
+	_self.asigna_texto_celda(:tbl_5,ren,col,cable_no.write_string ,20, _unset)
+			
+	# ------------------------------------
+	# Tabla 6
+	# ------------------------------------
+	#w(:tabla6)
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_6]
+	
+	_for gpo _over range(1,num_de_grupos)
+	_loop
+		tubo_holg1 << gpo
+		tubo_holg2 << colores_fibra[gpo]
+		
+		_if tab.oceldas.sys!slot(:collceldas)[gpo] _isnt _unset 
+		_then
+			ren << tab.oceldas.sys!slot(:collceldas)[gpo].nren
+			col << tab.oceldas.sys!slot(:collceldas)[gpo].ncol					
+			_self.asigna_texto_celda(:tbl_6,ren,col,tubo_holg1.write_string + %newline + tubo_holg2.write_string ,20, _unset)
+
+		_endif
+	_endloop
+	
+	
+	# ------------------------------------
+	# Tabla 7
+	# ------------------------------------
+	#w(:tabla7)
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_7]
+	posicion << 0
+	_for fibra _over range(1,num_de_grupos)
+	_loop
+		_for f _over range(1,numero_fibras)
+		_loop
+			posicion +<<1
+			# llena la columna COLOR F.O.
+                       _if tab.oceldas.sys!slot(:collceldas)[posicion] _isnt _unset 
+		       _then
+			       ren << tab.oceldas.sys!slot(:collceldas)[posicion].nren
+			       col << tab.oceldas.sys!slot(:collceldas)[posicion].ncol					
+			       _self.asigna_texto_celda(:tbl_7,ren,col,colores_fibra[f] ,20, _unset)			       
+		       _endif
+		_endloop
+	_endloop
+	# ------------------------------------
+	# Tabla 8
+	# ------------------------------------
+	#w(:tabla8)
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_8]
+	_for fibra _over range(1,capacidad_cable)
+	_loop
+		# llena la columna FIBRA
+		_if tab.oceldas.sys!slot(:collceldas)[fibra] _isnt _unset 
+		_then
+			ren << tab.oceldas.sys!slot(:collceldas)[fibra].nren
+			col << tab.oceldas.sys!slot(:collceldas)[fibra].ncol					
+			_self.asigna_texto_celda(:tbl_8,ren,col,fibra.write_string ,20, _unset)	
+		_endif
+
+	_endloop
+	# ------------------------------------
+	# Tabla 9
+	# ------------------------------------
+	#w(:tabla9)
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_9]
+	creng << 0
+	_for g _over range(1,num_de_grupos)
+	_loop
+		_for f _over range(1,numero_fibras)
+		_loop
+			creng +<<1
+			# llena la columna FIBRA (por gpo)
+			_if tab.oceldas.sys!slot(:collceldas)[creng] _isnt _unset 
+			_then
+				ren << tab.oceldas.sys!slot(:collceldas)[creng].nren
+				col << tab.oceldas.sys!slot(:collceldas)[creng].ncol	
+				_self.asigna_texto_celda(:tbl_9,ren,col,f.write_string ,20, _unset)	
+			_endif
+
+		_endloop
+	_endloop
+	# ------------------------------------
+	# Tabla 10
+	# ------------------------------------
+	#w(:tabla10)
+	dtos << rope.new()
+	_for g _over range(1,num_de_grupos)
+	_loop
+		_for f _over range(1,numero_fibras)
+		_loop
+			posicion << 0
+
+                        LoOwner <<  fo.getgrupos()[g][:fibras][f][:fiber].fiber_owner_record
+                             			
+			_if  LoOwner _isnt _unset _andif   LoOwner.user!_distrito _isnt _unset 
+			_then
+				dtos.add( LoOwner.user!_distrito)
+			_else 
+				dtos.add("Reserva Gral")
+			_endif
+			
+		_endloop
+	_endloop
+	# llena la columna dto 
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_10]
+	_for fibra _over range(1,capacidad_cable)
+	_loop
+		_if tab.oceldas.sys!slot(:collceldas)[fibra] _isnt _unset 
+		_then
+			ren << tab.oceldas.sys!slot(:collceldas)[fibra].nren
+			col << tab.oceldas.sys!slot(:collceldas)[fibra].ncol	
+			_self.asigna_texto_celda(:tbl_10,ren,col,dtos[fibra] ,20, _unset)	
+			
+		_endif
+
+	_endloop
+	# ------------------------------------
+	# Tabla 11
+	# ------------------------------------
+	#w(:tabla11)
+	puertos << rope.new()
+	_for g _over range(1,num_de_grupos)
+	_loop
+		_for f _over range(1,numero_fibras)
+		_loop
+			LoOwner <<  fo.getgrupos()[g][:fibras][f][:fiber].fiber_owner_record
+
+			_if LoOwner _isnt _unset _andif LoOwner.user!_cuenta _isnt _unset 
+			_then
+				puertos.add(LoOwner.user!_cuenta)
+			_else 
+				puertos.add("-")
+			_endif
+		_endloop
+	_endloop
+	# llena la columna FIBRA CTL.
+	tab << _self.o_tablas.sys!slot(:colltablas)[:tbl_11]
+	_for fibra _over range(1,capacidad_cable)
+	_loop
+		_if tab.oceldas.sys!slot(:collceldas)[fibra] _isnt _unset 
+		_then
+			ren << tab.oceldas.sys!slot(:collceldas)[fibra].nren
+			col << tab.oceldas.sys!slot(:collceldas)[fibra].ncol	
+			_self.asigna_texto_celda(:tbl_11,ren,col,puertos[fibra].write_string ,20, _unset)	
+			
+
+			
+		_endif
+		
+	_endloop
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_equivalencias_x_cable.obten_datos()
+
+	# (10/04/16 ahernan) : Modified.Guardado de planos.
+	
+	_if _self.elementos_bd_gis _isnt _unset _andif _self.elementos_bd_gis.size > 0
+	_then
+		Locable << _self.obtener_elementos_bd_gis().nth_element(1)
+		Lorme   << _self.obtener_elementos_bd_gis().nth_element(2)
+	_else
+		
+		Locable << .LoCable
+		
+		l_elementos << rope.new_with(locable)
+		l_elementos.add(.LoRme)
+		_self.guardar_elementos_bd_gis(l_elementos)
+	_endif
+	
+	fo << c_cable_fo.new(Locable,_false)
+	_return (Locable, fo,LoRme )
+	
+_endmethod
+$

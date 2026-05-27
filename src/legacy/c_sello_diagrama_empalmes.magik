@@ -1,0 +1,291 @@
+_package user
+$
+def_slotted_exemplar(:c_sello_diagrama_empalmes,{
+                           {:oEngine,_unset,:writable,:private}
+		     }, :c_base_sello_fibra)
+$
+c_sello_diagrama_empalmes.define_pseudo_slot(:grafico,_unset,:writable,:public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.configura_tabla()
+
+	# Las medidas del sello son ajustables, dependiendo de las
+	# medidas del bounding_box con que es creado.
+	
+	# Calcular el multiplo en x
+	_local ln_division_x << ( _self.bounds.xmax - _self.bounds.xmin )/(6 * 10)
+
+	_if (empalmes << _self.total_empalmes()) > 0 _andif
+	     empalmes > 10
+	_then
+		ln_division_x << empalmes * 2
+		ln_division_x << ln_division_x + empalmes + 15
+	_else
+		ln_division_x << ln_division_x + empalmes + 15
+	_endif
+
+	# Calcular el multiplo en y
+	_local ln_division_y << ( _self.bounds.ymax - _self.bounds.ymin )/(3 * 10)
+
+	#-----------------------------------------------------------
+	#  Tabla para ubicar el DFO origen
+	#-----------------------------------------------------------
+
+	_local pl_tbl_dfo << property_list.new()
+
+	pl_tbl_dfo[:ren] << {7 * ln_division_y}
+	pl_tbl_dfo[:col] << {2 * ln_division_x}
+
+	lo_tabla << .o_tablas.crea_tabla(1, 1, :tbl_dfo_origen)
+
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+
+	lo_tabla.bdibuja_bordes? << _false
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_tbl_dfo)
+
+	#-----------------------------------------------------------
+	#  Tabla para ubicar el título y notas adicionales
+	#-----------------------------------------------------------
+
+        _local ln_desplaza_x << .o_tablas.longitud_total_columnas({:tbl_dfo_origen})
+	
+	_local pl_tbl_titulo_notas << property_list.new()
+
+	pl_tbl_titulo_notas[:ren] << {ln_division_y, (5.5 * ln_division_y), (0.5 * ln_division_y)}
+	pl_tbl_titulo_notas[:col] << {8 * ln_division_x}
+	pl_tbl_titulo_notas[:borde_inf] << rope.new_with({1,1},{2,1})
+
+	lo_tabla << .o_tablas.crea_tabla(3, 1, :tbl_titulo_notas)
+
+	lo_tabla.oCoordenada_Origen << coordinate.new( .o_coord_inicio.x + ln_desplaza_x,
+						       .o_coord_inicio.y)
+
+	lo_tabla.bdibuja_bordes? << _false
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_tbl_titulo_notas)
+	_self.oculta_bordes_celdas(lo_tabla, pl_tbl_titulo_notas)
+
+	#-----------------------------------------------------------
+	#  Tabla para ubicar el DFO destino
+	#-----------------------------------------------------------
+
+	ln_desplaza_x << .o_tablas.longitud_total_columnas({:tbl_dfo_origen,:tbl_titulo_notas})
+	
+	lo_tabla << .o_tablas.crea_tabla(1, 1, :tbl_dfo_destino)
+
+	lo_tabla.oCoordenada_Origen << coordinate.new( .o_coord_inicio.x + ln_desplaza_x,
+						       .o_coord_inicio.y)
+
+	lo_tabla.bdibuja_bordes? << _false
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_tbl_dfo)
+
+	#-----------------------------------------------------------
+	#  Tabla para dibujar la trayectoria
+	#-----------------------------------------------------------
+
+	_local ln_desplaza_y << .o_tablas.longitud_total_renglones({:tbl_dfo_origen})
+
+	_local pl_tbl_trayectoria << property_list.new()
+
+	pl_tbl_dfo[:ren] << {2 * ln_division_y}
+	pl_tbl_dfo[:col] << {ln_division_x, 10 * ln_division_x, ln_division_x}
+	pl_tbl_dfo[:borde_der] << rope.new_with({1,1},{1,2})
+	
+	lo_tabla << .o_tablas.crea_tabla(1, 3, :tbl_trayectoria)
+	lo_tabla.oCoordenada_Origen << coordinate.new( .o_coord_inicio.x,
+						       .o_coord_inicio.y - ln_desplaza_y)
+
+	lo_tabla.bdibuja_bordes? << _false
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_tbl_dfo)
+	_self.oculta_bordes_celdas(lo_tabla, pl_tbl_dfo)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.etiqueta_celdas()
+
+	_self.asigna_texto_celda(:tbl_titulo_notas,1,1,"DIAGRAMA GENERAL DE EMPALMES",70)
+	_self.asigna_texto_celda(:tbl_titulo_notas,2,1,"ET - EMPALME TERMINAL" +
+				   character.newline + "ER - EMPALME RECTO" +
+				   character.newline + "ED - EMPALME DE DERIVACION",40)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.getdistanciaruta()
+## Objetivo: Obtener la distancia de la ruta que contiene el
+## sello, se obtiene sumando las longitudes de todos los cables	
+## Autor: rraragon
+## Fecha: 24/11/2009
+_local LoLongitudZero << length_value.new(0.00,:m) # Longitud cero en Metros
+
+     LoDistancia << 0.00
+    _for ele _over .oEngine.elements()
+    _loop
+	    _if (LoObj << ele[:objeto]).is_kind_of?(sheath)
+	    _then
+		    _if (LoKmRealMedido << LoObj.user!_km_real_medido) _isnt _unset 
+		    _then
+			    LoDistancia + << LoKmRealMedido.convert_to(LoLongitudZero.unit).value
+		    _endif
+	    _endif
+    _endloop
+
+    _return LoDistancia	
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.guardar_elementos_bd_gis()
+	## 
+	## 
+_local 	l_elementos_bd << rope.new()
+	_for obj _over .oEngine.elements()
+	_loop
+		l_collection << obj[:objeto].source_collection.name
+		l_id << obj[:objeto].id
+		l_direccion << obj[:direccion]
+		l_ele << property_list.new()
+		l_ele[l_collection] << l_id
+		l_ele[:direccion] << l_direccion
+		l_elementos_bd.add_last(l_ele)
+	_endloop
+	
+	_self.elementos_bd_gis << l_elementos_bd
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.llena_datos_celdas()
+
+	# Asigna el símbolo asociado al enlace
+
+	LoValores << _self.obtener_datos()
+
+	_self.asigna_texto_celda(:tbl_titulo_notas,3,1,"LONGITUD : " +
+                                                  LoValores[:longitud],35)
+
+	.grafico << c_diagrama_empalmes_grafico.new(.oEngine)
+
+	.o_tablas.elemento(:tbl_trayectoria).oCeldas.celda(1,2).oElemento << .grafico
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.llena_datos_dinamicos()
+## Objetivo: llenar datos dinamicos de la tabla
+## Autor: rraragon
+## Fecha: 24/11/2009
+	
+        # Si ya hay grafico, asignar el engine
+	_if .grafico _isnt _unset 
+	_then
+		.grafico.setEngine << .oEngine
+	_else
+		_if .b_origen_xml
+		_then
+			.grafico << c_diagrama_empalmes_grafico.new(.oEngine)
+			.o_tablas.elemento(:tbl_trayectoria).oCeldas.celda(1,2).oElemento << .grafico
+		_endif
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.new_with(bb, ruta)
+	## 
+	##
+	_self.sys!slot(:oengine) << ruta
+	>> _super.new_with(:bounds, bb)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.obtener_datos()
+## Objetivo: Obtener datos para el sello
+## Parametros de Entrada: Ninguno.
+## Parametros de Salida:  Ninguno.
+## Regresa: LoValores << property_list
+## Fecha de la ultima modificacion: 26/09/08
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo Nuevo.
+
+    LoFormat << float_format.new(:float_precision, 2)    		
+    LoValores << property_list.new()
+    LoDistancia  << _self.getdistanciaruta()#.oEngine.getdistanciaruta(:empalmes)
+    LoDistancia  << LoFormat.format(LoDistancia).write_string.default("")
+    LoValores[:longitud] << LoDistancia + " Mts."
+
+    _return LoValores
+						
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.obtener_elementos_bd_gis()
+	## 
+	##
+	l_dataset << mit_manager.modelit_dataset
+	_if _self.elementos_bd_gis _isnt _unset _andif _self.elementos_bd_gis.size > 0
+	_then
+		.oEngine << rope.new()
+		_for an_obj _over _self.elementos_bd_gis.elements()
+		_loop
+			l_obj_diagrama << property_list.new()
+			_for a_key,ele _over an_obj.keys_and_elements()
+			_loop
+				_if a_key _isnt :direccion 
+				_then
+					_if (l_dato << l_dataset.collection(a_key).at(ele)) _isnt _unset 
+					_then
+						l_obj_diagrama[:objeto] << l_dato
+					_endif
+				_else
+					l_obj_diagrama[:direccion] << ele
+				_endif				
+			_endloop
+			.oEngine.add_last(l_obj_diagrama)
+		_endloop		
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.post_initialisation()
+## 
+##
+    _self.obtener_elementos_bd_gis()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.setEngine << Poengine
+	## 
+	##
+	.oEngine << PoEngine
+	_self.guardar_elementos_bd_gis()
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_diagrama_empalmes.total_empalmes()
+	## 
+	##
+	nempalmes << 0
+	
+	_if ( ruta << _self.sys!slot(:oengine)) _isnt _unset 
+	_then
+		_for el _over ruta.elements()
+		_loop
+			_if el[:objeto].is_kind_of?(splice_closure)
+			_then
+				nempalmes +<< 1
+			_endif
+		_endloop
+	_endif
+	
+	_return nempalmes 
+_endmethod
+$

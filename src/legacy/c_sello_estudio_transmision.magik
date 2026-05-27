@@ -1,0 +1,689 @@
+_package user
+$
+#remex(:c_sello_estudio_transmision)
+$
+def_slotted_exemplar(:c_sello_estudio_transmision,{
+
+		     { :oEngine, _unset, :writable, :private},
+		     {:pl_datos,            _unset,  :writable,  :private},
+		     {:oTipoEmpresaR,      _unset                        }, # catalogo para empresa que revisa
+		     {:valor_empreviso,    _unset                        } # Valor para empresa que revisa
+		     },:c_base_sello_fibra)
+$
+c_sello_estudio_transmision.define_pseudo_slot(:grafico,_unset,:writable,:public)
+$
+c_est_transmision_1_fibra.define_shared_constant(:allowed_on_menu?, _false    , :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.defined_attributes
+	## ---------------------------------------------------------------------
+	#  Define atributos que seran proporcionados por el usuario
+	## ---------------------------------------------------------------------
+
+	
+	_local attribs << rope.new_from(_super.defined_attributes)
+
+	# START CHANGE
+	# (2020-04-17 AHERNAN, Hitss) : 
+	#
+	attribs.add(layout_attribute_definition.new(:empreviso, :string,
+						    :description, "Empresa que revisa",	    
+                                                    :enum_method, :enum_tipo_empresar))
+	# END CHANGE
+	
+	attribs.add(layout_attribute_definition.new(:estudio_num,  :string,
+						    :description,  "Estudio Num"))
+	attribs.add(layout_attribute_definition.new(:notas,        :string,
+						    :description,  "Notas Adicionales",
+						    :editor, in_place_multi_line_editor,
+						    :default_value,"OBSERVACIONES: SE CONSIDERAN DOS CONECTORES POR CENTRAL"))
+
+	attribs.add(layout_attribute_definition.new(:vobo1, :string,:description, "VO BO 1",:default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:nombre1, :string,:description, "Nombre 1",:default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:firma1, :string,:description, "Firma 1",:default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:Fecha1, :string,:description, "Fecha 1",:default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:vobo2, :string,:description, "VO BO 2",:default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:nombre2, :string,:description, "Nombre 2",:default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:firma2, :string,:description, "Firma 2",:default_value, _unset ))
+	attribs.add(layout_attribute_definition.new(:Fecha2, :string,:description, "Fecha 2",:default_value, _unset ))
+
+		
+	attribs.add(layout_attribute_definition.new(:observaciones,:string,
+						    :description,  "Observaciones",
+						    :editor, in_place_multi_line_editor))
+
+	
+	>> attribs
+	
+_endmethod
+$
+c_sello_estudio_transmision.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.enum_tipo_empresar
+
+	.oTipoEmpresaR    << hash_table.new()
+	.oTipoEmpresaR[1] << "TELMEX"
+	.oTipoEmpresaR[2] << "ULTIMA_MILLA"
+	.oTipoEmpresaR[3] << "ULTIMA_MILLA_N"	
+	_return .oTipoEmpresaR
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.configura_tabla()
+
+	.col_tablas << property_list.new()
+	
+	_local largo  << (_self.bounds.xmax - _self.bounds.xmin) / 10
+	
+	# (25/10/02 des_aaron) : considerar agregar  nodos intermedios
+	# para una mejor distribucion,
+	
+	_if (empalmes << _self.total_empalmes()  ) > 0 _andif
+	    empalmes > 10
+	_then
+		largo  << (_self.bounds.xmax - _self.bounds.xmin)
+		largo << (largo * (empalmes / 100))
+		largo << largo + empalmes + 30
+	_else
+		largo << largo + empalmes + 30
+	_endif
+	
+	_local alto << ((_self.bounds.ymax - _self.bounds.ymin) / 10   ) 
+	
+	## ---------------------------------------------------------------
+	#  Tabla general 
+	## ---------------------------------------------------------------
+	
+
+	_local pl_cfg_general << property_list.new()
+	
+	pl_cfg_general[:ren] << {alto}
+	pl_cfg_general[:col] << {largo}
+	
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_general)
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_general)
+	
+	## ----------------------------------------------------------------
+	#  Tabla primera parte
+	## ----------------------------------------------------------------
+	
+	_local pl_cfg_primera_parte << property_list.new()
+	
+	pl_cfg_primera_parte[:ren] << {alto*0.2}
+	pl_cfg_primera_parte[:col] << {largo*0.3, largo*0.5, largo*0.2}
+	lo_tabla << .o_tablas.crea_tabla(1,3, :tbl_primera_parte)
+	lo_tabla.oCoordenada_origen << coordinate.new(.o_coord_inicio.x,
+						      .o_coord_inicio.y)
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_primera_parte)
+	
+	## ----------------------------------------------------------------
+	#  Tabla numero de estudio
+	## ----------------------------------------------------------------
+	
+	lo_coord << coordinate.new(.o_coord_inicio.x + largo*8,
+			           .o_coord_inicio.y - alto*2/2.3)
+	
+	lo_tabla << c_tbl_Linea_Horizontal.new(_self, lo_coord, 1 ,5, largo*0.2)
+	lo_tabla.columna(1).nlongitud << largo*0.1
+	lo_tabla.columna(2).nLongitud << largo*0.1
+	lo_tabla.celda(1,1).nTamanio  << 30
+	lo_tabla.celda(1,2).ntamanio  << 45
+	lo_tabla.celda(1,2).salineacion  << :centre_centre
+	lo_tabla.b_dibuja_bordes?     << _false
+	lo_tabla.dibuja_columnas_internas? << _false
+	.col_tablas[:tbl_estudio_num] << lo_tabla
+
+	## ----------------------------------------------------------------
+	#  Tabla segunda parte (nombre del tramo, numero de fibras,
+	# longitud enlace
+	## ----------------------------------------------------------------
+	
+	_local pl_cfg_segunda_parte << property_list.new()
+	
+	pl_cfg_segunda_parte[:ren]  << {alto*0.03, alto*0.03*2.5, alto*0.03, alto*0.3}
+	pl_cfg_segunda_parte[:col]  << {largo}
+	pl_cfg_segunda_parte[:borde_inf] << rope.new_with({1,1},{2,1},{3,1},{4,1})
+	
+	pl_cfg_segunda_parte[:borde_sup] << rope.new_with({1,1},{2,1},{3,1},{4,1})
+	
+	lo_tabla << .o_tablas.crea_tabla(4,1, :tbl_segunda_parte)
+	lo_tabla.oCoordenada_origen << coordinate.new(.o_coord_inicio.x,
+						      .o_coord_inicio.y - alto*2)
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_segunda_parte)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_segunda_parte)
+	
+	## ----------------------------------------------------------------
+	#  Tabla Tercera parte (Observaciones y notas)
+	## ----------------------------------------------------------------
+	
+	_local pl_cfg_tercera_parte << property_list.new()
+	
+	##pl_cfg_tercera_parte[:ren]  << {alto*0.03, alto*0.07, 4,4,4}
+	##pl_cfg_tercera_parte[:col]  <<  {largo*0.5, largo*0.5,   }     
+	
+	# (25/10/02 des_aaron) : se actualiza ancho de celdas (3-->4)
+	pl_cfg_tercera_parte[:ren]  << {4,4,4,4,4}
+	
+	# (25/10/02 des_aaron) : se definen porcentajes de ancho
+	anchot         << largo * 0.1
+	anchov         << largo * 0.15
+	
+	anchoespacio   << largo * 0.01
+	anchoobs       << largo * 0.49
+	
+	pl_cfg_tercera_parte[:col]  << {anchot ,anchov,anchot,anchov,anchoespacio, anchoobs }     
+
+	pl_cfg_tercera_parte[:borde_sup_inf] << rope.new_with({1,1},{1,2},{1,3},{1,4} , {2,1},{2,3} ,{3,1},{3,3},{4,1},{4,3},{1,5},{2,5},{3,5},{4,5},{1,6})
+	
+	pl_cfg_tercera_parte[:borde_der_izq] << rope.new_with({1,1},{1,2},{1,3},{1,4},{1,5},{2,5},{3,5},{4,5},{5,5} ,{2,2},{2,3},{2,4},{3,2},{3,3},{3,4} ,{4,2},{4,3},{4,4} ,{5,2},{5,3},{5,4})
+	
+	pl_cfg_tercera_parte[:borde_der] << rope.new_with({2,1},{3,1},{4,1},{5,1})
+	
+	
+	lo_tabla << .o_tablas.crea_tabla(5,6, :tbl_tercera_parte)
+	
+	# (25/10/02 des_aaron) : calcular acho de sello pral(1450 )
+	lo_tabla.oCoordenada_origen << coordinate.new(.o_coord_inicio.x,.o_coord_inicio.y - 1450)
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_tercera_parte)
+	_self.oculta_bordes_celdas(lo_tabla, pl_cfg_tercera_parte)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.etiqueta_celdas()
+	## --------------------------------------------------------------------------------
+	#  Etiqueta celdas 
+	## --------------------------------------------------------------------------------
+
+	_self.asigna_simbolo_celda(:tbl_primera_parte, 1,1, "logo_ultima_milla",5)
+	
+	_self.asigna_texto_celda(:tbl_primera_parte,   1,2, "ESTUDIO DE TRANSMISION F.O", 80, :centre_centre)
+		
+	.col_tablas[:tbl_estudio_num].asigna_etiquetas({" EST. NO."})
+
+	_self.asigna_texto_celda(:tbl_segunda_parte, 1,1, "Nombre del tramo", 35)
+	_self.asigna_texto_celda(:tbl_segunda_parte, 2,1, "Numero de fibras y tipo", 35)
+	_self.asigna_texto_celda(:tbl_segunda_parte, 3,1, "LONGITUD TOTAL DEL ENLACE: ",35)
+
+	# (25/10/02 des_aaron) : se agregan celdas faltantes
+	
+	_self.asigna_texto_celda(:tbl_tercera_parte, 1,1,  "OBSERVACIONES: SE CONSIDERAN DOS CONECTORES POR CENTRAL", 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 2,1,  "Vo. Bo.:", 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 3,1,  "NOMBRE:", 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 4,1,  "FIRMA:", 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 5,1,  "FECHA", 35, :centre_left, 1)
+
+	_self.asigna_texto_celda(:tbl_tercera_parte, 2,3,  "Vo. Bo.:", 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 3,3,  "NOMBRE:", 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 4,3,  "FIRMA:", 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 5,3,  "FECHA", 35, :centre_left, 1)
+	
+	_self.asigna_texto_celda(:tbl_tercera_parte, 2,6,  "OBSERVACIONES", 35, :centre_left, 1)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.getcablesalida()
+## Objetivo: Obtener el cable de salida de la ruta que contiene
+## el sello
+## Autor: rraragon
+## Fecha: 24/11/2009	
+
+    _for ele _over .oEngine.elements()
+    _loop
+	    _if (LoObj << ele[:objeto]).is_kind_of?(sheath)
+	    _then
+		    l_cab << LoObj
+		    _leave 
+	    _endif
+    _endloop
+
+    _return l_cab
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.getcablessalida()
+## Objetivo: Obtener el cable de salida de la ruta que contiene
+## el sello
+## Autor: rbsaldan
+## Fecha: 14/04/2015	
+
+_local txtCables
+_local nLines
+_local nCharsXLine
+_local cSeparator
+       txtCables<<_unset
+       nLines<<1
+       nCharsXLine<<120
+       _for ele _over .oEngine.elements()
+       _loop
+	       _if (LoObj << ele[:objeto]).is_kind_of?(sheath)
+	       _then
+		       _if txtCables _is _unset
+		       _then
+			       txtCables<<LoObj.spec_id.write_string
+		       _else
+			       _if txtCables.index_of_seq(LoObj.spec_id.write_string) _isnt _unset
+			       _then
+				       _continue
+			       _else
+				       _if txtCables.size>nCharsXLine*nLines
+				       _then
+					       cSeparator<<%newline
+					       nLines<<nLines+1
+				       _else
+					       cSeparator<<" | "
+				       _endif
+				       txtCables<<txtCables+cSeparator+LoObj.spec_id.write_string	
+			       _endif
+			       
+		       _endif
+	       _endif
+       _endloop
+ 
+    _return txtCables
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.getdistanciaruta()
+	## Objetivo: Obtener la distancia de la ruta que contiene el
+	## sello, se obtiene sumando las longitudes de todos los cables	
+	## Autor: rraragon
+	## Fecha: 24/11/2009
+	
+	LoDistancia << 0.00
+	
+	_for ele _over .oEngine.elements()
+	_loop
+		_if (LoObj << ele[:objeto]).is_kind_of?(sheath)
+		_then
+			# (25/10/02 des_aaron) : se determina el campo 
+			_if (LoKm << LoObj.user!_km_real_medido) _isnt _unset 
+			_then
+				LoDistancia + << LoKm.value
+			_endif
+		_endif
+	_endloop
+	
+	
+	_return LoDistancia
+	
+_endmethod
+$
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.getEngine
+## 
+##
+	_return .oEngine
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.guardar_elementos_bd_gis()
+	## 
+	## 
+_local 	l_elementos_bd << rope.new()
+	_for obj _over .oEngine.elements()
+	_loop
+		l_collection << obj[:objeto].source_collection.name
+		l_id << obj[:objeto].id
+		l_direccion << obj[:direccion]
+		l_ele << property_list.new()
+		l_ele[l_collection] << l_id
+		l_ele[:direccion] << l_direccion
+		l_elementos_bd.add_last(l_ele)
+	_endloop
+	
+	_self.elementos_bd_gis << l_elementos_bd
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.llena_datos_celdas()
+	## -----------------------------------------------------------------------
+	#  Llena celdas con datos del sistema
+	## -----------------------------------------------------------------------
+	_try  _with LoError
+
+	      _if ( _self.attributes[:empreviso] _isnt _unset _andif
+		    _self.attributes[:empreviso].value) _isnt  _unset _andif
+		  _self.attributes[:empreviso].value.size > 0
+	      _then		
+		      .valor_empreviso << "logo_" +  _self.attributes[:empreviso].value.write_string.uppercase
+		      
+		      _if .valor_empreviso.uppercase.matches?("*TELMEX*")
+		      _then
+			      .valor_empreviso << 	.valor_empreviso + "_EP"
+		      _endif
+		      
+		      _self.asigna_simbolo_celda(:tbl_primera_parte,1,1, .valor_empreviso,5)
+		      
+	      _else
+		      _self.asigna_simbolo_celda(:tbl_primera_parte,1,1,"logo_ultima_milla",5)		      
+	      _endif
+
+	LoValores << _self.obtener_datos()
+	LoValores << _self.info_sello_propiedades(LoValores)
+
+
+	_self.asigna_texto_celda(:tbl_segunda_parte, 1,1, LoValores[:enlace],  25)
+	_self.asigna_texto_celda(:tbl_segunda_parte, 2,1, LoValores[:cable],    25)
+	_self.asigna_texto_celda(:tbl_segunda_parte, 3,1, LoValores[:longitud],30)
+
+	_self.asigna_texto_celda(:tbl_tercera_parte, 2,2, LoValores[:vobo1], 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 3,2, LoValores[:nombre1], 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 4,2, LoValores[:firma1], 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 5,2, LoValores[:fecha1], 35, :centre_left, 1)
+
+	_self.asigna_texto_celda(:tbl_tercera_parte, 2,4, LoValores[:vobo2], 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 3,4, LoValores[:nombre2], 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 4,4, LoValores[:firma2], 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 5,4, LoValores[:fecha2], 35, :centre_left, 1)
+
+	#####################################################################################################
+	_self.asigna_texto_celda(:tbl_tercera_parte, 3,6, LoValores[:observaciones], 35, :centre_left, 1)
+	_self.asigna_texto_celda(:tbl_tercera_parte, 1,1, LoValores[:notas], 35, :centre_left, 1)	
+
+	# Asigna el gráfico
+	.grafico << c_estudio_transmision_grafico.new(_self.getEngine)
+	.o_tablas.elemento(:tbl_segunda_parte).oCeldas.celda(4,1).oElemento << .grafico
+	      
+	_when error 
+	      write(LoError.write_string)
+	_endtry
+			
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.llena_datos_dinamicos()
+#-----------------------
+	#  Llena celdas con datos del usuario
+	## ----------------------------------------------------------------------
+
+	.col_tablas[:tbl_estudio_num].asigna_valores({_self.estudio_num})
+	_if .grafico _isnt _unset 
+	_then
+		.grafico.setEngine << _self.getEngine
+	_else
+		_if .b_origen_xml
+		_then
+			.grafico << c_estudio_transmision_grafico.new(_self.getEngine)
+			.o_tablas.elemento(:tbl_segunda_parte).oCeldas.celda(4,1).oElemento << .grafico
+		_endif
+	_endif	
+
+	#(19/11/14 bautistaja): Verificamos si se ingresaron
+	# observaciones o notas para determinar el largo de la tabla,
+	# para el sello estudio de transmision
+	# Start change
+#	_if (_self.observaciones _isnt _unset _andif
+#	     _self.observaciones.trim_spaces() <> "" ) _orif 
+#	    (_self.notas _isnt _unset _andif
+#	     _self.notas.trim_spaces() <> "" )
+#	_then
+#		_if _self.observaciones _is _unset 
+#		_then
+#			_self.observaciones << ""
+#		_elif _self.notas _is _unset 
+#		_then
+#			_self.notas << ""
+#		_endif
+#		
+#		_if _self.observaciones.occurrences_of(%newline) < _self.notas.occurrences_of(%newline)
+#		_then
+#			_self.tamanio_tbl_observaciones()
+#			_self.tamanio_tbl_notas()
+#		_else
+#			_self.tamanio_tbl_notas()
+#			_self.tamanio_tbl_observaciones()
+#		_endif
+#	_else
+#		_self.observaciones << _unset
+#		_self.notas << _unset 
+#		_self.o_tablas.elemento(:tbl_tercera_parte).orenglones.elemento(2).nlongitud << 5.5
+#	_endif
+	# End change
+	
+	##_self.asigna_texto_celda(:tbl_tercera_parte, 2,1, _self.observaciones, 30)
+	##_self.asigna_texto_celda(:tbl_tercera_parte, 2,2, _self.notas,         30)
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.new_with(bb1, ruta)
+	## 
+	## 
+	_self.sys!slot(:oengine) << ruta
+	>> _super.new_with(:bounds, bb1)
+_endmethod
+$
+
+_method c_sello_estudio_transmision.obtener_datos()
+	## Objetivo: Obtener datos para el sello
+	## Parametros de Entrada: Ninguno.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: LoValores << property_list
+	## Fecha de la ultima modificacion: 26/09/08
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo Nuevo.
+	
+	_local LoFormat << float_format.new(:float_precision, 3)
+	
+	_local LoValores << property_list.new()
+	_local LoEnlace << ""
+	
+	_if swg_dsn_admin_engine.active_scheme _isnt _unset 
+	_then
+		LoEnlace << swg_dsn_admin_engine.active_scheme.project.name
+	_endif
+	
+	LoDistancia  << _self.getdistanciaruta()
+	LoDistancia  << LoFormat.format(LoDistancia).write_string.default("")   
+	
+	LoValores[:enlace] << LoEnlace
+	LoValores[:cable] << _self.getcablessalida()
+	# (25/10/02 des_aaron) : se actualiza etiqueta de Mts a km
+	LoValores[:longitud] << LoDistancia + " km"
+
+
+	LoValores[:vobo1] << ""
+	LoValores[:nombre1] << ""
+	LoValores[:firma1] << ""
+	LoValores[:fecha1] << ""
+
+	LoValores[:vobo2] << ""
+	LoValores[:nombre2] << ""
+	LoValores[:firma2] << ""
+	LoValores[:fecha2] << ""
+
+	LoValores[:observaciones] << ""
+	LoValores[:notas] << "OBSERVACIONES: SE CONSIDERAN DOS CONECTORES POR CENTRAL"
+	
+	_return LoValores
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.obtener_elementos_bd_gis()
+	## 
+	##
+	l_dataset << mit_manager.modelit_dataset
+	_if _self.elementos_bd_gis _isnt _unset _andif _self.elementos_bd_gis.size > 0
+	_then
+		.oEngine << rope.new()
+		_for an_obj _over _self.elementos_bd_gis.elements()
+		_loop
+			l_obj_diagrama << property_list.new()
+			_for a_key,ele _over an_obj.keys_and_elements()
+			_loop
+				_if a_key _isnt :direccion 
+				_then
+					_if (l_dato << l_dataset.collection(a_key).at(ele)) _isnt _unset 
+					_then
+						l_obj_diagrama[:objeto] << l_dato
+					_endif
+				_else
+					l_obj_diagrama[:direccion] << ele
+				_endif				
+			_endloop
+			.oEngine.add_last(l_obj_diagrama)
+		_endloop		
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.post_initialisation()
+## 
+##
+	_self.obtener_elementos_bd_gis()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.setEngine << Poengine
+	## 
+	##
+	.oEngine << PoEngine	
+	_self.guardar_elementos_bd_gis()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.tamanio_tbl_notas()
+	## Calcular el largo de la tabla tbl_tercera_parte
+	## correspondiente a las observaciones y notas del sello
+	## estudio de transmision
+	## (19/11/14 bautistaja)
+	## Metodo nuevo
+        ## (19/01/15 bautistaja):Se calcula el tamaño de la tabla en
+	## base al numero de saltos de linea en el texto
+	tamanio << _self.notas.occurrences_of(%newline)
+	_if _self.notas.occurrences_of(%newline) = 0
+	_then
+		obs << %newline + %newline + _self.notas
+		_self.notas << obs
+		tamanio +<< 15
+	_elif _self.notas.occurrences_of(%newline) > 0
+	_then
+		_if _self.notas[1] <> %newline
+		_then
+			obs << %newline + %newline + _self.notas
+			_self.notas << obs
+		_endif
+		tamanio +<< 5
+		tamanio +<< _self.notas.occurrences_of(%newline)
+		tamanio << tamanio*2
+	_endif
+	_self.o_tablas.elemento(:tbl_tercera_parte).orenglones.elemento(2).nlongitud << tamanio
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.tamanio_tbl_observaciones()
+	## Calcular el largo de la tabla tbl_tercera_parte
+	## correspondiente a las observaciones y notas del sello
+	## estudio de transmision
+	## (19/11/14 bautistaja)
+	## Metodo nuevo
+	## (19/01/15 bautistaja):Se calcula el tamaño de la tabla en
+	## base al numero de saltos de linea en el texto
+	tamanio << _self.observaciones.occurrences_of(%newline)
+	_if _self.observaciones.occurrences_of(%newline) = 0
+	_then
+		obs << %newline + %newline + _self.observaciones
+		_self.observaciones << obs
+		tamanio +<< 15
+	_elif _self.observaciones.occurrences_of(%newline) > 0
+	_then
+		_if _self.observaciones[1] <> %newline
+		_then
+			obs << %newline + %newline + _self.observaciones
+			_self.observaciones << obs
+		_endif
+		tamanio +<< 5
+		tamanio +<< _self.observaciones.occurrences_of(%newline)
+		tamanio << tamanio*2
+	_endif
+	_self.o_tablas.elemento(:tbl_tercera_parte).orenglones.elemento(2).nlongitud << tamanio
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.total_empalmes()
+	## 
+	## 
+	nempalmes << 0
+	_if ( ruta << _self.sys!slot(:oengine)) _isnt _unset 
+	_then
+		_for el _over ruta.elements()
+		_loop
+			_if el[:objeto].is_kind_of?(splice_closure)
+			_then
+				nempalmes +<< 1
+			_endif
+		_endloop
+	_endif
+	
+	_return nempalmes 
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_estudio_transmision.valor_propiedad(Propiedad, dato_actual)
+
+	LoPropiedad << ""
+
+	_if dato_actual _is _unset 
+	_then
+		dato_actual << ""	
+	_endif
+
+	_if _self.attributes[Propiedad]  _isnt _unset  _andif
+	    _self.attributes[Propiedad].value _isnt _unset _andif
+	    _self.attributes[Propiedad].value.size > 0
+	_then
+	
+		LoPropiedad << _self.attributes[Propiedad].value.write_string
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+		
+_endmethod
+
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_estudio_transmision.info_sello_propiedades(lo_valores)
+
+	lo_valores[:vobo1]     <<  _self.valor_propiedad(:vobo1,             Lo_valores[:vobo1])
+	lo_valores[:nombre1]   <<  _self.valor_propiedad(:nombre1,           Lo_valores[:nombre1])
+	lo_valores[:firma1]    <<  _self.valor_propiedad(:firma1,            Lo_valores[:firma1])
+	lo_valores[:fecha1]    <<  _self.valor_propiedad(:fecha1,            Lo_valores[:fecha1])	
+	lo_valores[:vobo2]     <<  _self.valor_propiedad(:vobo2,             Lo_valores[:vobo2])
+	lo_valores[:nombre2]   <<  _self.valor_propiedad(:nombre2,           Lo_valores[:nombre2])
+	lo_valores[:firma2]    <<  _self.valor_propiedad(:firma2,            Lo_valores[:firma2])
+	lo_valores[:fecha2]    <<  _self.valor_propiedad(:fecha2,            Lo_valores[:fecha2])
+	lo_valores[:observaciones]    <<  _self.valor_propiedad(:observaciones,     Lo_valores[:observaciones])
+	lo_valores[:notas]    <<  _self.valor_propiedad(:notas,     Lo_valores[:notas])			
+	
+	_return lo_valores
+	
+_endmethod
+$

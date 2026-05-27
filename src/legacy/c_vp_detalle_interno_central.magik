@@ -1,0 +1,203 @@
+_package user
+$
+def_slotted_exemplar(:c_vp_detalle_interno_central,
+		     {
+			     {:oResulSet,     _unset, :writable, :public}			     
+		     },
+                      :viewport_layout)
+$
+c_vp_detalle_interno_central.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+c_vp_detalle_interno_central.define_shared_constant(:tamanio,7,:public)
+$
+c_vp_detalle_interno_central.define_shared_variable(:titulo,
+					     "",
+					     :public)
+$
+c_vp_detalle_interno_central.define_shared_variable(:window, _unset, :public)
+$
+c_vp_detalle_interno_central.define_attributes()
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method c_vp_detalle_interno_central.actualiza_datos()
+	## 
+	##	
+	LoEmpalmeCWDM         <<  _self.obtenerEmpalmesConCWDMs().an_element() 	
+	LoMapManager          << _self.layout_document.sys!slot(:map_manager)
+	LoApplicationManager  << LoMapManager.application.manager
+	
+	_if LoEmpalmeCWDM _isnt _unset 
+	_then	 
+		LoApplicationManager.goto_context(LoEmpalmeCWDM, :internal)	    
+		LoMapView            << _self.layout_document.sys!slot(:map_manager).current_map_view
+		LoLayoutPlugin       << smallworld_product.pni_application().plugin(:layout_plugin)
+		LoLayoutDesigner     << LoLayoutPlugin.layout_designer    #start_layout_designer()	     
+		LoLayoutManager      << LoLayoutDesigner.plugin(:layout_manager)
+		LoViewMapperPlugin   << LoLayoutDesigner.plugin(:viewport_mapper)
+		
+		LoBounds             << bounding_box.new(LoMapView.current_view_bounds.xmin, # - 300,
+							 LoMapView.current_view_bounds.ymin,
+							 LoMapView.current_view_bounds.xmax, # + 300,
+							 LoMapView.current_view_bounds.ymax)		
+		LoViewMapperPlugin.map_viewport_on_map_view(_self, LoMapView, LoBounds,_true)
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_detalle_interno_central.agregar_titulo(PoPage)
+## Objetivo: Agregar el titulo del viewport
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+    _local LoBounds << bounding_box.new(_self.bounds.xmin,
+				  _self.bounds.ymin - 100,
+				  _self.bounds.xmax ,
+				  _self.bounds.ymin - 300)
+				  
+    LoTitulo << _self.titulo
+    LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBounds,
+					   :font_name,        "bold",
+					   :font_size,        _self.tamanio,
+					   :fill_style,       _unset,
+					   :outline_style,    _unset,
+					   :text,             LoTitulo,
+					   :wrap,             _false,
+					   :align_horizontal, :centre,
+					   :align_vertical,   :centre,
+					   :orientation,      :left_right)
+    PoPage.add_element(LoTitulo)
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_detalle_interno_central.draw_content_on(windows)
+
+	# (23/10/11 des_aaron) : se corrige los textos de los detalles
+	# de central (titulo)
+
+	_local LoSize            << 210 
+	_local fontSize        <<  10
+	_local justificaciontxt << :bottom_centre	
+	_local LoFontBold   << font.new_with_properties(:type,:logical,:name,"Arial" ,:point_size,LoSize ,:orientation,:left_right)
+	_local LoTextStyle  << text_style.new_with_properties(:colour,colour.called(:black),:font,LoFontBold,  :underline?, _true)
+	
+	_super.draw_content_on(windows)
+	
+	_if _self.name _isnt _unset 
+	_then
+		LoTitulo << _self.name.uppercase	
+		LoTitulo << LoTitulo.split_by(%newline)
+		
+		Lodesplazamiento << 120
+
+        LoCoordY <<   _self.bounds.ymin
+
+       _for k  _over LoTitulo.elements()
+       _loop
+	       LoCoordY << LoCoordY - Lodesplazamiento
+	       
+	       LoCoordX << _self.bounds.centre.x
+	       
+	      Windows.draw_vtext_transform(LoTextStyle, LoCoordX,LoCoordY ,k, _unset, _unset, FontSize,0,justificaciontxt, _true  , _false   )
+	       
+       _endloop
+       	 		
+_endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_detalle_interno_central.geometry_set_for_render
+## Objetivo: Obtener la geometrias de la localizacion del TBA
+## Parametros de salida: Ninguno
+## Regresa: .oResulSet << composite_geometry_set
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+	
+_local LcollGeometrias  # Geometrias que deben dibujarse en el viewport.
+
+        # Obtener los objetos correspondientes al plano.
+        _dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset
+
+	LcollGeometrias << _super.geometry_set_for_render
+
+	.oResulSet << LcollGeometrias
+
+	>> .oResulSet
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_detalle_interno_central.initialise_for_page(a_layout_page)
+	## Objetivo: Agregar el ACE y grupo de estilos a self
+	
+	_if _self.name _isnt _unset 
+	_then	
+		_if _self.name.lowercase.matches?("*isometrico*")
+		_then
+			_self.ace_name << :isometrico
+			_self.display_style << "Auto" 
+			
+		_elif _self.name.lowercase.matches?("*vista frontal*") 
+		_then 
+			_self.ace_name << :vista_frontal
+			_self.display_style << "Auto"
+		_elif _self.name.lowercase.matches?("*vista de planta*")
+		_then
+			_self.ace_name << :vista_de_planta
+			_self.display_style << "Auto"
+		
+		_elif _self.name.lowercase.matches?("*cwdm")
+		_then
+			_self.ace_name << :splice_closure_view
+		_self.display_style << "Auto" 		
+		_self.view_scale <<  12500 
+		_else
+		_self.ace_name << :mit_floor_internal
+	_endif
+_else
+	_self.ace_name << :mit_floor_internal
+_endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, topic={plugins})
+_method c_vp_detalle_interno_central.obtenerEmpalmesConCWDMs()
+	## 
+	## (16/11/17 rhernan) : 
+       loCurrentMap_View << smallworld_product.pni_application().plugin(:map_plugin).current_map_view
+       lista << loCurrentMap_View.get_visible_geometry_set().rwo_set()			      
+       lista_geoms << equality_set.new()
+       lista_CWDMs << equality_set.new()
+       
+       _for i _over lista.elements()
+       _loop
+	       _if i.rwo_type _is :splice_closure_geoms
+	       _then 
+		       lista_geoms.add(i)   
+	       _endif 
+       _endloop       
+       
+      _for loEmpalmeGeom _over lista_geoms.elements() 
+      _loop	      
+	   _if loEmpalmeGeom _isnt _unset _andif
+	       loEmpalmeGeom.owner _isnt _unset _andif
+	       loEmpalmeGeom.owner.rwo_type _is :splice_closure _andif 
+	       loEmpalmeGeom.owner.user!_marc_cierre_emp = "FIST" _andif
+	       loEmpalmeGeom.owner.spec_id = "CIERRE FIST" 
+	   _then
+		  lista_CWDMs.add(loEmpalmeGeom.owner)
+	   _endif
+      _endloop
+
+      _return lista_CWDMs       
+       
+_endmethod
+$

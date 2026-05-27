@@ -130,6 +130,37 @@
 - src/legacy/c_pep.magik
 - src/legacy/layout_plugin.magik
 - src/legacy/c_lista_materiales_cables.magik
+- src/legacy/c_arbol_tba.magik
+- src/legacy/c_plano_esquematico_de_principales.magik
+- src/legacy/c_plano_esquematico_de_principales_acometida.magik
+- src/legacy/c_plano_esquematico_de_principales_fal.magik
+- src/legacy/c_plano_esquematico_de_principales_ftth.magik
+- src/legacy/c_plano_esquematico_de_principales_rof.magik
+- src/legacy/c_plano_montaje_tba.magik
+- src/legacy/c_factory_detalles.magik
+- src/legacy/c_plano_topologico_rof.magik
+- src/legacy/c_resumen_distritos_ruta.magik
+- src/legacy/c_resumen_proyecto_red.magik
+- src/legacy/c_secuencia_trabajo.magik
+- src/legacy/c_secuencia_trabajo_rof.magik ✓
+- src/legacy/c_sello2_estudio_transmision.magik ✓
+- src/legacy/c_sello3_estudio_transmision.magik ✓
+- src/legacy/c_sello_diagrama_empalmes.magik ✓
+- src/legacy/c_sello_estandar_base_fo.magik ✓
+- src/legacy/c_sello_estandar_base_fo_acometida.magik ✓
+- src/legacy/c_sello_estudio_transmision.magik ✓
+- src/legacy/c_sello_generico.magik ✓
+- src/legacy/c_sello_ruta_cables_fo.magik ✓
+- src/legacy/c_sello_ruta_cables_fo_sigp.magik ✓
+- src/legacy/c_tabla_capacidades.magik ✓
+- src/legacy/c_tabla_equivalencias.magik ✓
+- src/legacy/c_tabla_equivalencias_x_cable.magik ✓
+- src/legacy/c_tabla_ps_telealim.magik ✓
+- src/legacy/c_trace_ruta_cables.magik ✓
+- src/legacy/c_vp_detalle_interno_central.magik ✓
+- src/legacy/c_vp_localizacion_central.magik ✓
+- src/legacy/c_vp_localizacion_tba.magik ✓
+- src/legacy/c_vp_ruta_de_cables_fo.magik ✓
 
 ## Pendientes
 - src/legacy/c_placa_identificacion_falc.magik

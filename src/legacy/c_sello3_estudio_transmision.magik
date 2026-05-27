@@ -1,0 +1,112 @@
+_package user
+$
+def_slotted_exemplar(:c_sello3_estudio_transmision,
+                     {}, :c_base_sello_fibra)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello3_estudio_transmision.configura_tabla()
+	## 
+	##
+	.col_tablas << property_list.new()
+
+	_local pl_cfg_tabla_unica << property_list.new()
+
+	pl_cfg_tabla_unica[:ren] << {3,3,3,3,3,3,3,3,3,3}
+	pl_cfg_tabla_unica[:col] << {65,25}
+
+	lo_tabla << .o_tablas.crea_tabla(10,2,:tbl_tabla_unica)
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_tabla_unica, 0.7)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello3_estudio_transmision.defined_attributes
+
+	
+	_local attribs <<  rope.new_from(_super.defined_attributes)
+
+	attribs.add(layout_attribute_definition.new(:potencia,        :float,
+ 					            :description,     "Potencia de salida del emisor",
+						    :default_value,    0.0))
+	attribs.add(layout_attribute_definition.new(:sensibilidad,    :float,
+						    :description,     "Sensibilidad receptor",
+    					            :default_value,    0.0))
+	attribs.add(layout_attribute_definition.new(:max_potencia,    :float,
+						    :description,     "Maxima potencia permisible",
+						    :default_value,    0.0))
+	attribs.add(layout_attribute_definition.new(:atenuacion_cable,:float,
+						    :description,     "Atenuacion permisible cable",
+						    :default_value,    0.0))
+	attribs.add(layout_attribute_definition.new(:atenuacion_en_fibra,:float,
+						    :description,     "Atenuacion en la fibra",
+						    :default_value,    0.0))
+	attribs.add(layout_attribute_definition.new(:perdida_por_empalmes,:float,
+						    :description,     "Perdida por empalmes",
+						    :default_value,    0.0))
+	attribs.add(layout_attribute_definition.new(:perdida_por_conectores,:float,
+						    :description,     "Perdida por conectores",
+						    :default_value,    0.0))
+	attribs.add(layout_attribute_definition.new(:margen_respaldo,:float,
+						    :description,     "Margen de respaldo",
+						    :default_value,    0.0))
+
+	>> attribs
+	
+_endmethod
+$
+c_sello3_estudio_transmision.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello3_estudio_transmision.etiqueta_celdas()
+	## -------------------------------------------------------
+	#  Etiqueta celdas
+	## -------------------------------------------------------
+
+	_self.asigna_texto_celda(:tbl_tabla_unica, 1,1, "POTENCIA DE SALIDA DEL EMISOR",        18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 2,1, "SENSIBILIDAD DEL RECEPTOR",            18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 3,1, "MAXIMA POTENCIA DE ENTRADA PERMISIBLE",18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 4,1, "ATENUACION PERMISIBLE EN EL CABLE",    18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 5,1, "ATENUACION EN LA FIBRA",               18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 6,1, "PERDIDA POR EMPALMES",                 18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 7,1, "PERDIDA POR CONECTORES",               18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 8,1, "MARGEN DE RESPALDO PARA MANTENIMIENTO",18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 9,1, "ATENUACION TOTAL",                     18, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 10,1,"MARGEN RESERVA ADICIONAL",             18, :top_left, 1)	
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello3_estudio_transmision.llena_datos_celdas()
+	## --------------------------------------------------------------------------
+	#  Llena celdas con datos del sistema
+	## --------------------------------------------------------------------------
+
+	_self.asigna_texto_celda(:tbl_tabla_unica, 5,2, _self.atenuacion_en_fibra,  18)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 6,2, _self.perdida_por_empalmes,  18)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 7,2, _self.perdida_por_conectores,18)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 8,2, _self.margen_respaldo,   18)
+	l_atenuacion << _self.atenuacion_en_fibra.default(0.0) +
+			_self.perdida_por_empalmes.default(0.0)+
+			_self.perdida_por_conectores.default(0.0)
+	l_margen_res << _self.margen_respaldo.default(0.0)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 9,2, l_atenuacion,  18)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 10,2,l_margen_res,    18)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello3_estudio_transmision.llena_datos_dinamicos()
+	## -----------------------------------------------------------------
+	#  Llena celdas con datos del usuario
+	## -----------------------------------------------------------------
+	
+	_self.asigna_texto_celda(:tbl_tabla_unica, 1,2, _self.potencia, 18)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 2,2, _self.sensibilidad, 18)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 3,2, _self.max_potencia, 18)
+	_self.asigna_texto_celda(:tbl_tabla_unica, 4,2, _self.atenuacion_cable, 18)
+	
+_endmethod
+$

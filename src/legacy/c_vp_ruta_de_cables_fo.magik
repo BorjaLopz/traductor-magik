@@ -1,0 +1,1024 @@
+_package user
+$
+def_slotted_exemplar(:c_vp_ruta_de_cables_fo,
+		     {
+			     {:oBuffer,       _unset, :writable, :public},
+			     {:oEstructuras,  _unset, :writable, :public},
+			     {:oCanalizacion, _unset, :writable, :public},
+			     {:oElementos,    _unset, :writable, :public},
+			     {:oWindows,      _unset, :writable, :public},
+			     {:oMarco,        _unset, :writable, :public},
+			     {:barra,    _unset,:writable, :public},
+			     {:oResulSet,     _unset, :writable, :public}
+		     },
+                      :viewport_layout)
+$
+c_vp_ruta_de_cables_fo.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+c_vp_ruta_de_cables_fo.define_shared_constant(:alto, 3, :public)
+$
+c_vp_ruta_de_cables_fo.define_shared_constant(:Largo, 6, :public)
+$ 
+c_vp_ruta_de_cables_fo.define_shared_constant(:LoGeom,
+					      property_list.new_with(
+					      :splice_closure,{:user!_posicion_interna,:anotacion_sigc,:anotacion_sigc_2},
+					      :figure_eight,{:user!_detalle},
+					      :structure_annotation,{:user!_linea},
+					      :user!_tba_anotacion,{:user!_ubicacion},
+					      :user!_anotacion_reserva_fo,{:location},
+					      :user!_empalme_distribucion, {:location}
+							    ),_false)
+$
+c_vp_ruta_de_cables_fo.define_shared_constant(:LoGeomTxt,
+					      property_list.new_with(
+					      :building, {:annotation_1} ,
+				              :underground_route,{:annotation_1},
+					      :uub,{:anotacion_tipo_pozo,:anotation_num_pozo },
+					      :aerial_route,{:annotation_1},
+					      :structure_annotation,{:user!_anotacion},
+					      :user!_crucero, {:anotacion1},
+					      :user!_empalme_distribucion, {:user!_anotacion},
+					      :user!_anotacion_reserva_fo, {:user!_anotacion},   
+					      :figure_eight              , {:user!_eti_longitud,:user!_gaza_eti }), _false) 
+$
+c_vp_ruta_de_cables_fo.define_shared_constant(:longitud_default,10000,_false)
+$
+c_vp_ruta_de_cables_fo.define_shared_constant(:mes_anno,
+					      rope.new_with({1,"ENERO"}, {2,"FEBRERO"}, {3,"MARZO"},
+							    {4,"ABRIL"}, {5,"MAYO"},{6,"JUNIO"},
+							    {7,"JULIO"}, {8,"AGOSTO"},{9,"SEPTIEMBRE"},
+							    {10,"OCTUBRE"}, {11,"NOVIEMBRE"},{12,"DICIEMBRE"}),
+					      :public)
+$
+# (23/04/12 des_aaron) : add.
+c_vp_ruta_de_cables_fo.define_shared_variable(:data_vp_copy,_unset,:public )
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.init_with(properties)
+## 
+##
+	_super.init_with(properties)
+
+	>> _self 
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.initialise_for_page(a_layout_page)
+	## Objetivo: Agregar el ACE y grupo de estilos a self
+	## Parametros de entrada: a_layout_page << layout_page.
+	## Parametros de salida: Ninguno
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:18/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo 
+	
+	# (2012-07-19 AHERNAN, HILDEBRANDO) :  se actualiza la
+	# inicializacion al ace de planos.
+	
+	_self.ace_name << "002 - P Ruta FTTH"
+	_self.style_system_category << :|P Ruta FTTH|
+	_self.display_style << "2 250 - 3 000"
+	elementos << property_list.new()
+	elementos[:oEstructuras] << .oEstructuras
+	elementos[:oCanalizacion] << .oCanalizacion
+	elementos[:oElementos] << .oElementos
+	_self.guardar_elementos_bd_gis(elementos)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.post_initialisation()
+## Objetivo: Ejecutar la super, obtener los sectores para
+## volver a generar el buffer del viewport
+##
+	_super.post_initialisation()
+	
+	_if .obuffer _is _unset 
+	_then
+		_if  _self.elementos_bd_gis _isnt _unset 
+		_then
+			l_sectors << _self.elementos_bd_gis[:sectors_buffer]			
+		_endif
+		
+		_if l_sectors _isnt _unset 
+		_then
+			# viene de xml inicializar .oBuffer
+			.obuffer << pseudo_area.new_with_sectors(l_sectors)			
+		_elif _self.data_vp_copy _isnt _unset
+		_then
+			# viene de un copiado, inicializar self con data_vp_copy
+			datos << _self.data_vp_copy
+			_self.elementos_bd_gis << datos[:elementos_bd_gis]
+			_self.elementos_bd_lb << datos[:elementos_bd_lb]
+			_self.elementos_modificados << datos[:elementos_modificados]
+			_self.geoms_symbols_size << _self.geoms_symbols_init()
+			l_sectors << _self.elementos_bd_gis[:sectors_buffer]
+			
+			.oCanalizacion << _self.obtener_elementos_bd_gis()[:oCanalizacion]
+			.oEstructuras  << _self.obtener_elementos_bd_gis()[:oEstructuras]
+			.oElementos    << _self.obtener_elementos_bd_gis()[:oElementos]
+			.obuffer       << pseudo_area.new_with_sectors(l_sectors)
+		_endif
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={plotting}, usage={subclassable})
+_method c_vp_ruta_de_cables_fo.defined_attributes
+	## 
+	## 
+
+	attribs << rope.new_from ( _super.defined_attributes )
+
+	attribs.add ( layout_attribute_definition.new ( :tamanio_buffer, :integer,
+							:description, "Tamanio buffer",
+							:default_value, 10000,
+							:allowed_on_properties_page?, _false ) )	
+
+
+	attribs.add ( layout_attribute_definition.new(:fijar_configuracion,         :string,
+						      :description,                 "fijar configuraci�n",
+						      :default_value,               "No",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method,                 :val_falso_verdadero,
+						      :editor,                      _unset))
+
+	attribs.add ( layout_attribute_definition.new(:redibujar,                   :string,
+						      :description,                 "redibujar",
+						      :default_value,               "Si",
+						      :allowed_on_properties_page?, _true,
+						      :enum_method,                 :val_falso_verdadero,
+						      :editor,                      _unset))
+	
+		
+	>> attribs
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.defined_attributes()
+##
+_local LcollAtributos
+	LcollAtributos << rope.new_from(_super.defined_attributes)	
+	>> LcollAtributos
+_endmethod
+$
+c_vp_ruta_de_cables_fo.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.val_falso_verdadero
+	## Objetivo: Regresar un arreglo con los  valores "Si", "No"
+	## Parametros de Salida: Ninguno
+	_local LasSiNo    
+	LasSiNo << rope.new()
+	LasSiNo.add("Si")
+	LasSiNo.add("No")
+	
+	>> LasSiNo
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.draw_content_on(windows, _optional Punto )
+
+
+	_if _self.redibujar _isnt _unset  _andif
+	    _self.redibujar = "No"  _andif
+	    .oResulSet _isnt _unset 
+	_then
+		_return 
+	_endif  
+	
+	.oWindows << windows
+
+	_try
+		
+	_super.draw_content_on(windows)
+	
+	_when  error 
+	      
+	_endtry
+
+	_if .barra _isnt _unset 
+	_then
+		.barra.close()	
+	_endif
+	
+	_if Punto _isnt _unset 
+	_then
+	    _self.crea_circulo_ubicacion(Punto, .oWindows)	    
+	_endif
+
+
+	_self.escribe_titulo_de_viewport(windows)
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.geometry_set_for_render
+	## Objetivo: Obtener la geometrias de los elementos de al ruta
+	## Parametros de salida: Ninguno
+        # Obtener los objetos correspondientes al plano.
+	
+        _dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset
+	
+	_local LcollGeometrias  << _unset 
+
+	_if .oResulSet _is _unset 
+	_then
+		.oBuffer << .oBuffer.buffer(_self.tamanio_buffer)
+	_endif 
+	
+	_if _self.fijar_configuracion _isnt _unset  _andif
+	    _self.fijar_configuracion = "Si"  _andif
+	    .oResulSet _isnt _unset 
+	_then
+		.oResulSet.remove_invalid_elements()
+		_return .oResulSet
+	_endif   
+
+	LcollGeometrias <<_super.geometry_set_for_render
+	
+	_if LcollGeometrias  _isnt _unset _andif
+	    LcollGeometrias.size > 0 
+	_then
+		new_viewportGeo <<  _self.rotated_world_bounds
+		NuevoBuffer     << .oBuffer.intersection( new_viewportGeo )
+		LcollResulSet   <<  LcollGeometrias.select(:interacting_with, NuevoBuffer)
+
+		.oResulSet << _self.geometry_set_for_bufferGeo(LcollResulSet,NuevoBuffer)
+
+		_if _self.layout_page.layout_document.short_filename _is _unset 
+		_then
+			LoGuarda << c_guarda_objetos_vp.new()
+			LoGuarda.oResulSet << .oResulSet
+			elementos << LoGuarda.genera_lista_gsfr()
+			_for ky,ele _over elementos.keys_and_elements()
+			_loop
+				_self.guardar_visualizacion(ele,  ky)		
+			_endloop
+		_endif
+	_endif
+
+	## se fija solo para plano de ruta
+	_self.fijar_configuracion << "Si"
+	
+	>> .oResulSet
+
+_endmethod
+$
+_method c_vp_ruta_de_cables_fo.geometry_set_for_bufferGeo(LcollGeometrias,PoBuffer)
+	## Objetivo: Obtener la geometrias de los elementos de la ruta
+	## dentro del buffer
+
+        _local LcollResulSet<<LcollGeometrias
+	
+	_if LcollResulSet.bounds _isnt _unset 
+	_then
+		LoResulSet << _self.filtra_objetos(LcollResulSet)
+	_else
+		condition.raise(:user_error, :string, "No se encuentra en la vista principal...")
+	_endif
+	
+	>> LoResulSet 
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.filtra_objetos(LcollResulSet)
+	## Objetivo: Metodo para filtrar los objetos necesarios para la
+	## ruta de cables de un enlace o tba
+	_local paf                << smallworld_product.pni_application()
+	_local gen_planos         << paf.plugin(:gen_planos)
+	_local cables_fo          << gen_planos.o_ruta_sigp[:sheath]
+	_local Lostructure_annotation << equality_geometry_set.new()
+	_local LoLayoutPlugin     << paf.plugin(:layout_plugin)
+	_local LoLayoutDesigner   << LoLayoutPlugin.dialogs[:layout_designer]
+	_local LoLayoutManager    << LoLayoutDesigner.plugin(:layout_manager)
+	_local LcollGeometriasall <<_super.geometry_set_for_render
+	_local LoEst              << LcollResulSet. sys!slot(:sets).an_element().style_system
+	_local LnIndex            << 10
+	_local top_frame          << LoLayoutManager.top_frame
+	
+	_local lotitulo << "Obteniendo información del plano"
+	_local lolabel << "Agregando elementos del plano"
+	_local loinfo  << "Agregando información al  Plano de Ruta"
+
+	LoLayoutManager.busy?  << _true
+			
+	.barra << progress_indicator_dialog.new(lotitulo,
+						:info_string, lolabel,
+						:bar_label, loinfo,
+						:image, {:merge_post,:admin_proyectos} )
+
+	.barra.max_count << 100
+	.barra.interrupt_message <<  "Interrumpir"
+
+	.barra.activate_relative_to(_unset , top_frame,
+				    (top_frame.width /3).rounded ,
+				    (top_frame.height/3).rounded )
+
+	
+	LoResultSet << LcollResulSet.select(:collection, { :user!_manzana,
+							   :ferrocarril,
+							   :puente,
+							   :sheath_annotation,
+							   :vias_comunicacion,
+							   :cuerpos_agua,
+							   :rio,
+							   :infraestructura,
+							   :user!_radio_base,
+							   :building,
+							   :user!_building,
+							   :user!_eje_calle})
+
+	.barra.progress_changed(20, _true )
+	.barra.redraw_bar()
+
+	#llaves del cable
+	# (26/02/26 des_bibiano) :  
+	_if cables_fo _isnt _unset _andif
+	    cables_fo.size > 0 
+	_then
+		_for iterc _over cables_fo.fast_elements()
+		_loop
+			_if iterc.structure_annotations.size > 0 
+			_then
+				_for itera _over iterc.structure_annotations.fast_elements()
+				_loop
+					_if itera.user!_linea _isnt _unset 
+					_then
+						Lostructure_annotation.add(itera.user!_linea)	 
+					_endif
+					_if itera.user!_anotacion _isnt _unset 
+					_then
+						Lostructure_annotation.add(itera.user!_anotacion)
+					_endif
+				_endloop
+				
+			_endif
+		_endloop
+	
+		
+	_endif
+	
+	loCanalizacion << _self.agregar_canalizacion()
+	
+	.barra.progress_changed(40, _true )
+	.barra.redraw_bar()
+	
+	loEstructuras  << _self.agregar_estructuras()
+	
+	.barra.progress_changed(60, _true )
+	.barra.redraw_bar()
+	
+	loElementos      << _self.agregar_elementos()		
+	canalizaciones   << loCanalizacion.rwo_set()
+	LoResulPerfiles  << _self.agregar_perfiles(canalizaciones)
+	
+	.barra.progress_changed(80, _true )
+	.barra.redraw_bar()
+
+	LoResultSet << composite_geometry_set.new_with(LoResulPerfiles,loCanalizacion, LoResultSet,
+						       loEstructuras,loElementos,Lostructure_annotation )
+	
+	LoResultSet.style_system <<  LoEst
+	
+	.barra.progress_changed(100, _true )
+	.barra.redraw_bar()
+	.barra.quit()
+	
+	LoLayoutManager.busy?  << _false 
+
+	>> LoResultSet
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.geometry_set_for_buffer(LcollGeometrias)
+	## Objetivo: Obtener la geometrias de los elementos de la ruta
+	## dentro del buffer
+	
+	_local LcollResulSet
+	
+        LcollResulSet << LcollGeometrias
+
+	# Si esta definida el area de la ruta o enlace entonces ingnorar los
+	# elementos que estan fuera del area.
+	
+	_if .oBuffer _isnt _unset 
+	_then
+		NuevoBuffer << .oBuffer
+		
+		_if _self.tamanio_buffer _isnt _unset 
+		_then
+			# planos guardados o generados con valor en atributo tamanio_buffer
+			_if _self.tamanio_buffer > _self.longitud_default
+			_then
+				LcollResulSet << LcollResulSet.select(:within, NuevoBuffer)
+			_else			
+				LcollResulSet << LcollResulSet.select(:overlaying, NuevoBuffer)
+			_endif
+		_else
+			# planos guardados sin valor en atributo tamanio_buffer
+			LcollResulSet << LcollResulSet.select(:overlaying, NuevoBuffer)
+		_endif		
+		
+	_else
+		LcollResulSet << LcollGeometrias
+	_endif
+	
+	_if LcollResulSet.bounds _isnt _unset 
+	_then
+		# Filtrar elementos que pertenecen a la ruta o enlace
+		
+		LoResulSet << _self.filtra_objetos(LcollResulSet) #,LcollGeometrias)
+	_else
+		condition.raise(:user_error, :string, "No se encuentra en la vista principal...")
+	_endif
+
+	>> LoResulSet 
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.guardar_elementos_bd_gis(p_elementos)
+	## 
+	##
+	_local 	l_elementos_bd << property_list.new()
+	_for k,els _over p_elementos.keys_and_elements()
+	_loop
+		l_elementos_bd[k] << rope.new()
+		_for obj _over els.fast_elements()
+		_loop
+			_if obj _isnt _unset 
+			_then
+				l_collection << obj.source_collection.name
+				l_id << obj.id
+				l_ele << property_list.new()
+				l_ele[l_collection] << l_id
+				l_elementos_bd[k].add(l_ele)				
+			_endif
+			
+		_endloop
+	_endloop
+
+	# agregar los sectors del buffer
+	l_elementos_bd[:sectors_buffer] << .obuffer.sectors
+	
+	_self.elementos_bd_gis << l_elementos_bd
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.guardar_visualizacion(elementos, llave)
+	## fhramire 
+	## Funcionalidad para mover simbolos en el plano
+	_if _self.elementos_modificados _is _unset 
+	_then
+	    ## elementos en este caso es ya un property_list
+	    datos << property_list.new()
+	    datos[llave] << elementos
+	    _self.elementos_modificados << datos
+
+	_else
+	    ## elementos en este caso es un rope con los datos.
+	    ## y solo lo agregamos, con la llave = "llave" 
+	    _self.elementos_modificados[llave] << elementos
+	_endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.new_with(PoBuffer,PoEstructuras, PoCanalizacion,PoElementos, _gather args )
+	## Objetivo: Crear un viewport para los planos de ruta	
+	## Parametros de Entrada: PoBuffer << buffer de la ruta
+	##                       PoEstructuras << estructuras de la ruta
+	##                       PoCanalizacion << canalizacion de la ruta
+	##                       PoElementos << elementos de red de la ruta
+	##                       args << argumentos para la super	
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:18/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo 
+	
+	# Asignar los valores al viewport
+	.oBuffer       << PoBuffer
+	.oEstructuras  << poEstructuras
+	.oCanalizacion << PoCanalizacion
+	.oElementos    << PoElementos
+	
+	# ejecutar la super
+	>> _super.new_with(property_list.new_from_gathered ( args ))
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.obtener_elementos_bd_gis()
+	## 
+	##
+	_local l_dataset << mit_manager.modelit_dataset
+	_local l_elementos_bd << property_list.new()
+	
+	_if _self.elementos_bd_gis _isnt _unset _andif _self.elementos_bd_gis.size > 0
+	_then
+		_for k,els _over _self.elementos_bd_gis.keys_and_elements()
+		_loop
+			_if k _isnt  :sectors_buffer 
+			_then
+				# elementos de la BD
+				l_elementos_bd[k] << rope.new()
+				_for an_obj _over els.elements()
+				_loop
+					_for a_key,ele _over an_obj.keys_and_elements()
+					_loop
+						_if (l_dato << l_dataset.collection(a_key).at(ele)) _isnt _unset 
+						_then
+							l_elementos_bd[k].add_last(l_dato)
+						_endif
+					_endloop
+				_endloop
+			_endif
+		_endloop		
+	_endif
+	
+	_return l_elementos_bd
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.pinta_circulos_estructuras(windows)
+	## 
+	##	
+	
+	_dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset
+	_if .oCanalizacion _isnt _unset _andif _self.transform _isnt _unset 
+	_then	
+		_for poz _over .oCanalizacion.elements()
+		_loop		
+			_if poz.annotation_1 _isnt _unset 
+			_then			    
+				mi_coord<<coordinate.new_from(poz.annotation_1.coord)		 
+		    LCoord << mi_coord.transformed(_self.transform)		 
+		    
+		    est_line1 << line_style.new_with_properties(
+					 :foreground_colour, colour.called(:black), :width, 6)
+		    
+		    LCo1 << coordinate.new(LCoord.x, LCoord.y)
+		    LoCirculo << circle.new(LCo1, 300)
+		    LoCirculo.draw_on(windows,est_line1)
+			_endif
+		_endloop
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.ubica_elemento(Punto)
+	## 
+	##
+	windows << .oWindows
+	_self.draw_content_on(windows, Punto)
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.acomodar_elementos(pElementos)
+## Obejtivo: Acomodar los elementos de acuerdo a su eje Y, si
+## es un empalme se acomoda hacia arriba, si es una gasa se
+## acomoda hacia abajo.	
+## Autor: rraragon
+## Fecha: 05/08/2010
+	
+_local 	l_id << pElementos[1]
+_local 	l_objs << pElementos[2]
+_local 	l_rango_empalme << 1950 # empalmes se acomodan en el eje Y posotivo
+_local 	l_rango_gasa << -1600   # gasas se acomodan en el eje Y negativo
+_local 	l_y_gasa << l_y_empalme << 0
+
+    _for an_obj _over l_objs.elements()
+    _loop
+	    _if an_obj.source_collection.name _is :splice_closure
+	    _then
+		    _if l_y_empalme = 0
+		    _then
+			    l_y_empalme << 1.0
+		    _else
+			    l_y_empalme +<< l_rango_empalme
+		    _endif
+		    _self.asignar_valores_mov(:splice_closure_sim,an_obj.id,1.0,1.0,l_y_empalme)
+	    _endif
+	    _if an_obj.source_collection.name _is :figure_eight
+	    _then
+		    _if l_y_gasa = 0
+		    _then
+			    l_y_gasa << 1.0
+		    _else
+			    l_y_gasa +<< l_rango_gasa
+		    _endif			
+		    _self.asignar_valores_mov(:figure_eight_sim,an_obj.id,1.0,1.0,l_y_gasa)
+	    _endif
+    _endloop
+    
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.agregar_canalizacion()
+	## Objetivo: Crear un geometry_set con los objetos canalizacion
+	## de una ruta o enlace
+	## Parametros de entrada: Ninguno.
+	## Parametros de salida: Ninguno
+	## Regresa: loCanalizacion << geometry_set
+	## Fecha de Ultima modificacion:18/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo 
+	
+	loCanalizacion << geometry_set.new()
+	
+	_if _self.elementos_bd_gis _isnt _unset _andif
+	    _self.elementos_bd_gis.size > 0
+	_then
+		.oCanalizacion << _self.obtener_elementos_bd_gis()[:oCanalizacion]
+	_endif
+	
+	_for ugr _over .oCanalizacion.fast_elements()
+	_loop
+		# Agregar route
+		_if (LoGeo << ugr.structure_geometry()) _isnt _unset 
+		_then	
+			loCanalizacion.add(LoGeo)
+			## Fhramire
+			## Se agrega la geometria de apuntador
+			## para cuando exista perfil de canalizacion
+			## Pruebas Sitio las Armas
+			_if ugr.leader _isnt _unset 
+			_then
+			    loCanalizacion.add(ugr.leader)	
+			_endif
+
+			# (12/09/19 ahernanram) : 
+			#_for k _over ugr.mit_structure.mit_presentation_objects.fast_elements()
+			#_loop
+			#	loCanalizacion.add(k.boundary)				
+			#_endloop
+						
+		_endif
+		
+		LoNombresGeo << _self.LoGeomTxt[ugr.source_collection.name]  
+		
+		_if LoNombresGeo _isnt _unset 
+		_then
+			_for k  _over LoNombresGeo.elements()
+			_loop
+                                LoGeo << ugr.perform(k.as_symbol() )						     
+				_if LoGeo  _isnt _unset 
+				_then
+					loCanalizacion.add(LoGeo)
+				_endif
+				
+			_endloop
+			
+		_endif		
+		#
+		# FIN DEL CAMBIO			
+	_endloop
+	
+	_return loCanalizacion	
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.agregar_elementos()
+	## Objetivo: Crear un geometry_set con los objetos de los
+	## elementos de una ruta o enlace
+	## Parametros de entrada: Ninguno.
+	## Parametros de salida: Ninguno
+	## Regresa: loCanalizacion << geometry_set
+	## Fecha de Ultima modificacion:18/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo 
+	
+	loElementos << geometry_set.new()
+	_if _self.elementos_bd_gis _isnt _unset _andif
+	    _self.elementos_bd_gis.size > 0
+	_then
+		.oElementos << _self.obtener_elementos_bd_gis()[:oElementos]
+	_endif
+	_for el _over .oElementos.fast_elements()
+	_loop
+	       LoNomsGeo << _self.LoGeom[el.source_collection.name]
+
+	       _if LoNomsGeo _isnt _unset
+	       _then		       
+		       _for k  _over LoNomsGeo.elements() 
+		       _loop
+			       
+			       geo << el.perform(k)
+			       
+			       _if  geo _isnt _unset 
+			       _then
+				       loElementos.add(geo)
+			       _endif			       
+		       _endloop
+		       
+	       _endif
+	       
+	       # (2012-05-23 AHERNAN, HILDEBRANDO) : ahora regresara un rope
+	       # de varias anotaciones.
+	       
+	       LoNomsGeoTxt << _self.LoGeomTxt[el.source_collection.name]
+
+	       # (2012-05-23 AHERNAN, HILDEBRANDO) : se recorre el rope para
+	       # recuperar los nombres de las anotaciones.
+	       _if LoNomsGeoTxt _isnt _unset
+	       _then		       
+		       _for k  _over LoNomsGeoTxt.elements() 
+		       _loop
+			       geo << el.perform(k)
+			       
+			       _if  geo _isnt _unset 
+			       _then
+				       loElementos.add(geo)
+			       _endif			       
+		       _endloop
+		       
+	       _endif
+		
+	    #
+	    # FIN DEL CAMBIO
+	       
+	_endloop
+
+	_return loElementos
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.agregar_estructuras()
+	## Objetivo: Crear un geometry_set con los objetos de las
+	## estructuras de una ruta o enlace
+	## Parametros de entrada: Ninguno.
+	## Parametros de salida: Ninguno
+	## Regresa: loCanalizacion << geometry_set
+	## Fecha de Ultima modificacion:18/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo 
+	
+	loEstructuras << geometry_set.new()
+	_if _self.elementos_bd_gis _isnt _unset _andif
+	    _self.elementos_bd_gis.size > 0
+	_then
+		.oEstructuras << _self.obtener_elementos_bd_gis()[:oEstructuras]
+	_endif
+	
+	_for estru _over .oEstructuras.fast_elements()
+       _loop
+	       _if _not estru.is_kind_of?(access_point)
+	       _then
+		       # (10/07/19 jtlelo) :  agregamos los campos geometricos del crucero
+		       # (11/03/16 bflores) : se valida la existencia de las geometrias.
+		       _if estru.is_kind_of?(user!_crucero) _orif
+			   estru.is_kind_of?(anchor)
+		       _then
+			       geoms << _self.geometrias_visibles_obj(estru,:chain)
+			       geoms.add_all_last(_self.geometrias_visibles_obj(estru,:text))
+			       _for a_geom _over geoms.elements()
+			       _loop
+				       loEstructuras.add(a_geom)
+			       _endloop
+		       _else 
+			       loEstructuras.add(estru.structure_geometry())
+		       _endif
+		       
+		       #LoNomGeo << _self.LoGeomTxt[estru.source_collection.name]
+                        LoNomsGeo << _self.LoGeomTxt[estru.source_collection.name]
+
+			_if LoNomsGeo _isnt _unset 
+			_then
+
+                              _for k  _over LoNomsGeo.elements()
+			      _loop
+				      _if (geo << estru.perform(k)) _isnt _unset 
+				      _then
+					      loEstructuras.add(geo)
+				      _endif 			       				      
+			      _endloop
+			      				
+			_endif
+		       
+
+	       _endif 
+       _endloop
+       
+       _return loEstructuras
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.agregar_perfiles(PoCanalizaciones)
+		## 
+	## 
+	loPerfilesCanal << geometry_set.new()
+	
+	_for loCanal _over PoCanalizaciones.elements()
+	_loop		
+		_if locanal.rwo_type _is :underground_route _andif
+		    loCanal.mit_structure_route _isnt _unset _andif
+		    loCanal.mit_structure_route.mit_presentation_objects.size > 0
+		_then			
+			_for loMitPresentationObject _over loCanal.mit_structure_route.mit_presentation_objects.elements()
+			_loop
+				
+			     _if loMitPresentationObject.tierra _isnt _unset 
+			     _then
+				 loPerfilesCanal.add(loMitPresentationObject.tierra)
+			     _endif
+			     _if loMitPresentationObject.boundary _isnt _unset 
+			     _then
+				   loPerfilesCanal.add(loMitPresentationObject.boundary)
+			     _endif
+			     _if loMitPresentationObject.source_boundary _isnt _unset 
+			     _then
+				   loPerfilesCanal.add(loMitPresentationObject.source_boundary)
+			     _endif
+			     _if loMitPresentationObject.source_boundary_mapeo _isnt _unset 
+			     _then
+				     loPerfilesCanal.add(loMitPresentationObject.source_boundary_mapeo) 
+			     _endif
+
+			     # START CHANGE
+			     # (25/03/26 des_aaron) : se agregan las anotaciones y apuntadores de los
+			     # ductos X
+			     #
+			     loPerfilesCanal.add_all( loMitPresentationObject.obtiene_sheath_annotations)
+			     #
+			     # END CHANGE			     
+			_endloop			
+		_endif
+	_endloop
+	
+	_return loPerfilesCanal 
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.asignar_valores_mov(pTipo,pId,pRot,pX,pY)
+## Objetivo: Asignar valores al property_list
+## elementos_modificados, dependiendo de pTipo y pId
+## Autor: rraragon
+## Fecha: 05/08/2010
+	
+    _for a_key,an_ele _over _self.elementos_modificados.keys_and_elements()
+    _loop
+	    _if a_key _is pTipo
+	    _then
+		    _for el _over an_ele.elements()
+		    _loop
+			    _if el[2] = pId
+			    _then
+				    el[3] << pRot
+				    el[4] << pX					
+				    el[5] << pY
+			    _endif
+		    _endloop
+	    _endif
+    _endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.gasas_empalmes()
+	## Objetivo: Agrupar todos los empalmes y gasas de acuerdo a su
+	## estructura que los contiene.
+	## Regresa: rope
+	## Autor: rraragon
+	
+	_local l_dataset << mit_manager.modelit_dataset
+	_local l_elementos << rope.new()
+	_local l_structuras << rope.new()
+	
+	l_elementos.add_all_last(_self.elementos_modificados[:figure_eight_sim].default(rope.new()))
+	l_elementos.add_all_last(_self.elementos_modificados[:splice_closure_sim].default(rope.new()))
+	
+	_for an_ele _over l_elementos.fast_elements()
+	_loop	    
+		l_coll << l_dataset.collection(an_ele[1]) # obtener la colleccion que contiene al objeto
+       _if (obj << l_coll.at(an_ele[2])) _isnt _unset # obtener el objeto
+       _then
+	       _if obj.responds_to?(:get_structure|()|) _andif (l_str << obj.get_structure()) _isnt _unset 
+	       _then
+		       # encontrar la estrucura si existe dentro de la lista de estructuras
+		       l_struct << _unset  # indica si se encontro la estructura
+		       l_id_str << l_str.id # estructura a buscar
+		       _for a_structure _over l_structuras.elements()
+		       _loop
+			       _if a_structure[1].id = l_id_str
+			       _then
+				       l_struct << a_structure
+				       _leave 
+			       _endif					 
+		     _endloop
+		       
+		       _if l_struct _is _unset 
+		       _then
+			       # no existe esta estructura en el rope se agrega
+			       l_structuras.add_last(rope.new_with(l_str,rope.new_with(obj)))
+		       _else
+			       # ya existe la estructura solo agregamos el objeto
+			       l_struct[2].add_last(obj)
+		     _endif				    
+	       _endif
+       _endif
+	_endloop
+	
+	_return l_structuras   
+	
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.crea_circulo_ubicacion(Punto, windows)
+	## 
+	##
+
+	_dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset	
+
+	est_line1 << line_style.new_with_properties(
+			     :foreground_colour, colour.called(:blue), :width, 1)
+
+	LCoord << Punto.transformed(_self.transform)
+
+	LCo1 << coordinate.new(LCoord.x, LCoord.y)
+	LoCirculo << circle.new(LCo1, 300)
+	LoCirculo.draw_on(windows,est_line1)
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_ruta_de_cables_fo.geometrias_visibles_obj(a_obj,a_type)
+	## 
+	##
+	geoms << rope.new()
+	_if a_obj.responds_to?(:location) _andif (a_geom << a_obj.location) _isnt _unset 
+	_then
+		geoms.add(a_geom)
+	_endif
+	
+	_for a_campo_geom _over a_obj.geometry_fields_of_type(a_type).elements()
+	_loop
+		_if (a_geom << a_obj.perform(a_campo_geom.name)) _isnt _unset 
+		_then
+			geoms.add(a_geom)
+		_endif
+	_endloop
+	
+	_return geoms 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_ruta_de_cables_fo.escribe_titulo_de_viewport(Window)
+	#---------------------------------------------------
+	## <Req. #> : Escribir pie de viewport "Ruta de cables"
+	##
+	_local LoSize            << 210 
+	_local fontSize          <<  10
+	_local justificaciontxt  << :bottom_centre	
+	_local LoFontBold        << font.new_with_properties(:type,:logical,:name,"Arial" ,:point_size,LoSize ,:orientation,:left_right)
+	_local LoTextStyle       << text_style.new_with_properties(:colour,colour.called(:black),:font,LoFontBold,  :underline?, _true)
+	
+	_if _self.name _isnt _unset  _andif
+	    _self.name.write_string <> "mapa"
+	_then
+		LoTitulo << _self.name.uppercase	
+		LoTitulo << LoTitulo.split_by(%newline)
+		
+		Lodesplazamiento << 120
+
+		LoCoordY <<   _self.bounds.ymin
+		
+		_for k  _over LoTitulo.elements()
+		_loop
+			LoCoordY << LoCoordY - Lodesplazamiento
+			
+			LoCoordX << _self.bounds.centre.x
+			
+			Window.draw_vtext_transform(LoTextStyle, LoCoordX,LoCoordY ,k, _unset, _unset, FontSize,0,justificaciontxt, _true  , _false   )
+			
+		_endloop
+		
+	_endif
+		
+_endmethod
+$

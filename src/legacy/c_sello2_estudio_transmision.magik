@@ -1,0 +1,213 @@
+_package user
+$
+def_slotted_exemplar(:c_sello2_estudio_transmision,{
+		     {:oEngine, _unset, :writable, :private}
+		     }, :c_base_sello_fibra)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.configura_tabla()
+	## ---------------------------------------------------
+	#  Tabla uno
+	##----------------------------------------------------
+	.col_tablas << property_list.new()	
+
+	_local pl_cfg_tabla_uno << property_list.new()
+
+	pl_cfg_tabla_uno[:ren] << {3,3,3,3}
+	pl_cfg_tabla_uno[:col] << {35,15}
+
+	lo_tabla << .o_tablas.crea_tabla(4,2,:tbl_tabla_uno)
+	lo_tabla.oCoordenada_Origen << .o_coord_inicio
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_tabla_uno, 0.7)
+
+	
+	## ---------------------------------------------------
+	#  Tabla dos
+	##----------------------------------------------------
+	.col_tablas << property_list.new()	
+
+	_local pl_cfg_tabla_dos << property_list.new()
+
+	pl_cfg_tabla_dos[:ren] << {3,3}
+	pl_cfg_tabla_dos[:col] << {35,15}
+
+	lo_tabla << .o_tablas.crea_tabla(2,2,:tbl_tabla_dos)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x,
+						      .o_coord_inicio.y - 100)
+	
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_tabla_dos, 0.7)
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.defined_attributes
+
+	_local attribs << rope.new_from(_super.defined_attributes)
+
+	attribs.add(layout_attribute_definition.new(:conectores,     :string,
+ 					            :description,    "Conectores",
+                                                    :default_value,  "2"))
+	attribs.add(layout_attribute_definition.new(:configuracion,  :string,
+ 					            :description,    "Configuración",
+                                                    :default_value,  "1625"))
+	attribs.add(layout_attribute_definition.new(:aumento,        :string,
+ 					            :description,    "Aumento"))
+	attribs.add(layout_attribute_definition.new(:atenuador,      :string,
+ 					            :description,    "Requiere Atenuador",
+						    :enum_method,   :si_no))
+	attribs.add(layout_attribute_definition.new(:val_min,        :string,
+ 					            :description,    "Valor Minimo",
+						    :default_value,  "1"))
+
+	>> attribs
+	
+_endmethod
+$
+
+c_sello2_estudio_transmision.define_attributes()
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.etiqueta_celdas()
+	## -----------------------------------------------------------------
+	#  Asigna etiquetas a celdas
+	## -----------------------------------------------------------------
+	_self.asigna_texto_celda(:tbl_tabla_uno, 1,1, "NO. DE EMPALMES",   20, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_uno, 2,1, "NO. DE CONECTORES", 20, :top_left, 1)
+	_self.asigna_texto_celda(:tbl_tabla_uno, 3,1, "CONFIGURACION",     20, :top_left, 1)
+        _self.asigna_texto_celda(:tbl_tabla_uno, 4,1, "AUMENTO",           20, :top_left, 1)
+
+	_self.asigna_texto_celda(:tbl_tabla_dos, 1,1, "REQUIERE ATENUADOR",20, :top_left, 1)
+        _self.asigna_texto_celda(:tbl_tabla_dos, 2,1, "VALOR MINIMO",      20, :top_left, 1)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.getempalmes()
+## Objetivo: Obtener los empalmes de la ruta que contiene el sello
+## Autor: rraragon
+## Fecha: 24/11/2009
+	
+_local l_empalmes << rope.new()
+
+    _for ele _over .oEngine.elements()
+    _loop
+	    _if (LoObj << ele[:objeto]).is_kind_of?(splice_closure)
+	    _then
+		    l_empalmes.add_last(LoObj)
+	    _endif
+    _endloop
+
+    _return l_empalmes	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.guardar_elementos_bd_gis()
+	## 
+	## 
+_local 	l_elementos_bd << rope.new()
+	_for obj _over .oEngine.elements()
+	_loop
+		l_collection << obj[:objeto].source_collection.name
+		l_id << obj[:objeto].id
+		l_direccion << obj[:direccion]
+		l_ele << property_list.new()
+		l_ele[l_collection] << l_id
+		l_ele[:direccion] << l_direccion
+		l_elementos_bd.add_last(l_ele)
+	_endloop
+	
+	_self.elementos_bd_gis << l_elementos_bd
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.llena_datos_celdas()
+## --------------------------------------------------------------------
+#  Llena datos con datos del sistema
+## --------------------------------------------------------------------
+
+_local Lodatos << _self.getempalmes().size.write_string
+
+    _self.asigna_texto_celda(:tbl_tabla_uno, 1,2, Lodatos,  20)
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.llena_datos_dinamicos()
+	## --------------------------------------------------------------------
+	#  Llena celdas con datos del usuario
+	## --------------------------------------------------------------------
+
+	_self.asigna_texto_celda(:tbl_tabla_uno, 3,2, _self.configuracion, 20)
+	_self.asigna_texto_celda(:tbl_tabla_uno, 4,2, _self.aumento,       20)
+	_self.asigna_texto_celda(:tbl_tabla_dos, 1,2, _self.atenuador,     20)
+	_self.asigna_texto_celda(:tbl_tabla_dos, 2,2, _self.val_min,       20)
+	_self.asigna_texto_celda(:tbl_tabla_uno, 2,2, _self.conectores,    20)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.obtener_elementos_bd_gis()
+	## 
+	##
+	l_dataset << mit_manager.modelit_dataset
+	_if _self.elementos_bd_gis _isnt _unset _andif _self.elementos_bd_gis.size > 0
+	_then
+		.oEngine << rope.new()
+		_for an_obj _over _self.elementos_bd_gis.elements()
+		_loop
+			l_obj_diagrama << property_list.new()
+			_for a_key,ele _over an_obj.keys_and_elements()
+			_loop
+				_if a_key _isnt :direccion 
+				_then
+					_if (l_dato << l_dataset.collection(a_key).at(ele)) _isnt _unset 
+					_then
+						l_obj_diagrama[:objeto] << l_dato
+					_endif
+				_else
+					l_obj_diagrama[:direccion] << ele
+				_endif				
+			_endloop
+			.oEngine.add_last(l_obj_diagrama)
+		_endloop		
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.post_initialisation()
+## 
+##
+	_self.obtener_elementos_bd_gis()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.setEngine << PoEngine 
+## 
+##
+      .oEngine << PoEngine
+      _self.guardar_elementos_bd_gis()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello2_estudio_transmision.si_no
+	## ---------------------------------------------------------------------
+	#  Para el combo Si/No
+	## ---------------------------------------------------------------------
+	_local lp_si_no << hash_table.new()
+
+	lp_si_no[1] << "Si"
+	lp_si_no[2] << "No"
+	lp_si_no[3] << ""
+
+	_return lp_si_no
+	
+_endmethod
+$

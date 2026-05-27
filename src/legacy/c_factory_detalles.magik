@@ -1,0 +1,1252 @@
+_package user
+$
+def_slotted_exemplar(:c_factory_detalles,{
+		       {:oEngine, _unset, :writable,:private}, #Engine para la ruta
+		        {:oCable, _unset, :writable,:public},  #Cable
+		       {:oPafManager, _unset, :writable,:private} #Application manager
+                     },:c_factory_planos)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_factory_detalles.init(PoEngine)
+## Metodo para inicializar la instancia
+##
+    .oEngine      << PoEngine
+    .oPafManager  << smallworld_product.pni_application().manager
+    _return _self 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.new(_optional PoEngine)
+## Metodo para crear un _clone de _self
+##	
+    _return _clone.init(PoEngine)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.genera_plano(PoCable,_optional  PEnlace)
+	## Objetivo: Generar el plano, en base al elemento solicitado
+	## Parametros de Entrada: PoElemento << sheath,
+	## mit_pesudo_fiber_pin o mit_fiber_pin
+#	paf << smallworld_product.pni_application()
+#	genp << paf.plugin(:gen_planos)
+#	genp.o_enlace << PEnlace
+#	.oEngine.recorrer_ruta(PoCable)
+	.oCable << PoCable
+#	genp.publicalo(_self.oEngine)
+	
+
+	##############################
+	_super.genera_plano(PEnlace)
+	_self.AddSellosPlanoDetalles()
+	#_self.AddDetalleCentralOrigen()
+	.oPage.layout_document.user!_tipo_plano << :detalles_construccion				
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddSellosPlanoDetalles()
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddDetalleCentralOrigen()
+## Objetivo: Agregar los detalles de la central origen
+## Parametros de Entrada: Ninguno
+
+    _if .oPage _isnt _unset _andif .oPage.is_kind_of?(layout_page)
+    _then
+
+	# Agregar la localizacion del origen
+	_self.AddLocalizacionOrigen()	
+	# Agregar la sala de transmision del origen
+	_self.AddSalaTx()
+	# Agregar la vista del Bastidor
+	_self.AddRmeBay()    
+	# Agregar la vista posterior del Bastidor
+	_self.AddBackRmeBay()
+	# Agregar la vista de isometrico de la central
+	_self.AddIsometrico()
+	# Agregar la vista del perfil de la central
+	_self.AddVistaPerfil()
+
+    _endif
+    
+_endmethod
+$
+# (23/08/10 des_aaron) : update
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.add_sello_tabla_equivalencias_x_cable()
+	##  Objetivo  : Agrega la tabla de equiovalencias del cable.
+	##
+	
+	gen_planos << smallworld_product.pni_application().plugin(:gen_planos)
+        bastidores  << gen_planos.obtener_bastidores()
+
+	
+	desplazamientox << 0
+	
+	_for bastidor  _over bastidores.fast_elements() 
+	_loop
+		
+		# START CHANGE
+		# (23/08/09 des_aaron) : 
+		#		
+		LocableS << bastidor.signal_cable_pins()
+		
+		_for iterpin _over LoCableS.fast_elements()
+		_loop
+			LocableSalida << iterpin.sheath
+			
+			_if LocableSalida  _isnt _unset _andif
+			    LocableSalida.construction_status.write_string.lowercase = "proyectado"
+			_then
+				#Generar sello
+				datos <<  property_list.new()	
+				datos[:LoCable]         <<   LocableSalida
+				datos[:rme]             <<   Bastidor
+				datos[:LoCableObjeto]   <<   user:c_cable_fo.new(LocableSalida,_false)
+				datos[:Central]         <<   Bastidor.user!_central
+				datos[:num_de_grupos]   <<   datos[:LoCableObjeto].getgrupos().size
+				
+				_for iterNF _over 1.upto(datos[:num_de_grupos])
+				_loop
+					_if datos[:LoCableObjeto].getgrupos()[iterNF][:fibras].size > 0 
+					_then
+						datos[:numero_fibras] << datos[:LoCableObjeto].getgrupos()[iterNF][:fibras].size
+						_leave
+					_endif
+				_endloop
+				
+				datos[:capacidad_cable] <<   datos[:num_de_grupos] * datos[:numero_fibras]		 	
+				datos[:piso]            <<   Bastidor.ObtenerNumeroDePiso()
+				datos[:sala]            <<   Bastidor.ObtenerTipoSala()
+				datos[:fila]            <<   Bastidor.ObtenerFila()
+				datos[:bastidor]        <<   Bastidor.ObtenerPosBastidor()
+				
+				_if datos[:num_de_grupos] = 0 _orif
+				    datos[:numero_fibras] = 0
+				_then
+					
+					condition.raise(:information,:string,"No se puede generar tabla de equivalencias por falta de información en las fibras del cable")
+				_else
+					
+					lo_sello << user:c_tabla_equivalencias_x_cable.new_with(datos ,
+												:bounds,
+												bounding_box.new(3556 + desplazamientox, 5735, 4546 + desplazamientox, 8395))
+					.oPage.add_element(lo_sello) 
+
+					
+					desplazamientox << desplazamientox + 1000
+				_endif 
+				
+			_endif
+			
+		_endloop
+		
+		#
+		# END CHANGE
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddBackRmeBay()
+	## Objetivo: Agregar un viewport con la parte posterior del Bastidor
+	## Parametros de Entrada: Ninguno
+	
+	# Bounds para el viewport de localizacion	    
+	LoBounds << bounding_box.new(.oPage.bounds.xmax-6100,
+				     .oPage.bounds.ymax-2500,
+				     .oPage.bounds.xmax-5100,
+				     .oPage.bounds.ymax-500)
+	
+	_if (LoRmeBay << .oEngine.getRmeInicio()) _isnt _unset _andif 
+	    LoRmeBay.is_rwo? _andif LoRmeBay.back_boundary _isnt _unset 
+	_then
+		.oPafManager.goto_context(LoRmeBay,:back_world)
+		
+		
+		
+	   	# titulo y display_style	
+		siglas      << "SIglas"
+		Nom_central << "Ctl="
+		Titulo << "VISTA DE PLANTA"
+		
+		_if LoRmeBay.mit_building_structure.responds_to?(:building) _andif
+		    LoRmeBay.mit_building_structure.building _isnt _unset 
+		_then
+			
+			siglas << LoRmeBay.mit_building_structure.building.user!_siglas
+			Nom_central << LoRmeBay.mit_building_structure.building.user!_nom_nodo
+			
+			titulo << "DETALLE DE BASTIDOR" + %newline +
+				  siglas + " - " + Nom_central + %newline + "VISTA POSTERIOR"
+			
+		_endif
+			
+		LoViewport << c_vp_detalle_interno_central.new_with(:trail, _false,
+								    :selection, _false,
+								    :post_render, _false,
+								    :name, titulo.uppercase,
+								    :bounds, LoBounds)
+		
+		LoViewport.titulo << titulo
+		
+		# Obtener la vista
+		LoMapView << _self.getmapview(LoRmeBay.back_boundary.sectors.as_sector())
+		
+		# Agregar el viewport
+		LoBounds << bounding_box.new(LoMapView.current_view_bounds.xmin + 600,
+					     LoMapView.current_view_bounds.ymin,
+					     LoMapView.current_view_bounds.xmax - 600,
+					     LoMapView.current_view_bounds.ymax)
+
+		# (22/07/26 des_aaron) : primero debe agregarse  antes de mapearlo.
+		.oPage.add_element(LoViewport)		
+		.oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							    LoBounds,_true)			
+		
+		
+	_endif	   
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddIsometrico()
+## Objetivo: Agregar un viewport con la vista isometrica (3D) de la central
+## Parametros de Entrada: Ninguno
+## Regresa: Ninguno.
+ # Bounds para el viewport de localizacion	    
+
+# (09/10/28 colivera) : Modified. se modifica para cambiar el
+# ace para el detalle del isometrico
+	
+    LoBounds << bounding_box.new(.oPage.bounds.xmax-5100,
+				 .oPage.bounds.ymax-2500,
+				 .oPage.bounds.xmax-3100,
+				 .oPage.bounds.ymax-500)
+   
+    _if (LoRmeBay << .oEngine.getRmeInicio()) _isnt _unset _andif
+	(LoEdificio << .oEngine.getedificio(LoRmeBay)) _isnt _unset _andif
+	(LoEstruEdif << LoEdificio.mit_building_structure) _isnt _unset #_andif
+	#(LoIsometrico << LoEstruEdif.mit_floors.an_element().user!_geom_isometrico) _isnt _unset 
+	#(LoIsometrico << LoEstruEdif.user!_area_3d) _isnt _unset 
+    _then
+	    _if (Pisos << LoEstruEdif.mit_floors.an_element()) _isnt _unset _andif
+		(LoIsometrico << Pisos.user!_geom_isometrico) _isnt _unset 
+	    _then
+
+		 .oPafManager.goto_context(LoEstruEdif,:internal)
+		 
+		 LoViewport << c_vp_detalle_interno_central.new_with(:trail, _false,
+								     :selection, _false,
+								     :post_render, _false,
+								     :bounds, LoBounds,
+								     :name, "VISTA DE ISOMETRICO CENTRAL ORIGEN",
+								     :ace_name, "isometrico")
+		 
+		 # Obtener la vista
+		 LoMapView << _self.getmapview(LoIsometrico.bounds.sectors.as_sector())
+		 
+		 # Agregar el viewport
+		 LoBounds << bounding_box.new(LoMapView.current_view_bounds.xmin-5200,
+					      LoMapView.current_view_bounds.ymin+7000,
+					      LoMapView.current_view_bounds.xmax+5200,
+					      LoMapView.current_view_bounds.ymax)
+
+		 .oPage.add_element(LoViewport)		 
+		 .oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							     LoBounds,_true)			
+		 
+		 # titulo y display_style
+		 LoViewport.titulo << "VISTA DE ISOMETRICO CENTRAL ORIGEN"
+		 
+
+		 
+	    _elif (LoIsometrico << LoEstruEdif.user!_area_3d) _isnt _unset
+	    _then 
+
+		 .oPafManager.goto_context(LoEstruEdif,:internal)
+		 
+		 LoViewport << c_vp_detalle_interno_central.new_with(:trail, _false,
+								     :selection, _false,
+								     :post_render, _false,
+								     :bounds, LoBounds,
+								     :name, "VISTA DE ISOMETRICO CENTRAL ORIGEN",
+								     :ace_name, "isometrico")
+		 
+		 # Obtener la vista
+		 LoMapView << _self.getmapview(LoIsometrico.bounds.sectors.as_sector())
+		 
+		 # Agregar el viewport
+		 LoBounds << bounding_box.new(LoMapView.current_view_bounds.xmin-600,
+					      LoMapView.current_view_bounds.ymin,
+					      LoMapView.current_view_bounds.xmax+600,
+					      LoMapView.current_view_bounds.ymax)
+
+		 .oPage.add_element(LoViewport)				 
+		 .oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							     LoBounds,_true)			
+		 
+		 # titulo y display_style
+		 LoViewport.titulo << "VISTA DE ISOMETRICO CENTRAL ORIGEN"
+		 
+
+	    _endif
+    _endif	   
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddLocalizacionOrigen()
+	## Objetivo: Agregar un viewport con la localizacion de la
+	## central
+	
+
+	LoBuilding << swg_dsn_admin_engine.active_design.project.user!_central.building 
+	
+	
+	_if LoBuilding _isnt _unset 
+	_then
+		CtrlBuilding << LoBuilding
+		
+		_self.AddViewport( .oPage,:c_vp_croquis, _unset, .oViewMapperPlugin ,
+				   8,60,25,23,   CtrlBuilding )
+		
+	_else
+		
+		_if (LoRmeBay << .oEngine.getRmeInicio()) _isnt _unset _andif 
+		    (LoBuilding << .oEngine.getRmeInicio().gis_owner) _isnt _unset _andif
+		    LoBuilding.is_kind_of?(sw:building) 
+		_then	    	    
+			CtrlBuilding << LoBuilding
+			
+			_self.AddViewport( .oPage,:c_vp_croquis, _unset, .oViewMapperPlugin ,
+					   8,60,25,23,   CtrlBuilding )
+		_else
+			condition.raise(:user_error,:string,"El cable no esta conectado a un Bastidor")
+			
+		_endif 
+		
+	_endif
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddRmeBay()
+	## Objetivo: Agregar un viewport con la localizacion del Bastidor
+	## Parametros de Entrada: Ninguno
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:18/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo 
+	
+	
+	# Bounds para el viewport de localizacion	    
+	LoBounds << bounding_box.new(.oPage.bounds.xmax-7100,
+				     .oPage.bounds.ymax-2500,
+				     .oPage.bounds.xmax-6100,
+				     .oPage.bounds.ymax-500)
+	
+	_if (LoRmeBay << .oEngine.getRmeInicio()) _isnt _unset _andif 
+	    LoRmeBay.is_rwo? _andif LoRmeBay.boundary _isnt _unset 
+	_then
+		.oPafManager.goto_context(LoRmeBay,:internal)
+		
+		
+		# titulo y display_style
+		siglas      << "SIglas"
+		Nom_central << "Ctl="
+		Titulo << "VISTA DE PLANTA"
+		
+		_if LoRmeBay.mit_building_structure.responds_to?(:building) _andif
+		    LoRmeBay.mit_building_structure.building _isnt _unset 
+		_then
+			siglas << LoRmeBay.mit_building_structure.building.user!_siglas
+			Nom_central << LoRmeBay.mit_building_structure.building.user!_nom_nodo
+			titulo << "DETALLE DE BASTIDOR" + %newline + siglas + " - " + Nom_central		   
+		_endif
+		
+		
+		LoViewport << c_vp_detalle_interno_central.new_with(:trail, _false,
+							     :selection, _false,
+							     :post_render, _false,
+							     :name,titulo.uppercase,
+							     :bounds, LoBounds)
+	    
+		# Obtener la vista
+		LoMapView << _self.getmapview(LoRmeBay.boundary.sectors.as_sector())
+		
+		# Agregar el viewport
+		LoBounds << bounding_box.new(LoMapView.current_view_bounds.xmin + 600,
+					     LoMapView.current_view_bounds.ymin,
+					     LoMapView.current_view_bounds.xmax - 600,
+					     LoMapView.current_view_bounds.ymax)
+
+		.oPage.add_element(LoViewport)	
+		.oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							    LoBounds,_true)			
+		
+		LoViewport.titulo << titulo
+		
+
+	_endif	   
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddSalaTx()
+## Objetivo: Agregar un viewport con la localizacion de la
+## sala de transmision
+## Parametros de Entrada: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+    # Bounds para el viewport de localizacion	    
+    LoBounds << bounding_box.new(.oPage.bounds.xmax-9900,
+				 .oPage.bounds.ymax-2500,
+				 .oPage.bounds.xmax-7200,
+				 .oPage.bounds.ymax-500)
+    
+    _if (LoRmeBay << .oEngine.getRmeInicio()) _isnt _unset _andif 
+	(LoOwner << .oEngine.getRmeInicio().owner) _isnt _unset _andif 
+         LoOwner.is_rwo? _andif LoOwner.responds_to?(:floor_plan)
+    _then
+	    .oPafManager.goto_primary_context(LoOwner)
+
+	    
+	   # titulo y display_style
+	    Nom_central << "Ctl="
+	    siglas      << "SIglas"
+	    Titulo << "VISTA DE PLANTA"
+	    
+	    _if LoOwner.mit_building_structure.responds_to?(:building) _andif
+		LoOwner.mit_building_structure.building _isnt _unset 
+	    _then
+		    Nom_central << LoOwner.mit_building_structure.building.user!_nom_nodo
+		    siglas << LoOwner.mit_building_structure.building.user!_siglas
+		    titulo << "VISTA DE PLANTA" + %newline + siglas + " - " + Nom_central  
+	    _endif
+	    
+
+	    LoViewport << c_vp_detalle_interno_central.new_with(:trail, _false,
+							     :selection, _false,
+							     :post_render, _false,
+							     :bounds, LoBounds,
+							     :name,titulo.uppercase )
+
+             LoViewport.titulo << titulo.uppercase
+	    
+    	    # Obtener la vista
+    	    LoMapView << _self.getmapview(LoOwner.floor_plan.sectors.as_sector())
+	    
+	    # Agregar el viewport
+	    .oPage.add_element(LoViewport)		    
+	    .oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							LoMapView.current_view_bounds.new_enlarging(1.5),
+							_true)
+	    
+
+    _endif	   
+	
+_endmethod
+$
+
+_method c_factory_detalles.AddViewport(PoPage,
+					  PyTipoDeVp,
+					  PoLimite,
+					  PoViewMapperPlugin,
+					  PiCord_x1, PiCord_y1,
+					  PiWidth,PiHeight,
+					  _optional PoUserBuilding)
+
+	_local LoPage
+	_local LoViewport
+	_local LoBound
+	_local LoBoundary
+	_local LiIdBuilding
+	_local LoNombreEdificio
+	_local LoTypeEdificio
+	_local LoDto
+	_local LoNomDto
+	_local LoEdoCons
+	_local LiCord_x1
+	_local LiCord_y1 
+	_local LiWidth
+	_local LiHeight
+	
+	LiCord_x1 << PiCord_x1*100
+	LiCord_y1 << PiCord_y1*100
+	LiWidth   << PiWidth *100
+	LiHeight  << PiHeight*100
+	
+	LoPage<<PoPage
+
+       LoBound<<bounding_box.new(LoPage.bounds.xmin+LiCord_x1,
+				 LoPage.bounds.ymin+LiCord_y1,
+				 LoPage.bounds.xmin+LiCord_x1+LiWidth,
+				 LoPage.bounds.ymin+LiCord_y1+LiHeight)
+       
+       Tlienzos<< smallworld_product.pni_application().database.collection(:gis,:user!_lienzo_plano)
+
+
+       
+       LoApp<<smallworld_product.pni_application()
+       LoAppManager<<LoApp.plugin(:application_manager)
+       LoMapManager<<LoAppManager.map_manager
+
+       # START CHANGE
+       # (22/07/26 des_aaron) : 
+       #LoEnlace << swg_dsn_admin_engine.active_design.project.user!_enlaces
+
+	genp << Loapp.plugin(:gen_planos)
+	datosruta <<genp.datos_ruta()
+	LoEnlace << datosruta[:oenlace]
+
+       #
+       # END CHANGE 
+       
+       # (15/08/13 bautistaja) : Modified.  Caso de que sea radio base
+       _if (radiobase << _self.radio_base()) _isnt _unset 
+       _then
+	       _if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	       _then
+		       _if PyTipoDeVp = :c_vp_croquis
+		       _then 
+			       .oPafManager.goto_primary_context(radiobase)
+			       LoBoundary << radiobase.location.buffer(50000).bounds
+			       LoBoundary << LoBoundary.buffer(30000,:square,:square) # Buff. 15m.
+			       LoBoundary << LoBoundary.sectors.as_sector()
+			       
+			       LoViewport << c_vp_croquis_general.new_with(:bounds, LoBound)
+			       LoViewport.etiqueta << "CROQUIS DE LOCALIZACION"				
+			       LoViewport.oLimite << LoBoundary
+			       LoMapView << _self.GetMapView(LoViewport.oLimite)
+			       
+			       # Generar las anotaciones de las calles 
+			       _self.calles_radiobase(radiobase.location)
+			       
+			       PoViewMapperPlugin.map_viewport_on_map_view(
+				       LoViewport,LoMapView,
+				       LoMapView.current_view_bounds.new_enlarging(0.8), _true)
+			       LoViewport.ace_name << "Radio Base"
+			       LoViewport.view_scale << 1200
+		       _else
+			       _return 
+		       _endif
+		       
+		       LoPage.add_element(LoViewport)
+		       
+	       _endif
+	       
+       _elif LoEnlace _isnt _unset 
+       _then
+	       LoLienzos  <<Loenlace.user!_lienzo_planos
+
+	       oCurrentLienzo << _unset
+	       
+	       _if LoLienzos.size > 0
+	       _then
+		       p << predicate.eq(:user!_tipo_plano,"Croquis" )
+		       sel << LoLienzos.select(p)
+		       _if sel.size > 0
+		       _then
+			       oCurrentLienzo << sel.an_element()					 
+		       _endif
+	       _endif
+	       
+	       _if oCurrentLienzo _is _unset 
+	       _then
+		       
+		       oCurrentLienzo << _self.crear_croquis()	       
+		       
+		       _if oCurrentLienzo _isnt _unset 
+		       _then
+			       _self.dibujar_enlace(oCurrentLienzo)
+		       _endif
+		       
+	       _endif
+	       
+	       _if oCurrentLienzo _isnt _unset 
+	       _then
+		       
+		       LoMapManager.goto(oCurrentLienzo.get_spatial_context(:internal))
+		       LoMapView<<LoMapManager.current_map_view
+		       
+		       LoViewport << c_vp_plano_detalles.new_with(:ace_name, "Croquis",
+								  :trail, _false,
+								  :selection, _false,
+								  :post_render, _false,
+								  :bounds, LoBound,
+								  :name, "CROQUIS DE LOCALIZACION")
+		       
+		       # Agregar el viewport
+		       LoBounds << bounding_box.new(LoMapView.current_view_bounds.xmin-600,
+						    LoMapView.current_view_bounds.ymin,
+						    LoMapView.current_view_bounds.xmax+600,
+						    LoMapView.current_view_bounds.ymax)
+		       
+
+		       PoPage.add_element(LoViewport)
+		       
+		       PoViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+								   LoBounds,_true)
+		       
+		       # Agregar Viewport
+		       LoViewport.attributes[:ace_name].value << "Croquis"
+		       
+		       _return
+		       
+	       _endif
+       _else
+	       _if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	       _then
+		       
+		       gpge << LoPage
+		       
+		       _if PyTipoDeVp=:c_vp_croquis
+		       _then
+			       # Calcular el Limite
+			       _if PoUserBuilding _isnt _unset 
+			       _then
+				       .oPafManager.goto_primary_context(PoUserBuilding)
+				       LoBoundary<<PoUserBuilding.location.buffer(5000).bounds
+				       
+				       #LoBoundary<<LoBoundary.buffer(3000,:square,:square) # Buff. 15m.
+				       #LoBoundary<<LoBoundary.sectors.as_sector()				       
+				       #LiIdBuilding<<PoUserBuilding.id
+				       
+				       # START CHANGE 
+				       # (09/11/09 ahernan) : 
+				       #
+				       LoViewport<<c_vp_croquis_general.new_with(:bounds, LoBound)
+				       #_global cr
+				       #cr << LoViewport
+				      				
+				       LoViewport.oLimite       << LoBoundary				       
+				       LoMapView<<_self.GetMapView(LoViewport.oLimite)
+
+				       LoPage.add_element(LoViewport)
+				       
+				       PoViewMapperPlugin.map_viewport_on_map_view(
+					       LoViewport,LoMapView,
+					       LoMapView.current_view_bounds.new_enlarging(0.8), _true)
+				       
+				       LoViewport.view_scale    << 350 #2500
+				       LoViewport.display_style << "0 - 750 p construcción"
+				       LoViewport.etiqueta      << "CROQUIS DE LOCALIZACION"
+			       _else
+				       _return 
+			       _endif
+			       
+		       _else
+			       _return
+		       _endif
+		       
+		       
+	       _endif   
+       _endif
+       
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddVistaPerfil()
+## Objetivo: Agregar un viewport con la parte frontal de la central
+## Parametros de Entrada: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:08/09/17  
+## Autor de la modificacion: jtlelo
+## Descripcion de la modificacion: Metodo nuevo 
+ # Bounds para el viewport de localizacion
+	
+    LoBounds << bounding_box.new(.oPage.bounds.xmax-3100,
+				 .oPage.bounds.ymax-2500,
+				 .oPage.bounds.xmax-1100,
+				 .oPage.bounds.ymax-500)
+   
+    _if (LoRmeBay << .oEngine.getRmeInicio()) _isnt _unset _andif
+	(LoEdificio << .oEngine.getedificio(LoRmeBay)) _isnt _unset _andif
+	(LoEstruEdif << LoEdificio.mit_building_structure) _isnt _unset
+#    _andif
+#	LoEstruEdif.mit_floors.an_element().floor_vertical _isnt _unset 
+    _then
+	    .oPafManager.goto_context(LoEstruEdif,:internal)
+	    
+	    LoViewport << c_vp_detalle_interno_central.new_with(:trail, _false,
+							     :selection, _false,
+							     :post_render, _false,
+							     :bounds, LoBounds,
+							     :name, "VISTA FRONTAL CENTRAL ORIGEN")
+
+	    LoPisos << geometry_set.new()
+	    _for piso _over LoEdificio.mit_floors.fast_elements()
+	    _loop
+		    _if piso.floor_vertical _isnt _unset
+		    _then
+			    LoPisos.add(piso.floor_vertical)
+		    _endif
+	    _endloop
+
+	    # Si no hay pisos tomar el bound de LoRmeBay
+	    _Local LoBoundSector
+	    _if LoPisos.empty?
+	    _then
+		    LoBoundSector<<LoRmeBay.internals_bounds.sectors.as_sector()
+	    _else
+		    LoBoundSector<<LoPisos.bounds.sectors.as_sector()
+	    _endif
+	    
+    	    # Obtener la vista
+    	    #LoMapView << _self.getmapview(LoPisos.bounds.sectors.as_sector())
+	    LoMapView << _self.getmapview(LoBoundSector)
+	    
+	    # Agregar el viewport
+	    LoBounds << bounding_box.new(LoMapView.current_view_bounds.xmin-600,
+				         LoMapView.current_view_bounds.ymin,
+				         LoMapView.current_view_bounds.xmax+600,
+				         LoMapView.current_view_bounds.ymax)
+
+	    .oPage.add_element(LoViewport)
+	    .oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							LoBounds,_true)			
+
+	    # titulo y display_style
+	    LoViewport.titulo << "VISTA FRONTAL CENTRAL ORIGEN"
+    
+    _endif
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.buscar_gme()
+	## Buscar si el bastidor final se conecta con un bastidor GME
+	##
+	
+	_if (LoRuta << .oEngine.sys!slot(:osheathtrace)) _isnt _unset _andif
+	    (LoBstFinal << LoRuta.sys!slot(:obasfinal)) _isnt _unset 
+	_then
+		_for bst _over LoBstFinal.elements()
+		_loop
+			#Obtenemos los cables conectados al bastidor
+			cables << bst.obtener_conexion_de_cables()
+			_global mc
+			        mc << cables
+				
+			_for cab _over cables.keys()
+			_loop
+				#Obtenemos el conector y validamos que sea punto de acceso
+				LoConector << cab.get_downstream_connector()
+
+				_if LoConector _isnt _unset _andif
+				    LoConector.source_collection.name _is :strw_connect_point
+				_then
+					#Verificamos bastidor sea GME y si esta asociado a una radiobase
+					_global  mic
+					         mic << LoConector
+			##alvarezjab :se agrega validacion y solo sale del metodo				 
+					LoBst << LoConector.mit_bay
+					_if LoBst _is _unset 
+					_then
+						_return _unset 
+					_endif					
+			##alvarezjab modified.
+					_if LoBst.spec_info.model = "GME" _andif
+					    _self.gme_asociado_a_radiobase(LoBst) > 0 
+					_then
+						_return LoBst.mit_building_structure.owner
+					_endif
+				_endif
+			_endloop
+		_endloop
+	_endif
+
+	_return _unset 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.calles_faltantes_en_croquis(obj_location)
+	## 
+	## Objetivo  : Obtiene las calles que corresponden al enlace
+	## desde su central inicio y destino.
+	
+	LoGpm << gis_program_manager
+	LoLbv << LoGpm.cached_dataset(:landbase)
+	LoTabla << LoLbv.collection(:user!_eje_calle)
+
+	htCalles << hash_table.new()
+	LoBuffer << obj_location.buffer(10000)
+	LoBuffer.world << LoLbv.world
+
+	LoCalles << LoTabla.select(predicate.interacts(:user!_posicion, LoBuffer))
+
+	_for calle _over LoCalles.fast_elements()
+	_loop
+		_if htCalles.size = 3
+		_then
+			_leave 
+		_endif
+		_if _not htCalles.includes_key?(calle.user!_nombre_calle)
+		_then
+			htCalles[calle.user!_nombre_calle.as_symbol()] << calle
+		_endif
+	_endloop
+
+	_return htCalles
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.calles_radiobase(rb_location)
+	## Generar las anotaciones de las calles cercanas a la
+	## radiobase
+
+	calles << _self.calles_faltantes_en_croquis(rb_location)
+
+         _if calles.an_element() _isnt _unset _andif
+	     calles.an_element().source_collection.source_view.mode _is :write
+	 _then
+	
+		 _for calle _over calles.fast_elements()
+		 _loop
+			 calle.make_annotation()
+		 _endloop	 
+	 _endif
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.crear_croquis()
+
+        LoTablaLienzo<< smallworld_product.pni_application().database.collection(:gis,:user!_lienzo_plano)
+	LoValoresPropuestos<<property_list.new()
+
+
+	# START CHANGE
+	# (22/07/26 des_aaron) : 
+	#	oCurrentEnlace <<  swg_dsn_admin_engine.active_design.project.user!_enlaces
+	paf << smallworld_product.pni_application()
+	genp << paf.plugin(:gen_planos)
+	datosruta <<genp.datos_ruta()
+	oCurrentEnlace << datosruta[:oenlace]
+	
+	#
+	# END CHANGE
+
+	
+	LoValoresPropuestos[:id_enlace]<<oCurrentEnlace.id
+	LoValoresPropuestos[:user!_tipo_plano]<<"Croquis"
+	
+	_try _with cond
+		LoTransaction   <<record_transaction.new_insert(LoTablaLienzo,LoValoresPropuestos)
+		LoRecord	<< LoTransaction.run()		
+	_when error
+			LoError<<cond.report_string
+	_endtry
+
+	_return LoRecord
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.dibujar_enlace(oCurrentLienzo)
+	## 
+	##
+
+	paf << smallworld_product.pni_application()
+	LoDraf << paf.plugin(:drafting)
+	LoAppManager<<paf.plugin(:application_manager)
+	LoMapManager<<LoAppManager.map_manager
+	genplanos  << paf.plugin(:gen_planos)
+	
+	canal     << genplanos.sys!slot(:o_ruta)[:ocanalizacion]
+	tam << 0
+	
+	LoMapManager.goto(oCurrentLienzo.get_spatial_context(:internal))
+	
+	LoView << LoMapManager.current_map_view
+
+	LoTr << _self.obtener_transform()
+
+	mitad << canal.size.as_float/2
+	mitad << mitad.floor
+	
+	_for LoIt _over canal.elements()
+	_loop
+		tam +<< 1
+		LoCoor << LoIt.route.first_coord.transformed(LoTr)
+		LoView.trail.add_coordinate(LoCoor)
+		
+		_if tam = mitad
+		_then
+			mitad << LoIt.route.first_coord
+		_endif
+	_endloop
+
+	LoDraf.select_drafting_mode(:lines_mode)
+	curr_sel << LoMapManager.current_map.current_selection.an_element()
+	LoDraf.set_geometry_style(15)
+
+
+	# START CHANGE
+	# (22/07/26 des_aaron) : 
+	###LoEnlace << swg_dsn_admin_engine.active_design.project.user!_enlaces
+
+	paf << smallworld_product.pni_application()
+	genp << paf.plugin(:gen_planos)
+	datosruta <<genp.datos_ruta()
+	LoEnlace << datosruta[:oenlace]
+	
+	#
+	# END CHANGE
+	
+	ctl_origen << LoEnlace.central_origen()
+	ctl_destino << LoEnlace.central_destino()
+
+	# (16/10/19 bautistaja) : Modified.Buscamos el cliente
+	_if ctl_destino _is _unset 
+	_then
+		LoCliente << LoEnlace.user!_cliente
+		_if LoCliente _isnt _unset 
+		_then
+			ctl_destino << LoCliente.user!_building
+		_endif
+	_endif
+	
+	#Central origen
+	_self.generar_central(ctl_origen, LoTr)
+	
+	#Calles origen
+	LoCalles << _self.calles_faltantes_en_croquis(ctl_origen.location)
+	_self.generar_calles(LoCalles, LoTr)
+
+	#Calles centro
+	LoCalles << _self.calles_faltantes_en_croquis(mitad)
+	_self.generar_calles(LoCalles, LoTr)
+
+	#Central destino
+	_self.generar_central(ctl_destino, LoTr)
+	
+	#Calles destino
+	LoCalles << _self.calles_faltantes_en_croquis(ctl_destino.location)
+	_self.generar_calles(LoCalles, LoTr)	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.generar_calles(htCalles, LoTransform)
+	## 
+	##
+	paf << smallworld_product.pni_application()
+	LoDraf << paf.plugin(:drafting)
+	LoAppManager << paf.plugin(:application_manager)
+	LoMapManager << LoAppManager.map_manager
+	LoView << LoMapManager.current_map_view
+
+	_for calle _over htCalles.fast_elements()
+	_loop
+		#coord_inicio << calle.user!_posicion.first_coord.transformed(LoTransform)
+		#coord_fin << calle.user!_posicion.last_coord.transformed(LoTransform)
+		#LoView.trail.add_coordinate(coord_inicio)
+		#LoView.trail.add_coordinate(coord_fin)
+		#LoDraf.select_drafting_mode(:lines_mode)
+
+		# Obtener coordenadas de posicion de Texto
+		( LoCoor, LoOri ) << calle.user!_posicion.midseg_midpoint_coord_and_theta
+		_if LoOri > float.half_pi
+		_then
+			LoOri -<< float.pi
+		_elif LoOri < - float.half_pi
+		_then
+			LoOri +<< float.pi
+		_endif
+
+		# Transformar la coordenada
+		_if calle.user!_nombre_calle <> "No disponible" _andif
+		    calle.user!_nombre_calle <> ""
+		_then
+			LoCoor << LoCoor.transformed(LoTransform)
+			LoView.trail.add_coordinate(LoCoor)
+			LoDraf.select_drafting_mode(:texts_mode)
+			curr_sel << LoMapManager.current_map.current_selection.an_element()
+			curr_sel.height << 10
+			curr_sel.orientation << LoOri
+			curr_sel.string << calle.user!_nombre_calle
+		_endif
+
+		# Generar Texto
+		#LoText << pseudo_text.new(LoCoor, calle.user!_nombre_calle, LoOri, :bottom_centre,
+		#			  :left_right, 1 )
+		
+		#LoText.world << _self.world
+
+		# Hacer transaccion para insertar calle en croquis
+		#LoPl << property_list.new_with(:anotacion, LoText, :id_landbase, calle.id)
+		#LoRt << record_transaction.new_insert(LoTabla, LoPl)
+		#LoRt.run()
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.generar_central(ctl, LoTransform)
+	## 
+	##
+	paf << smallworld_product.pni_application()
+	LoAppManager << paf.plugin(:application_manager)
+	LoMapManager << LoAppManager.map_manager
+	LoView << LoMapManager.current_map_view
+	LoDraf << paf.plugin(:drafting)
+
+	# (16/10/19 bautistaja) : Modified.
+	_if ctl.source_collection.name _is :user!_building
+	_then
+		LoTxt << "CLI" + ctl.name
+	_else
+		LoTxt << "CTL" + ctl.user!_siglas
+	_endif
+	
+	LoCtl << ctl.main_geometry.transformed(LoTransform)
+	LoView.trail.set_from_geometry(LoCtl)
+	LoBounds << bounding_box.new_centred(LoCtl.x,LoCtl.y,2500,2400)
+	LoView.trail.set_from_geometry(LoBounds)
+	LoDraf.select_drafting_mode(:areas_mode)
+	curr_sel << LoMapManager.current_map.current_selection.an_element()
+	LoDraf.set_geometry_style(7)
+	
+	txt << ctl.annotation_1.transformed(LoTransform)
+	LoView.trail.set_from_geometry(txt)
+	LoDraf.select_drafting_mode(:texts_mode)
+	curr_sel << LoMapManager.current_map.current_selection.an_element()
+	curr_sel.height << 10.5
+	curr_sel.string << "CTL - " + ctl.user!_siglas
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.gme_asociado_a_radiobase(LoBastidor)
+	## Consultar tabla de relacion radiobase-bastidor
+	## Si LoBastidor esta asociado a alguna radio base
+
+	LoTabla << smallworld_product.pni_application().database.collection(:gis,:user!_radio_base_mit_bays)
+	LoPredicate << predicate.eq(:user!_id_mit_bay, LoBastidor.id)
+	LoReg << LoTabla.select(LoPredicate)
+
+	_return LoReg.size
+	
+_endmethod
+$
+
+_pragma(classify_level=basic, usage={redefinable})
+_method c_factory_detalles.obtener_transform()
+	## 
+	## Este metodo obtiene la transformacion de coordenadas que
+	## llevan al geometry set al origen
+	# INICIO DEL CAMBIO
+	# (15/02/09 ahernan) :
+	# 1. Obtener las estructuras del plugin despues de generar el plano.
+	# 2. Obtener el bounds de todas las geometrias obtenidas.
+	# 3. retornar la transformacion definida.
+
+	paf << smallworld_product.pni_application()
+	genplanos  << paf.plugin(:gen_planos)
+	canal     << genplanos.sys!slot(:o_ruta)[:oestructuras]
+	#
+	# FIN DEL CAMBIO
+ 
+	_local LoGS << geometry_set.new()
+	
+	_for LoIt _over canal.elements()
+	_loop
+		_if LoIt _isnt _unset 
+		_then
+			_if LoIt.responds_to?(:route)
+			_then
+				LoGS.add(LoIt.route)	
+			_endif
+			
+		_endif
+	_endloop
+	
+	mtransform <<  transform.new()
+	mtransform << mtransform.translate(-LoGS.bounds.xmin, -LoGS.bounds.ymin)
+        mtransform << mtransform.scale(0.1)
+	
+	_return mtransform
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.radio_base()
+	## Si el cable es de salida, regresa el building en el que se
+	## encuentra el bastidor al cual esta conectado el cable
+	
+	LoCables << .oEngine.sys!slot(:ocablesalida)
+	
+	_for cable _over LoCables.fast_elements()
+	_loop
+		_if cable.obtener_direccion_a_rme _is :sale
+		_then
+			LoBastidor << cable.get_upstream_connector().mit_bay
+			
+			_if LoBastidor.spec_info.model = "GME"
+			_then
+				LoBuilding << LoBastidor.mit_building_structure.owner
+				_leave
+			_else
+				LoBuilding << _self.buscar_gme()
+			_endif
+		_endif
+	_endloop
+	
+	_return LoBuilding
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.crea_titulo
+	## Objetivo: Crear el titulo para los planos de detalles
+        ##	
+        _local paf          << smallworld_product.pni_application()
+	_local cable_nombre << paf.plugin(:gen_planos).o_ruta_sigp[:ocables].an_element().name
+	_local prj << swg_dsn_admin_engine.active_design.project
+	_local ctl << prj.user!_central
+	_local nodo<< ctl.building
+	_local programa        << prj.user!_programa.write_string + %space + prj.user!_programa_anyo
+	_local subprograma     << prj.job_title.write_string
+	_local municipio       << ""
+	_local estado          << ""
+	_local num_trayectoria << ""
+	
+	_if nodo  _isnt _unset 
+	_then
+		ctlname   << prj.user!_central.user!_nombre
+		ctlsiglas << prj.user!_central.user!_central
+		
+		(nco_nombre,nco_siglas ) << nodo.datos_nco
+		Estado                   << nodo.location.coordinate.estado_txt()
+		Municipio                << nodo.location.coordinate.municipio_txt()
+		num_trayectoria          << nodo.location.coordinate.trayectoria_txt
+	_endif
+	
+	LoTitulo << "PROGRAMA " + programa.write_string +     %newline +
+		    "NCO "      + nco_nombre.write_string   +
+		    "(" + nco_siglas.write_string  + ")" +  %newline +
+		    "TRAYECTORIA " + num_trayectoria.write_string +%newline +
+		    "PLANO DE DETALLES CENTRAL " + %newline +
+		    cable_nombre + %newline +
+		    subprograma  + %newline +
+		    municipio + ","  +    estado 
+	
+	_return LoTitulo.uppercase			
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.AddDiagramaEmpalmesConexion(PoEmpalmes)
+	## Objetivo: Agregar Diagrama de Conexion de Empalme
+	## Pueden agregarse mas de un empalme, todos se agregaran en la
+	## misma ubicacion del layout. El usuario debe moverlos. 
+	
+	_local Crear << _false
+	
+	_if PoEmpalmes.size > 0
+	_then       
+		_for Emp _over PoEmpalmes.elements()
+		_loop
+			## Valido que el empalme tenga la conectividad completa para
+			## que se permita la generacion del diagrama
+			_if Emp.get_cwdms().size = 0
+			_then
+				_if (Emp.get_downstream_cables().size > 0) _and
+				    (Emp.get_upstream_cables().size > 0)
+		   _then 	      
+			   _local LoBounds << bounding_box.new( .oPage.bounds.xmax - 2800,
+								.oPage.bounds.ymax - 4800,
+								.oPage.bounds.xmax - 500,
+								.oPage.bounds.ymax - 3000 )	   
+			   LoCE << _unset
+			   
+			   ## valido el tipo de empalme
+			   _if Emp.user!_tipo_emp = "RECTO" 
+			   _then
+				   ## Validar que el empalme tenga minimo una conexion de fibra
+				   ## y que este expandido a nivel de fibras
+				   ## expandido bundle
+				   ## expandido fibra
+				   _for cable_fo _over Emp.get_upstream_cables().fast_elements()
+				   _loop		      
+					   Lopines << cable_fo.obtener_pines(cable_fo.mit_sheath_pins.size)
+					   
+					   # validar que esten expandidos, deben ser de la clase mit_fiber_pin
+					   _for Lp _over Lopines.fast_elements()
+					   _loop
+						   _if Lp.is_kind_of?(mit_fiber_pin)  
+						   _then
+							   _if (LoFibCon << Lp.connected_object()) _isnt _unset 
+							   _then
+								   Crear << _true					  
+							   _endif 
+							   _continue
+						   _else
+							   Crear << _false
+							   _leave 
+						   _endif
+					   _endloop
+					   
+					   _if Crear 
+					   _then				  
+						   LoCE    << c_diagrama_conexion_empalme.new_with(Emp, :bounds, LoBounds )       
+					   _endif			  
+				   _endloop		   
+			   _else
+				   LoCE << c_diagrama_unifilar_ruta.new_with(rope.new_with(Emp), :bounds, LoBounds )
+			   _endif
+			   _if LoCE _isnt _unset 
+			   _then
+				   .oPage.add_element(LoCE)   
+			   _endif
+				_endif
+				
+	   _endif 
+			
+		_endloop
+		
+		
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_factory_detalles.bastidor_final(Penlace)
+
+	
+	LoEnlaceProy << PEnlace
+	bastfins << .oEngine.getrmefinal()
+	bastfin<<_unset
+
+	#Busca el bastidor final que corresponde al enlace.
+	_for anBastFin _over bastfins.fast_elements()
+	_loop
+		_for anEnlaceBast _over anBastFin.enlaces_relacionados.fast_elements()
+		_loop
+			_if anEnlaceBast[1] = LoEnlaceProy
+			_then
+				bastfin<<anBastFin
+				_leave 
+			_endif
+		_endloop
+		_if bastfin _isnt _unset
+		_then
+			_leave	
+		_endif
+	_endloop
+	
+	_return bastfin
+	
+_endmethod
+$

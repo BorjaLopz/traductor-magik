@@ -1,0 +1,254 @@
+#----------------------------------------------------------------
+# c_trace_ruta_cables.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rraragon
+#
+# Date: 08/07/29
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user 
+$
+#remex(:c_trace_ruta_cables)
+$
+def_slotted_exemplar(:c_trace_ruta_cables,{
+                       {:oLowEngine, _unset, :writable, :private}, #mit_low_level_trace_engine
+		       {:oEstructuras, _unset, :writable,:private}, #Estructuras del enlace
+       		       {:oCanalizacion, _unset, :writable, :private}, # Canalizacion del enlace
+       		       {:oCables, _unset, :writable, :private}, # Cables del trace
+		       {:oElementos, _unset, :writable, :private}, #Elementos (Gasas,Empalmes)
+		       {:oBasInicio, _unset, :writable, :private}, #Bastidor inicio
+		       {:oBasFinal, _unset, :writable, :private} #Bastidor final
+
+
+		       
+                     })
+$
+c_trace_ruta_cables.define_shared_constant(:tipos_elementos,{:figure_eight,:splice_closure},_false)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.new()
+## Metodo para crear un _clone de _self
+##
+	_return _clone.init()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_trace_ruta_cables.init()
+## Metodo para inicializar la instancia
+##
+	.oLowEngine << mit_low_level_trace_engine.new()	
+	_return _self 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.obtener_estructuras(PoNodo)
+## 
+##
+_local LCollResultados << _unset 
+_local LCollEstructuras << _unset
+_local LCollCanalizacion << _unset 
+_local LCollElementos << _unset
+
+	_try
+		LCollResultados << .oLowEngine.trace_out( set.new_with(PoNodo))
+	_when error 
+	      _return LCollEstructuras
+	_endtry
+
+	.oCables << rope.new()	
+	.oBasInicio << _self.bastidor_inicial(PoNodo)
+	.oBasFinal << rope.new()
+	.oCanalizacion << rope.new()
+	
+	(LCollEstructuras,LCollElementos) << _self.estructuras_por_link(LCollResultados)
+
+	.oEstructuras << LCollEstructuras
+	.oElementos << LCollElementos
+	_return LCollEstructuras,.oCanalizacion,LCollElementos
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.bastidor_inicial(PoPin)
+## 
+##
+	LoSheathPin << PoPin.sheath_pin
+	_if (LoConnec << LoSheathPin.strw_connect_point) _isnt _unset 
+	_then
+		_return LoConnec.owner
+	_endif
+
+	_return _unset 		 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private  _method c_trace_ruta_cables.estructuras_por_link(PoCollLinks)
+## 
+##
+_local LCollSt << rope.new()
+_local LcollEl << rope.new()
+	_for LoLink _over PoCollLinks.elements()
+	_loop
+		_self.estructuras_en_nodo(LoLink.in_node,LCollSt,LcollEl)
+		_self.estructuras_en_nodo(LoLink.out_node,LCollSt,LcollEl)
+		_self.device_en_link(LoLink,LCollSt,LcollEl)		
+	_endloop
+	
+	_return LCollSt,LcollEl
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_trace_ruta_cables.estructuras_en_nodo(PoNodo,PoCollSt,PoCollEl)
+## 
+##
+	_if PoNodo.is_kind_of?(mit_pseudo_fiber_pin ) _orif
+	    PoNodo.is_kind_of?(mit_fiber_pin )
+	_then
+		# agregar estructuras del cable
+		_for st _over PoNodo.owner.structures.elements()
+		_loop
+			_if _not PoCollSt.includes_by_equality?(st) _andif
+			    _not st.is_kind_of?(underground_route)
+			_then
+				PoCollSt.add(st)				
+			_elif _not .oCanalizacion.includes_by_equality?(st) _andif
+			      st.is_kind_of?(underground_route)
+			_then
+				.oCanalizacion.add(st)				
+			_endif 
+		_endloop
+
+		# agregar las llaves asociadas al cable
+		_for st_anotacion _over PoNodo.owner.structure_annotations.elements()
+		_loop
+			_if _not PoCollEl.includes_by_equality?(st_anotacion)
+			_then
+				PoCollEl.add(st_anotacion)
+			_endif
+			
+		_endloop
+
+		# agregar el cable
+		_if _not .oCables.includes_by_equality?(PoNodo.owner)
+		_then
+			.oCables.add(PoNodo.owner)
+		_endif
+	_endif	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_trace_ruta_cables.device_en_link(PoLink,PoCollSt,PoCollEl)
+## Metodo que obtiene las estructuras de alto nivel (:building,
+## :user!_building) y los elementos relacionados (gasas,empalmes)
+##
+
+_local LoTopStr << PoLink.get_top_level_device()
+_local LoLowDev << PoLink.get_low_level_device_for_low_level()
+
+    # validar el device_top_level que sea estructura, sino
+    # agregarlo como elemento
+
+    _if LoTopStr _isnt _unset _andif LoTopStr.is_structure? _andif
+	_not PoCollSt.includes_by_equality?(LoTopStr)		       
+    _then
+	    PoCollSt.add(LoTopStr)
+    _else
+	    _self.agrega_elemento(LoTopStr,PoCollEl)
+    _endif
+
+    # validar el device_low_level que sea mit_rme_port, y obtener
+    # su estructura(building, user!_building)
+    _if LoLowDev _isnt _unset _andif LoLowDev.is_kind_of?(mit_rme_port)
+    _then
+	    LoOwner << LoLowDev.gis_owner
+	    _if LoOwner.responds_to?(:is_structure?) _andif
+		LoOwner.is_structure? _andif
+		_not PoCollSt.includes_by_equality?(LoOwner)		       
+	    _then	   
+		    PoCollSt.add(LoOwner)
+	    _endif
+
+	    Lobas << LoLowDev.rme_bay_owner()
+	    _if .oBasInicio <> Lobas
+	    _then
+		    .oBasFinal.add(Lobas)
+	    _endif
+    _endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_trace_ruta_cables.agrega_elemento(PoTopStr,PoCollEl)
+## Metodo que agrega un elemento (:figure_eight,:splice_closure)
+##
+	
+    _if PoTopStr _isnt _unset _andif
+	_self.tipos_elementos.includes?(PoTopStr.source_collection.name) _andif 
+	_not PoCollEl.includes_by_equality?(PoTopStr)
+    _then
+	    PoCollEl.add(PoTopStr)
+    _endif
+    
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.cables()
+## 
+##
+	_return .oCables
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.rme_inicio()
+## 
+## 
+	_return .oBasInicio
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.rme_final()
+## 
+## 
+	_return .oBasFinal
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.Estructuras()
+## 
+## 
+	_return .oEstructuras
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.Canalizacion()
+## 
+## 
+	_return .oCanalizacion
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_trace_ruta_cables.Elementos_ruta()
+## 
+## 
+	_return .oElementos
+	
+_endmethod
+$

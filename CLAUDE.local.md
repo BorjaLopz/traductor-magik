@@ -43,17 +43,17 @@
 - src/legacy/c_circulo_grafico.magik
 - src/legacy/c_detalles_layout.magik
 - src/legacy/cuadro_de_notas_plugin.magik
-- src/legacy/c_ocupacion_de_vias.magik
-- src/legacy/c_placa_fosc350c.magik
+- src/legacy/c_ocupacion_de_vias.magik ✓
+- src/legacy/c_placa_fosc350c.magik ✓
 - src/legacy/c_simbologia_plano_reubicacion_exist_proy.magik
-- src/legacy/c_simbologia_plano_reubicacion_terminales.magik
-- src/legacy/c_simbolo_longitud_trazo_gazas.magik
+- src/legacy/c_simbologia_plano_reubicacion_terminales.magik ✓
+- src/legacy/c_simbolo_longitud_trazo_gazas.magik ✓
 - src/legacy/c_margen_layout.magik
 - src/legacy/c_plano_ruta_de_cables.magik
 - src/legacy/c_simbologia_plano_construccion.magik
 - src/legacy/c_vp_detalle_interno_edificio.magik
 - src/legacy/c_elementos_tramo_g.magik
-- src/legacy/c_sello_lista_cables.magik
+- src/legacy/c_sello_lista_cables.magik ✓
 - src/legacy/c_sello_competencia_telmex.magik
 - src/legacy/c_servicios_estilos.magik
 - src/legacy/c_imagen_bmp.magik
@@ -65,7 +65,7 @@
 - src/legacy/c_dibuja.magik
 - src/legacy/c_Sello_Estandar_Ctl.magik
 - src/legacy/c_area_telmex.magik
-- src/legacy/c_sello_aumentos_secundarios.magik
+- src/legacy/c_sello_aumentos_secundarios.magik ✓
 - src/legacy/c_sello_estandar_ctl.magik
 - src/legacy/c_vp_croquis_proy_can.magik
 - src/legacy/c_sello_correspondencias.magik
@@ -73,7 +73,7 @@
 - src/legacy/c_fila.magik
 - src/legacy/c_linea_grafico.magik
 - src/legacy/c_Traductor.magik
-- src/legacy/c_plano_desmontaje_cd.magik
+- src/legacy/c_plano_desmontaje_cd.magik ✓
 - src/legacy/c_vp_ubicacion_cedo.magik
 - src/legacy/c_tabla_georeferencia.magik
 - src/legacy/c_sello_estandar_base.magik
@@ -117,11 +117,11 @@
 - src/legacy/c_resumen_competencia_tvpaga_sigp.magik
 - src/legacy/c_leyenda_ashurado.magik
 - src/legacy/c_norte.magik
-- src/legacy/c_lista_materiales_esquema_red.magik
+- src/legacy/c_lista_materiales_esquema_red.magik ✓
 - src/legacy/c_plano_principales.magik
 - src/legacy/c_vp_plano_proy_can.magik
 - src/legacy/layout_element.magik
-- src/legacy/c_lista_materiales_esquema.magik
+- src/legacy/c_lista_materiales_esquema.magik ✓
 - src/legacy/c_vp_croquis_edificio.magik
 - src/legacy/c_style_y_viewport_layout.magik
 - src/legacy/layout_series_plugin.magik
@@ -162,7 +162,7 @@
 - src/legacy/c_base_sello_cobre.magik
 - src/legacy/c_construccion_canalizacion.magik
 - src/legacy/c_tbl_linea_Horizontal.magik
-- src/legacy/c_plano_topologico.magik
+- src/legacy/c_plano_topologico.magik ✓
 - src/legacy/c_tabla.magik
 - src/legacy/c_plano_permisos.magik
 - src/legacy/c_sello_cuadro_de_notas.magik
@@ -181,6 +181,7 @@
 - src/legacy/c_sello_red_secundaria.magik
 - src/legacy/c_guarda_objetos_vp.magik
 - src/legacy/c_sello_fibra_optica_acometida.magik ✓
+- src/legacy/c_sello_fibra_optica_rof.magik ✓
 - src/legacy/c_construccion_microcanalizacion.magik
 - src/legacy/c_viewport_layout_sigc.magik
 - src/legacy/c_inventario_dto.magik ✓

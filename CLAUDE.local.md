@@ -75,6 +75,13 @@
 - src/legacy/c_Traductor.magik
 - src/legacy/c_plano_desmontaje_cd.magik ✓
 - src/legacy/c_vp_ubicacion_cedo.magik
+- src/legacy/c_vp_ubicacion_tba.magik ✓
+- src/legacy/c_enlace_grafico.magik ✓
+- src/legacy/c_estudio_transmision_grafico.magik ✓
+- src/legacy/c_factory_detalles.magik ✓
+- src/legacy/c_factory_planos.magik ✓
+- src/legacy/c_factory_ruta_cables.magik ✓
+- src/legacy/c_gui_direccion_empalmes.magik ✓
 - src/legacy/c_tabla_georeferencia.magik
 - src/legacy/c_sello_estandar_base.magik
 - src/legacy/c_cfg_bloque_titdet_editable_mixin.magik
@@ -149,6 +156,12 @@
 - src/legacy/c_sello_estandar_base_fo.magik ✓
 - src/legacy/c_sello_estandar_base_fo_acometida.magik ✓
 - src/legacy/c_sello_estudio_transmision.magik ✓
+- src/legacy/c_placa_identificacion_fo.magik ✓
+- src/legacy/c_notas_constructor_rof.magik ✓
+- src/legacy/c_notas_constructor.magik ✓
+- src/legacy/c_notas_considerar.magik ✓
+- src/legacy/c_lista_materiales.magik ✓
+- src/legacy/c_lista_clientes.magik ✓
 - src/legacy/c_sello_generico.magik ✓
 - src/legacy/c_sello_ruta_cables_fo.magik ✓
 - src/legacy/c_sello_ruta_cables_fo_sigp.magik ✓

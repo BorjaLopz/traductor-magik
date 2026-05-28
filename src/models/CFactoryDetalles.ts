@@ -88,12 +88,22 @@ export class CFactoryDetalles extends CFactoryPlanos {
   // Magik: AddVistaPerfil() — viewport at xmax-[3100→1100], ymax-[2500→500]. Fase 5.
   addVistaPerfil(): void { /* Fase 5 */ }
 
-  // Magik: AddViewport(page, tipoVp, limite, mapper, x1, y1, w, h, building)
-  // Complex factory: handles radio_base, lienzo_plano, and standard croquis paths. Fase 5.
+  // Magik: AddViewport(page, tipoVp, limite, mapper, x1, y1, w, h, building?)
+  // Coords (x1,y1,w,h) are in cm-units — multiplied by 100 internally before bounding_box.
+  // Example call from addLocalizacionOrigen: (page, :c_vp_croquis, unset, mapper, 8,60,25,23, building)
+  //   → bounds = (page.xmin+800, page.ymin+6000, page.xmin+3300, page.ymin+8300)
+  // Three dispatch paths: radio_base() / lienzo_plano enlace / standard croquis with building. Fase 5.
   // Different Magik signature than CFactoryPlanos.addViewport — rest params keep both compatible.
   override addViewport(..._args: unknown[]): void { /* Fase 5 */ }
 
-  // Magik: add_sello_tabla_equivalencias_x_cable() — with x offset per bastidor. Fase 5.
+  // Magik: add_sello_tabla_equivalencias_x_cable()
+  // For each bastidor from gen_planos.obtener_bastidores():
+  //   → iterates signal_cable_pins() → sheath (construction_status == "proyectado")
+  //   → builds datos: { LoCable, rme, LoCableObjeto, Central, num_de_grupos, numero_fibras,
+  //                     capacidad_cable, piso, sala, fila, bastidor }
+  //   → raises :information if num_de_grupos==0 or numero_fibras==0
+  //   → else creates CTabulaEquivalenciasXCable at bounds(3556+dx, 5735, 4546+dx, 8395), dx+=1000
+  // Fase 5.
   addSelloTablaEquivalenciasXCable(): void { /* Fase 5 */ }
 
   // Magik: AddDiagramaEmpalmesConexion(empalmes) — c_diagrama_conexion_empalme or c_diagrama_unifilar_ruta. Fase 5.
@@ -116,8 +126,12 @@ export class CFactoryDetalles extends CFactoryPlanos {
   // Magik: buscar_gme() — traverses connectivity to find GME bastidor. Fase 5.
   buscarGme(): unknown { return undefined /* Fase 5 */ }
 
-  // Magik: calles_faltantes_en_croquis(location) — selects up to 3 nearby streets. Fase 5.
+  // Magik: calles_faltantes_en_croquis(location) — selects up to 3 user!_eje_calle within 10 000-unit buffer. Fase 5.
   callesFaltantesEnCroquis(_location: unknown): Map<string, unknown> { return new Map() }
+
+  // Magik: calles_radiobase(rb_location) — calls callesFaltantesEnCroquis, then for each street
+  // calls calle.make_annotation() if dataset is in write mode. Fase 5.
+  callesRadiobase(_rbLocation: unknown): void { /* Fase 5 */ }
 
   // Magik: crear_croquis() — inserts a user!_lienzo_plano record for the route. Fase 5.
   crearCroquis(): unknown { return undefined /* Fase 5 */ }

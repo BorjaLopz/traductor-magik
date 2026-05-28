@@ -1,0 +1,175 @@
+_package user
+$
+def_slotted_exemplar(:c_plano_topologico_rof,{
+                     },:c_factory_detalles)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico_rof.new(_optional PoEngine)
+## Metodo para crear un _clone de _self
+##	
+    _return _clone.init(PoEngine)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico_rof.genera_plano(PoElemento  _optional PEnlace,  PoEmpalmes)
+## Objetivo: Generar el plano, en base al elemento solicitado
+## Parametros de Entrada: PoElemento << sheath,
+## mit_pesudo_fiber_pin o mit_fiber_pin
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:11/05/2010
+## Autor de la modificacion: aalarcon
+## Descripcion de la modificacion: Se agregan los llamados a
+## los metodos que agregan el detalle del cliente 
+
+	paf << smallworld_product.pni_application()
+	paf.plugin(:gen_planos).o_enlace << PEnlace
+
+	
+    # Ejecutar la super
+    _super.genera_plano(PoElemento,PEnlace)
+
+    _self.AddSellosDetalles()
+
+    lyp   <<  paf.plugin(:layout_plugin)
+    lyd   << lyp.dialogs[:layout_designer]
+    Layout_manager_plugin   <<  lyd.plugin(:layout_manager)
+    Layout_manager_plugin.action(:layout_view_home_view).execute_action()
+    
+_endmethod 
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico_rof.AddSellosDetalles()
+## Objetivo: Agregar los topologico de la central destino
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:25/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo
+
+	_local paf        <<  smallworld_product.pni_application()
+	_local gen_planos <<  paf.plugin(:gen_planos)
+	
+	_if gen_planos.o_ruta_sigp[:oclientestelcel] _isnt _unset 
+	_then
+		LoElemResumen << gen_planos.o_ruta_sigp[:oclientestelcel]
+		.opage.add_element(c_cuadro_resumen_usuarios_telcel.new_with(LoElemResumen,:bounds,  bounding_box.new(580,4421  ,2630, 4961)))
+	_endif
+
+	##_________________________________________________________________________________________________________
+	_self.agrega_simbolo("simbologia_anillo_rof",  bounding_box.new(330,5480 ,1933 ,7305))	 	
+	##--------------------------------cartula de plano rof ----------------------------------------------------
+	.oPage.add_element(c_sello_fibra_optica_rof.new_with(:bounds,      bounding_box.new(429, 429,2529,2429)))
+	##---------------------------------------------------------------------------------------------------------
+	.opage.add_element(c_sello_estandar_base_fo.new_with(:bounds,  bounding_box.new(267, 279,3837,3019)))
+	##---------------------------------------------------------------------------------------------------------
+	_self.AddNorte()
+	##---------------------------------------------------------------------------------------------------------
+	_self.add_viewport_principal()
+	##---------------------------------------------------------------------------------------------------------
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico_rof.AddNorte()
+	## Objetivo: Agregar el norte a los planos de ruta
+	## Parametros de Entrada: Ninguno
+	## Regresa: Ninguno.
+	## Fecha de Ultima modificacion:18/08/2008
+	## Autor de la modificacion: rraragon
+	## Descripcion de la modificacion: Metodo nuevo
+	
+	Lobounds<<bounding_box.new(.oPage.bounds.xmin,.oPage.bounds.ymax-1500,
+				   .oPage.bounds.xmin+1000,.oPage.bounds.ymax)
+	LoNorte << c_norte.new_with(:bounds,Lobounds)
+	LoNorte.limites<<_unset
+	.oPage.add_element(LoNorte)    
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico_rof.add_viewport_principal()
+	## 
+	## 
+	_local oPaf        << smallworld_product.pni_application()
+	_local LoMapPlugin << oPaf.plugin(:map_plugin)
+
+	_local geoms << opaf.plugin(:gen_planos).generar_geometrias_plano_rof()
+	
+	LoVpArea << bounding_box.new( 2922,1300,14700,7945)
+	
+	LoMapView                << LoMapPlugin.current_map_view
+	LoMapView.view_scale     << 10000
+	LoBoundsMv               << LoMapView.current_view_bounds
+	LoViewport               << c_viewport_layout_sigc.new_with(:bounds, LoVpArea, :oelementos,geoms )
+	LoViewport.outline_style << _unset
+	LoViewport.display_style << :|2 250 - 3 000 p ruta| 
+	LoViewport.view_scale    << "10000"
+	LoViewport.trail         << _false
+	LoViewport.selection     << _false
+	LoViewport.sTipoPlano    << "PLANO_TOPOLOGICO"
+	
+	LoViewport.set_fill_colour(_unset)
+	.oPage.add_element(LoViewport)
+	.oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView, geoms.bounds,_true)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_topologico_rof.crea_titulo
+	## Objetivo: Crear el titulo
+	
+
+        _local paf          << smallworld_product.pni_application()
+	
+	_local prj          << swg_dsn_admin_engine.active_design.project
+	_local fecha        << prj.fecha_proyecto
+	_local programa     << prj.user!_programa.write_string +  %space + prj.user!_programa_anyo
+	_local subprograma  << prj.job_title.write_string
+	
+	_if (cables<<paf.plugin(:gen_planos).o_ruta_sigp[:ocables]) _isnt _unset 
+	_then
+		cable_nombre << cables.an_element().name
+	_endif
+	
+	_local ctl             << _unset 
+	_local nodo            << _unset
+	
+	_local nco_nombre      << ""
+	_local nco_siglas      << ""
+	_local municipio       << ""
+	_local estado          << ""
+	_local num_trayectoria << ""	
+	_local ctls            << paf.plugin(:gen_planos).o_ruta_sigp[:oelementos_hash][:building]
+	
+	_if ctls _isnt _unset _andif
+	    ctls.an_element() _isnt _unset 
+	_then
+		ctl  << ctls.an_element()
+		nodo << ctl.building
+
+		titlectls << ""
+		_for iterc _over ctls.fast_elements()
+		_loop
+			titlectls +<< iterc.user!_nom_nodo +  %( + iterc.user!_siglas + %) + %newline
+		_endloop
+		
+	_endif
+
+
+
+	# (25/10/10 des_aaron) : updated
+	(nco_nombre,nco_siglas ) << swg_dsn_admin_engine.active_design.project.user!_central.building.datos_nco
+
+
+	LoTitulo << "PROGRAMA " + programa.write_string +     %newline +
+		    cable_nombre + %newline +
+		    		    "PLANO TOPOLOGICO" + %newline +
+		    "NCO "      + nco_nombre.write_string   +
+		    "(" + nco_siglas.write_string  + ")" +  %newline +
+		    titlectls +
+		    fecha 
+		
+	_return LoTitulo.uppercase
+	
+_endmethod
+$

@@ -1,0 +1,412 @@
+_package user
+$
+def_slotted_exemplar(:c_secuencia_trabajo,
+{
+	{:oTablas, _unset},
+	{:oCoordOrigen, _unset },	
+        {:oWindow, _unset }, 
+	{:bTablas_creadas, _unset }
+}, :textbox_layout)
+$
+c_secuencia_trabajo.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+c_secuencia_trabajo.define_slot_access(:bTablas_creadas,     :writable, :public)
+$
+c_secuencia_trabajo.define_shared_variable(:contenido_sello, _unset, :public)
+$
+c_secuencia_trabajo.define_slot_access(:oCoordOrigen,        :writable, :public)
+$
+c_secuencia_trabajo.define_slot_access(:oTablas,             :writable, :public)
+$
+c_secuencia_trabajo.define_slot_access(:oWindow,             :writable, :public)
+$
+c_secuencia_trabajo.define_shared_variable(:varObjeto, _unset, :public) 
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo.abre_interfaz_GUI
+	## 
+	## Objetivo: Llenar las celdas de las tablas del sello.
+	## Parametros de Entrada: Ninguno.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: Ninguno. 
+	
+	_self.varObjeto << c_gui_edita_sello_sec_trab.new(_self )
+	
+	_self.varObjeto.abre_ventana
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_secuencia_trabajo.Agrega_LYM(RoLym)
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+_endmethod
+$
+#_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+#_method c_secuencia_trabajo.defined_attributes
+#
+#	attribs << rope.new_from (_super.defined_attributes)
+##	_for attrib _over attribs.fast_elements()
+##	_loop
+##		attrib.allowed_on_properties_page? << _false
+##	_endloop
+#	
+#	# Atributo que indica si el sello debe presentarse en color
+#	# negro o en color rojo
+#	attribs.add(layout_attribute_definition.new(:Nombre_de_central,  :string,
+#		                                    :description,   "Central",
+#						    :default_value, _unset ))
+#	attribs.add(layout_attribute_definition.new(:Pozos_donde_van_los_soportes,  :string,
+#		                                    :description,   "Pozos donde van los soportes",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Numero_de_soportes,  :string,
+#		                                    :description,   "Numero de soportes",
+#						    :default_value, _unset ))
+#	attribs.add(layout_attribute_definition.new(:Soportes_en_pozos_de_paso,  :string,
+#		                                    :description,   "Soportes en pozos de paso",
+#						    :default_value, _unset ))
+#	attribs.add(layout_attribute_definition.new(:Mts_en_bastidor_remate,  :string,
+#						    :description,   "Mts en bastidor remate ",
+#						    :default_value, _unset ))
+#	attribs.add(layout_attribute_definition.new(:Mts_bdfo_de_ctl_hasta_ventana,  :string,
+#		                                    :description,   "Mts bdfo de ctl hasta ventana",
+#						    :default_value, _unset ))
+#	attribs.add(layout_attribute_definition.new(:Tipo_cable_bdfo_de_ctl_hasta_ventana,  :string,
+#		                                    :description,   "Tipo cable bdfo de ctl hasta ventana",
+#						    :default_value, _unset ))
+#	attribs.add(layout_attribute_definition.new(:Mts_desde_ventana_hasta_fosa_de_cables,  :string,
+#		                                    :description,   "Mts desde ventana hasta fosa de cables",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Tipo_cable_desde_ventana_hasta_fosa_de_cables,  :string,
+#		                                    :description,   "Tipo cable desde ventana hasta fosa de cables",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Pozo_donde_se_ubica_empalme_derivacion,  :string,
+#		                                    :description,   "Pozo donde se ubica empalme derivacion",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Mts_jalar_desde_pozo_a_empalme_derivacion,  :string,
+#						    :description,   "Mts jalar desde pozo a empalme derivacion",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Tipo_cable_jalar_desde_pozo_a_empalme_derivacion,  :string,
+#		                                    :description,   "Tipo cable jalar desde pozo a empalme derivacion",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Desde_el_pozo,  :string,
+#		                                    :description,   "Desde el pozo",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Hasta_empalme_de_derivacion,  :string,
+#		                                    :description,   "Hasta empalme de derivacion",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Ubicado_en_pozo_numero,  :string,
+#		                                    :description,   "Ubicado en pozo numero",
+#						    :default_value, _unset))
+#	attribs.add(layout_attribute_definition.new(:Numero_de_placas_de_identificacion,  :string,										:description,  "Numero de placas de identificacion",
+#						    :default_value, _unset))
+#	# Notas adicionales
+#	attribs.add(layout_attribute_definition.new(:Notas_adicionales,  :string,									                	:description,  "Notas Adicionales",
+#						    :default_value, _unset))
+#	>> attribs
+#	
+#_endmethod
+#$
+c_secuencia_trabajo.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo.defined_attributes
+
+   ## Objetivo: Se definen los atributos del sello secuencia de trabajo.
+   ## Parametros de Entrada: Ninguno.
+   ## Parametros de Salida:  Ninguno.
+   ## Regresa: Ninguno.
+   ## Autor de la modificacion: (09/05/08 rhernan)
+   ## (10/06/18 rraragon) : Modified. Se agrega el atributo
+   ## texto_sello para guardar el contenido del sello en el XML
+	
+   attribs << rope.new_from (_super.defined_attributes)
+   
+   _for attrib _over attribs.fast_elements()
+   _loop
+	   _if attrib.key.write_string.matches?("*font*").not
+	   _then
+		   attrib.allowed_on_properties_page? << _false	   
+	   _endif
+	   
+   _endloop
+   
+   # (09/05/07 rhernan) : Modified.
+   attribs.add ( layout_attribute_definition.new ( :|Editar Sello click aqui: ---->|, :unset,
+						   :description, "Editar Sello haz click ",
+						   :enum_method, :abre_interfaz_GUI))
+   
+   attribs.add ( layout_attribute_definition.new (:texto_sello, :string,
+						   :description, "",
+						   :deafult_value, _unset,
+						   :allowed_on_properties_page?, _false))
+   
+   attribs.add ( layout_attribute_definition.new (:largo, :integer,
+						  :description, "Largo",
+						  :deafult_value, 0 )) #,
+   
+   attribs.add ( layout_attribute_definition.new (:ancho, :integer,
+						  :description, "Ancho",
+						  :deafult_value, 0 ))
+   
+   >> attribs
+
+	
+_endmethod
+$
+c_secuencia_trabajo.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_secuencia_trabajo.draw_content_on ( window )
+
+
+	_self.prvAsignaTexto()
+	_self.oWindow << window
+
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << .oTablas.area_total()
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento.ntamanio << _self.font_size	
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(1,1).oElemento.scolor << _self.colour
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento.scolor << _self.colour
+        _self.oTablas.Despliega(window, _self.get_foreground_line_colour())
+	#_self.oTablas.Despliega(window)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo.envia_mensage_error
+     f << frame.new("Sello Secuencia Trabajo")
+     p << panel.new(f)
+     p.start_row() 
+     p.start_row()  
+     etiq << label_item.new(p, "Usted no tiene permisos para editar el Sello Secuencia de Trabajo")
+     p.start_row()
+     f.width << 350 
+     f.height << 200
+     f.activate()
+     f.x << 300 
+     f.y << 300
+     f.maximizable? << _false
+     f.minimizable? << _false 	  
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_secuencia_trabajo.Inicializa(_optional RoCoord)
+
+	_local LoArea # Area que ocupan todas la tablas
+
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord	
+
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	# Crea y configura cada una de las tablas 
+	_self.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+	# Se conoce el area de la tabla dibujada
+	LoArea << _self.oTablas.area_total()
+	# Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+	# Crea a los objetos que tendra c/u de las tablas
+
+	# START CHANGE
+	# (24/08/29 des_aaron) : 
+	#
+	LoCentral  <<  swg_dsn_admin_engine.active_scheme.project.user!_central.user!_central
+
+	texto1 << ""
+		texto1 +<< character.newLine 
+		texto1 +<< "  1.  ANTES DE INICIAR ESTOS TRABAJOS VERIFICAR QUE ESTEN CONCLUIDOS LOS TRABAJOS"
+		texto1 +<< character.newLine 	
+		texto1 +<< "  COMPLEMENTARIOS DE INFRAESTRUCTURA NECESARIA EN LA CTL  "   + LoCentral.default("")
+		texto1 +<< character.newLine + character.newLine 
+		texto1 +<< "  2.  SUBDIVIDIR TRAMOS INDICADOS EN LA RUTA" 
+		texto1 +<< character.newLine
+		texto1 +<< "  3.  ACONDICIONAR LOS POZOS PARA RAQUEO DE FO PROYECTADA COMO SE MENCIONA EN EL" 
+		texto1 +<< character.newLine	 
+		texto1 +<< "  PLANO DE RUTA DE CABLES" 
+		texto1 +<< character.newLine
+		texto1 +<< "  4.  COLOCAR SOPORTES EN LOS POZOS:  "  
+		texto1 +<< character.newLine
+		texto1 +<< "  PARA SUJECION DE GASAS" 
+		texto1 +<< character.newLine
+		texto1 +<< "  5.  COLOCAR  " + " SOPORTES EN LOS POZOS DE PASO:  "
+		texto1 +<< character.newLine
+		texto1 +<< "  DONDE SE ENCUENTRA DAÑADOS, SATURADOS O NO ESXISTE FO" 
+		texto1 +<< character.newLine 
+		texto1 +<< "  6.  SE DEJARAN  "  + " MTS EN BASTIDOR PARA REALIZAR REMATE EN LA CTL  "  + LoCentral.default("")
+		texto1 +<< character.newLine
+		
+		texto1 +<< "  7.  JALAR  " + " MTS DE CABLE  " + " DESDE EL BDFO DE LA CTL  " +  LoCentral.default("")  + ", HASTA LA VENTANA"
+		texto1 +<< character.newLine 
+		texto1 +<< "  DE LA FOSA DE CABLES "
+		texto1 +<< character.newLine	
+		texto1 +<< "  8.  JALAR Y SUJETAR  " + " MTS DE CABLE  " + " DESDE LA VENTANA DE LA FOSA DE"
+		texto1 +<< character.newLine
+		texto1 +<< "  CABLES HASTA EL EMPALME DE DERIVACION UBICADO EN EL POZO NO. " 
+		texto1 +<< character.newLine
+		texto1 +<< "  9.  JALAR Y SUJETAR  " + " MTS DE CABLE  " + "  DESDE EL POZO NO. " + " HASTA EL"
+		texto1 +<< character.newLine
+
+		texto1 +<< "  EMPALME DE DERIVACION  " + " UBICADO EN EL POZO NO.  " 
+		texto1 +<< character.newLine
+		texto1 +<< "  10.  REALIZAR EMPALMES DE DERIVACION Y EMPALMES TERMINAL DE ACUERDO AL PLANO,___DE___,___DE"
+		texto1 +<< character.newLine
+		texto1 +<< "  ___ Y ___DE___ EN POZOS MARCADOS CON ET Y E"
+		texto1 +<< character.newLine
+		texto1 +<< "  11.  ANTES DE PROCEDER A ELABORAR LAS PLACAS DE IDENTIFICACION EL CONTRATISTA DEBERA DE"
+		texto1 +<< character.newLine
+		texto1 +<< "  RECTIFICAR O RATIFICAR LOS KILOMETROS DE F.O. NUMERO DE EMPALMES COMO QUEDARON"
+		texto1 +<< character.newLine
+		texto1 +<< "  REALMENTE DESPUES DE LA CONSTRUCCION."
+		texto1 +<< character.newLine    
+		texto1 +<< "  12.  COLOCAR  " + " PLACAS DE IDENTIFICACION EN EL CABLE OPTICO COMO SE INDICA A CONTINUACION:"
+		texto1 +<< character.newLine    
+		texto1 +<< "   A.- COLOCAR UNA PLACA EN LA PARTE FRONTAL DEL BDFO DE LA CTL -  " + LoCentral.default("")    #+ edita1 
+		texto1 +<< character.newLine
+		texto1 +<< "   B.- COLOCAR UNA PLACA EN LA PARTE POSTERIOR DEL BDFO DE LA CTL -  " + LoCentral.default("")    #+ edita1
+		texto1 +<< character.newLine
+		texto1 +<< "   C.- COLOCAR UNA PLACA EN EL CABLE OPTICO CADA 5.0 mts. DESDE LA VENTANA DE LA FOSA DE"
+		texto1 +<< character.newLine 
+		texto1 +<< "    CABLES, HASTA EL BDFO DE LA CTL -  " + LoCentral.default("")  #+ edita1 
+		texto1 +<< character.newLine
+		texto1 +<< "   D.- COLOCAR UNA PLACA EN TODOS LOS POZOS DE LA RUTA"
+		texto1 +<< character.newLine
+		texto1 +<< "   E.- COLOCAR UNA PLACA ADICIONAL SOBRE EL CABLE EN LOS POZOS DONDE HAY GASAS." 
+		texto1 +<< character.newLine 
+		texto1 +<< "   F.- COLOCAR DOS PLACAS ADICIONALES SOBRE EL CABLE EN LOS POZOS CON EMPALME DE DERIVACION"
+		texto1 +<< character.newLine  
+		
+		_self.texto_sello << Texto1
+			
+	#
+	# END CHANGE
+	
+	_self.prvLlena_Celdas()
+	# Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+
+	# START CHANGE
+	# (24/08/29 des_aaron) : definir tamaño de font al iniciar
+	#
+	_self.font_size << 35
+	#
+	# END CHANGE
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo.post_initialisation ()
+	
+        _self.Inicializa(coordinate.new(0,0))	
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo.prvAsignaTexto()
+	## Objetivo: Asignar texto al sello; el sello esta compuesto de
+	## tablas, celdas y layout_elements se asignan el texto a la
+	## celda correspondiente. 
+	## Parametros de Entrada: Ninguno.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: Ninguno.
+	## Descripcion: 	
+	## (10/06/18 rraragon) : Modified. Se guarda el texto del sello
+	## en el atributo sello_texto, para ser guardado en el XML
+	
+	_local texto1     <<  character.newLine	
+	_local LoCentral  <<  swg_dsn_admin_engine.active_scheme.project.user!_central.user!_central
+	_local loDesplaza  <<  2
+
+	_if _self.texto_sello _isnt _unset 
+	_then
+		_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento.sTexto << _self.texto_sello
+	_endif
+	
+	_if _self.varObjeto _isnt _unset _andif
+	    _self.varObjeto.oventana.contents.size > 0
+	_then
+		# actualizar desde la interfaz
+		LoTexto <<  _self.varObjeto.oventana.contents.uppercase		
+		_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento.sTexto << LoTexto
+		_self.texto_sello << LoTexto
+		
+	_endif
+	
+	
+	_if _self.contenido_sello _isnt _unset _andif
+	    _self.contenido_sello.size > 0
+	_then
+		_if _self.contenido_sello.uppercase.occurrences_of(%newline) > 45 _and
+		    _self.contenido_sello.uppercase.occurrences_of(%newline) <= 60
+		_then 
+			loDiferencia  << _self.contenido_sello.uppercase.split_by(%newline).size - 40
+			loDesplaza    << loDesplaza * loDiferencia  			
+			totalDesplaza << loDesplaza + 120
+			
+			_self.oTablas.elemento(:tbl_secuencia_trabajo).orenglones.elemento(2).nlongitud << totalDesplaza
+			
+		_elif _self.contenido_sello.uppercase.occurrences_of(%newline) <=  40
+		_then
+			_self.oTablas.elemento(:tbl_secuencia_trabajo).orenglones.elemento(2).nlongitud << 110
+		_endif
+	_endif
+
+	
+	_if _self.attributes[:largo].value _isnt _unset _andif
+	    _self.attributes[:largo].value > 0
+	_then  
+		_self.oTablas.elemento(:tbl_secuencia_trabajo).orenglones.elemento(2).nlongitud << _self.attributes[:largo].value
+	_endif       
+	_if _self.attributes[:ancho].value _isnt _unset _andif 
+	    _self.attributes[:ancho].value > 0 
+	_then
+		_self.oTablas.elemento(:tbl_secuencia_trabajo).oColumnas.elemento(1).nlongitud << _self.attributes[:ancho].value
+	_endif  
+	
+_endmethod 
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_secuencia_trabajo.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblSecuencia # Tabla que almacena el título de la tabla
+
+	#######################
+	LoTblSecuencia	<< _self.oTablas.crea_tabla(2,1,:tbl_secuencia_trabajo)
+	# coordenada donde inicia la tabla
+	LoTblSecuencia.oCoordenada_origen << RoCoord
+	
+	# longitud de los renglones de la tabla
+	LoTblSecuencia.orenglones.elemento(1).nlongitud << 8        
+	LoTblSecuencia.orenglones.elemento(2).nlongitud << 150     # 130    80%
+	# longitud de las columnas de la tabla
+	LoTblSecuencia.oColumnas.elemento(1).nLongitud <<  207     # 115    80%
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_secuencia_trabajo.prvLlena_Celdas()
+
+	# Tamaño de la letra en cada una de los objetos
+
+        _local LoTitulo      << c_texto_grafico.new("SECUENCIA DE TRABAJO")
+        _local LoDescripcion << c_texto_grafico.new("")
+
+	LoTitulo.nTamanio      << 54     ## 30   80%
+	LoDescripcion.nTamanio << 36     ## 20   80%
+	LoDescripcion.sALineacion << :top_left 
+
+	# Asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(1,1).oElemento << LoTitulo
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento << LoDescripcion	
+	_self.prvAsignaTexto()
+
+	
+_endmethod
+$

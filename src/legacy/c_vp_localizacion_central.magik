@@ -1,0 +1,121 @@
+#----------------------------------------------------------------
+# c_vp_localizacion_central.magik - Smallworld Physical Network Inventory
+#                  Customization for Project : 
+#
+# GE Network Solutions
+#
+# Created By: rraragon
+#
+# Date: 20/08/08
+# Description: 
+#
+# ---------------- Revision History -----------------
+#
+# -------------- end revision history ---------------
+_package user
+$
+
+remex(:c_vp_localizacion_central)
+$
+
+
+def_slotted_exemplar(:c_vp_localizacion_central,
+		     {
+			     {:oResulSet,     _unset, :writable, :public}
+		     },
+                      :viewport_layout)
+$
+c_vp_localizacion_central.define_shared_constant(:titulo,
+					     "Croquis de Localización de la Central",
+					     :public)
+$
+c_vp_localizacion_central.define_shared_constant(:tamanio,8,:public)
+$
+c_vp_localizacion_central.define_shared_constant(:allowed_on_menu?,_false,:public)
+$
+c_vp_localizacion_central.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_vp_localizacion_central.initialise_for_page(a_layout_page)
+## Objetivo: Agregar el ACE y grupo de estilos a self
+## Parametros de entrada: a_layout_page << layout_page.
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+	_self.ace_name << "CENT_PLANOS"
+	_self.style_system_category << :plano
+	_self.display_style << "3 000 - 5 000"
+	_self.agregar_titulo(a_layout_page)
+
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_localizacion_central.geometry_set_for_render
+## Objetivo: Obtener la geometrias de la localizacion del TBA
+## Parametros de salida: Ninguno
+## Regresa: .oResulSet << composite_geometry_set
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+	
+_local LcollGeometrias  # Geometrias que deben dibujarse en el viewport.
+
+        # Obtener los objetos correspondientes al plano.
+        _dynamic !current_coordinate_system!
+	!current_coordinate_system! << _unset
+
+	LcollGeometrias << _super.geometry_set_for_render
+
+	.oResulSet << LcollGeometrias.select(:collection,{:user!_manzana,
+					                  :building,
+					                  :user!_eje_calle})
+
+	>> .oResulSet 
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_localizacion_central.draw_content_on(windows)
+## Objetivo: Ejecutar la super
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+	_super.draw_content_on(windows)
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted)
+_method c_vp_localizacion_central.agregar_titulo(PoPage)
+## Objetivo: Agregar el titulo del viewport
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:20/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+    _local LoBounds << bounding_box.new(_self.bounds.xmin,
+				  _self.bounds.ymin - 100,
+				  _self.bounds.xmax,
+				  _self.bounds.ymin )
+				  
+    LoTitulo << _self.titulo
+    LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBounds,
+					   :font_name,        "bold",
+					   :font_size,        _self.tamanio,
+					   :fill_style,       _unset,
+					   :outline_style,    _unset,
+					   :text,             LoTitulo,
+					   :wrap,             _false,
+					   :align_horizontal, :centre,
+					   :align_vertical,   :centre,
+					   :orientation,      :left_right)
+    PoPage.add_element(LoTitulo)
+	
+_endmethod
+$

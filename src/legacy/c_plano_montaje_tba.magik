@@ -1,0 +1,313 @@
+_package user
+$
+def_slotted_exemplar(:c_plano_montaje_tba,{
+                     {:oEngine, _unset , :writable, :private},  # Engine para el plano
+		     {:oPafManager, _unset, :writable,:private} #Application manager
+		     },:c_factory_planos)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.AddConexionEmpalme()
+## Objetivo: Agregar el diagrama de conexion de empalme
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+    Lobounds<<bounding_box.new(.oPage.bounds.xmin + 4600,  #3500  x = 1800
+			       .oPage.bounds.ymax - 450,   #2000  y = 1200
+			       .oPage.bounds.xmin + 6400,  #1400
+			       .oPage.bounds.ymax - 1650)  #3700
+
+    LoCableTBA << .oEngine.cable_contectado_tba()
+    LoEmpalme << .oEngine.empalme_tba()
+    _if LoCableTBA _isnt _unset _andif LoEmpalme _isnt _unset 
+    _then
+	     LoDiagConex << c_conexion_empalme.new_with(LoCableTBA,LoEmpalme,:bounds,Lobounds)
+	     LoDiagConex.guardar_elementos_bd_gis(rope.new_with(LoCableTBA,LoEmpalme))
+	     .oPage.add_element(LoDiagConex)
+    _endif
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.AddMarco()
+## Objetivo: Metodo subclaseado para agregar el marco a la
+## pagina del Layout
+## Parametros de Entrada: Ninguno.
+## Regresa: Lomarco << c_marco
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+    LoMarco << c_marco.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+    LoMarco.Largo << 4
+    LoMarco.Alto << 2
+    LoMarco.set_fill_colour(_unset)
+    .oPage.add_element(LoMarco)	
+    _return LoMarco
+    
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.AddNorte()
+## Objetivo: Agregar el norte al plano
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+    Lobounds<<bounding_box.new(.oPage.bounds.xmin,.oPage.bounds.ymax-1500,
+			       .oPage.bounds.xmin+1000,.oPage.bounds.ymax)
+    
+    LoNorte << c_norte.new_with(:bounds,Lobounds)
+    LoNorte.limites<<_unset
+    .oPage.add_element(LoNorte)    
+	
+	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.AddParticulares()
+## Objetivo: Agregar los elementos particulares a este plano
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+	LoGenSellos << c_generador_sellos.obten_instancia()
+	# c_datos_de_red x = 1650, y = 4000
+	LoGenSellos.genera_sello(.oPage,c_datos_de_red, bounding_box.new(1500,250,3150,4250 ))
+	# c_cuadro_simbologia_planos_fo x = 1650, y = 4000
+    	LoGenSellos.genera_sello(.oPage,c_cuadro_simbologia_planos_fo, bounding_box.new(450,1250,2100,4250) )
+	#  c_notas_considerar x = 2550,  y = 1300	
+	LoGenSellos.genera_sello(.oPage,c_notas_considerar, bounding_box.new(2350,1160,2350,1160))
+	#  c_tabla_ps_telealim x = 0, y = 0
+	LoGensellos.genera_sello(.oPage,c_tabla_ps_telealim, bounding_box.new(6850,5650,6850,5650) )
+	# c_lista_materiales x = 0, y = 0
+	LoGenSellos.genera_sello(.oPage,c_lista_materiales, bounding_box.new(3300,4250,3300,4250))
+	_self.AddNorte()
+	_self.AddConexionEmpalme()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.AddSellos()
+	## 
+	## 
+	# (08/09/23 jtlelo) : sellos de la clase super....
+	LoSello << c_sello_ruta_cables_fo.new_with(:bounds,bounding_box.new(450,400,2100,3000 ))
+	.oPage.add_element(LoSello)
+	LoGenSellos << c_generador_sellos.obten_instancia()
+	LoGenSellos.genera_sello(.oPage,c_sello_estandar_base_fo, bounding_box.new(285,400,2100,3000 ))
+	# c_notas_constructor x = 1650, y = 4600
+	LoGenSellos.genera_sello(.oPage,c_notas_constructor, bounding_box.new(2350,1500,2350,1500))
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.AddViewportLocalizacion()
+## Objetivo: Metodo que agrega el viewport de localizacion
+## Parametros de entrada: Ninguno.
+## Parametros de salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:21/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo
+
+
+    _if .oPage _isnt _unset _andif .oPage.is_kind_of?(layout_page)
+    _then
+	_if (LoLocalizacion << .oEngine.ir_localizacion_tba()) _isnt _unset
+	_then
+		LoEstr << .oEngine.obten_estructura_localizacion()
+    	        .oPafManager.goto_primary_context(LoEstr)
+		
+		# Bounds para el viewport
+		LoBounds << bounding_box.new(.oPage.bounds.xmin+700, # 700  x=1800
+					     .oPage.bounds.ymax-300, # 2500
+					     .oPage.bounds.xmin+2500, # 3400 y = 1200
+					     .oPage.bounds.ymax-1500)  # 500
+		
+		# Crear el viewport
+		lv << LoViewport << c_vp_localizacion_tba.new_with(LoEstr,
+					                           :trail, _false,
+								   :selection, _false,
+								   :post_render, _false,
+								   :bounds, LoBounds)
+		lv.guardar_elementos_bd_gis(rope.new_with(LoEstr))
+	
+		# Obtener la vista con el buffer
+		LoMapView<<_self.GetMapView(LoLocalizacion)
+		
+		# Agregar el viewport
+		.oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							    LoMapView.current_view_bounds.new_enlarging(1.5),
+							    _true)			
+		.oPage.add_element(LoViewport)		
+	_endif
+    _endif 
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.AddViewportUbicacion()
+## Objetivo: Metodo que agrega el viewport de ubicacion
+## Parametros de entrada: Ninguno.
+## Parametros de salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:21/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo
+
+    _if .oPage _isnt _unset _andif .oPage.is_kind_of?(layout_page)
+    _then
+	_if (LoUbicacion << .oEngine.ir_ubicacion_tba()) _isnt _unset
+	_then
+			
+		_if _not .oEngine.tba_en_gis?
+		_then
+	    	    .oPafManager.goto_primary_context(.oEngine.getTba)
+		_endif 
+		
+		# Bounds para el viewport
+		LoBounds << bounding_box.new(.oPage.bounds.xmin+2600,    #3600 x = 1800
+					     .oPage.bounds.ymax-300,    #2500 y = 1200
+					     .oPage.bounds.xmin+4400,    #6300
+					     .oPage.bounds.ymax-1500)	 #500
+		
+		# Crear el viewport
+		Loelementos << _self.agregar_elementos()
+		LoViewport << c_vp_ubicacion_tba.new_with( Loelementos,
+							   :trail, _false,
+							   :selection, _false,
+							   :post_render, _false,
+							   :bounds, LoBounds)
+		LoViewport.guardar_elementos_bd_gis(Loelementos)
+	
+		# Obtener la vista con el buffer
+		LoMapView<<_self.GetMapView(LoUbicacion.sectors.as_sector())
+		
+		# Agregar el viewport
+		.oViewMapperPlugin.map_viewport_on_map_view(LoViewport,LoMapView,
+							    LoMapView.current_view_bounds.new_enlarging(1.5),							    _true)
+		# Cambiar el Ace
+		_if _not .oEngine.tba_en_gis?
+		_then			
+			LoViewport.ace_name << "mit_floor_internal"		    
+		_else			
+			LoViewport.ace_name << "CENT_PLANOS"
+			LoViewport.style_system_category << :plano
+			LoViewport.display_style << "250 - 1 000"		    
+		_endif
+		
+		.oPage.add_element(LoViewport)		
+	_endif
+    _endif 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.agregar_elementos()
+## Objetivo: Metodo que agrega los elementos necesarios para la
+## ubicaion del TBA
+## Parametros de entrada: Ninguno.
+## Parametros de salida: Ninguno.
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:21/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo
+
+_local LoElementos << rope.new()
+
+    _if (loAnota << .oEngine.anotacion_tba()) _isnt _unset 
+    _then
+	    LoElementos.add(loAnota)
+    _endif
+    _if (loEmp << .oEngine.empalme_tba()) _isnt _unset 
+    _then
+	    LoElementos.add(loEmp)
+    _endif
+    _for gasa _over .oEngine.gasas().elements()
+    _loop
+	    LoElementos.add(gasa)
+    _endloop
+
+    _return LoElementos
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.crea_titulo
+## Objetivo: Crear el titulo para el plano
+## Parametros de salida: Ninguno
+## Regresa: Ninguno.
+## Fecha de Ultima modificacion:18/08/2008
+## Autor de la modificacion: rraragon
+## Descripcion de la modificacion: Metodo nuevo 
+
+	# (10/07/30 lgranados) : Se agrega el nombre de la central y el
+	# programa en el titulo.
+	LoTitulo << "PLANO MONTAJE DE TBA" + %newline +
+		    .oEngine.getTba.user!_identificador.write_string + %newline +
+		    swg_dsn_admin_engine.active_design.project.user!_programa_tipo + %newline +
+		    swg_dsn_admin_engine.active_design.project.user!_central.user!_central + " - "+
+		    swg_dsn_admin_engine.active_design.project.user!_central.user!_nombre
+	
+	_return LoTitulo
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.genera_plano()
+## Objetivo: Metodo que subclaseable para generar el plano,
+## llama a la super y carga los elementos particulares para
+## este tipo de plano
+## Parametros de entrada: Ninguno.
+## Parametros de salida: Ninguno
+## Regresa: Ninguno
+## Fecha de Ultima modificacion:13/08/2008
+## Autor de la modificacion: fhramire
+## Descripcion de la modificacion: Metodo nuevo
+
+
+    _super.genera_plano()    
+    _self.AddViewportLocalizacion()
+    _self.AddViewportUbicacion()
+    _self.AddParticulares()
+
+    .oViewMapperPlugin.layout_manager.action(:layout_view_refresh).execute_action()
+    # Asignar nombre de plano
+    .oPage.layout_document.user!_tipo_plano << :montaje_tba
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_plano_montaje_tba.init(_optional PoEngine)
+## Metodo para inicializar la instancia
+##
+    _if PoEngine _isnt _unset 
+    _then
+        .oEngine << PoEngine
+    _endif
+    
+     .oPafManager << smallworld_product.pni_application().manager
+     
+    _super.init()    
+    _return _self 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_montaje_tba.new(_optional PoEngine)
+## Metodo para crear un _clone de _self
+##	
+    _return _clone.init(PoEngine)
+	
+_endmethod
+$

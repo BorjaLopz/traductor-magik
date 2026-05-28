@@ -1,0 +1,117 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Planos - Fibra Óptica 
+# Objetivo: crear la tabla de capacidades
+# Autor:    lgranados
+# Fecha de creacion: 7-agosto-2008
+#
+#----------------------------------------------------------------
+
+_package user
+$
+
+def_slotted_exemplar(:c_tabla_capacidades,
+{
+}, :c_base_sello_fibra)
+$
+
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_capacidades.configura_tabla()
+
+	lo_tabla << .o_tablas.crea_tabla(22,2,:tbl_capacidades)
+
+	# coordenada donde inicia la tabla
+	lo_tabla.ocoordenada_origen << .o_coord_inicio
+
+	# longitud de los renglones de la tabla, dada en mm 
+	lo_tabla.orenglones.elemento(1).nlongitud << 8
+	_for n_reng _over range(2,22)
+	_loop
+		lo_tabla.orenglones.elemento(n_reng).nlongitud << 5
+	_endloop
+	
+	# longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 6
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 45
+	
+	# se ocultan bordes de celdas
+	
+	lo_celda << lo_tabla.oceldas.celda(1,2).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Izq? << _false
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_capacidades.etiqueta_celdas()
+
+	msg << "ABREVIATURAS" +%newline
+	msg +<< "PARA CAPACIDAD DE CABLE"
+
+	_self.asigna_texto_celda(:tbl_capacidades,1,2,msg,30, :top_left,5)
+	
+	lrope_textos << rope.new()
+	lrope_textos.add("A")
+	lrope_textos.add("B")
+	lrope_textos.add("C")
+	lrope_textos.add("D")
+	lrope_textos.add("E")
+	lrope_textos.add("F")
+	lrope_textos.add("G")
+	lrope_textos.add("H")
+	lrope_textos.add("I")
+	lrope_textos.add("J")
+	lrope_textos.add("K")
+	lrope_textos.add("L")
+	lrope_textos.add("M")
+	lrope_textos.add("N")
+	lrope_textos.add("R")
+	lrope_textos.add("S")
+	lrope_textos.add("T")
+	lrope_textos.add("V")
+	lrope_textos.add("W")
+	lrope_textos.add("X")
+	lrope_textos.add("Z")
+	ln_reng_ini << 2
+	
+	_for s_txt _over lrope_textos.fast_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_capacidades,ln_reng_ini,1,s_txt,20, :centre_left,2)
+		ln_reng_ini +<< 1
+	_endloop
+
+	lrope_textos2 << rope.new()
+	lrope_textos2.add("10 PS.")
+	lrope_textos2.add("20")
+	lrope_textos2.add("30")
+	lrope_textos2.add("50")
+	lrope_textos2.add("70")
+	lrope_textos2.add("100")
+	lrope_textos2.add("150")
+	lrope_textos2.add("200")
+	lrope_textos2.add("300")
+	lrope_textos2.add("600")
+	lrope_textos2.add("900")
+	lrope_textos2.add("1200")
+	lrope_textos2.add("1800")
+	lrope_textos2.add("2400")
+	lrope_textos2.add("CABLE PARA LA TIERRA FISICA")
+	lrope_textos2.add("TUBO POLYFLO")
+	lrope_textos2.add("TRONCALES")
+	lrope_textos2.add("VIDEO")
+	lrope_textos2.add("COMISION FEDERAL DE ELECTRICIDAD")
+	lrope_textos2.add("CABLES COAXIALES")
+	lrope_textos2.add("FIBRAS OPTICAS F.O.")
+	ln_reng_ini << 2
+	
+	_for s_txt _over lrope_textos2.fast_elements()
+	_loop
+		_self.asigna_texto_celda(:tbl_capacidades,ln_reng_ini,2,s_txt,20,_unset)
+		ln_reng_ini +<< 1
+	_endloop
+	
+_endmethod
+$

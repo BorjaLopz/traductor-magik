@@ -1,0 +1,402 @@
+#Tipo: Patch. 
+#Número de cambio: 10029_1
+#Corrige Números de falla: 
+#Corrigío: rhernan.
+#Fecha: (14/10/21 rhernan) : 
+#Falla Originado 
+#Patch Para liberar: Versión 11_8_5.
+#Comentarios: Se genera Sello editable, generico.
+#--------------------------------------------------------------
+$
+_package user 
+$
+#remex(:c_sello_generico)
+$
+def_slotted_exemplar(:c_sello_generico,
+{
+	{:oTablas, _unset},
+	{:oCoordOrigen, _unset },	
+        {:oWindow, _unset }, 
+	{:bTablas_creadas, _unset },
+	{:varObjeto, _unset},
+	{:contenido_sello, _unset},
+	{:gui_edita_sello, _unset}
+}, :layout_element)
+$ 
+c_sello_generico.define_slot_access(:oWindow,             :writable, :public)
+$
+#c_sello_generico.define_shared_variable(:contenido_sello, _unset, :public)
+$ 
+c_sello_generico.define_shared_constant(:allowed_on_menu?, _true  , :public)
+$
+#c_sello_generico.define_shared_variable(:varObjeto, _unset, :public) 
+$
+c_sello_generico.define_slot_access(:oTablas,             :writable, :public)
+$
+c_sello_generico.define_slot_access(:oCoordOrigen,        :writable, :public)
+$
+c_sello_generico.define_slot_access(:bTablas_creadas,     :writable, :public)
+$
+_pragma(classify_level=restricted, topic={optical_splice_closure_spec})
+_method c_sello_generico.defined_attributes
+      ## Objetivo: Se definen los atributos del sello secuencia de trabajo.
+      ## Parametros de Entrada: Ninguno.
+      ## Parametros de Salida:  Ninguno.
+      ## Regresa: Ninguno. 
+      ## Autor de la modificacion: (09/05/08 rhernan)
+      ## (10/06/18 rraragon) : Modified. Se agrega el atributo
+      ## texto_sello para guardar el contenido del sello en el XML
+	
+	attribs << rope.new_from (_super.defined_attributes)
+	
+	_for attrib _over attribs.fast_elements()
+	_loop
+		attrib.allowed_on_properties_page? << _false
+	_endloop
+	
+	# (09/05/07 rhernan) : Modified.
+	
+	attribs.add ( layout_attribute_definition.new ( :|Editar Sello click aqui: ---->|, :unset,
+							:description, "Editar Sello haz click ... ",
+							:enum_method, :abre_interfaz_GUI))
+	
+	attribs.add ( layout_attribute_definition.new (:titulo_sello, :string,
+						       :description, _self.message(:notas_grales),
+						       :default_value, _self.message(:notas_grales)))
+	
+	attribs.add ( layout_attribute_definition.new (:texto_sello, :string,
+						       :description, "",
+						       :default_value, _unset,
+						       :allowed_on_properties_page?, _false))
+	
+	attribs.add ( layout_attribute_definition.new (:largo, :integer,
+						       :description, "Largo",
+						       :default_value, 0 ))
+	
+	attribs.add ( layout_attribute_definition.new (:ancho, :integer,
+						       :description, "Ancho",
+						       :default_value, 0 ))
+	
+	>> attribs
+	
+_endmethod
+$
+# (14/10/22 rhernan) : QUITAR SI NO TIENE EFECTO ..
+_pragma(classify_level=restricted, usage={redefinable})
+c_sello_generico.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_generico.Inicializa(_optional RoCoord)
+
+ _local LoArea # Area que ocupan todas la tablas
+
+   _if RoCoord _is _unset 
+   _then
+	   RoCoord << coordinate.new(0,0)
+   _endif
+   
+   _self.oCoordOrigen << RoCoord	
+   
+   # Crea el objeto que contiene todas las tablas del sello estandar
+   _self.oTablas << c_tablas.new(_self)
+   # Crea y configura cada una de las tablas 
+   _self.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+   # Se conoce el area de la tabla dibujada
+   LoArea << _self.oTablas.area_total()
+   # Se ajustan los limites del layout de acuerdo  a las tablas definidas
+   _self.bounds << LoArea
+
+   # Crea a los objetos que tendra c/u de las tablas
+   _self.prvLlena_Celdas()
+   # Indica que los objetos tabla ya fueron creados 
+   _self.bTablas_creadas << _true
+	
+_endmethod
+$
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_generico.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblSecuencia # Tabla que almacena el título de la tabla
+
+	#######################
+	#LoTblSecuencia	<< _self.oTablas.crea_tabla(2,1,:tbl_secuencia_trabajo)
+
+        LoTblSecuencia	<< _self.oTablas.crea_tabla(2,1,:tbl_sello_generico)
+	
+	# coordenada donde inicia la tabla
+	LoTblSecuencia.oCoordenada_origen << RoCoord
+	
+	# longitud de los renglones de la tabla
+	LoTblSecuencia.orenglones.elemento(1).nlongitud << 8
+	LoTblSecuencia.orenglones.elemento(2).nlongitud << 50
+	# longitud de las columnas de la tabla
+	LoTblSecuencia.oColumnas.elemento(1).nLongitud << 110
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_generico.draw_content_on ( window )
+
+	_self.prvAsignaTexto() 	
+	_self.oWindow << window 
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << .oTablas.area_total() 
+
+        _self.oTablas.Despliega(window)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_sello_generico.prvLlena_Celdas()
+
+	# Tamanio de la letra en cada una de los objetos
+
+	loTituloSello      << _self.attributes[:titulo_sello].value.write_string.uppercase
+	
+        #_local LoTitulo      << c_texto_grafico.new("SELLO GENERICO ")  
+        _local LoTitulo      << c_texto_grafico.new(loTituloSello.default(""))
+	 
+        _local LoDescripcion << c_texto_grafico.new("valor")
+
+	LoTitulo.nTamanio      << 35
+	LoDescripcion.nTamanio << 35
+	LoDescripcion.sALineacion << :top_left  
+
+	# Asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_sello_generico).oCeldas.Celda(1,1).oElemento << LoTitulo
+	_self.oTablas.elemento(:tbl_sello_generico).oCeldas.Celda(2,1).oElemento << LoDescripcion
+
+	_self.prvAsignaTexto()
+	
+_endmethod 
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable}) 
+_method c_sello_generico.envia_mensage_error
+     f << frame.new("Sello Secuencia Trabajo")
+     p << panel.new(f)
+     p.start_row() 
+     p.start_row()  
+     etiq << label_item.new(p, "Usted no tiene permisos para editar el Sello Secuencia de Trabajo")
+     p.start_row()
+     f.width << 350 
+     f.height << 200
+     f.activate()
+     f.x << 300 
+     f.y << 300
+     f.maximizable? << _false
+     f.minimizable? << _false 	  
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_generico.post_initialisation ()
+	
+        _self.Inicializa(coordinate.new(0,0))	
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_generico.Agrega_LYM(RoLym)
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_generico.abre_interfaz_GUI
+   ## 
+   ## Objetivo: Llenar las celdas de las tablas del sello.
+   ## Parametros de Entrada: Ninguno.
+   ## Parametros de Salida:  Ninguno.
+   ## Regresa: Ninguno. 
+   ## Autor de la modificacion: (09/05/08 rhernan).
+
+  # _if c_sello_generico.varObjeto _is _unset
+  # _then
+  #c_sello_generico.varObjeto << c_gui_edita_sello_sec_trab.new()
+  # _endif	
+ 
+  _if gis_program_manager.authorisation_view.current_user.access_to?(:edicion_sello_secuencia_trabajo) = _true
+  _then
+       .gui_edita_sello.abre_ventana
+      #.varObjeto.abre_ventana
+  _else
+       _self.envia_mensage_error       
+  _endif 
+    
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_generico.prvAsignaTexto()
+   ## Objetivo: Asignar texto al sello; el sello esta compuesto de
+   ## tablas, celdas y layout_elements se asignan el texto a la
+   ## celda correspondiente. 
+   ## Parametros de Entrada: Ninguno.
+   ## Parametros de Salida:  Ninguno.
+   ## Regresa: Ninguno.
+   ## Descripcion: 	
+   ## Autor de la modificacion: rhernan.
+   ## (10/06/18 rraragon) : Modified. Se guarda el texto del sello
+   ## en el atributo sello_texto, para ser guardado en el XML
+
+  _local texto1 <<  ""  #character.newLine
+
+  
+  loTituloSelloActualizado      << _self.attributes[:titulo_sello].value.write_string.uppercase
+  TituloAct << c_texto_grafico.new(loTituloSelloActualizado)
+  
+  _if loTituloSelloActualizado _isnt unset
+  _then
+     _self.oTablas.elemento(:tbl_sello_generico).oCeldas.Celda(1,1).oElemento << TituloAct 
+  _endif  
+  
+  .gui_edita_sello << c_gui_edita_sello_generico.new(_self)
+     
+  _if .gui_edita_sello.sys!slot(:oventana) _isnt _unset _andif
+      .gui_edita_sello.sys!slot(:oventana).contents.size > 0
+  _then
+     _if .gui_edita_sello.sys!slot(:oventana) _isnt _unset _andif
+	 .gui_edita_sello.sys!slot(:oventana).contents _isnt _unset   
+     _then
+	  contenido << .gui_edita_sello.sys!slot(:oventana).contents 
+	  LoTexto   << .gui_edita_sello.sys!slot(:oventana).contents.uppercase	  
+	  _self.oTablas.elemento(:tbl_sello_generico).oCeldas.Celda(2,1).oElemento.sTexto << LoTexto
+	  
+	  _if _self.responds_to?(:texto_sello)
+	  _then
+		  _self.texto_sello << LoTexto
+	  _endif
+     _endif
+     
+  _elif _self.responds_to?(:texto_sello) _andif
+	_self.texto_sello _isnt _unset
+  _then
+	# actualizar desde el atributo texto_sello que se guardo en el XML
+	_self.oTablas.elemento(:tbl_sello_generico).oCeldas.Celda(2,1).oElemento.sTexto <<	  _self.texto_sello 
+  _else    
+   _self.oTablas.elemento(:tbl_sello_generico).oCeldas.Celda(2,1).oElemento.sTexto << texto1   
+  _endif 
+
+   _if .contenido_sello _isnt _unset _andif
+       .contenido_sello.size > 0  _andif
+       _self.responds_to?(:texto_sello) 
+   _then
+	 _self.oTablas.elemento(:tbl_sello_generico).oCeldas.Celda(2,1).oElemento.sTexto << .contenido_sello.uppercase
+	 _self.texto_sello << .contenido_sello.uppercase
+   _endif
+  
+ # (14/10/20 rhernan) :
+ _local loDesplaza << 2
+ 
+ _if .contenido_sello _isnt _unset 
+ _then
+	 
+    _if .contenido_sello.uppercase.occurrences_of(%newline)  > 21 _and
+	.contenido_sello.uppercase.occurrences_of(%newline) <= 150
+    _then  
+	loDiferencia << .contenido_sello.uppercase.split_by(%newline).size - 21
+	loDesplaza << loDesplaza * loDiferencia 
+	totalDesplaza << loDesplaza + 110
+	_self.oTablas.elemento(:tbl_sello_generico).orenglones.elemento(2).nlongitud << totalDesplaza
+	 
+    _elif .contenido_sello.uppercase.split_by(%newline).size <=  21
+    _then
+	  _self.oTablas.elemento(:tbl_sello_generico).orenglones.elemento(2).nlongitud << 70
+    _endif   
+ _endif
+
+ _if _self.attributes[:largo].value _isnt _unset _andif
+     _self.attributes[:largo].value > 0
+ _then  
+     _self.oTablas.elemento(:tbl_sello_generico).orenglones.elemento(2).nlongitud << _self.attributes[:largo].value
+ _endif
+ 
+ _if _self.attributes[:ancho].value _isnt _unset _andif
+     _self.attributes[:ancho].value > 0
+ _then
+     _self.oTablas.elemento(:tbl_sello_generico).oColumnas.elemento(1).nlongitud << _self.attributes[:ancho].value
+ _endif  
+	  
+_endmethod 
+$
+
+
+    # (09/05/07 rhernan) : Modified. se comenta porque ya no se
+    # requiere puesto que el usuario podrá llenarlo como lo desee.
+
+    #texto1 +<< "  1.  ANTES DE INICIAR ESTOS TRABAJOS VERIFICAR QUE ESTEN CONCLUIDOS LOS TRABAJOS"
+    #texto1 +<< character.newLine      
+    # (09/05/07 rhernan) : Modified. se obtiene las siglas de la central.
+    #LoCentral << swg_dsn_admin_engine.active_scheme.project.user!_central.user!_central
+    # (09/05/07 rhernan) : Modified. se concatena el nombre de la central al texto.
+ 
+    #texto1 +<< character.newLine 
+    # texto1 +<< " " # AQUI SE ESCRIBEN LOS DATOS COMPLEMENTARIOS AL SELLO   "
+                   #    texto1 +<< character.newLine + character.newLine 
+		   #    texto1 +<< "  2.  SUBDIVIDIR TRAMOS INDICADOS EN LA RUTA" 
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  3.  ACONDICIONAR LOS POZOS PARA RAQUEO DE FO PROYECTADA COMO SE MENCIONA EN EL" 
+		   #    texto1 +<< character.newLine	 
+		   #    texto1 +<< "  PLANO DE RUTA DE CABLES" 
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  4.  COLOCAR SOPORTES EN LOS POZOS:  "  #+ edita2 
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  PARA SUJECION DE GASAS" 
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  5.  COLOCAR  " + " SOPORTES EN LOS POZOS DE PASO:  "
+		   #    #+ edita3 + " SOPORTES EN LOS POZOS DE PASO:  " + edita4
+		   #    texto1 +<< character.newLine
+                   #    texto1 +<< "  DONDE SE ENCUENTRA DAÑADOS, SATURADOS O NO ESXISTE FO" 
+		   #    texto1 +<< character.newLine 
+		   #    texto1 +<< "  6.  SE DEJARAN  "  + " MTS EN BASTIDOR PARA REALIZAR REMATE EN LA CTL  "  + LoCentral.default("")
+		   #    
+		   #    # edita5 + " MTS EN BASTIDOR PARA REALIZAR REMATE EN LA CTL"
+		   #    texto1 +<< character.newLine
+		   #    
+		   #    texto1 +<< "  7.  JALAR  " + " MTS DE CABLE  " + " DESDE EL BDFO DE LA CTL  " +
+		   #	       LoCentral.default("")  + ", HASTA LA VENTANA"
+		   #    # + edita6 + " MTS DE CABLE  " + edita7 + " DESDE EL BDFO DE LA CTL HASTA LA VENTANA" 
+		   #    texto1 +<< character.newLine 
+		   #    texto1 +<< "  DE LA FOSA DE CABLES "
+		   #    texto1 +<< character.newLine	
+		   #    texto1 +<< "  8.  JALAR Y SUJETAR  " + " MTS DE CABLE  " + " DESDE LA VENTANA DE LA FOSA DE"
+		   #    #edita8 + " MTS DE CABLE  "+ edita9 +" DESDE LA VENTANA DE LA FOSA DE"
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  CABLES HASTA EL EMPALME DE DERIVACION UBICADO EN EL POZO NO. " #+ edita10
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  9.  JALAR Y SUJETAR  " + " MTS DE CABLE  " + "  DESDE EL POZO NO. " +
+                   # " HASTA EL" #   edita11+ " MTS DE CABLE  "+edita12+ "  DESDE EL POZO NO. "+edita13 +" HASTA EL"
+		   #    texto1 +<< character.newLine
+		   #    # texto1 +<< "  EMPALME DE DERIVACION  "+edita14+" UBICADO EN EL POZO NO.  "+edita15
+		   #    texto1 +<< "  EMPALME DE DERIVACION  " + " UBICADO EN EL POZO NO.  "  #+edita15 
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  10.  REALIZAR EMPALMES DE DERIVACION Y EMPALMES TERMINAL DE ACUERDO AL PLANO,___DE___,___DE"
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  ___ Y ___DE___ EN POZOS MARCADOS CON ET Y E"
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  11.  ANTES DE PROCEDER A ELABORAR LAS PLACAS DE IDENTIFICACION EL CONTRATISTA DEBERA DE"
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  RECTIFICAR O RATIFICAR LOS KILOMETROS DE F.O. NUMERO DE EMPALMES COMO QUEDARON"
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "  REALMENTE DESPUES DE LA CONSTRUCCION."
+		   #    texto1 +<< character.newLine    
+		   #    #texto1 +<< "  12.  COLOCAR  "+ edita16 +
+		   #    #"PLACAS DE IDENTIFICACION EN EL CABLE OPTICO COMO SE INDICA A CONTINUACION:"
+		   #    
+		   #    texto1 +<< "  12.  COLOCAR  " + " PLACAS DE IDENTIFICACION EN EL CABLE OPTICO COMO SE INDICA A CONTINUACION:"
+		   #    texto1 +<< character.newLine    
+		   #    texto1 +<< "   A.- COLOCAR UNA PLACA EN LA PARTE FRONTAL DEL BDFO DE LA CTL -  " + LoCentral.default("")    #+ edita1 
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "   B.- COLOCAR UNA PLACA EN LA PARTE POSTERIOR DEL BDFO DE LA CTL -  " + LoCentral.default("")    #+ edita1
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "   C.- COLOCAR UNA PLACA EN EL CABLE OPTICO CADA 5.0 mts. DESDE LA VENTANA DE LA FOSA DE"
+		   #    texto1 +<< character.newLine 
+		   #    texto1 +<< "    CABLES, HASTA EL BDFO DE LA CTL -  " + LoCentral.default("")  #+ edita1 
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "   D.- COLOCAR UNA PLACA EN TODOS LOS POZOS DE LA RUTA"
+		   #    texto1 +<< character.newLine
+		   #    texto1 +<< "   E.- COLOCAR UNA PLACA ADICIONAL SOBRE EL CABLE EN LOS POZOS DONDE HAY GASAS." 
+		   #    texto1 +<< character.newLine 
+		   #    texto1 +<< "   F.- COLOCAR DOS PLACAS ADICIONALES SOBRE EL CABLE EN LOS POZOS CON EMPALME DE DERIVACION"
+		   #    texto1 +<< character.newLine  

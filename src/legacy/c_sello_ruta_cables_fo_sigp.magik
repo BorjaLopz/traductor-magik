@@ -1,0 +1,640 @@
+_package user
+$
+#update 50%
+#
+#remex(:c_sello_ruta_cables_fo_sigp) 
+$
+def_slotted_exemplar(:c_sello_ruta_cables_fo_sigp,
+{
+		{:oTipoEmpresaR,      _unset }, # catalogo para empresa que revisa
+		{:oTipoEmpresaP,      _unset }, # catalogo para empresa que proyecta
+		{:valor_empreviso,    _unset }, # Valor para empresa que revisa
+		{:valor_empproyecto,  _unset } # Valor para empresa que proyecta
+  	
+		
+},:c_base_sello_fibra)
+$
+c_sello_ruta_cables_fo_sigp.define_shared_constant(:allowed_on_menu?, _false    , :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo_sigp.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+	
+
+	attribs.add(layout_attribute_definition.new(:empproyecto, :string,
+						    :description, "Empresa que proyecta",
+                                                    :enum_method, :enum_tipo_empresap))	
+
+	attribs.add(layout_attribute_definition.new(:jaladocable, :string,
+						    :description, "Jalado de Cable",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:pep, :string,
+						    :description, "Pep",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:vobo, :string,
+						    :description, "VoBo",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:proyecto, :string,
+						    :description, "Proyecto",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:programa, :string,
+						    :description, "Programa",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:numcable, :string,
+						    :description, "NumCable",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:supervisor, :string,
+						    :description, "Supervisor",
+						    :default_value, _unset ))
+	
+	
+	attribs.add(layout_attribute_definition.new(:siglas, :string,
+						    :description, "Siglas",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:fecha, :string,
+						    :description, "Fecha",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:const_opb, :string,
+						    :description, "Ref C opb",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:const_oei, :string,
+						    :description, "Ref C oei",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:const_oe, :string,
+						    :description, "Ref C oe",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:desm_opb, :string,
+						    :description, "Ref opb",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:desm_oei, :string,
+						    :description, "Ref oei",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:desm_oe, :string,
+						    :description, "Ref oe",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:distritos, :string,
+						    :description, "Distritos afectados",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:hoja, :string,
+						    :description, "",
+						    :default_value, "PLANO 2 DE 3" ))
+
+	
+	>> attribs
+	
+_endmethod
+$
+c_sello_ruta_cables_fo_sigp.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo_sigp.enum_tipo_empresar
+
+	.oTipoEmpresaR    << hash_table.new()
+	.oTipoEmpresaR[1] << "TELMEX"
+	.oTipoEmpresaR[2] << "ULTIMA_MILLA"
+	.oTipoEmpresaR[3] << "ULTIMA_MILLA_N"	
+	_return .oTipoEmpresaR
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo_sigp.enum_tipo_empresap
+
+	.oTipoEmpresaP    << hash_table.new()
+	.oTipoEmpresaP[1] << "IMTSA"
+	.oTipoEmpresaP[2] << "GSP"
+	.oTipoEmpresaP[3] << "KBTEL"
+	.oTipoEmpresaP[4] << "TELNOR"
+	_return .oTipoEmpresaP
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo_sigp.ocultar_bordes_sup_inf(LoTabla, bordeSupInf)
+	## 
+	##
+	_for elem _over bordeSupInf.fast_elements()
+	_loop
+		LoCelda << LoTabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		LoCelda.bBorde_Inf? << _false
+		LoCelda.bBorde_Sup? << _false
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo_sigp.ocultar_bordes_renglon(LoTabla, bordeSupInf, nivel)
+	## 
+	##
+	_for elem _over bordeSupInf.fast_elements()
+	_loop
+		LoCelda << LoTabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+
+                _if nivel _is :inf
+		_then
+			LoCelda.bBorde_Inf? << _false			
+		_endif
+		
+		_if nivel _is :sup
+		_then
+			LoCelda.bBorde_sup? << _false			
+		_endif		
+	_endloop
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo_sigp.configura_tabla()
+
+	.o_color_linea << {1.0, 0.0, 0.0}
+	
+	_local ln_desp_y << 1
+	_local pl_cfg_inf_tbl_4 << property_list.new()
+	_local pl_cfg_inf_adm_1 << property_list.new()
+	_local pl_cfg_inf_adm_2 << property_list.new()
+	_local pl_cfg_inf_adm_3 << property_list.new()
+	
+	
+	pl_cfg_inf_tbl_4[:ren] << {15,15,12,10,30}          ##50%    {10,10,8,5,20}
+	pl_cfg_inf_tbl_4[:col] << {150}                     ##50%    {100}  
+
+	#configua visibilidad de bordes	
+	bordeSupInf_tbl_4 << rope.new_with({4,1})        
+
+	#####tabla 1
+	pl_cfg_inf_adm_1[:ren] << {10,10}                 ##50%  {5,5}
+	pl_cfg_inf_adm_1[:col] << {22.5,52.5,75}              ##50%  {15,35,50}         
+
+	#configua visibilidad de bordes
+	pl_cfg_inf_adm_1[:borde_der] << rope.new_with({1,1}, {2,1})
+	bordeSupInf_inf_adm_1        << rope.new_with({1,1}, {1,2}, {1,3},{2,1},{2,2}, {2,3})
+
+	#####tabla 2
+
+	pl_cfg_inf_adm_2[:ren] << {6,10.5}                       ##50%   {4,7}
+	                                 ##
+	pl_cfg_inf_adm_2[:col] << {22.5,52.5,37.5,37.5 }         ##50%   {15,35,25,25}   
+
+	#configua visibilidad de bordes
+	pl_cfg_inf_adm_2[:borde_der_izq] << rope.new_with({1,3},{2,3} )
+	bordeSupInf_inf_adm_2            << rope.new_with( {1,2},{2,3})
+	bordeSup_adm_2                   << rope.new_with({1,3},{1,4})
+
+	
+	#####tabla 3
+	pl_cfg_inf_adm_3[:ren] << {7.5,7.5,7.5,7.5,7.5,15,7.5}       ##50%    {5,5,5,5,5,10,5}      
+	pl_cfg_inf_adm_3[:col] << {22.5,22.5,30,10.5,27,37.5}        ##50%     {15,15,20,7,18,25}
+
+	#configua visibilidad de bordes
+	pl_cfg_inf_adm_3[:borde_der]     << rope.new_with({3,1},{4,1},{5,1},{5,2},{5,3},{5,4},{5,5},{6,1},{6,2},{6,3},{6,4},{6,5},{7,1},{7,2},{7,3},{7,4},{7,6})
+	pl_cfg_inf_adm_3[:borde_der_izq] << rope.new_with({1,2}, {2,2},{7,1},{7,5},{7,6})
+	bordeSupInf_inf_adm_3            << rope.new_with({1,2},{1,3},{5,2},{5,3},{5,4},{5,5}, {7,1},{7,2},{7,3},{7,4} ,{7,5},{7,6} )
+	bordeSup_adm_3                   << rope.new_with({5,1},{5,6} )
+	
+	lo_tabla << .o_tablas.crea_tabla(pl_cfg_inf_tbl_4[:ren].size  ,pl_cfg_inf_tbl_4[:col].size , :tbl_4)	
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x+ ln_desp_y , .o_coord_inicio.y)
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_inf_tbl_4)
+	_self.ocultar_bordes_sup_inf(Lo_Tabla, bordeSupInf_tbl_4)
+	#-----------------------------------------------------------
+	#Tabla 1
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(pl_cfg_inf_adm_1[:ren].size,pl_cfg_inf_adm_1[:col].size,:tbl_inf_adm_1)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_4}) ##  + 20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)	
+	_self.asigna_medidas_tabla(lo_tabla, pl_cfg_inf_adm_1)
+	_self.oculta_bordes_celdas(  lo_tabla, pl_cfg_inf_adm_1)
+	_self.ocultar_bordes_sup_inf(Lo_Tabla,bordeSupInf_inf_adm_1)
+
+	#-----------------------------------------------------------
+	#Tabla 2
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(pl_cfg_inf_adm_2[:ren].size,pl_cfg_inf_adm_2[:col].size,:tbl_inf_adm_2)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_4,:tbl_inf_adm_1}) ##  + 20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)	
+	_self.asigna_medidas_tabla(  lo_tabla, pl_cfg_inf_adm_2)
+	_self.oculta_bordes_celdas(  lo_tabla, pl_cfg_inf_adm_2)
+	_self.ocultar_bordes_renglon(Lo_Tabla,bordeSupInf_inf_adm_2, :inf)
+	_self.ocultar_bordes_renglon(Lo_Tabla,bordeSup_adm_2, :inf)
+	#-----------------------------------------------------------
+	#Tabla 3
+	#-----------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(pl_cfg_inf_adm_3[:ren].size,pl_cfg_inf_adm_3[:col].size,:tbl_inf_adm_3)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_4,:tbl_inf_adm_1,:tbl_inf_adm_2 }) ##  + 20
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x, .o_coord_inicio.y - ln_desp_y)	
+
+	_self.asigna_medidas_tabla(  lo_tabla, pl_cfg_inf_adm_3)	
+	_self.oculta_bordes_celdas(  lo_tabla, pl_cfg_inf_adm_3)
+	_self.ocultar_bordes_sup_inf(Lo_Tabla, bordeSupInf_inf_adm_3)
+	_self.ocultar_bordes_renglon(Lo_Tabla,bordeSup_adm_3, :inf)
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo_sigp.asigna_celdas_a_colorear()
+
+	_local lst_celdas_color << rope.new()
+
+	lst_celdas_color.add({:tbl_4,1,1,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_1,1,2,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_3,2,1,.o_color_linea})
+	
+	lst_celdas_color.add({:tbl_inf_adm_3,2,5,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_3,3,5,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_3,4,5,.o_color_linea})
+
+	lst_celdas_color.add({:tbl_inf_adm_3,2,6,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_3,3,6,.o_color_linea})
+	lst_celdas_color.add({:tbl_inf_adm_3,4,6,.o_color_linea})
+	
+	_return lst_celdas_color
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo_sigp.etiqueta_celdas()
+
+	_local LoColor       <<  rope.new_with(1,0,0)
+	_local proy          <<  _unset
+	_local ctl           << _unset 
+	_local siglasctl     << ""
+	_local nombrectl     << ""
+	_local nodo          << _unset 
+	_local diseno        << swg_dsn_admin_engine.active_design
+	_local LoEmpresa     <<  "imtsa"
+	
+	_if diseno _isnt _unset 
+	_then
+		proy          <<  diseno.project
+		 ctl           <<  diseno.project.user!_central
+		siglasctl     <<  ctl.user!_central.default("")
+		nombrectl     <<  ctl.user!_nombre.default("")
+		nodo          <<  ctl.building
+		LoEmpresa     <<  proy.user!_empresa_proyecto.default("imtsa")
+
+		_if nodo _isnt _unset 
+		_then
+			(nconombre, ncosiglas) <<  nodo.datos_nco
+		_else
+			nconombre   << ""
+			ncosiglas   << ""
+		_endif	
+		
+	_endif
+	
+	
+	_local col_celdas_tbl_4          << .o_tablas.elemento(:tbl_4).oCeldas
+	_local col_celdas_tbl_adm_info_1 << .o_tablas.elemento(:tbl_inf_adm_1).oCeldas
+
+	
+	str_ctl << "CENTRAL - " + nombrectl + %space + %( + siglasctl + %)
+	str_nco << "NCO - " + nconombre +  %space + %( + ncosiglas + %) + %space  +  " CTL- " + nombrectl + %space + %( + siglasctl + %)
+	
+	_self.asigna_texto_celda(:tbl_4 ,1,1, "RED PRINCIPAL DE FIBRA OPTICA"   ,67,:centre_centre,2, {1.0, 0.0, 0.0})      ##50%   -45
+	
+	_self.asigna_texto_celda(:tbl_4 ,2,1, str_ctl                           ,45,:centre_centre,2)                       ##50%   -30   (15)
+	_self.asigna_texto_celda(:tbl_4 ,3,1, str_nco                           ,37,:centre_centre,2)                       ##50%   -25   (12)
+	_self.asigna_texto_celda(:tbl_4 ,4,1, "JALADO DE CABLE DE:"             ,30,:centre_left  ,2)                       ##50%   -20   (10) 
+	_self.asigna_texto_celda(:tbl_inf_adm_1,1,1, "PEPS:"                    ,45,:centre_left  ,2)                       ##50%   -30   (15) 
+	_self.asigna_texto_celda(:tbl_inf_adm_1,1,3, "VoBo RNUM"                ,30,:centre_centre ,2)                      ##50%   -20   (10) 
+	_self.asigna_texto_celda(:tbl_inf_adm_2,1,1, "REALIZO:"                 ,22,:centre_centre ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_2,1,2, "PROYECTO:"                ,22,:centre_left   ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_2,1,3, "PROGRAMA"                 ,22,:centre_left   ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,1,1, "No.DE CABLE"              ,22,:centre_centre ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,2,1, ""                         ,22,:centre_centre ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,1,2, "SUPERVISO: "              ,22,:centre_centre ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,1,5, "CONSTRUCCION"             ,30,:centre_centre ,2)                      ##50%   -20   (10) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,1,6, "DESMONTAJE"               ,30,:centre_centre ,2)                      ##50%   -20   (10) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,2,4, "OPB:"                     ,22,:centre_left   ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,3,4, "OEI:"                     ,22,:centre_left   ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,4,4, "OE:"                      ,22,:centre_left   ,2)                      ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,3,1, "SIGLAS"                   ,22,:centre_left   ,10)                     ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,3,3, "FECHA"                    ,22,:centre_centre   ,2)                    ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,5,1,"DISTRITOS AFECTADOS   "    ,22,:centre_left     ,2)                    ##50%   -15   (7) 
+	_self.asigna_texto_celda(:tbl_inf_adm_3,7,6,"PLANO 2 DE 3 "             ,22,:centre_left     ,2)                    ##50%   -15   (7) 
+	
+	_self.asigna_simbolo_celda(:tbl_inf_adm_2,2,1,"logo_" + LoEmpresa)
+	
+	col_celdas_tbl_4.Celda(1,1).oElemento.sEstilo << "Bold"
+	col_celdas_tbl_4.Celda(2,1).oElemento.sEstilo << "Bold"
+	col_celdas_tbl_adm_info_1.Celda(1,1).oElemento.sEstilo << "Bold"
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+
+_method c_sello_ruta_cables_fo_sigp.llena_datos_celdas()
+	
+	_self.etiqueta_celdas()
+
+	_local pl_datos << _self.obten_registros()
+	
+	#datos del proyecto
+	LoColor      <<  rope.new_with(1,0,0)
+
+	diseno       <<  swg_dsn_admin_engine.active_design
+	proy         <<  diseno.project	
+	LoEmpresa     << proy.user!_empresa_proyecto
+
+       _if LoEmpresa _isnt  _unset 
+       _then
+   	       LogoEmpresa   << "logo_" + LoEmpresa.lowercase
+	       _self.asigna_simbolo_celda(:tbl_inf_adm_2,2,1,logoEmpresa)
+       _endif 	       
+
+	       _if ( _self.attributes[:empproyecto] _isnt _unset _andif
+		     _self.attributes[:empproyecto].value) _isnt  _unset _andif
+		   _self.attributes[:empproyecto].value.size > 0
+	       _then
+
+		       .valor_empproyecto << "logo_" +  _self.attributes[:empproyecto].value.write_string.uppercase
+		       _self.asigna_simbolo_celda(:tbl_inf_adm_2,2,1,.valor_empproyecto)	
+
+	       _endif
+	    
+	       
+	       _self.asigna_texto_celda(:tbl_inf_adm_2,2,3,pl_datos[:programa]  ,30,:centre_left  ,15)                                ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,2,1,pl_datos[:numcable]  ,22,:centre_centre ,2, {1.0, 0.0, 0.0})               ##50%   -15   (7) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,6,1,pl_datos[:distritos] ,22,:top_left   ,2, {1.0, 0.0, 0.0})                  ##50%   -15   (7) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,2,6, pl_datos[:desm_opb],30,:centre_centre ,2, {1.0, 0.0, 0.0})                       ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,3,6, pl_datos[:desm_oei],30,:centre_centre ,2, {1.0, 0.0, 0.0})                       ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,4,6, pl_datos[:desm_oe] ,30,:centre_centre ,2, {1.0, 0.0, 0.0})                       ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_1,1,2, pl_datos[:pep],     45,:centre_centre ,2, {1.0, 0.0, 0.0})                       ##50%   -30   (15)        
+	       _self.asigna_texto_celda(:tbl_inf_adm_1,2,3, pl_datos[:vobo],    30,:centre_centre ,2)                                        ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_2,2,2, pl_datos[:proyecto],30,:centre_left   ,2)                                        ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,2,2, pl_datos[:supervisor], 30,:centre_left ,2)                                       ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,4,1, pl_datos[:siglas],     22,:centre_left ,10)                                      ##50%   -15   (7) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,4,3, pl_datos[:fecha],      22,:centre_centre, 2)                                     ##50%   -15   (7) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,2,5,   pl_datos[:const_opb],30,:centre_centre, 2, {1.0, 0.0, 0.0})                    ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,3,5,   pl_datos[:const_oei],30,:centre_centre ,2, {1.0, 0.0, 0.0})                    ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,4,5,   pl_datos[:const_oe] ,30,:centre_centre ,2, {1.0, 0.0, 0.0})                    ##50%   -20   (10) 
+
+	       _self.asigna_texto_celda(:tbl_inf_adm_3,7,6,   pl_datos[:hoja] ,22,:centre_left,2)                      ##50%   -15   (7) 
+	       _self.asigna_texto_celda(:tbl_4        ,4,1,pl_datos[:jaladocable] ,30,:top_left,2)                     ##50%   -20   (10) 
+	       _self.asigna_texto_celda(:tbl_4        ,5,1,"" ,30,:top_left,2)                                         ##50%   -20   (10) 
+
+	       .o_tablas.elemento(:tbl_inf_adm_3).oCeldas.Celda(2,1).oElemento.sEstilo << "Bold"
+	       .o_tablas.elemento(:tbl_inf_adm_3).oCeldas.Celda(6,1).oElemento.sEstilo << "Bold"
+	       .o_tablas.elemento(:tbl_inf_adm_3).oCeldas.Celda(2,6).oElemento.sEstilo << "Bold"
+	       .o_tablas.elemento(:tbl_inf_adm_3).oCeldas.Celda(3,6).oElemento.sEstilo << "Bold"
+	       .o_tablas.elemento(:tbl_inf_adm_3).oCeldas.Celda(4,6).oElemento.sEstilo << "Bold"
+	       .o_tablas.elemento(:tbl_inf_adm_3).oCeldas.Celda(2,5).oElemento.sEstilo << "Bold"
+	       .o_tablas.elemento(:tbl_inf_adm_3).oCeldas.Celda(3,5).oElemento.sEstilo << "Bold"
+	       .o_tablas.elemento(:tbl_inf_adm_3).oCeldas.Celda(4,5).oElemento.sEstilo << "Bold"
+	       .o_tablas.elemento(:tbl_inf_adm_1).oCeldas.Celda(1,2).oElemento.sEstilo << "Bold"
+
+	       
+_endmethod
+$
+#_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+#_method c_sello_ruta_cables_fo_sigp.draw_content_on(window)
+#
+#	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+#	_self.bounds << _self.o_tablas.area_total()
+#	_self.llena_datos_celdas()
+#        .o_tablas.Despliega(window)
+#_endmethod
+#$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo_sigp.obten_registros()
+
+	pl_datos << property_list.new()
+
+        pl_datos << _self.Calcula_informacion(pl_datos)
+	
+		
+	pl_datos << _self.info_sello_propiedades(pl_datos) 
+	
+	_return pl_datos
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo_sigp.busca_objeto(name)
+	# (23/03/22 des_aaron) : recibe como parametro  el objeto como
+	# simbolo p/e :mit_bay
+	
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view
+	objs << mv.get_visible_geometry_set()
+	regs << equality_set.new()
+	
+	_if mv.ace_name _is :gs!schematic 
+	_then	
+		_for itergeom  _over objs.fast_elements()
+		_loop		
+			_if  (reg <<  itergeom.rwo.source_rwo_records().an_element()) _isnt _unset  _andif
+			     reg.source_collection.name _is name 
+			_then
+				regs.add(reg)
+			_endif
+		_endloop	
+	_endif
+	
+	>> regs
+	
+_endmethod
+$
+
+
+
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo_sigp.Calcula_informacion(pl_datos)
+	#---------------------------------------------------
+	## <Req. #> : <Description>
+	##
+	#
+	# Customization for Project : 
+	#
+	#---------------- Revision History -----------------
+	# (23/02/07 des_daniel) : Created
+	#-------------- End Revision History ---------------
+	diseno       <<  swg_dsn_admin_engine.active_design
+	proy         <<  diseno.project	
+	nombre       <<  proy.name
+	programa     <<  proy.user!_programa_tipo
+	direc_div    <<  proy.division
+	area         <<  proy.area
+	departamento <<  proy.user!_empresa_revisora
+	proyectista  <<  diseno.user!_proyecto
+	superviso    <<  diseno.user!_superviso
+	fecha_entrega << proy.user!_fecha_entrega 
+	anio          << proy.user!_programa_anyo
+	construccion  << proy.planning_start
+	vb             << diseno.user!_vobo
+	LoEmpresa     << proy.user!_empresa_proyecto
+	ctl           <<   diseno.project.user!_central
+	siglasctl     << ctl.user!_central
+	nombrectl     << ctl.user!_nombre
+	nodo          << ctl.building
+	# (22/09/26 des_aaron) : cables 
+	jaladocables  << ""
+	distritos     << ""
+	numcable      << ""
+	
+	peps          << ""
+	opb           << ""
+	oei           << ""
+	oe_str        << ""
+	
+	opbd           << ""
+	oeid           << ""
+	oed_str        << ""
+	
+	#####################################
+        proyecto      << c_proyecto.new() 
+	#####################################
+	programa      << proyecto.programa
+	oe            << proyecto.oe_reg_scheme(:construccion)
+	oed           << proyecto.oe_reg_scheme(:desmontaje)
+	
+	_if oe _isnt _unset  
+	_then
+		(pep, tipo) << proyecto.obten_pep_de_oe(oe)
+		
+		peps          << pep      ##    "D-8404117-B017" + %newline + "D-8404117-B017"
+		opb           << oe.user!_oei_local.user!_op_local.user!_num_op.write_string
+		oei           << oe.user!_oei_local.user!_num_oei.write_string
+		oe_str        << oe.user!_num_oe.write_string
+	_endif
+	
+	
+	
+	
+	_if oed _isnt _unset 
+	_then
+		(pep,tipo) << proyecto.obten_pep_de_oe(oed)
+		
+		peps          << peps + %newline +  pep ##    "D-8404117-B017" + %newline + "D-8404117-B017"
+		opbd           << oed.user!_oei_local.user!_op_local.user!_num_op.write_string
+		oeid           << oed.user!_oei_local.user!_num_oei.write_string
+		oed_str      << oed.user!_num_oe.write_string
+	_endif
+	
+	meses         << {:ene, :feb, :mar, :abr, :may, :jun,:jul, :ago, :sep, :oct,:nov, :dic}	
+	mes           << meses[date_now().month_number]
+	anio          << date_now().year
+	
+        fecha         << mes.write_string + %/ + anio.write_string
+	fecha         << fecha.uppercase
+	
+	_if nodo _isnt _unset 
+	_then
+		(nconombre, ncosiglas) <<  nodo.datos_nco
+	_else
+		nconombre   << ""
+		ncosiglas   << ""
+	_endif
+	
+	str_ctl << "CENTRAL - " + nombrectl + %space + %( + siglasctl + %)
+	str_nco << "NCO - " + nconombre +  %space + %( + ncosiglas + %) + %space  +  " CTL- " + nombrectl + %space + %( + siglasctl + %)
+	
+	pl_datos[:programa] << programa
+	pl_datos[:pep] << peps
+	pl_datos[:vobo] << vb
+	pl_datos[:proyecto] << proyectista
+	pl_datos[:supervisor] << superviso
+	pl_datos[:const_opb] << opb
+	pl_datos[:const_oei] << oei
+	pl_datos[:const_oe] << oe_str
+	pl_datos[:desm_opb] << opbd
+	pl_datos[:desm_oei] << oeid
+	pl_datos[:desm_oe] << oed_str
+	pl_datos[:fecha] << fecha
+	
+	pl_datos[:siglas] << "NCO_" + ncosiglas
+
+	##jalado de cable
+        txts <<  proyecto.jalado_de_cables
+	txt << ""
+	
+	_for itertxt    _over txts.fast_elements()
+		_loop
+			txt << txt + itertxt + %newline
+		_endloop
+	
+	pl_datos[:jaladocable] << txt.uppercase
+	
+	##cable principal
+	cable_principal << proyecto.cable_principal().an_element()
+
+	_if cable_principal _isnt _unset 
+	_then
+		pl_datos[:numcable] << cable_principal.name
+	_else
+		pl_datos[:numcable] << ""
+	_endif
+
+
+	##distritos afectados
+	
+	pl_datos[:distritos] << proyecto.distritos_afectados()
+
+	
+	_return pl_datos
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo_sigp.info_sello_propiedades(pl_datos)
+
+	pl_datos[:programa]         <<   _self.valor_propiedad(:programa,    pl_datos[:programa])
+	pl_datos[:jaladocable]      <<   _self.valor_propiedad(:jaladocable, pl_datos[:jaladocable])
+	pl_datos[:numcable]         <<   _self.valor_propiedad(:numcable,    pl_datos[:numcable])
+	pl_datos[:distritos]        <<   _self.valor_propiedad(:distritos,   pl_datos[:distritos])
+	pl_datos[:hoja]             <<   _self.valor_propiedad(:hoja,        pl_datos[:hoja])
+	pl_datos[:desm_opb]         <<   _self.valor_propiedad(:desm_opb,    pl_datos[:desm_opb] )
+	pl_datos[:desm_oei]         <<   _self.valor_propiedad(:desm_oei,    pl_datos[:desm_oei] )
+	pl_datos[:desm_oe]          <<   _self.valor_propiedad(:desm_oe,     pl_datos[:desm_oe]  )
+	pl_datos[:pep]              <<   _self.valor_propiedad(:pep,         pl_datos[:pep] )
+	pl_datos[:vobo]             <<   _self.valor_propiedad(:vobo,        pl_datos[:vobo] )
+	pl_datos[:proyecto]         <<   _self.valor_propiedad(:proyecto,    pl_datos[:proyecto] )
+	pl_datos[:supervisor]       <<   _self.valor_propiedad(:supervisor,  pl_datos[:supervisor] )
+	pl_datos[:siglas]           <<   _self.valor_propiedad(:siglas,      pl_datos[:siglas] )
+	pl_datos[:fecha]            <<   _self.valor_propiedad(:fecha,       pl_datos[:fecha] )
+						    
+	pl_datos[:const_opb]        <<   _self.valor_propiedad(:const_opb,   pl_datos[:const_opb] )
+	pl_datos[:const_oei]        <<   _self.valor_propiedad(:const_oei,   pl_datos[:const_oei] )
+	pl_datos[:const_oe]         <<   _self.valor_propiedad(:const_oe,    pl_datos[:const_oe]  )
+
+	_return pl_datos
+	
+_endmethod
+$
+
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo_sigp.valor_propiedad(Propiedad, dato_actual)
+	## 
+	##
+	_if _self.attributes[Propiedad]  _isnt _unset  _andif
+	    _self.attributes[Propiedad].value _isnt _unset _andif
+	    _self.attributes[Propiedad].value.write_string.size > 0
+	_then
+		LoPropiedad << _self.attributes[Propiedad].value.write_string.uppercase
+	_else
+		LoPropiedad << dato_actual
+	_endif
+
+	_return LoPropiedad
+	
+_endmethod
+$

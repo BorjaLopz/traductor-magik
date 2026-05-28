@@ -1,0 +1,368 @@
+#----------------------------------------------------------------
+_package user
+$
+#remex(:c_plano_esquematico_de_principales_acometida)
+$
+def_slotted_exemplar(:c_plano_esquematico_de_principales_acometida,{
+		       {:oEngine, _unset, :writable,:private}, #Engine para la ruta		     
+		       {:oBuffer, _unset, :writable,:private}, #Engine para la ruta
+		       {:oMarco,_unset,:writable}
+		       
+		     },:c_factory_planos)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.new(_optional PoEngine)
+## Metodo para crear un _clone de _self	
+    _return _clone.init(PoEngine)
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_plano_esquematico_de_principales_acometida.init(PoEngine)
+	## Metodo para inicializar la instancia
+	##
+	.oEngine << PoEngine
+	_return _self 	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.cables_esquema_sigp()
+	#---------------------------------------------------
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view
+	objs << mv.get_visible_geometry_set()
+
+	_if mv.ace_name _is :gs!schematic 
+	_then
+		cables_esquema << rope.new()
+		cables_gis     << rope.new()
+		
+		_for itergeom  _over objs.fast_elements()
+		_loop		
+			_if itergeom.rwo.source_rwo_records().size > 0 _andif
+			    itergeom.rwo.source_rwo_records().an_element().source_collection.name _is :sheath _andif
+			    itergeom.app_type _is  :centre_line
+		_then
+			
+			cables_esquema.add(itergeom)
+			cables_gis.add(itergeom.rwo.source_rwo_records().an_element())
+			_endif
+		_endloop
+		
+	_endif
+	
+#      	show(_self , :cables, cables_esquema.size, cables_gis.size)
+	
+	>> cables_esquema, cables_gis
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.genera_plano(_optional PoCable,Penlace)
+	## Objetivo: Metodo que subclaseable para generar el plano,
+	## llama a la super y carga los elementos particulares para
+	## este tipo de plano
+	## Parametros de entrada: PoCable = Sheath para la ruta	
+	_self.inicia_layout()
+	
+	LoDoc << .oPage.layout_document
+	LoDoc.user!_tipo_plano << :esquema_principales
+	_local LoPaf << smallworld_product.pni_application()
+	loMapa << Lopaf.plugin(:map_plugin)
+
+	loMapa.current_map.trail.clear()
+		
+	_local genp << LoPaf.plugin(:gen_planos)
+	_local gs << geometry_set.new()
+        _self.add_marco()
+	_self.addNorte()
+	_self.add_sellos()
+	_self.add_viewport_principal()
+	
+        (cables_esquema, cables_gis)  <<  _self.cables_esquema_sigp()
+
+
+	
+	_if cables_esquema _isnt _unset 
+	_then
+		_for iterc _over cables_esquema.fast_elements()
+		_loop
+				gs.add(iterc)
+		_endloop
+		
+		LoBuffer_plano   << gs.buffer(10)
+		
+		.oBuffer << LoBuffer_plano
+		
+	loMapa.current_map.set_trail_from_geometry(LoBuffer_plano)
+	
+		
+		_self.activa_Layout_series(LoBuffer_plano)
+	_endif
+	
+		
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.activa_Layout_series(PoBuffer)
+	## Activa la interfaz del layouit series con los frames que
+	## sean necesarios para ver la ruta en una escala de 1:10.
+	##
+	
+	Paf  << smallworld_product.pni_application()		
+	lp   << paf.plugin(:layout_plugin)
+	l_designer << lp.dialogs[:layout_designer]	
+	l_designer.busy? << _true
+	paf.busy? << _true	
+	l_manager  << l_designer.plugin(:layout_manager)
+	l_series   << l_designer.plugin(:layout_series)
+	
+	l_series.reset()
+	
+	LoViewportmapper<< l_designer.plugin(:viewport_mapper)
+	_self.asigna_pagina_y_viewport(l_series.master_series_page(),LoViewportmapper)
+	
+	 l_areas <<  rope.new()
+	 l_areas.add(PoBuffer)
+	
+	 pl << property_list.new_with(:plano_esquematico_ftth?,_true  ,:areas_ruta,l_areas)
+	 l_series.propiedades_plano_ruta << pl
+	
+	l_series.action(:data_source).set_value(:current_trail, _true)
+	
+	l_series.action(:angle_area_automatic).set_value(_true ,_true) ## _false  
+	l_series.action(:tiling_method).set_value(:fewer,_true)	
+	l_series.action(:view_scale).set_value(10 ,_true)
+	l_series.set_master_series_page()
+	l_series.create_and_edit_series()
+	###l_series.generate_frames()
+	l_series.add_dependent( _self )
+
+	paf.busy? << _false
+	l_designer.busy? << _false
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.add_marco()
+	## 
+	## 
+	.oMarco << c_marco.new_with(:bounds,bounding_box.new(0, 0, 1, 1))
+	.oMarco.Largo <<  4
+	.oMarco.Alto  <<  2
+	.oMarco.set_fill_colour(_unset)
+	.oPage.add_element( .oMarco )
+	_self.AddTitulo( .oMarco )
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.agrega_simbolo(pNombreSimbolo, pbounds)
+        
+	LoBound<< pbounds
+		
+	LoSimbolo<<symbol_layout.new_with(:bounds,Lobound)
+
+		_if (LoSimbolo<<symbol_layout.new_with(:bounds,LoBound,
+						       :name,pNombreSimbolo,
+						       :fill_style,_unset,
+						       :outline_style,_unset)) _isnt _unset 
+		_then
+			.oPage.add_element(LoSimbolo)
+		_endif 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.AddNorte()
+	## 
+	## lgranados: Se agrega el norte por default al plano
+	
+	_local LoBounds
+	_local LoNorte
+	_local LoPage
+	
+        LoPage<< .oPage
+	
+	_if LoPage _isnt _unset _andif LoPage.is_kind_of?(layout_page)
+	_then
+		Lobounds<<bounding_box.new(LoPage.bounds.xmin,LoPage.bounds.ymax-1500,
+					   LoPage.bounds.xmin+4000,LoPage.bounds.ymax)
+		LoNorte << c_norte.new_with(:bounds,Lobounds)
+		LoNorte.limites<<_unset
+		LoPage.add_element(LoNorte)
+	_endif
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.add_sellos()
+	## 
+	##
+	
+	LoSello << c_sello_estandar_base_fo.new_with(:bounds,bounding_box.new(267,279,3837,3019))	
+	.opage.add_element(LoSello)
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.add_viewport_principal()
+	## 
+	## 
+	_local Paf << smallworld_product.pni_application()
+	LoMapPlugin << Paf.plugin(:map_plugin)
+	LoVpArea    << bounding_box.new( 2346, 826, 8749 ,5716)
+	LoMapView   << LoMapPlugin.current_map_view	
+	LoBoundsMv  << LoMapView.current_view_bounds
+	LoViewport << c_viewport_layout_sigc.new_with(:bounds, LoVpArea) ##permite filtrar los objetos
+	LoViewport.set_fill_colour(_unset)
+	LoViewport.outline_style << _unset
+	LoViewport.trail << _false
+	LoViewport.selection << _false
+	LoViewport.sTipoPlano << "DIAGRAMA_ESQUEMA_PRINCIPALES"
+	LoViewport.name << "mapa"
+	.oPage.add_element(LoViewport)
+	
+_endmethod
+$
+_method c_plano_esquematico_de_principales_acometida.AddParticulares()
+	## Objetivo: Metodo para cargar los elementos particulares de
+	## este tipo de plano
+	## este tipo de plano
+
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.crea_titulo
+	## Objetivo: Crear el titulo para los planos RDA
+## Parametros de salida: Ninguno
+	
+	LoTitulo << "PLANO ESQUEMATICO  DE PRINCIPALES" + %newline + " CTL - " + 
+		    swg_dsn_admin_engine.active_scheme.project.user!_central.user!_nombre
+	
+	_return LoTitulo
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.AddTitulo(PoMarco)
+## Objetivo: Agregar el titulo al plano
+## Parametros de Entrada: Ninguno.
+## Regresa: Ninguno
+## Fecha de Ultima modificacion:20/10/2009
+## Autor de la modificacion: rmrosale
+## Descripcion de la modificacion: Metodo nuevo 
+
+    LoTitulo << _self.crea_titulo
+    
+    LoBB << bounding_box.new(PoMarco.bounds.xmax-2800,
+			     PoMarco.bounds.ymin+200,
+			     PoMarco.bounds.xmax-200,
+			     PoMarco.bounds.ymin+600)
+    
+    LoTitulo << c_titulo_de_plano.new_with(:bounds,           LoBB,
+					   :font_name,        "bold",
+					   :font_size,        8,
+					   :fill_style,       _unset,
+					   :outline_style,    _unset,
+					   :text,             LoTitulo,
+					   :wrap,             _false,
+					   :align_horizontal, :centre,
+					   :align_vertical,   :centre,
+					   :orientation,      :left_right)
+    
+    .oPage.add_element(LoTitulo)	
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.busca_bastidores()
+
+	paf << smallworld_product.pni_application()
+	mv << paf.plugin(:map_plugin).current_map_view
+	objs << mv.get_visible_geometry_set()
+	bastidores << equality_set.new()
+	
+	_if mv.ace_name _is :gs!schematic 
+	_then	
+		_for itergeom  _over objs.fast_elements()
+		_loop		
+			_if  (reg <<  itergeom.rwo.source_rwo_records().an_element()) _isnt _unset  _andif
+			     reg.source_collection.name _is :mit_bay
+			_then
+				bastidores.add(reg)
+			_endif
+		_endloop
+		
+	_endif
+	
+	>> bastidores
+
+	
+_endmethod
+$
+
+
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_plano_esquematico_de_principales_acometida.add_sello_tabla_equivalencias_x_cable()
+	#---------------------------------------------------
+	##  Objetivo  : Agrega la tabla de equiovalencias del cable.
+	##
+	bastidores     << _self.busca_bastidores()
+
+	_for bastidor  _over bastidores.fast_elements() 
+	_loop
+
+		LocableSalida << bastidor.obtener_conexion_de_cables().keys.an_element()
+		
+		_if Bastidor _isnt _unset _andif
+		    LocableSalida _isnt _unset 
+		_then
+			
+			datos <<  property_list.new()
+			
+			datos[:LoCable]         <<   LocableSalida
+			datos[:rme]             <<   Bastidor
+			datos[:LoCableObjeto]   <<   c_cable_fo.new(LocableSalida,_false)
+			datos[:Central]         <<   Bastidor.user!_central
+			datos[:num_de_grupos]   <<   datos[:LoCableObjeto].getgrupos().size
+			
+			_for iterNF _over 1.upto(datos[:num_de_grupos])
+			_loop
+				_if datos[:LoCableObjeto].getgrupos()[iterNF][:fibras].size > 0 
+				_then
+					datos[:numero_fibras] << datos[:LoCableObjeto].getgrupos()[iterNF][:fibras].size
+					_leave
+				_endif
+			_endloop
+			
+			datos[:capacidad_cable] <<   datos[:num_de_grupos] * datos[:numero_fibras]		 	
+			datos[:piso]            <<   Bastidor.ObtenerNumeroDePiso()
+			datos[:sala]            <<   Bastidor.ObtenerTipoSala()
+			datos[:fila]            <<   Bastidor.ObtenerFila()
+			datos[:bastidor]        <<   Bastidor.ObtenerPosBastidor()
+			
+			_if datos[:num_de_grupos] = 0 _orif
+			    datos[:numero_fibras] = 0
+			_then
+				
+				condition.raise(:information,
+						:string,
+						"No se puede generar tabla de equivalencias por falta de información en las fibras del cable")
+			_else
+				
+				lo_sello << c_tabla_equivalencias_x_cable.new_with(datos ,
+										   :bounds,
+										   bounding_box.new(2500,627,3490,5687 ))
+				.oPage.add_element(lo_sello) 				
+			_endif 
+			
+			
+		_endif
+			
+	_endloop
+		
+_endmethod
+$
+
+

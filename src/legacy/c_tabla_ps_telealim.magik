@@ -1,0 +1,56 @@
+#----------------------------------------------------------------
+#
+# Empresa:  Sigma Tao
+# Traza:    Planos - Fibra Óptica 
+# Objetivo: Mostrar la tabla para pares de telealimentación 
+# Autor:    lgranados
+# Fecha de creacion: 27-agosto-2008
+#
+#----------------------------------------------------------------
+
+_package user
+$
+
+def_slotted_exemplar(:c_tabla_ps_telealim,
+{
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_ps_telealim.configura_tabla()
+
+	lo_tabla << .o_tablas.crea_tabla(22,3,:tbl_ps_teleal)
+
+	# coordenada donde inicia la tabla
+	lo_tabla.ocoordenada_origen << .o_coord_inicio
+
+	# longitud de los renglones de la tabla, dada en mm 
+	_for n_reng _over range(1,22)
+	_loop
+		lo_tabla.orenglones.elemento(n_reng).nlongitud << 7
+	_endloop
+
+	# longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 50
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 12
+	lo_tabla.ocolumnas.elemento(3).nlongitud  << 12
+	
+	# se ocultan bordes de celdas
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda << lo_tabla.oceldas.celda(1,2).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_tabla_ps_telealim.etiqueta_celdas()
+
+	_self.asigna_texto_celda(:tbl_ps_teleal,1,1,"PARES PRINCIPALES DE TELEALIMENTACION",30,:centre_left,6)
+	_self.asigna_texto_celda(:tbl_ps_teleal,2,1,"TERMINAL DE BANDA ANCHA",20,_unset)
+	_self.asigna_texto_celda(:tbl_ps_teleal,2,2,"STRIP",20,_unset)
+	_self.asigna_texto_celda(:tbl_ps_teleal,2,3,"PAR",20,_unset)
+	
+	
+_endmethod
+$
+

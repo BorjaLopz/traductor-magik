@@ -1,0 +1,245 @@
+_package user
+$
+def_slotted_exemplar(:c_resumen_proyecto_red,
+{	
+        {:oWindow, _unset }, 
+	{:bTablas_creadas, _unset },
+	{:varObjeto, _unset},
+	{:oTexto, _unset},
+	{:contenido_sello, _unset},
+	{:gui_edita_sello, _unset}
+}, :c_base_sello_fibra)
+$
+c_resumen_proyecto_red.define_shared_constant(:allowed_on_menu?, _true   , :public)
+$
+c_resumen_proyecto_red.define_slot_access(:bTablas_creadas, :writable, :public)
+$
+c_resumen_proyecto_red.define_slot_access(:oWindow, :writable, :public)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto_red.defined_attributes
+	##
+	##
+	attribs << rope.new_from (_super.defined_attributes)
+   
+	_for attrib _over attribs.fast_elements()
+	_loop
+		attrib.allowed_on_properties_page? << _false
+	_endloop
+	
+	
+	attribs.add ( layout_attribute_definition.new ( :|Editar Sello click aqui: ---->|, :unset,
+							:description, "Editar Sello haz click ... ",
+							:enum_method, :abre_interfaz_GUI))
+	
+	attribs.add ( layout_attribute_definition.new (:texto_sello, :string,
+						       :description, "",
+						       :default_value, _unset,
+						       :allowed_on_properties_page?, _false))
+	
+	attribs.add ( layout_attribute_definition.new (:largo, :integer,
+						       :description, "Largo",
+						       :default_value, 0 ))
+	
+	attribs.add ( layout_attribute_definition.new (:ancho, :integer,
+						       :description, "Ancho",
+						       :default_value, 0 ))
+	
+	>> attribs 
+	
+_endmethod
+$
+c_resumen_proyecto_red.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_proyecto_red.configura_tabla()
+
+	lo_tabla << .o_tablas.crea_tabla(2,1,:tbl_resumen)
+	lo_tabla.ocoordenada_origen << .o_coord_inicio
+	# longitud de los renglones de la tabla, dada en mm 
+	lo_tabla.orenglones.elemento(1).nlongitud << 9
+	lo_tabla.orenglones.elemento(2).nlongitud << 130
+	# longitud de las columnas de la tabla, dada en mm 
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 150
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_proyecto_red.etiqueta_celdas()
+	##
+	##
+	_local LoTitulo << c_texto_grafico.new("")
+	_local LoTexto << c_texto_grafico.new("")
+
+msg << 
+" 1.-   LONGITUD TOTAL DEL TRAMO A CONSTRUIR___________________________MTS" + %newline +
+" 2.-  LONGITUD TOTAL DE LA RUTA________________________________________MTS"  + %newline +
+" 3.-  CABLE DE 4 F.O. SFDTP-2YF______GAZA A ELABORAR___________________MTS"  + %newline +
+" 4.-  CABLE DE 4 F.O. SaOTV _________GAZA A ELABORAR____________________MTS"  + %newline +
+" 5.-  INTER.A EMPALME DERV. FOSC 450 BS_________________________________PZAS"  + %newline + 
+
+" 6.-  JGO. DE CHAROLA ADICIONAL PARA EMPALME FOSC 450BS________________PZA"  + %newline +
+" 7.-  CIERRE EMP. RECTO HAS TA 36 F.O. FOSK 350 C______________________PZA"  + %newline +
+" 8.-  CONEXIONES DE F.O. POR FUSION____________________________________PZA"  + %newline +
+" 9.-  PROTOCOLO / 9 ACOMETIDAS_______________________________________PZA"  + %newline +
+"10.- PLACAS DE INDENTIFICACION______________________________________PZA"  + %newline +
+"11.- SOPORTE EN POZO________________________________________________PZA"  + %newline +
+"12.- INSTAL/TUBO POLIETILENO (FLEXODUCTO P/SUB.DE VIA)______________MTS"  + %newline +
+"13.- INTERV/CANAL SUB A POSTE_______________________________________PZA"  + %newline +
+"14.- SUMINISTRO Y COLOCACION DE CANALETAS PARA POSTE________________PZA"  + %newline +
+"15.- PROTECTOR DE NEOPRENO__________________________________________PZA"  + %newline +
+"16,- DESRRAMAR ARBOL________________________________________________PZA"  + %newline +
+"17.- PV. ENGRA. DE CABLE F.O C/CAPACIDAD____________________________MTS"  + %newline +
+"18.- CRUCERO PARA GUIA DE POSTE A POSTE_____________________________PZA"  + %newline +
+"19.- PV HILADO CAB. F.O. C/ CAPACIDAD_______________________________MTS"  + %newline +
+"20.- PV. SACAR GUIA CABLE DE F.O.___________________________________MTS"  + %newline +
+"21.- DESAGUAR POZO__________________________________________________PZA"  + %newline +
+"22.- PV. INSTAL/F.O. EN VIA OCUPADA_________________________________MTS"  + %newline +
+"23.- DESOLDAR TAPAS DE POZO EN FORMA CONTINUA_______________________ML"   + %newline +
+"24.- SOLDAR TAPAS DE POZO EN FORMA CONTINUA_________________________PZA"  + %newline +
+"25.- SUM. COLOC. TAPA POZO EXIST. CON SOLERA 1/4 x2_________________PZA"  + %newline +
+"26.- PVA. A FCES00 PIEZA DE SOLERA DE PROTECCION ADIC. EN PZO______ PZA"   + %newline +
+"27.- ETIQUETA DE IDENTIFICACION EN DFO_____________________________ PZA"   + %newline +
+"28.- ETIQUETA TIPO BANDERA PARA POSTE_______________________________PZA"   + %newline +
+"29.- PVA. ENTUBADO F.O. C/CAPACIDAD_________________________________MTS"   + %newline +
+"30.- TUBO RANURADO__________________________________________________PZA"   + %newline +
+"31.- INSTALACION EN ESCALERILLA EXISTENTE___________________________MTS"   + %newline 
+
+
+	LoTitulo.sTexto << "RESUMEN DEL PROYECTO"
+	LoTexto.nTamanio << 35
+	LoTexto.sAlineacion << :top_left
+	
+	LoTexto.sTexto << msg
+	
+	.o_tablas.elemento(:tbl_resumen).oCeldas.Celda(1,1).oElemento << LoTitulo
+	.o_tablas.elemento(:tbl_resumen).oCeldas.Celda(2,1).oElemento << LoTexto
+	
+	_self.prvAsignaTexto()
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto_red.draw_content_on ( window )
+
+	_self.prvAsignaTexto() 	
+#	_self.oWindow << window 
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << _self.o_tablas.area_total()
+
+        .o_tablas.Despliega(window)
+	
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_proyecto_red.inicializa(_optional RoCoord)
+	## 
+	## 
+	_local LoArea # Area que ocupan todas la tablas	
+	.o_coord_inicio << coordinate.new(0,0)
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	.o_tablas << c_tablas.new(_self)
+	# Crea y configura cada una de las tablas 
+	_self.configura_tabla()
+	# Se conoce el area de la tabla dibujada
+	LoArea << .o_tablas.area_total()
+	# Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+	# Crea a los objetos que tendra c/u de las tablas
+	_self.etiqueta_celdas()
+	# Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_proyecto_red.post_initialisation ()
+	
+        _self.Inicializa(coordinate.new(0,0))	
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_proyecto_red.prvAsignaTexto()
+   ## Objetivo: Asignar texto al sello; el sello esta compuesto de
+   ## tablas, celdas y layout_elements se asignan el texto a la
+   ## celda correspondiente. 
+   ## Parametros de Entrada: Ninguno.
+   ## Parametros de Salida:  Ninguno.
+   ## Regresa: Ninguno.
+   ## Descripcion: 	
+   ## Autor de la modificacion: rhernan.
+   ## (10/06/18 rraragon) : Modified. Se guarda el texto del sello
+   ## en el atributo sello_texto, para ser guardado en el XML
+  
+  .gui_edita_sello << c_gui_edita_sello_generico.new(_self)
+     
+  _if .gui_edita_sello.sys!slot(:oventana) _isnt _unset _andif
+      .gui_edita_sello.sys!slot(:oventana).contents.size > 0
+  _then
+     _if .gui_edita_sello.sys!slot(:oventana) _isnt _unset _andif
+	 .gui_edita_sello.sys!slot(:oventana).contents _isnt _unset   
+     _then
+	  contenido << .gui_edita_sello.sys!slot(:oventana).contents 
+	  LoTexto   << .gui_edita_sello.sys!slot(:oventana).contents.uppercase	  
+	  .o_tablas.elemento(:tbl_resumen).oCeldas.Celda(2,1).oElemento.sTexto << LoTexto
+	  
+	  _if _self.responds_to?(:texto_sello)
+	  _then
+		  _self.texto_sello << LoTexto
+	  _endif
+     _endif
+     
+  _elif _self.responds_to?(:texto_sello) _andif
+	_self.texto_sello _isnt _unset
+  _then
+	# actualizar desde el atributo texto_sello que se guardo en el XML
+	  .o_tablas.elemento(:tbl_resumen).oCeldas.Celda(2,1).oElemento.sTexto << _self.texto_sello 
+  _endif 
+
+   _if .contenido_sello _isnt _unset _andif
+       .contenido_sello.size > 0  _andif
+       _self.responds_to?(:texto_sello) 
+   _then
+	 .o_tablas.elemento(:tbl_resumen).oCeldas.Celda(2,1).oElemento.sTexto << .contenido_sello.uppercase
+	 _self.texto_sello << .contenido_sello.uppercase
+   _endif
+  
+ # (14/10/20 rhernan) :
+ _local loDesplaza << 2
+
+ _if .contenido_sello _isnt _unset 
+ _then
+	_local oLineas  << .contenido_sello.occurrences_of(%newline) + 1
+	_local oLongitud << oLineas * 6
+	.o_tablas.elemento(:tbl_resumen).orenglones.elemento(2).nlongitud << oLongitud
+ _endif
+# end
+ 
+ _if _self.attributes[:largo].value _isnt _unset _andif
+     _self.attributes[:largo].value > 0
+ _then  
+	 .o_tablas.elemento(:tbl_resumen).orenglones.elemento(2).nlongitud << _self.attributes[:largo].value
+ _endif
+ 
+ _if _self.attributes[:ancho].value _isnt _unset _andif
+     _self.attributes[:ancho].value > 0
+ _then
+	 .o_tablas.elemento(:tbl_resumen).oColumnas.elemento(1).nlongitud << _self.attributes[:ancho].value
+ _endif  
+	  
+_endmethod 
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_proyecto_red.abre_interfaz_GUI
+   ## 
+   ## Objetivo: Llenar las celdas de las tablas del sello.
+   ## Parametros de Entrada: Ninguno.
+   ## Parametros de Salida:  Ninguno.
+   ## Regresa: Ninguno. 
+   ## Autor de la modificacion: (09/05/08 rhernan).	
+
+	.gui_edita_sello.abre_ventana
+    
+_endmethod
+$

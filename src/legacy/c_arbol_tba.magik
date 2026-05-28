@@ -1,0 +1,299 @@
+_package user
+$
+def_slotted_exemplar(:c_arbol_tba,
+                     {
+	                {:list,      _unset, :writable}, 
+	                {:tree_item, _unset, :writable},
+			{:oTba,      _unset, :writable} 
+                     },
+		     :model)
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.activados()
+	
+	## Regresa una lista de los Cables de FO activados por el usuario.
+
+	_local RoHT << rope.new()
+	_for dt _over .list.fast_elements()
+	_loop
+	    _if dt.value[:check] _isnt _unset _andif dt.value[:check] 
+	    _then
+		RoHT.add(dt.value[:elemento] )
+	    _endif
+	_endloop
+	>> RoHT
+
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.activate_in(p_frame)
+	## Se activa la interface con los Tba´s que existan dentro del diseno
+	## Activo.		
+	
+	p_frame.maximizable? << _false
+	p_frame.default_resize? << _false
+	p_frame.title << "Seleccionar TBA"
+	
+	_local l_button_width << 80 
+	_local l_rc << rowcol.new(p_frame, _unset, 1, _unset,
+				  :row_resize_values, {100, 0},
+				  :resize_x?, _true, :resize_y?, _true)
+
+	_local l_style_holder << string_styles_holder.new_with()
+	l_style_holder.add_text_style(:green_bold, :green, _false, font.new_logical("bold", 12))
+
+	.tree_item << tree_item.new(l_rc,
+				    :model,         _self,
+				    :message_on_no_data?,   _true,
+				    :data_selector, {:|llena_arbol()|},
+				    :col_alignment, :fill,
+				    :row_alignment, :fill,
+				    :width,         200,
+				    :select_notifier,                 :|selected()|,
+				    :style_holder, l_style_holder,
+				    :mode,           :one)
+			  
+	_local l_brc << rowcol.new(l_rc, 1, _unset, :pixel, :style, :button_box, :col_alignment, :right, :top_spacing, 2)
+	button_item.new_safe(l_brc, "Generar Plano Montaje TBA",  _self, :|genera_plano_montaje_tba()|,
+			     :min_width, l_button_width)
+	button_item.new_safe(l_brc, "Ir a TBA",  _self, :|ir_a_tba()|,  :min_width, l_button_width)
+	button_item.new_safe(l_brc, "Salir",   _self, :|cancelar()|,    :min_width, l_button_width)
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.buscar_detalles_edificio()
+	##    
+	## Buscar detalles de edicio dado el area del diseno activo.
+        LoAreaDiseno <<  swg_dsn_admin_engine.active_design.scheme_area
+
+    v << mit_manager.modelit_dataset
+    dbv << v.collections
+    
+    LoTablaEdificios << dbv[:user!_building]
+       
+    pred3 << predicate.within(:location, LoAreaDiseno )
+    
+    LoCollEdificios << LoTablaEdificios.select(pred3)
+    
+    _return  LoCollEdificios
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.buscar_tbas_en_edificio()
+	## 
+	##
+  _local ListaTbas << rope.new() 
+         v << mit_manager.modelit_dataset
+	 dbv << v.collections
+ 
+	 LoCollTBAs << dbv[:user!_tba_anotacion]
+	 LoDetEdificios << _self.buscar_detalles_edificio( )
+
+	 
+_if LoDetEdificios.size > 0
+_then 
+  _for det_edifc  _over LoDetEdificios.fast_elements() 
+  _loop
+      pred2 << predicate.within(:user!_ubicacion, det_edifc.mit_building_structure.box)
+      CollTbasAnotacion << LoCollTBAs.select(pred2)
+
+     _if CollTbasAnotacion.size > 0
+     _then
+        _for tba_anotacion _over CollTbasAnotacion.fast_elements()
+	_loop
+	      ListaTbas.add(tba_anotacion.user!_tba) 
+	_endloop 	      
+     _endif
+  _endloop
+_endif
+	
+  _return  ListaTbas
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.cancelar()	
+	_self.quit()
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.genera_plano_montaje_tba()
+	## Tomar el Tba,  Seleccionado por el usuario, para generar
+	## su Plano de Montaje.
+
+	Tba_seleccionado << _self.activados()
+	_if Tba_seleccionado.size = 0
+	_then
+	    condition.raise(:user_error, :string,
+		            "No se ha seleccionado un TBA")
+	_elif Tba_seleccionado.size > 1
+	_then
+	    condition.raise(:user_error, :string,
+		            "Debe Seleccionar solo un TBA")
+	_endif
+
+	LoEng << c_engine_montaje_tba.new()
+	LoEng.settba << Tba_seleccionado.an_element()
+	LoPlano << c_plano_montaje_tba.new(LoEng)
+	LoPaf << smallworld_product.pni_application()## Se obtiene la aplicacion
+	LoPaf.plugin(:gen_planos).tbas_activados << Tba_seleccionado.an_element()##Se asigna al pseudoslot el tba seleccionado
+	LoPlano.genera_plano()
+	
+	_self.quit()
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.ir_a_tba()
+	## Tomar el Tba,  Seleccionado por el usuario, para generar
+	## su Plano de Montaje.
+
+	Tba_seleccionado << _self.activados()
+	_if Tba_seleccionado.size = 0
+	_then
+	    condition.raise(:user_error, :string,
+		            "No se ha seleccionado un TBA")
+	_elif Tba_seleccionado.size > 1
+	_then
+	    condition.raise(:user_error, :string,
+		            "Debe Seleccionar solo un TBA")
+	_endif
+	smallworld_product.pni_application().manager.goto_primary_context(Tba_seleccionado.an_element())
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.llena_arbol()
+	## Metodo que regresa una lista para llenar el arbol con los
+	## tbas que se encuentran en el diseno.
+	_local LoCentral	
+
+	LoTbas << _self.obtener_tbas_diseno()	
+	LoCentral << c_cuentas_fo_plugin.ObtenerCentral()	
+	
+	_local l_list << rope.new()
+
+	_local l_styled_string << styled_string.new(:toggle, :check,
+						    :value, :valor,
+						    :green_bold,:value,:estatus	)
+	_for tba _over LoTbas.fast_elements()
+	_loop
+	    _local l_valor
+	    _local comentario << "IDENTFICADOR: "   + tba.user!_identificador.default("") +
+				 "  |  TIPO: " + tba.user!_tipo.default("") + 
+				 "  |  ESPECIFICACION: " + tba.spec_id +
+				 "  |  FIBRAS OPTICAS: " + tba.user!_fibras_opticas.default("") +
+				 "  |  UBICACION: " + tba.user!_ubicacion
+	    l_valor << property_list.new_with(:elemento,tba,:valor, comentario, :check, _false)
+	    _local l_display_tree << display_tree.new(tba, l_valor)
+	    l_display_tree.styled_string << l_styled_string
+	    l_list.add(l_display_tree)
+	_endloop
+	.list << l_list
+	>> .list
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.obtener_tbas_diseno()
+	## 
+	##
+	_local LcollTba   << rope.new()
+	_local LoTablaGUT << mit_manager.modelit_dataset.collections[:user!_tba_anotacion]
+	## Consulta Espacial para obtener los Tbas que estan en el area
+	## de diseno actual y con estado de construccion Proyectado.
+	_local LoDisenoActual << c_cuentas_fo_plugin.ObtenerDiseno()
+	_local LoArea  << LoDisenoActual.scheme_area
+	_local LoResult_setGUT << LoTablaGUT.select(predicate.within(:user!_ubicacion, LoArea))
+
+	_if (LoDto << LoDisenoActual.user!_distrito ) _is _unset 
+	_then
+		LoDto << LoDisenoActual.distrito_optico
+	_endif
+        
+	_if LoDisenoActual.scheme_area _isnt _unset _andif
+	    LoDto _isnt _unset 
+	_then
+		
+	    # Se valida si el diseno esta dentro de Edificio
+	    _if LoDto.user!_limite_edificio _is _unset 
+	    _then		
+		# Si el Diseno es a nivel de distrito en Gis, buscamos en CD
+		## estas lineas son para tbas en CD
+		LoTabla << mit_manager.modelit_dataset.collections[:mit_terminal_enclosure]
+		LoResult_set << LoTabla.select(predicate.within(:location, LoArea))			
+            _else
+		# LoArea es el Limite de Distrito en Edificio
+	        LoArea  << LoDisenoActual.user!_distrito.user!_limite_edificio
+		# Si el Diseno es a nivel de Edificio, buscamos en Registro Tablero
+		LoTabla << mit_manager.modelit_dataset.collections[:user!_registro_tablero]
+		LoResult_set << LoTabla.select(predicate.within(:inside_location , LoArea))		
+	    _endif	    
+
+	    ## Se tienen las cds o registros tableros, y se analizan que
+	    ## cajas o registros tienen asociados tbas.
+	    _if LoResult_set.size > 0
+	    _then
+		 _for cd  _over LoResult_set.fast_elements()
+		 _loop
+		     _if cd.user!_tbas.size > 0
+		     _then
+			 ## Agregamos los tbas proyectados
+			  _for tba _over cd.user!_tbas.elements()
+			  _loop
+			       _if tba.construction_status = "PROYECTADO"
+			       _then
+				   LcollTba.add(tba)
+			       _endif 
+			  _endloop			     
+		     _endif
+		 _endloop
+	    _endif
+
+	    ## Buscamos si existen TBA tipo GUTS en el diseño, es decir en
+	    ## el limite de distrito dentro de Edificio
+	    ## Los tipo GUts, no requieren de CD o Registro, estan Solos.		
+	    ## En el disenno pueden haber los tres tipos de tbas
+	    ## (v1, v2 y gut)
+	    
+
+	    
+	    _if LoResult_setGUT.size > 0
+	    _then
+		_for LoElem _over LoResult_setGUT.fast_elements()
+		_loop                  
+			_if LoElem.user!_tba _isnt _unset _andif
+			    LoElem.user!_tba.user!_tipo = "GUT"
+			_then
+				
+				Tbaguts << LoElem.user!_tba
+				_if tbaguts.construction_status = "PROYECTADO"
+				_then   
+					LcollTba.add(tbaguts)
+				_endif				
+			  _endif
+		
+		_endloop
+
+		_return LcollTba
+	    _endif		    
+	_endif	        
+	
+	_return LcollTba
+	
+	
+_endmethod
+$
+_pragma(classify_level=basic, topic={tree_item}, usage={subclassable})
+_method c_arbol_tba.selected(p_selection)
+	## metodo que controla la seleccion de la lista y resalta en el
+	## mapa la ruta por donde pasa el cable selecciopnado.
+	##
+    
+	.tree_item.refresh()	
+	
+_endmethod
+$

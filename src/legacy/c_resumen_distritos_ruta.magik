@@ -1,0 +1,158 @@
+_package user
+$
+def_slotted_exemplar(:c_resumen_distritos_ruta,
+{
+	{:distritos,_unset,:writable}
+}, :c_base_sello_fibra)
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_resumen_distritos_ruta.new(_optional PcollDtos,PoBoundingBox)
+## 
+## Ult mod:
+## 12/11/08 19:32 DSB:- Se creo	
+
+	.distritos<<PcollDtos
+	
+	_return _self.new_with(:bounds,PoBoundingBox)
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_distritos_ruta.configura_tabla()
+
+	# DSB: Esta linea se comento para recudir el acoplamiento entre
+	# los planos y l ageneracion del sello
+	_self.obten_distritos()
+	
+	_if .distritos _isnt _unset 
+	_then
+		
+		lo_tabla << .o_tablas.crea_tabla(2 +.distritos.size,11,:tbl_res_dtos_ruta)
+	_else
+		lo_tabla << .o_tablas.crea_tabla(2,11,:tbl_res_dtos_ruta)
+	_endif
+
+	# coordenada donde inicia la tabla
+	lo_tabla.ocoordenada_origen << .o_coord_inicio
+	
+	# longitud de los renglones de la tabla, dada en mm 
+	lo_tabla.orenglones.elemento(1).nlongitud << 10
+	lo_tabla.orenglones.elemento(2).nlongitud << 40
+	
+	_for n_ren _over range(3,2+.distritos.size) 
+	_loop
+		lo_tabla.orenglones.elemento(n_ren).nlongitud << 6
+	_endloop
+	
+	# longitud de las columnas de la tabla, dada en mm 
+	_for n_col _over range(1,11) 
+	_loop
+		lo_tabla.ocolumnas.elemento(n_col).nlongitud  << 25
+	_endloop
+	
+	# se ocultan bordes de celdas
+	ocultaSup << rope.new_with({1,1},{1,2},{1,3},{1,4},{1,5},{1,6},{1,7},
+				   {1,8},{1,9},{1,10},{1,11})
+	_for e _over ocultaSup.fast_elements()
+	_loop
+	lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Sup? << _false
+	_endloop
+
+	ocultaIzq << rope.new_with({1,1},{1,2},{1,3},{1,4},{1,5},{1,6},{1,7},
+				   {1,8},{1,9},{1,10},{1,11})
+	_for e _over ocultaIzq.fast_elements()
+	_loop
+	lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Izq? << _false
+	_endloop
+
+	ocultaDer << rope.new_with({1,1},{1,2},{1,3},{1,4},{1,5},{1,6},{1,7},
+				   {1,8},{1,9},{1,10},{1,11})
+	_for e _over ocultaDer.fast_elements()
+	_loop
+	lo_celda << lo_tabla.oceldas.celda(e[1].as_number(),e[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	_endloop
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_distritos_ruta.etiqueta_celdas()
+
+	msg << "DISTANCIA" +%newline
+	msg +<< "A O.C. EN" +%newline
+	msg +<< "KMS." 
+
+	msg2 << "TOTAL" +%newline
+	msg2 +<< "FIBRAS" +%newline
+	msg2 +<< "DISTRITO" 
+
+	msg3 << "NUMERO" +%newline
+	msg3 +<< "FIBRAS" +%newline
+	msg3 +<< "ASIGNADAS" 
+
+	msg4 << "NUMERO" +%newline
+	msg4 +<< "FIBRAS" +%newline
+	msg4 +<< "RESERVAS" +%newline
+	msg4 +<< "POR GRUPO" 
+
+	msg5 << "RESERVAS" +%newline
+	msg5 +<< "GENERALES"
+
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,1,6,"RESUMEN DE DISTRITOS DE LA RUTA",40, _unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,1,"CENTRAL",40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,2,"DISTRITO",40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,3,msg,40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,4,"RUTA",40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,5,"NSE",40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,6,"NIPP",40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,7,"MODA",40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,8,msg2,40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,9,msg3,40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,10,msg4,40,_unset)
+	_self.asigna_texto_celda(:tbl_res_dtos_ruta,2,11,msg5,40,_unset)
+	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_distritos_ruta.llena_datos_celdas()
+	## 
+	## 
+	cont << 2
+	_if .distritos _isnt _unset 
+	_then
+		_for dto _over .distritos.fast_elements()
+		_loop
+			cont+<<1
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,1,dto[:central],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,2,dto[:distrito],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,3,dto[:distancia_oc],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,4,dto[:ruta],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,5,dto[:nse],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,6,dto[:nipp],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,7,dto[:moda],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,8,dto[:total_fibras],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,9,dto[:fibras_asignadas],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,10,dto[:reserva_grupo],35,_unset)
+			_self.asigna_texto_celda(:tbl_res_dtos_ruta,cont,11,dto[:reservas_generales],35,_unset)
+			
+		_endloop
+	_endif
+	
+_endmethod
+$
+
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_resumen_distritos_ruta.obten_distritos()
+
+
+	eng << c_engine_ruta_cables.new()
+	LoPaf << smallworld_product.pni_application()
+	Locable << LoPaf.plugin(:gen_planos).cables_activados_fo
+	eng.recorrer_ruta(Locable)
+	.distritos << eng.getdistritos()
+
+_endmethod
+$

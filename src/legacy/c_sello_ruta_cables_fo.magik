@@ -1,0 +1,1620 @@
+_package user
+$
+#remex(:c_sello_ruta_cables_fo)
+$
+def_slotted_exemplar(:c_sello_ruta_cables_fo,
+{
+		{:oTipoEmpresaR,      _unset }, # catalogo para empresa que revisa
+		{:oTipoEmpresaP,      _unset }, # catalogo para empresa que proyecta
+		{:valor_empreviso,    _unset }, # Valor para empresa que revisa
+		{:valor_empproyecto,  _unset } # Valor para empresa que proyecta
+  	
+		
+},:c_base_sello_fibra)
+$
+c_sello_ruta_cables_fo.define_shared_constant(:allowed_on_menu?,_false  , :public)
+$
+c_sello_ruta_cables_fo.define_shared_constant(:tipos_peps_ba,{"user!_pep_ba_rp_fo_peba",
+	                                                      "user!_pep_ba_rs_fo_peba",
+							      "user!_pep_ba_ter_peba",
+							      "user!_pep_ba_pares_principales",
+							      "user!_pep_desm_rp_fo",
+							      "user!_pep_desm_itba",
+							      "user!_pep_desm_cana",
+							      "user!_pep_ba_can_alig_plex" },:public )
+$
+c_sello_ruta_cables_fo.define_shared_constant(:tipos_peps_fibra,
+                  { "user!_pep_ut_cana_ali", 
+                    "user!_pep_ut_cana_enc", 
+		    "user!_pep_ut_fib_ae"  , 
+		    "user!_pep_ut_fib_sub" , 
+		    "user!_pep_zo_cana_ali", 
+		    "user!_pep_zo_cana_enc", 
+		    "user!_pep_zo_fib_ae",   
+		    "user!_pep_zo_fib_sub" },:public ) 
+$
+c_sello_ruta_cables_fo.define_shared_constant(:tipos_peps_fttb,{"user!_pep_cons_ppal", 
+      			                                    "user!_pep_desm_ppal",
+				                            "user!_pep_ba_rp_fo_peba",
+				                            "user!_pep_ba_rs_fo_peba",
+				                            "user!_pep_desm_secu",
+			 	                            "user!_pep_cons_secu",
+				                            "user!_pep_cons_ccc",
+				                            "user!_pep_desm_ccc",
+				                            "user!_pep_desm_cana",
+				                            "user!_pep_cons_cana",
+				                            "user!_pep_desm_rp_fo",
+				                            "user!_pep_desm_rs_fo",
+				                            "user!_pep_ba_ter_peba",
+				                            "user!_pep_desm_itba" },:public )
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.defined_attributes
+
+	attribs << rope.new_from (_super.defined_attributes)
+	
+	# Atributo que indica si el sello debe presentarse en color
+	# negro o en color rojo
+
+	
+	# START CHANGE
+	# (2020-04-17 AHERNAN, Hitss) : 
+	#
+	attribs.add(layout_attribute_definition.new(:empreviso, :string,
+						    :description, "Empresa que revisa",	    
+                                                    :enum_method, :enum_tipo_empresar))
+
+	attribs.add(layout_attribute_definition.new(:empproyecto, :string,
+						    :description, "Empresa que proyecta",
+                                                    :enum_method, :enum_tipo_empresap))	
+	#
+	# END CHANGE
+	
+	
+	attribs.add(layout_attribute_definition.new(:blanco_negro,  :string,
+		                                    :description,   "Blanco / Negro",
+						    :enum_method,   :enum_bool,
+						    :default_value, "NO"))
+
+	attribs.add(layout_attribute_definition.new(:nombre_enlace, :string,
+						    :description, "Nombre del enlace",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:cable, :string,
+						    :description, "Cable",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:titulo, :string,
+						    :description, "Titulo plano",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:numero_de_hoja, :string,
+						    :description, "Número de Hoja",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:total_hojas, :string,
+						    :description, "Total de hojas",
+						    :default_value, _unset ))
+
+	
+	attribs.add(layout_attribute_definition.new(:telefono, :string,
+						    :description, "TELEFONO",
+						    :default_value, _unset ))
+
+	attribs.add(layout_attribute_definition.new(:dir_area, :string,
+						    :description, "DIRECCION AREA",
+						    :default_value, _unset ))
+	
+	attribs.add(layout_attribute_definition.new(:responsable_area, :string,
+						    :description, "RESPONSABLE AREA",
+						    :default_value, _unset ))
+
+	
+	>> attribs
+	
+_endmethod
+$
+c_sello_ruta_cables_fo.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.enum_tipo_empresar
+
+	.oTipoEmpresaR    << hash_table.new()
+	.oTipoEmpresaR[1] << "TELMEX"
+	.oTipoEmpresaR[2] << "ULTIMA_MILLA"
+	.oTipoEmpresaR[3] << "ULTIMA_MILLA_N"	
+	_return .oTipoEmpresaR
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.enum_tipo_empresap
+
+	.oTipoEmpresaP    << hash_table.new()
+	.oTipoEmpresaP[1] << "IMTSA"
+	.oTipoEmpresaP[2] << "GSP"
+	.oTipoEmpresaP[3] << "KBTEL"
+	.oTipoEmpresaP[4] << "TELNOR"
+
+	
+	_return .oTipoEmpresaP
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.ajusta_marco_y_bounds(p_tot_ren)
+	## Se ajusta el marco y la ubicacion  del sello para cuando aumenta el numero
+	## de renglones por las oes.p_tot_ren es el total de renglones
+	## a considerar para la tabla de peps.
+	## 
+	LongInicio << 250
+	.o_tablas.tablas[:tbl_general].orenglones.elemento(1).nlongitud << LongInicio +
+									   ((p_tot_ren -10)*8)
+
+	LoBounds << bounding_box.new(_self.bounds.xmin,_self.bounds.ymin,
+				     _self.bounds.xmax,_self.bounds.ymax + ((p_tot_ren -10)*80))
+	_self.bounds << LoBounds
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.año
+	## 
+	## 	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.cable
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.cables
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.configura_tabla()
+
+	#--------------------------------------------------------------
+	#	  Tabla General
+	#--------------------------------------------------------------
+	lo_tabla << .o_tablas.crea_tabla(1,1,:tbl_general)
+	lo_tabla.oCoordenada_origen << .o_coord_inicio
+	lo_tabla.orenglones.elemento(1).nlongitud << 250
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 185
+	#--------
+	# tabla 1
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(1,1, :tbl_1)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + 150, .o_coord_inicio.y - 0)
+	lo_tabla.orenglones.elemento(1).nlongitud << 11
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 155
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	lo_celda.bBorde_Sup? << _false
+	lo_celda.bBorde_Inf? << _false
+	#--------
+	# tabla 2
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(1,1, :tbl_2)
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_1})
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_y, .o_coord_inicio.y - ln_desp_y)
+	lo_tabla.orenglones.elemento(1).nlongitud << 11
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 155
+      	#--------
+	# tabla 3
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(8,2, :tbl_3)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x+ 380, .o_coord_inicio.y - 220)
+	_for n_reng _over range(1,8)
+	_loop
+		lo_tabla.orenglones.elemento(n_reng).nlongitud << 8
+	_endloop
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 51
+	lo_tabla.ocolumnas.elemento(2).nlongitud  << 53
+	ocultaBIzq << rope.new_with({1,1},{1,2},{2,1},{2,2},{3,1},{3,2},{4,1},{4,2},{5,1},{5,2},{6,1},{6,2},
+				    {7,1},{7,2},{8,1},{8,2})
+	_for elem _over ocultaBIzq.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+		lo_celda.bBorde_Der? << _false		
+	_endloop
+	ocultaBInfSup << rope.new_with({1,1},{1,2},{2,1},{3,1},{4,1},{5,1},{6,1},{7,1},{8,1})
+	_for elem _over ocultaBInfSup.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Inf? << _false
+		lo_celda.bBorde_Sup? << _false
+	_endloop
+	#--------
+	# tabla logo imtsa
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(1,1, :tbl_logo_imtsa)
+	lo_tabla.orenglones.elemento(1).nlongitud << 48
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 51
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x+ ln_desp_y, .o_coord_inicio.y - 940)
+        #--------
+	# tabla 4
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(8,1, :tbl_4)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x+ ln_desp_y+ 510 , .o_coord_inicio.y - 940)
+	_for n_ren _over range(1,8)
+	_loop
+		lo_tabla.orenglones.elemento(n_ren).nlongitud << 8
+	_endloop
+	lo_tabla.ocolumnas.elemento(1).nlongitud << 53
+	
+        ocultaBInf << rope.new_with({1,1},{3,1},{5,1})
+	_for elem _over ocultaBInf.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Inf? << _false
+	_endloop
+	#--------
+	# tabla logo telmex
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(2,1, :tbl_logo_telmex)
+	lo_tabla.orenglones.elemento(1).nlongitud << 48
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 51
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_y + 1040, .o_coord_inicio.y - 940)
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Inf? << _false
+	#--------
+	# tabla 5
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(2,1, :tbl_5)
+	lo_tabla.orenglones.elemento(1).nlongitud << 8
+	lo_tabla.orenglones.elemento(2).nlongitud << 8
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 51
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x+ ln_desp_y, .o_coord_inicio.y - 1420)
+	#--------
+	# tabla 6
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(2,1, :tbl_6)
+	lo_tabla.orenglones.elemento(1).nlongitud << 8
+	lo_tabla.orenglones.elemento(2).nlongitud << 8
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 51
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x + ln_desp_y + 1040, .o_coord_inicio.y - 1420)
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Sup? << _false
+	#--------
+	# tabla 7
+	#--------
+	lo_tabla << .o_tablas.crea_tabla(1,5, :tbl_7)
+	lo_tabla.orenglones.elemento(1).nlongitud << 8
+	lo_tabla.ocolumnas.elemento(1).nlongitud  << 95
+	_for n_col _over range(2,5)
+	_loop
+		lo_tabla.ocolumnas.elemento(n_col).nlongitud  << 15
+	_endloop
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x+ ln_desp_y, .o_coord_inicio.y - 1580)
+	lo_celda << lo_tabla.oceldas.celda(1,1).oelementos.obten_elemento(:bordes_celda)
+	lo_celda.bBorde_Der? << _false
+	lo_celda.bBorde_Izq? << _false
+	#--------+
+	# tabla 8 TABLA DE PEPS Y UNIDADES CONTABLES
+	#--------
+	_self.crea_tabla_peps()
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.crea_tabla_peps()
+	## Se crea la tabla de peps en base a la informacion agrupada
+	## de las OES por trabajo (Construccion o desmontaje) y por
+	## tipo de red (Cobre, Fibra, Canal)
+	## 
+	LoPeps<<c_proyecto.obten_peps_por_tipo()
+	LoTotRen << 0 #inicializamos el total de renglones en 10
+	LoTotFibConst << 0
+	LoTotCobConst << 0
+	LoTotCanConst << 0
+	LoTotFibDesm << 0
+	LoTotCobDesm << 0
+	LoTotCanDesm << 0
+
+	_for k,v _over LoPeps.fast_keys_and_elements()
+	_loop
+		_if k _is :construccion
+		_then
+			LoTotFibConst +<<  v[:fibra].size
+			LoTotCobConst +<<  v[:cobre].size
+			LoTotCanConst +<<  v[:canal].size	
+		_elif k _is :desmontaje
+		_then 
+			LoTotFibDesm +<<  v[:fibra].size
+			LoTotCobDesm +<<  v[:cobre].size
+			LoTotCanDesm +<<  v[:canal].size
+		_endif
+		
+	_endloop
+
+	LoTotRenConst << 4 + LoTotFibConst + LoTotCobConst + LoTotCanConst
+	LoTotRenDesmo << 4 + LoTotFibDesm + LoTotCobDesm + LoTotCanDesm
+	LoTotRen << LoTotRenConst + LoTotRenDesmo
+	ln_desp_y << .o_tablas.Longitud_total_Renglones({:tbl_1})
+	lo_tabla << .o_tablas.crea_tabla(LoTotRen,5, :tbl_8)
+	lo_tabla.oCoordenada_Origen << coordinate.new(.o_coord_inicio.x+ ln_desp_y, .o_coord_inicio.y - 1660)
+	_for n_reng _over range(1,LoTotRen)
+	_loop
+		lo_tabla.orenglones.elemento(n_reng).nlongitud << 8
+	_endloop
+	_for n_col _over range(1,5)
+	_loop
+		lo_tabla.ocolumnas.elemento(n_col).nlongitud << 31
+	_endloop
+	ocultaBIzq << rope.new_with({1,2},{1,3},{1,4},{1,5},{LoTotRenConst + 1,2},{LoTotRenConst + 1,3},{LoTotRenConst + 1,4},{LoTotRenConst + 1,5})
+	_for elem _over ocultaBIzq.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Izq? << _false
+	_endloop
+	ocultaBDer << rope.new_with({1,1},{1,2},{1,3},{1,4},{LoTotRenConst +1,1},{LoTotRenConst +1,2},{LoTotRenConst +1,3},{LoTotRenConst +1,4})
+	_for elem _over ocultaBDer.fast_elements()
+	_loop
+		lo_celda << lo_tabla.oceldas.celda(elem[1].as_number(),elem[2].as_number()).oelementos.obten_elemento(:bordes_celda)
+		lo_celda.bBorde_Der? << _false	
+	_endloop
+	LoTotales << rope.new_with(LoTotFibConst,
+				   LoTotCobConst,
+				   LoTotCanConst,
+				   LoTotFibDesm,
+				   LoTotCobDesm,
+				   LoTotCanDesm)
+	_self.ajusta_marco_y_bounds(LoTotRen)
+	_self.etiqueta_celdas_de_peps(LoTotRenConst,LoTotales)
+
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.datos_para_larguillos()
+	## 
+	##
+	LoPaf << smallworld_product.pni_application()
+	LayoutPlugin << LoPaf.plugin(:layout_plugin)
+	LayoutManager << LayoutPlugin.layout_designer.plugin(:layout_manager)
+	LoDocument << LayoutManager.current_document
+	LoUserTipoPlano << LoDocument.user!_tipo_plano
+	### Llena el campo tipo de plano
+	_if LoUserTipoPlano = :ruta_cables_fo_lar 
+	_then
+		LoTipoPlano << "Plano de Detalles de Ruta"
+	_elif LoUserTipoPlano = :ruta_cables_fo_lar_gral
+	_then
+		LoTipoPlano << "Plano de generico de Ruta"
+	_endif
+	### Llena los campos numero de pagina y total de paginas
+	LoTotalHojas << LoDocument.all_elements_of(c_sello_ruta_cables_fo).size
+	LoNumHoja << 0
+	_for ele _over LoDocument.all_elements_of(c_sello_ruta_cables_fo).fast_elements()
+	_loop
+		LoNumHoja +<<1
+		ele.asigna_texto_celda(:tbl_1, 1,1, LoTipoPlano, 70,_unset)
+		ele.asigna_texto_celda(:tbl_7, 1,3, LoNumHoja, 30,_unset)
+		ele.asigna_texto_celda(:tbl_7,1,5, LoTotalHojas,30,_unset)
+	_endloop
+
+_endmethod
+$
+
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.departamento
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.domicilio
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.etiqueta_celdas()
+	## 
+	##
+	#write(:etiqueta_simbolos)
+	
+	diseno << swg_dsn_admin_engine.active_design
+	proy << diseno.project
+	tipo_plano << _self.get_tipo_plano()
+	
+	l_nco_central << "CENTRAL"	
+#	_if proy.name.matches?("FTTB*") _or
+#	    proy.name.matches?("FALC*") # para proyecto FTTB o FALC cambia la etiqueta
+#	_then
+#		l_nco_central << "NCO"
+#	_endif	
+
+	_self.asigna_texto_celda(:tbl_1, 1,1, tipo_plano, 70,_unset)
+	
+        _self.asigna_texto_celda(:tbl_3 ,1,1, "PROGRAMA:", 35, _unset)
+        _self.asigna_texto_celda(:tbl_3 ,2,1, "DIRECCIÓN DIVISIONAL:",35, :centre_left,2)
+        _self.asigna_texto_celda(:tbl_3 ,3,1, "ÁREA:",35, :centre_left,2)
+        _self.asigna_texto_celda(:tbl_3 ,4,1, l_nco_central,35, :centre_left,2)
+        _self.asigna_texto_celda(:tbl_3 ,5,1, "DEPARTAMENTO:",35, :centre_left,2)
+        _self.asigna_texto_celda(:tbl_3 ,6,1, "RESPONSABLE:",35, :centre_left,2)
+        _self.asigna_texto_celda(:tbl_3 ,7,1, "DOMICILIO:",35, :centre_left,2)
+        _self.asigna_texto_celda(:tbl_3 ,8,1, "TELEFONO:",35, :centre_left,2)
+	
+	_self.asigna_texto_celda(:tbl_4 ,1,1, "PROYECTO:",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_4 ,3,1, "SUPERVISO:",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_4 ,5,1, "FECHA DE ENTREGA:",35,:centre_left,2)
+
+	_self.asigna_texto_celda(:tbl_4 ,7,1, "AÑO:",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_4 ,8,1, "CONSTRUCCIÓN:",35,:centre_left,2)
+
+	_if swg_dsn_admin_engine.active_scheme.project.user!_empresa_proyecto = "GSP"
+	_then
+		_self.asigna_simbolo_celda(:tbl_logo_imtsa,1,1,"logo_gsp")
+	_elif  swg_dsn_admin_engine.active_scheme.project.user!_empresa_proyecto = "IMTSA"
+	_then	
+		_self.asigna_simbolo_celda(:tbl_logo_imtsa,1,1,"logo_imtsa")
+	_elif swg_dsn_admin_engine.active_scheme.project.user!_empresa_proyecto = "KBTEL"
+	_then
+		_self.asigna_simbolo_celda(:tbl_logo_imtsa,1,1,"logo_kbtel")
+	_elif swg_dsn_admin_engine.active_scheme.project.user!_empresa_proyecto = "TELNOR"
+	_then
+		_self.asigna_simbolo_celda(:tbl_logo_imtsa,1,1,"logo_telnor")
+	_endif
+
+	_self.asigna_simbolo_celda(:tbl_logo_telmex,1,1,"logo_telmex_ep")
+
+	_self.asigna_texto_celda(:tbl_5,1,1,"CABLES",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_6,1,1,"Vo.Bo.",35,:centre_left,2)
+	
+	_self.asigna_texto_celda(:tbl_7,1,2,"HOJA:",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_7,1,4,"DE:",35,:centre_left,2)
+
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.etiqueta_celdas_de_peps(p_tot_cons,p_totales)
+	## Se agrega metodo al sello para agregar los titulos de la
+	## tabla de peps de acuerdo al renglon que le corresponda en
+	## base al total de oes a distribuir en el sello.
+	## p_tot_cons es el total de oes de construccion. p_totales es
+	## el total de oes dividido por fibra, cobre y canal.
+	
+
+	_self.asigna_texto_celda(:tbl_8 ,1,3, "INSTALACIONES",40,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,2,1, "PEP",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,2,2, "TIPO DE TRABAJO",32,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,2,3, "OPERACIONES",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,2,4, "OEI",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,2,5, "OE",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,3,2, "FIBRA",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_totales[1]+3,2, "COBRE",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_totales[1] + p_totales[2]+4,2, "CANALIZACIÓN",
+				 35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+1,3, "DESMONTAJES",40,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+2,1, "PEP",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+2,2, "TIPO DE TRABAJO",32,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+2,3, "OPERACIONES",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+2,4, "OEI",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+2,5, "OE",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+3,2, "FIBRA",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+p_totales[4]+4,2, "COBRE",35,:centre_left,2)
+	_self.asigna_texto_celda(:tbl_8 ,p_tot_cons+p_totales[4]+p_totales[5]+4,2, "CANALIZACIÓN",
+				 35,:centre_left,2)
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.fecha
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.filtrar_campos_x_proyecto()
+#---------------------------------------------------
+##  Objetivo  : Filtrar los campos validos de PEP por tipo de proyecto
+##
+LoCamposPEP << rope.new()
+	
+LoProject    <<  swg_dsn_admin_engine.active_design.project
+campos << LoProject.physical_fields
+TipoProyecto <<  LoProject.job_type
+FTTB?  <<  LoProject.name.matches?("FTTB_*")
+BA?     << LoProject.name.matches?("BA_*")
+
+# (2011-04-08 Aarón Hernández Ramírez, SIGMATAO) : tipo de PEP
+
+_if BA? 
+_then
+	ListaNombrecampos << 	c_sello_ruta_cables_fo.tipos_peps_ba
+_elif FTTB?
+_then
+	ListaNombrecampos <<     c_sello_ruta_cables_fo.tipos_peps_fttb
+_else
+	ListaNombrecampos <<     c_sello_ruta_cables_fo.tipos_peps_fibra	
+_endif
+
+#write("campos...")
+#print(ListaNombrecampos)
+
+_for k _over campos.elements()
+_loop
+	_if  ListaNombrecampos.index_of_eq(k.name) _isnt _unset 
+	_then
+	       	LoCamposPEP.add(k)
+	_endif
+		
+_endloop
+
+#write("CAMPOS PEP VALIDOS")
+#print(LoCamposPEP)
+
+_return LoCamposPEP
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.get_page()
+	## 
+	## 
+	LoLayoutPlugin    << smallworld_product.pni_application().plugin(:layout_plugin)
+	LoLayoutPlugin.start_layout_designer()
+	LoLayoutDesigner << LoLayoutPlugin.dialogs[:layout_designer]
+	LoLayoutManager   << LoLayoutDesigner.plugin(:layout_manager)
+	LoViewMapperPlugin<<LoLayoutDesigner.plugin(:viewport_mapper)
+	LoDoc  << LoLayoutManager.current_document
+	LoPage << LoLayoutManager.current_page
+	_return Lopage
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.get_tipo_plano()
+	## 
+	## 
+	LoPage << _self.get_page()
+	LoTipoPlano << ""
+	_for el _over lopage.elements.fast_elements()
+	_loop
+		_if el.class_name _is :c_titulo_de_plano
+		_then
+			LoTipoPlano << el.text.as_lines.an_element()
+			_leave
+		_endif
+	_endloop
+	_return LoTipoPlano
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.llena_datos_celdas()
+
+	#datos del proyecto
+	LoColor      <<  rope.new_with(1,0,0)
+	diseno       <<  swg_dsn_admin_engine.active_design
+	proy         <<  diseno.project	
+	nombre       <<  proy.name
+	programa     <<  proy.user!_programa_tipo
+	direc_div    <<  proy.division
+	area         <<  proy.area
+	departamento <<  proy.user!_empresa_revisora
+	proyectista  <<  proy.user!_proyectista_proyecto
+	superviso    <<  proy.user!_supervisor 
+	fecha_entrega << proy.user!_fecha_entrega 
+	anio          << proy.user!_programa_anyo
+	construccion  << proy.planning_start
+	vp            << proy.user!_vb
+	l_cables_txt  << proy.user!_central.user!_central.write_string + " "
+	ctl           << proy.user!_central.user!_central + " - " +
+			 proy.user!_central.user!_nom_nodo      
+	LoEmpresa     << proy.user!_empresa_proyecto
+
+       _if LoEmpresa _isnt  _unset 
+       _then       
+   	       LogoEmpresa   << "logo_" + LoEmpresa.lowercase	       
+       _endif
+
+	new_proj      << c_proyecto.new()
+	
+	#Datos del area
+	oarea         << c_area_telmex.new(new_proj.area_telmex)
+	responsable   << oarea.responsable
+	direccion     << oarea.direccion
+	telefono      << oarea.telefono
+	LoTipoPlano << _self.get_tipo_plano()
+
+        #datos del PEP 
+	_self.llena_datos_pep()
+	
+	_if LoTipoPlano = "PLANO MONTAJE DE TBA"
+	_then
+		(LoTBA) << _self.obten_tba()
+		_if  LoTBA _isnt _unset _then	nombre << LoTBA.user!_identificador _endif
+	_else
+		
+		_if ( _self.attributes[:nombre_enlace] _isnt _unset _andif
+		      _self.attributes[:nombre_enlace].value) _isnt  _unset _andif
+		      _self.attributes[:nombre_enlace].value.size > 0
+		_then
+
+			nombre <<  _self.attributes[:nombre_enlace].value.write_string.uppercase
+		_else
+
+			_if proy.user!_enlaces _isnt _unset 
+			_then
+			        nombre  << proy.user!_enlaces.txt_nom_enlace
+			_else
+				nombre << ""
+			_endif
+			
+		_endif
+	
+	_endif
+
+	_if LoTipoPlano.matches?("*lar*")
+	_then
+		_self.datos_para_larguillos()
+	_endif
+	
+	# (12/08/31 ahernanram) : asigna numero de hoja.               
+	_if ( _self.attributes[:numero_de_hoja] _isnt _unset _andif
+	      _self.attributes[:numero_de_hoja].value) _isnt  _unset _andif
+	    _self.attributes[:numero_de_hoja].value.size > 0
+	_then
+		ls_num_hoja <<  _self.attributes[:numero_de_hoja].value.write_string.uppercase
+	_else
+		ls_num_hoja << _self.layout_page.page_number().write_string.default("1")
+	_endif
+	
+	_if ( _self.attributes[:total_hojas] _isnt _unset _andif
+	      _self.attributes[:total_hojas].value) _isnt  _unset _andif
+	    _self.attributes[:total_hojas].value.size > 0
+	_then	
+		ls_total_hojas <<  _self.attributes[:total_hojas].value.write_string.uppercase
+	_else
+		ls_total_hojas << _self.layout_page.number_of_pages().write_string.default("1")
+	_endif
+	
+	_if ( _self.attributes[:titulo] _isnt _unset _andif
+	      _self.attributes[:titulo].value) _isnt  _unset _andif
+	    _self.attributes[:titulo].value.size > 0
+	_then
+		tipo_plano <<  _self.attributes[:titulo].value.write_string.uppercase	
+	_else
+		tipo_plano << _self.get_tipo_plano()
+	
+	_endif
+	
+	_if ( _self.attributes[:cable] _isnt _unset _andif
+	      _self.attributes[:cable].value) _isnt  _unset _andif
+	    _self.attributes[:cable].value.size > 0
+	_then
+		
+		l_cables_txt <<  _self.attributes[:cable].value.write_string.uppercase
+	_endif
+
+
+	_self.asigna_texto_celda(:tbl_7,1,3,ls_num_hoja           ,30,_unset)
+	_self.asigna_texto_celda(:tbl_7,1,5,ls_total_hojas        ,30,_unset)			
+	_self.asigna_texto_celda(:tbl_2,1,1,nombre.write_string   ,50, _unset)
+	_self.asigna_texto_celda(:tbl_5,2,1,l_cables_txt          ,30,_unset)
+	_self.asigna_texto_celda(:tbl_1,1,1,tipo_plano            ,70,_unset)
+	_self.asigna_texto_celda(:tbl_3,1,2,programa.write_string ,28, _unset)
+	_self.asigna_texto_celda(:tbl_3,2,2,direc_div.write_string,30, _unset)
+	_self.asigna_texto_celda(:tbl_3,3,2,area.write_string     ,30, _unset)
+	_self.asigna_texto_celda(:tbl_3,4,2,ctl.write_string      ,30, _unset)
+	_self.asigna_texto_celda(:tbl_3,5,2,departamento.write_string,30, _unset)
+	_self.asigna_texto_celda(:tbl_3,6,2,responsable.write_string ,30, _unset)
+	_self.asigna_texto_celda(:tbl_3,7,2,direccion.write_string   ,30, _unset)
+	_self.asigna_texto_celda(:tbl_3,8,2,telefono.write_string    ,30, _unset)
+	_self.asigna_texto_celda(:tbl_4,2,1,proyectista.write_string ,30, _unset)
+	_self.asigna_texto_celda(:tbl_4,4,1,superviso.write_string   ,30, _unset)
+	_self.asigna_texto_celda(:tbl_4,6,1,fecha_entrega.write_string,30, _unset)
+	_self.asigna_texto_celda(:tbl_4,7,1,"AÑO: " +anio.write_string,30, _unset)
+	_self.asigna_texto_celda(:tbl_4,8,1,"CONSTRUCCION: " + construccion.write_string,30, _unset)
+	_self.asigna_texto_celda(:tbl_6,2,1,vp.write_string,30,_unset)
+
+
+	_if ( _self.attributes[:responsable_area] _isnt _unset _andif
+	      _self.attributes[:responsable_area].value) _isnt  _unset _andif
+	     _self.attributes[:responsable_area].value.size > 0
+	_then
+		
+		responsable_area<<  _self.attributes[:responsable_area].value.write_string.uppercase
+		
+		_self.asigna_texto_celda(:tbl_3,6,2,responsable_area.write_string   ,30, _unset)
+	_endif
+	
+	_if ( _self.attributes[:dir_area] _isnt _unset _andif
+	      _self.attributes[:dir_area].value) _isnt  _unset _andif
+	     _self.attributes[:dir_area].value.size > 0
+	_then
+		
+		dir_area <<  _self.attributes[:dir_area].value.write_string.uppercase
+		_self.asigna_texto_celda(:tbl_3,7,2,dir_area.write_string   ,30, _unset)
+	_endif
+
+	
+	_if ( _self.attributes[:telefono] _isnt _unset _andif
+	      _self.attributes[:telefono].value) _isnt  _unset _andif
+	    _self.attributes[:telefono].value.size > 0
+	_then
+		
+		telefono <<  _self.attributes[:telefono].value.write_string.uppercase		
+		_self.asigna_texto_celda(:tbl_3,8,2,telefono.write_string    ,30, _unset)
+
+	_endif
+
+
+	# START CHANGE
+	# (2020-04-17 AHERNAN, Hitss) : 
+	#
+	_if ( _self.attributes[:empreviso] _isnt _unset _andif
+	      _self.attributes[:empreviso].value) _isnt  _unset _andif
+	      _self.attributes[:empreviso].value.size > 0
+	_then		
+		.valor_empreviso << "logo_" +  _self.attributes[:empreviso].value.write_string.uppercase
+
+		_if .valor_empreviso.uppercase.matches?("*TELMEX*")
+		_then
+				.valor_empreviso << 	.valor_empreviso + "_EP"
+		_endif
+
+		#write(:logo_por_propiedad)
+		#w(:llena_datos_celdas, "-------->",  .valor_empreviso.uppercase)
+		_self.asigna_simbolo_celda(:tbl_logo_telmex,1,1, .valor_empreviso)
+	_else
+		#write(:logo_por_default)
+		_self.asigna_simbolo_celda(:tbl_logo_telmex,1,1,"logo_telmex_ep")
+		
+	_endif
+	#
+	# END CHANGE
+	
+		
+	# START CHANGE
+	# (2020-04-17 AHERNAN, Hitss) : 
+	#
+	_if ( _self.attributes[:empproyecto] _isnt _unset _andif
+	      _self.attributes[:empproyecto].value) _isnt  _unset _andif
+	      _self.attributes[:empproyecto].value.size > 0
+	_then		
+		.valor_empproyecto << "logo_" +  _self.attributes[:empproyecto].value.write_string.uppercase
+
+		#write(:logo_por_propiedad)
+		#w(:llena_datos_celdas_empp, "-------->",  .valor_empproyecto.uppercase)
+		
+		_self.asigna_simbolo_celda(:tbl_logo_imtsa,1,1, .valor_empproyecto)
+	_else
+		#write(:logo_por_default)
+		_if LogoEmpresa _isnt _unset 
+		_then	
+			_self.asigna_simbolo_celda(:tbl_logo_imtsa,1,1,LogoEmpresa)			
+		_endif
+	_endif
+	#
+	# END CHANGE
+	
+#	_if LogoEmpresa _isnt _unset 
+#	_then
+#		# (2020-04-17 AHERNAN, Hitss) : ver	
+#		# _self.asigna_simbolo_celda(:tbl_logo_imtsa,1,1,LogoEmpresa)
+#	 
+#	_endif
+
+	 # (2020-04-17 AHERNAN, Hitss) : ver
+	
+#	_self.asigna_simbolo_celda(:tbl_logo_telmex,1,1,"logo_telmex_ep")
+			
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.llena_datos_dinamicos()
+	#(02/12/14 bautistaja):
+	_self.asigna_texto_celda(:tbl_2,1,1,_self.attributes[:nombre_enlace].value,50, _unset)
+	_self.asigna_texto_celda(:tbl_7,1,3,_self.attributes[:numero_de_hoja].value,30,_unset)
+	_self.asigna_texto_celda(:tbl_7,1,5,_self.attributes[:total_hojas].value,30,_unset)
+	_self.asigna_texto_celda(:tbl_5,2,1,_self.attributes[:cable].value,30,_unset)
+	_self.asigna_texto_celda(:tbl_1,1,1,_self.attributes[:titulo].value, 70,_unset)
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.llena_datos_pep()
+	## 
+	##
+	LoPeps << c_proyecto.obten_peps_por_tipo()
+	_self.verifica_datos_tabla(LoPeps)
+	LoColor << rope.new_with(1,0,0)
+	LoContRenglon << 1
+		
+	_for rubro,tipos _over LoPeps.fast_keys_and_elements()
+	_loop
+		_if rubro _is :desmontaje
+		_then
+			LoContRenglon+<<1
+		_endif
+		_for tipo,valores _over tipos.fast_keys_and_elements()
+		_loop
+			LoContRenglon+<<1
+			_for valor _over valores.fast_elements()
+			_loop
+				LoContRenglon+<<1
+				_self.asigna_texto_celda(:tbl_8,LoContRenglon,1,
+							 valor[:pep].write_string,30, _unset,_unset,LoColor)
+				_self.asigna_texto_celda(:tbl_8,LoContRenglon,3,
+							 valor[:opb].write_string,30, _unset,_unset,LoColor)
+				_self.asigna_texto_celda(:tbl_8,LoContRenglon,4,
+							 valor[:oei].write_string,30, _unset,_unset,LoColor)
+				_self.asigna_texto_celda(:tbl_8,LoContRenglon,5,
+							 valor[:oe].write_string,30, _unset,_unset,LoColor)
+			_endloop
+			
+		_endloop
+	_endloop
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.llena_op_oei_oe()
+	##
+	LoColor << rope.new_with(1,0,0)
+	TXT_OE << ""
+	TXT_OEI << ""
+	TXT_OP << ""
+	LoDiseno << swg_dsn_admin_engine.active_design
+	id_oe << LoDiseno.user!_oe_local_id
+
+	# (10/07/13 fmejia) : si el if se cumple, tomamos las oes del
+	# diseno activo y apartir de ellas sus oeis y opbs. de lo
+	# contrario tomamos las opbs del proyecto.
+
+	_if LoDiseno.user!_oe_locals.size > 0
+	_then
+		_for oe _over LoDiseno.user!_oe_locals.fast_elements()
+		_loop
+			_if TXT_OE.size > 0
+			_then
+				TXT_OE +<< ","+oe.user!_num_oe.write_string
+			_else
+				TXT_OE +<< oe.user!_num_oe.write_string
+			_endif
+			TXT_OP << oe.user!_oei_local.user!_op_local.user!_num_op
+			TXT_OEI << oe.user!_oei_local.user!_num_oei
+		_endloop
+	_else
+		_for op _over LoDiseno.project.user!_op_locals.elements()
+		_loop
+			_if TXT_OP.size > 0
+			_then
+				TXT_OP +<< "," + op.user!_num_op
+			_else
+				TXT_OP +<< op.user!_num_op
+			_endif
+
+			_for oei _over op.user!_oei_locals.elements()
+			_loop
+				_if TXT_OEI.size > 0
+				_then
+					TXT_OEI +<< "," + oei.user!_num_oei
+				_else
+					TXT_OEI +<< oei.user!_num_oei
+				_endif
+
+				_for oe _over oei.user!_oe_locals.elements()
+				_loop
+					_if TXT_OE.size > 0
+					_then
+						TXT_OE +<< "," + oe.user!_num_oe
+					_else
+						TXT_OE +<< oe.user!_num_oe
+					_endif
+				_endloop
+			_endloop
+		_endloop
+	_endif
+	# (2011-03-23 Aarón Hernández Ramírez, SIGMATAO) : Posiciones.
+	# para PEP de construccion FIBRA.
+	_self.asigna_texto_celda(:tbl_8,3,5,TXT_OE.write_string,30, _unset,_unset,LoColor)
+	_self.asigna_texto_celda(:tbl_8,3,3,TXT_OP.write_string,30, _unset,_unset,LoColor)
+	_self.asigna_texto_celda(:tbl_8,3,4,TXT_OEI.write_string,30, _unset,_unset,LoColor)
+
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.nombre_enlace
+	## 
+	## 
+	_return ""
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.numero_de_hoja
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.obten_ace()
+	## 
+	##
+	Lo_ace << ""
+	_if _self.layout_page _isnt  _unset
+	_then
+		Lo_elementos << _self.layout_page.elements
+
+		_for el _over Lo_elementos.fast_elements()
+		_loop
+			_if el.responds_to?(:ace_name)
+			_then
+				Lo_ace << el.ace_name
+				_leave
+			_endif
+		_endloop
+	_endif
+	_return Lo_ace
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.obten_cable()
+# (09/08/20 fmejia) : Este metodo devuelve los cables asociados
+# a un esquematico de RDA,Troncal, ROF o TBA a partir del
+# sheath_geoms, de no ser ninguno de los anteriores devuelve
+# los cables activados en el plugin de gen_planos.
+	
+	LoPaf << smallworld_product.pni_application()
+	Locables << rope.new()
+	LoGpm << gis_program_manager
+	LoTabCables << LoGpm.cached_dataset(:gis).collection(:sheath_geoms)
+	LoGui << Lopaf.plugin(:esquema_tab_plugin).sys!slot(:esq_gui)
+	LoEsquema << LoGui.engine.admesquemas.esquema.current_esq
+
+	LoEsquemas << rope.new_with(:|Esquema ROF|,
+				    :|Esquema RDA|,
+				    :|Esquema Troncal|,
+				    :|Esquema TBA|) 
+	
+	_if LoEsquemas.includes?(_self.obten_ace().as_symbol())
+	_then
+		_for cab _over LoTabCables.fast_elements()
+		_loop
+			_if LoEsquema _isnt _unset _andif
+			    cab.esquema _isnt _unset _andif
+			    cab.esquema.string_buffer.index_of_seq(LoEsquema.id.write_string) _isnt _unset
+			_then
+				Locables.add(cab.sheath)
+			_endif
+		_endloop
+	_else
+		a_cables << LoPaf.plugin(:gen_planos).cables_activados_fo
+		_if a_cables.is_kind_of?(mit_cable_mixin)
+		_then
+			Locables.add(a_cables)
+		_elif a_cables _isnt _unset _andif
+		      a_cables.responds_to?(:size)
+                  _then 
+			Locables.add_all_last(a_cables)
+		_endif
+		
+	_endif
+
+	_return Locables	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.obten_pep_para_fttb()
+	## 
+	##
+	# INICIO DEL CAMBIO
+	# (2010-07-29 Aarón Hernández Ramírez, SIGMATAO) : se redefine
+	# el metodo para poder obtener las oEs de los diseños que son
+	# de principales.Anteriormente calculaba las OEs para
+	# secundarios (Montaje de tBA)
+	#
+	# FIN DEL CAMBIO
+
+	LoDiseno << swg_dsn_admin_engine.active_design
+	  proy << LoDiseno.project
+
+          _if LoDiseno.tipo_diseno _is :principales #_or 
+	     # LoDiseno.tipo_diseno _is :enlace
+	  _then
+		  # (2010-07-29 Aarón Hernández Ramírez, SIGMATAO) :Conntruccion de fibra
+		  Pl << _self.obtiene_informacion_admin_principales(proy, "user!_pep_ba_rp_fo_peba",3 )
+		  # (2010-07-29 Aarón Hernández Ramírez, SIGMATAO) : construccion de cobre
+		  Pl << _self.obtiene_informacion_admin_principales(proy, "user!_pep_cons_ppal"    ,4 )
+		  # (2010-07-29 Aarón Hernández Ramírez, SIGMATAO) : construccion canalizacion
+		  Pl << _self.obtiene_informacion_admin_principales(proy, "user!_pep_cons_cana"    ,5 )
+		  # (2010-07-29 Aarón Hernández Ramírez, SIGMATAO) : desmontaje de fibra		  
+		  Pl << _self.obtiene_informacion_admin_principales(proy, "user!_pep_desm_rp_fo"   ,8 )
+		  # (2010-07-29 Aarón Hernández Ramírez, SIGMATAO) : desm cobre
+		  Pl << _self.obtiene_informacion_admin_principales(proy, "user!_pep_desm_ppal"   ,9 )
+		  # (2010-07-29 Aarón Hernández Ramírez, SIGMATAO) : desm canalizacion
+		  Pl << _self.obtiene_informacion_admin_principales(proy, "user!_pep_desm_cana"   ,10 )
+		   
+	  _elif LoDiseno.tipo_diseno _is :trabajo _or
+		LoDiseno.tipo_diseno _is :enlace
+	  _then
+		  ElementosPEP <<  _self.obtener_peps_y_su_tipo()
+
+                 _for k  _over ElementosPEP.elements()
+	       _loop
+		        posicion <<  _self.obtiene_indice(k[1].write_string , k[3])
+
+			Pl << _self.obtiene_informacion_admin_principales(proy,k[1].write_string,posicion )
+	       _endloop
+		                 
+	  _else
+		  Pl << _self.obtiene_informacion_admin_secundario(proy )	  
+
+	  _endif
+	  
+	_return pl
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.obten_pep_para_fttb_OLD()
+	## 
+	##
+	pl << property_list.new()
+	pl[:valor] << ""
+	proy << swg_dsn_admin_engine.active_design.project
+	_if _self.get_tipo_plano()= "PLANO MONTAJE DE TBA"
+	_then
+		pl[:nombre_campo] << "user!_pep_ba_ter_peba"
+		pl[:valor] << proy.user!_pep_ba_ter_peba
+	_endif
+	
+	LoColor << rope.new_with(1,0,0)
+	TXT_OE << ""
+	TXT_OEI << ""
+	TXT_OP << ""
+	LoDiseno << swg_dsn_admin_engine.active_design
+	id_oe << LoDiseno.user!_oe_local_id
+
+	# (10/07/13 fmejia) : si el if se cumple, tomamos las oes del
+	# diseno activo y apartir de ellas sus oeis y opbs. de lo
+	# contrario tomamos las opbs del proyecto.
+	_if LoDiseno.user!_oe_locals.size > 0
+	_then
+		_for oe _over LoDiseno.user!_oe_locals.fast_elements()
+		_loop
+			_if oe.user!_catalogo_pep = pl[:nombre_campo].uppercase
+			_then
+				TXT_OE << oe.user!_num_oe
+				TXT_OP << oe.user!_oei_local.user!_op_local.user!_num_op
+				TXT_OEI << oe.user!_oei_local.user!_num_oei
+				_leave
+			_endif
+		_endloop
+	_endif
+	_self.asigna_texto_celda(:tbl_8,3,5,TXT_OE.write_string,30, _unset,_unset,LoColor)
+	_self.asigna_texto_celda(:tbl_8,3,3,TXT_OP.write_string,30, _unset,_unset,LoColor)
+	_self.asigna_texto_celda(:tbl_8,3,4,TXT_OEI.write_string,30, _unset,_unset,LoColor)
+	_return pl
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.obten_tba()
+	## 
+	##
+	LoPaf << smallworld_product.pni_application()
+	LoLayPlug << LoPaf.plugin(:layout_plugin)
+	LoAppl << LoLayPlug.sys!slot(:applications).an_element().application
+	LoPlugMan << LoAppl.plugin(:layout_manager)
+	LoDoc << LoPlugMan.current_document
+	LoSelloRed << _unset
+	LoTBA << _unset
+	_for el _over LoDoc.current_page.elements.fast_elements()
+	_loop
+		_if el.responds_to?(:class_name) _andif
+		    el.class_name _is :c_datos_de_red 
+		_then
+			LoSelloRed << el
+			LoTBA << LoSelloRed.obtener_elementos_bd_gis().an_element()
+			_leave
+		_endif
+	_endloop
+
+	_return (LoTBA)
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.obtener_peps_y_su_tipo()
+	#---------------------------------------------------
+	##  Objetivo  : obtener las PEP y su tipo dependiendo de su valor.
+	##  regresa : arreglo con el nombre del campo Pep, valor del
+	## campo pep y tipo de PEP.
+	# (2011-03-23 Aarón Hernández Ramírez, SIGMATAO) : metodo nuevo
+	
+             LoPEPsTipo  << property_list.new_with("D-", "construccion" ,
+                                                   "J-", "desmontaje",
+                                                   "X-", "rehabilitacion",
+                                                   "Y-", "reconcentracion")
+		     
+	LoProject << swg_dsn_admin_engine.active_design.project
+	campos << LoProject.physical_fields
+
+	LoCamposvalidos  << _self.filtrar_campos_x_proyecto() 
+  
+	LoCamposPEP << rope.new()
+	_for k _over LoCamposvalidos.elements()
+	_loop
+		#filtra los campos validos con valor.
+		_if k.name.matches?("*user!_pep*") _andif 		   
+		    (valor << LoProject.perform(k.name)) _isnt _unset 
+		_then
+			#valor << LoProject.perform(k.name)
+			
+                      _for m,n _over LoPEPsTipo.keys_and_elements()
+		      _loop			     
+			      _if valor.subseq(1,2) = m
+			      _then
+				      LoCamposPEP.add( {k.name , valor, n} )
+			      _endif
+			      
+		      _endloop
+		      
+		_endif
+	_endloop
+
+	_return LoCamposPEP
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.obtiene_indice(PoCampoPep, PoTipo)
+#---------------------------------------------------
+##  Objetivo  : Obtiene la posiccion en la tabla dada el tipo
+## de PEP y el nombre de campo. 
+##	
+LoIndice << 3
+
+_if pocampoPep.lowercase.matches?("*cana*") _andif Potipo = "construccion"
+_then
+	LoIndice << 5
+_endif  
+
+_if (pocampoPep.lowercase.matches?("*fib*") _or
+     pocampoPep.lowercase.matches?("*const_ppal*") _or
+     pocampoPep.lowercase.matches?("*fo_peba*"))  _andif Potipo = "construccion"
+_then
+	LoIndice << 3
+_endif	
+_if (pocampoPep.lowercase.matches?("*fib*") _or
+     pocampoPep.lowercase.matches?("*desm_ppal*") _or
+     pocampoPep.lowercase.matches?("*desm_rp_fo*") )  _andif Potipo = "desmontaje"
+_then		
+	LoIndice << 8
+_endif  
+
+_if pocampoPep.lowercase.matches?("*cana*") _andif Potipo = "desmontaje"
+	_then
+		LoIndice << 10
+_endif  
+
+_return LoIndice
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.obtiene_informacion_admin_principales(PoProyecto, PoPEP, LoPosicion)
+	#---------------------------------------------------
+	##  Objetivo  : Obtener los elementos OE,OEI y OPB de un diseño
+	## de red principal.
+	##
+	#Parametros de entrada:Objeto PoProyecto Proyecto del diseño activo
+	#                      Cadena PoPEP Elemento PEP que corresponde al tipo de diseño y proyecto activo.
+	#Parametros de salida: Ninguno
+	#
+	#Regresa:Property_list  Pl lista que contiene el nombre del PEP y su valor
+	#Fecha de última modificación: 2010-07-28
+	#Autor de la modificación:Aarón Hernández Ramírez, SIGMATAO
+	##
+	#Descripción de la modificación:
+	#
+	#Inicio Control de cambios
+	# (2010-07-28 Aarón Hernández Ramírez, SIGMATAO) : Creado
+	#Fin de control de cambios
+
+	LoColor << rope.new_with(1,0,0)
+	TXT_OE << ""
+	TXT_OEI << ""
+	TXT_OP << ""
+	pl << property_list.new()
+	pl[:valor] << _unset 
+	
+        LoPEP <<  PoProyecto.perform(PoPEP.as_symbol())
+	
+	_if LoPEP _isnt _unset 
+	_then		
+		pl[:nombre_campo] << PoPEP
+		pl[:valor] << _unset 
+
+		TXT_PEP << LoPEP
+                   		
+		_for opb _over PoProyecto.user!_op_locals.elements()
+		_loop						
+			_for oei _over opb.user!_oei_locals.elements()
+			_loop					
+				_for oe _over oei.user!_oe_locals.elements()
+				_loop					
+					_if oe.user!_catalogo_pep.uppercase = pl[:nombre_campo].uppercase
+					_then
+						
+						_if  TXT_OE.index_of_seq( oe.user!_num_oe ) _is _unset 
+						_then
+							TXT_OE << TXT_OE + " " + oe.user!_num_oe	
+						_endif
+												
+                                                LoOPB << oe.user!_oei_local.user!_op_local.user!_num_op
+
+						_if TXT_OP.index_of_seq( LoOPB ) _is _unset 
+						_then
+							TXT_OP << TXT_OP + " " +  LoOPB
+						_endif
+
+                                                LoOEI << oe.user!_oei_local.user!_num_oei
+						
+						_if TXT_OEI.index_of_seq( LoOEI ) _is _unset 
+						_then
+							TXT_OEI << TXT_OEI + " " + LoOEI
+						_endif																													
+					_endif					    					    
+				_endloop			    
+			_endloop		    
+			
+		_endloop
+
+
+		_if TXT_OP.size > 0 
+		_then
+			_self.asigna_texto_celda(:tbl_8,LoPosicion ,3  ,TXT_OP.write_string,30,  _unset,_unset,LoColor)	
+		_endif
+		
+		_if TXT_OEI.size > 0 
+		_then
+			_self.asigna_texto_celda(:tbl_8,LoPosicion ,4  ,TXT_OEI.write_string,30, _unset,_unset,LoColor)	
+		_endif
+		
+		_if TXT_OE.size > 0 
+		_then
+			_self.asigna_texto_celda(:tbl_8,LoPosicion ,5 ,TXT_OE.write_string,30,  _unset,_unset,LoColor)	
+		_endif
+		
+		_if TXT_PEP.size > 0 
+		_then
+			# (2010-07-29 Aarón Hernández Ramírez, SIGMATAO) : posicion del pep
+			_self.asigna_texto_celda(:tbl_8,LoPosicion ,1,TXT_PEP.write_string,30, :centre_left,5,LoColor)
+			
+		_endif
+		
+	_endif
+	
+	_return pl	
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.obtiene_informacion_admin_secundario(PoProyecto)
+	#---------------------------------------------------
+	##  Objetivo  : <Description>
+	##
+	#Parametros de entrada:Objeto  PoProyecto  Proyecto del diseño activo
+	#Parametros de salida: Ninguno 
+	#
+	#Regresa:property_list  pl  Nombre del campo PEP y su valor.
+	#
+	#Fecha de última modificación: 2010-07-28
+	#Autor de la modificación:Aarón Hernández Ramírez, SIGMATAO
+	##
+	#Descripción de la modificación:
+	#
+	#Inicio Control de cambios
+	# (2010-07-28 Aarón Hernández Ramírez, SIGMATAO) : Creado
+	#Fin de control de cambios
+	
+        proy <<  PoProyecto
+	pl << property_list.new()
+	pl[:valor] << ""
+		
+	_if _self.get_tipo_plano()= "PLANO MONTAJE DE TBA"
+	_then
+		pl[:nombre_campo] << "user!_pep_ba_ter_peba"
+		pl[:valor] << proy.user!_pep_ba_ter_peba
+	_endif
+	
+	LoColor << rope.new_with(1,0,0)
+	TXT_OE << ""
+	TXT_OEI << ""
+	TXT_OP << ""
+	TXT_PEP << ""
+	
+	LoDiseno << swg_dsn_admin_engine.active_design
+	id_oe << LoDiseno.user!_oe_local_id
+	
+	# (10/07/13 fmejia) : si el if se cumple, tomamos las oes del
+	# diseno activo y apartir de ellas sus oeis y opbs. de lo
+	# contrario tomamos las opbs del proyecto.
+	_if LoDiseno.user!_oe_locals.size > 0
+	_then
+		_for oe _over LoDiseno.user!_oe_locals.fast_elements()
+		_loop
+			#_if oe.user!_catalogo_pep = pl[:nombre_campo].uppercase
+			#_then
+				TXT_OE << oe.user!_num_oe
+				TXT_OP << oe.user!_oei_local.user!_op_local.user!_num_op
+				TXT_OEI << oe.user!_oei_local.user!_num_oei
+
+				_if oe.user!_tipo_valor.matches?("*DESMONTAJE DE CANALIZACION*")
+				_then
+					indice << 10					
+				_elif oe.user!_tipo_valor.matches?("*DESMONTAJE DE RED*")
+				_then 
+					indice << 8
+				_elif oe.user!_tipo_valor.matches?("*DESMONTAJE DE TBA*") 
+				_then
+					indice << 8
+				_else 
+					indice << 3
+				_endif
+				
+				_if  TXT_OE.index_of_seq( oe.user!_num_oe ) _is _unset 
+				_then
+					TXT_OE << TXT_OE + " " + oe.user!_num_oe	
+				_endif
+				
+				LoOPB << oe.user!_oei_local.user!_op_local.user!_num_op
+				
+				_if TXT_OP.index_of_seq( LoOPB ) _is _unset 
+				_then
+					TXT_OP << TXT_OP + " " +  LoOPB
+				_endif
+				
+				LoOEI << oe.user!_oei_local.user!_num_oei
+				
+				_if TXT_OEI.index_of_seq( LoOEI ) _is _unset 
+				_then
+					TXT_OEI << TXT_OEI + " " + LoOEI
+				_endif													
+				LoPEP << proy.perform(  oe.user!_catalogo_pep.lowercase.as_symbol() )
+								
+				_if TXT_PEP.index_of_seq( LoPEP ) _is _unset 
+				_then
+					TXT_PEP << TXT_PEP + " " + LoPEP
+				_endif
+				
+				#_endif
+		_endloop
+
+		_if TXT_PEP.size > 0 
+		_then
+			_self.asigna_texto_celda(:tbl_8,indice,1,TXT_PEP.write_string,30, _unset,_unset,LoColor)	
+		_endif
+		
+		_if TXT_OP.size > 0  
+		_then
+			_self.asigna_texto_celda(:tbl_8,indice,3,TXT_OP.write_string,30, _unset,_unset,LoColor)
+		_endif
+		
+		_if TXT_OEI.size > 0 
+		_then
+			_self.asigna_texto_celda(:tbl_8,indice,4,TXT_OEI.write_string,30, _unset,_unset,LoColor)	
+		_endif
+		
+		_if TXT_OE.size > 0 
+		_then
+			_self.asigna_texto_celda(:tbl_8,indice,5,TXT_OE.write_string,30, _unset,_unset,LoColor)	
+		_endif
+		
+		
+	_endif
+	
+	_return pl
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oe_canal_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oe_canal_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oe_cobre_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oe_cobre_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oe_fibra_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oe_fibra_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oei_canal_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oei_canal_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oei_cobre_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oei_cobre_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oei_fibra_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.oei_fibra_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.pep_canal_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.pep_canal_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.pep_cobre_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.pep_cobre_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.pep_fibra_c
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.pep_fibra_d
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.programa
+	## 
+	## 
+	_return ""
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.proyectista
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.responsable
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.supervisor
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.telefono
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.titulo
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_sello_ruta_cables_fo.total_hojas
+	## 
+	## 
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_sello_ruta_cables_fo.verifica_datos_tabla(p_datos)
+	## 
+	##
+	LoTotValores << 0
+	_for k,v _over p_datos.fast_keys_and_elements()
+	_loop
+		LoTotValores +<<  v[:fibra].size
+		LoTotValores +<<  v[:cobre].size
+		LoTotValores +<<  v[:canal].size	
+	_endloop
+
+	LoTotFilas <<  .o_tablas.tablas[:tbl_8].orenglones.ntotal_filas
+	_if (LoTotFilas-8) <> LoTotValores
+	_then
+		LoBounds << bounding_box.new(_self.bounds.xmin,_self.bounds.ymin,
+					     _self.bounds.xmax,_self.bounds.ymax - ((LoTotFilas -10)*80))
+		_self.bounds << LoBounds
+		_self.crea_tabla_peps()
+	_endif
+	
+_endmethod
+$

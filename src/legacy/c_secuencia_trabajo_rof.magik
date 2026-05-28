@@ -1,0 +1,323 @@
+_package user
+$
+def_slotted_exemplar(:c_secuencia_trabajo_rof,
+{
+	{:oTablas, _unset},
+	{:oCoordOrigen, _unset },	
+        {:oWindow, _unset }, 
+	{:bTablas_creadas, _unset }
+}, :textbox_layout)
+$
+c_secuencia_trabajo_rof.define_shared_constant(:allowed_on_menu?, _false, :public)
+$
+c_secuencia_trabajo_rof.define_slot_access(:bTablas_creadas,     :writable, :public)
+$
+c_secuencia_trabajo_rof.define_shared_variable(:contenido_sello, _unset, :public)
+$
+c_secuencia_trabajo_rof.define_slot_access(:oCoordOrigen,        :writable, :public)
+$
+c_secuencia_trabajo_rof.define_slot_access(:oTablas,             :writable, :public)
+$
+c_secuencia_trabajo_rof.define_slot_access(:oWindow,             :writable, :public)
+$
+c_secuencia_trabajo_rof.define_shared_variable(:varObjeto, _unset, :public) 
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo_rof.abre_interfaz_GUI
+	## 
+	## Objetivo: Llenar las celdas de las tablas del sello.
+	## Parametros de Entrada: Ninguno.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: Ninguno. 
+	
+	_self.varObjeto << c_gui_edita_sello_sec_trab.new(_self )
+	
+	_self.varObjeto.abre_ventana
+    
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_secuencia_trabajo_rof.Agrega_LYM(RoLym)
+
+	_self.oTablas.Agrega_LYM(RoLym)
+
+_endmethod
+$
+c_secuencia_trabajo_rof.define_attributes()
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo_rof.defined_attributes
+
+   ## Objetivo: Se definen los atributos del sello secuencia de trabajo.
+   ## Parametros de Entrada: Ninguno.
+   ## Parametros de Salida:  Ninguno.
+   ## Regresa: Ninguno.
+   ## Autor de la modificacion: (09/05/08 rhernan)
+   ## (10/06/18 rraragon) : Modified. Se agrega el atributo
+   ## texto_sello para guardar el contenido del sello en el XML
+	
+   attribs << rope.new_from (_super.defined_attributes)
+   
+   _for attrib _over attribs.fast_elements()
+   _loop
+	   _if attrib.key.write_string.matches?("*font*").not
+	   _then
+		   attrib.allowed_on_properties_page? << _false	   
+	   _endif
+	   
+   _endloop
+   
+   # (09/05/07 rhernan) : Modified.
+   attribs.add ( layout_attribute_definition.new ( :|Editar Sello click aqui: ---->|, :unset,
+						   :description, "Editar Sello haz click ",
+						   :enum_method, :abre_interfaz_GUI))
+   
+   attribs.add ( layout_attribute_definition.new (:texto_sello, :string,
+						   :description, "",
+						   :deafult_value, _unset,
+						   :allowed_on_properties_page?, _false))
+   
+   attribs.add ( layout_attribute_definition.new (:largo, :integer,
+						  :description, "Largo",
+						  :deafult_value, 0 )) #,
+   
+   attribs.add ( layout_attribute_definition.new (:ancho, :integer,
+						  :description, "Ancho",
+						  :deafult_value, 0 ))
+   
+   >> attribs
+
+	
+_endmethod
+$
+c_secuencia_trabajo_rof.define_attributes()
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_secuencia_trabajo_rof.draw_content_on ( window )
+
+
+	_self.prvAsignaTexto()
+	_self.oWindow << window
+
+	#Se ajustan los limites del layout de acuerdo a las tablas definidas
+	_self.bounds << .oTablas.area_total()
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento.ntamanio << _self.font_size	
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(1,1).oElemento.scolor << _self.colour
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento.scolor << _self.colour
+        _self.oTablas.Despliega(window, _self.get_foreground_line_colour())
+	#_self.oTablas.Despliega(window)
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo_rof.envia_mensage_error
+     f << frame.new("Sello Secuencia Trabajo")
+     p << panel.new(f)
+     p.start_row() 
+     p.start_row()  
+     etiq << label_item.new(p, "Usted no tiene permisos para editar el Sello Secuencia de Trabajo")
+     p.start_row()
+     f.width << 350 
+     f.height << 200
+     f.activate()
+     f.x << 300 
+     f.y << 300
+     f.maximizable? << _false
+     f.minimizable? << _false 	  
+
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_method c_secuencia_trabajo_rof.Inicializa(_optional RoCoord)
+
+	_local LoArea # Area que ocupan todas la tablas
+
+	_if RoCoord _is _unset 
+	_then
+		RoCoord << coordinate.new(0,0)
+	_endif
+
+	_self.oCoordOrigen << RoCoord	
+
+	# Crea el objeto que contiene todas las tablas del sello estandar
+	_self.oTablas << c_tablas.new(_self)
+
+	# Crea y configura cada una de las tablas 
+	_self.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+	# Se conoce el area de la tabla dibujada
+	LoArea << _self.oTablas.area_total()
+	# Se ajustan los limites del layout de acuerdo  a las tablas definidas
+	_self.bounds << LoArea
+	# Crea a los objetos que tendra c/u de las tablas
+
+	# START CHANGE
+	# (24/08/29 des_aaron) : 
+	#
+	LoCentral  <<  swg_dsn_admin_engine.active_scheme.project.user!_central.user!_central
+	LoAnillo << "__ __"
+	LoDistancia << "1297.0"
+
+	texto1 << ""
+		texto1 +<< character.newLine 
+		texto1 +<< "  1.  ANTES DE INICIAR ESTOS TRABAJOS, VERIFICAR QUE ESTEN CONCLUIDAS LAS OBRAS COMPLEMENTARIAS"
+		texto1 +<< character.newLine 	
+		texto1 +<< "      DEL ANILLO " +LoAnillo.default("")+ " DE FIBRA OPTICA PARA ATENDER LOS CLIENTES A ATENDER "
+		texto1 +<< character.newLine
+		texto1 +<< "  2.  INMERSIONAR " + Lodistancia.default("") + " MTS DESDE BDFOAD HASTA EL POZO DEL EMPALME AB" 
+		texto1 +<< character.newLine
+		texto1 +<< "      DEJANDO GAZA DE 7.0 EN POZO PARA EMPALME AA Y EN POZO PARA MANTENIMIENTO" 
+		texto1 +<< character.newLine
+		texto1 +<< "  3.  INMERSIONAR 1929.0 MTS DESDE EL POZO DEL EMPALME AB AL POZO DEL EMPALME AD " 
+		texto1 +<< character.newLine
+		texto1 +<< "      DEJANDO GAZA DE 7.0 EN POZO PARA EMPALME AC Y EN POZO PARA MANTENIMIENTO" 
+		texto1 +<< character.newLine
+		texto1 +<< "  4.  INMERSIONAR 1783.0 MTS DESDE EL POZO DEL EMPALME AD AL POZO DEL EMPALME RECTO " 
+		texto1 +<< character.newLine
+		texto1 +<< "      DEJANDO GAZA DE 7.0 EN POZO PARA EMPALME AE Y EN POZO PARA MANTENIMIENTO" 
+		texto1 +<< character.newLine
+		texto1 +<< "  5.  INMERSIONAR 1783.0 MTS DESDE EL POZO DEL EMPALME RECTO AL POZO DEL EMPALME AK" 
+		texto1 +<< character.newLine
+		texto1 +<< "      DEJANDO GAZA DE 7.0 EN POZO PARA EMPALME AE Y EN POZO PARA MANTENIMIENTO" 
+		texto1 +<< character.newLine
+		texto1 +<< "  6.  INMERSIONAR 1783.0 MTS DESDE EL POZO DEL EMPALME RECTO AL POZO DEL EMPALME AK" 
+		texto1 +<< character.newLine
+		texto1 +<< "      DEJANDO GAZA DE 7.0 EN POZO PARA EMPALME AE Y EN POZO PARA MANTENIMIENTO" 
+		texto1 +<< character.newLine
+		texto1 +<< "  7.  INMERSIONAR 1631.0 MTS DESDE EL POZO DEL EMPALME AK HASTA EL BDFOAD 2 DE LA CENTRAL GU" 
+		texto1 +<< character.newLine
+		texto1 +<< "      DEJANDO GAZA DE 7.0 EN POZO PARA EMPALME AE Y EN POZO PARA MANTENIMIENTO" 
+		texto1 +<< character.newLine
+		texto1 +<< "  8.  DEJAR LAS PANTALLAS CONTINUAS EN LOS CIERRES. Y CERRAR EMPALME PERMANENTE." 
+		texto1 +<< character.newLine
+		texto1 +<< "      INSTALAR PLACAS DE IDENTIFICACION EN TODOS LOS CABLES AFECTADOS" 
+		texto1 +<< character.newLine
+		texto1 +<< "      REALIZAR PRUEBA DE PROTOCOLO #9 A CADA UNA DE LAS F.O. QUE SE PROYECTAN." 
+		texto1 +<< character.newLine
+		
+		_self.texto_sello << Texto1
+			
+	#
+	# END CHANGE
+	
+	_self.prvLlena_Celdas()
+	# Indica que los objetos tabla ya fueron creados 
+	_self.bTablas_creadas << _true
+
+	# START CHANGE
+	# (24/08/29 des_aaron) : definir tamaño de font al iniciar
+	#
+	_self.font_size << 35
+	#
+	# END CHANGE
+	
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo_rof.post_initialisation ()
+	
+        _self.Inicializa(coordinate.new(0,0))	
+
+_endmethod
+$
+_pragma(classify_level=advanced, topic={plotting}, usage={subclassable})
+_method c_secuencia_trabajo_rof.prvAsignaTexto()
+	## Objetivo: Asignar texto al sello; el sello esta compuesto de
+	## tablas, celdas y layout_elements se asignan el texto a la
+	## celda correspondiente. 
+	## Parametros de Entrada: Ninguno.
+	## Parametros de Salida:  Ninguno.
+	## Regresa: Ninguno.
+	## Descripcion: 	
+	## (10/06/18 rraragon) : Modified. Se guarda el texto del sello
+	## en el atributo sello_texto, para ser guardado en el XML
+	
+	_local texto1     <<  character.newLine	
+	_local LoCentral  <<  swg_dsn_admin_engine.active_scheme.project.user!_central.user!_central
+	_local loDesplaza  <<  2
+
+	_if _self.texto_sello _isnt _unset 
+	_then
+		_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento.sTexto << _self.texto_sello
+	_endif
+	
+	_if _self.varObjeto _isnt _unset _andif
+	    _self.varObjeto.oventana.contents.size > 0
+	_then
+		# actualizar desde la interfaz
+		LoTexto <<  _self.varObjeto.oventana.contents.uppercase		
+		_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento.sTexto << LoTexto
+		_self.texto_sello << LoTexto
+		
+	_endif
+	
+	
+	_if _self.contenido_sello _isnt _unset _andif
+	    _self.contenido_sello.size > 0
+	_then
+		_if _self.contenido_sello.uppercase.occurrences_of(%newline) > 45 _and
+		    _self.contenido_sello.uppercase.occurrences_of(%newline) <= 60
+		_then 
+			loDiferencia  << _self.contenido_sello.uppercase.split_by(%newline).size - 40
+			loDesplaza    << loDesplaza * loDiferencia  			
+			totalDesplaza << loDesplaza + 120
+			
+			_self.oTablas.elemento(:tbl_secuencia_trabajo).orenglones.elemento(2).nlongitud << totalDesplaza
+			
+		_elif _self.contenido_sello.uppercase.occurrences_of(%newline) <=  40
+		_then
+			_self.oTablas.elemento(:tbl_secuencia_trabajo).orenglones.elemento(2).nlongitud << 110
+		_endif
+	_endif
+
+	
+	_if _self.attributes[:largo].value _isnt _unset _andif
+	    _self.attributes[:largo].value > 0
+	_then  
+		_self.oTablas.elemento(:tbl_secuencia_trabajo).orenglones.elemento(2).nlongitud << _self.attributes[:largo].value
+	_endif       
+	_if _self.attributes[:ancho].value _isnt _unset _andif 
+	    _self.attributes[:ancho].value > 0 
+	_then
+		_self.oTablas.elemento(:tbl_secuencia_trabajo).oColumnas.elemento(1).nlongitud << _self.attributes[:ancho].value
+	_endif  
+	
+_endmethod 
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_secuencia_trabajo_rof.prvCrea_Cfg_Tbl_Notas_Grales(RoCoord)
+
+	_local LoTblSecuencia # Tabla que almacena el título de la tabla
+
+	#######################
+	LoTblSecuencia	<< _self.oTablas.crea_tabla(2,1,:tbl_secuencia_trabajo)
+	# coordenada donde inicia la tabla
+	LoTblSecuencia.oCoordenada_origen << RoCoord
+	
+	# longitud de los renglones de la tabla
+	LoTblSecuencia.orenglones.elemento(1).nlongitud << 8        
+	LoTblSecuencia.orenglones.elemento(2).nlongitud << 80     # 130    80%
+	# longitud de las columnas de la tabla
+	LoTblSecuencia.oColumnas.elemento(1).nLongitud <<  207     # 115    80%
+	
+_endmethod
+$
+_pragma(classify_level=restricted, usage={redefinable})
+_private _method c_secuencia_trabajo_rof.prvLlena_Celdas()
+
+	# Tamaño de la letra en cada una de los objetos
+
+        _local LoTitulo      << c_texto_grafico.new("SECUENCIA DE TRABAJO")
+        _local LoDescripcion << c_texto_grafico.new("")
+
+	LoTitulo.nTamanio      << 54     ## 30   80%
+	LoDescripcion.nTamanio << 36     ## 20   80%
+	LoDescripcion.sALineacion << :top_left 
+
+	# Asigna los objetos creados a su correspondiente celda
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(1,1).oElemento << LoTitulo
+	_self.oTablas.elemento(:tbl_secuencia_trabajo).oCeldas.Celda(2,1).oElemento << LoDescripcion	
+	_self.prvAsignaTexto()
+
+	
+_endmethod
+$

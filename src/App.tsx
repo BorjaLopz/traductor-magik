@@ -20,7 +20,15 @@ const NIVEL_COLOR: Record<ShowcaseEntry['nivel'], 'success' | 'info' | 'warning'
   'CRÍTICO':      'error',
 }
 
-const SIDEBAR_WIDTH = 320
+const NIVEL_ORDER: Record<ShowcaseEntry['nivel'], number> = {
+  'SIMPLE':       0,
+  'MODERADO':     1,
+  'COMPLEJO':     2,
+  'MUY COMPLEJO': 3,
+  'CRÍTICO':      4,
+}
+
+const SIDEBAR_WIDTH = 440
 
 export default function App() {
   const [selectedId, setSelectedId] = useState<string>(SHOWCASE_REGISTRY[0]?.id ?? '')
@@ -39,6 +47,9 @@ export default function App() {
     ;(acc[entry.fase] ??= []).push(entry)
     return acc
   }, {})
+  Object.values(byFase).forEach(entries =>
+    entries.sort((a, b) => NIVEL_ORDER[a.nivel] - NIVEL_ORDER[b.nivel])
+  )
 
   return (
     <ThemeProvider theme={theme}>
@@ -87,7 +98,7 @@ export default function App() {
                 Sin resultados para "{query}"
               </Typography>
             ) : (
-              Object.entries(byFase).map(([fase, entries]) => (
+              Object.entries(byFase).sort(([a], [b]) => Number(a) - Number(b)).map(([fase, entries]) => (
                 <Box key={fase}>
                   <Typography variant="overline" sx={{
                     px: 2, pt: 1.5, pb: 0.5, display: 'block', fontSize: 10,

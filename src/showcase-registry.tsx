@@ -67,6 +67,24 @@ import { CElementoEmpalmeGUI } from './migration/CElementoEmpalmeG'
 import { CSeccionamientoUI } from './migration/CSeccionamiento'
 import { CElementoGraficoUI } from './migration/CElementoGrafico'
 import { LayoutSeriesPluginUI } from './migration/LayoutSeriesPlugin'
+import { CInventarioDtoShowcase } from './components/CInventarioDtoShowcase'
+import { CElementoNodoGShowcase } from './components/CElementoNodoGShowcase'
+import { CGuiEditaSelloResumenProyectoShowcase } from './components/CGuiEditaSelloResumenProyectoShowcase'
+import { CTituloDelPlanoShowcase } from './components/CTituloDelPlanoShowcase'
+import { CResumenProyectoShowcase } from './components/CResumenProyectoShowcase'
+import { CSelloFibraOpticaAcometidaShowcase } from './components/CSelloFibraOpticaAcometidaShowcase'
+import { CSelloFibraOpticaRofShowcase } from './components/CSelloFibraOpticaRofShowcase'
+import { CPlanoTopologicoShowcase } from './components/CPlanoTopologicoShowcase'
+import { COcupacionDeViasShowcase } from './components/COcupacionDeViasShowcase'
+import { CPlacaFosc350cShowcase } from './components/CPlacaFosc350cShowcase'
+import { CSimbologiaPlanoReubicacionTerminalesShowcase } from './components/CSimbologiaPlanoReubicacionTerminalesShowcase'
+import { CSimboloLongitudTrazoGazasShowcase } from './components/CSimboloLongitudTrazoGazasShowcase'
+import { CListaMaterialesEsquemaShowcase } from './components/CListaMaterialesEsquemaShowcase'
+import { CListaMaterialesEsquemaRedShowcase } from './components/CListaMaterialesEsquemaRedShowcase'
+import { CSelloAumentosSecundariosShowcase } from './components/CSelloAumentosSecundariosShowcase'
+import { CPlanoDesmontageCdShowcase } from './components/CPlanoDesmontageCdShowcase'
+import { CSelloListaCablesShowcase } from './components/CSelloListaCablesShowcase'
+import { CCorteGeograficoShowcase } from './components/CCorteGeograficoShowcase'
 import { CSelloProyectoCanalizacionUI } from './migration/CSelloProyectoCanalizacion'
 import { CResumenMaterialesUI } from './migration/CResumenMateriales'
 import { CCableFoShowcase } from './components/CCableFoShowcase'
@@ -78,6 +96,11 @@ import { CCuadroSimbologiaPlanosFoShowcase } from './components/CCuadroSimbologi
 import { CDatosDeRedShowcase } from './components/CDatosDeRedShowcase'
 import { CDfoGraficoShowcase } from './components/CDfoGraficoShowcase'
 import { CDiagramaConexionEmpalmeShowcase } from './components/CDiagramaConexionEmpalmeShowcase'
+import { CArbolTbaUI } from './migration/CArbolTba'
+import { CPlanoDetallesAcometidaUI } from './migration/CPlanoDetallesAcometida'
+import { CBuildingPerfilEIsometricoPluginUI } from './migration/CBuildingPerfilEIsometricoPlugin'
+import { CEnlaceGraficoUI } from './migration/CEnlaceGrafico'
+import { CEstructuraRutaCablesUI } from './migration/CEstructuraRutaCables'
 
 export interface ShowcaseEntry {
   id: string
@@ -590,52 +613,196 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     element: <CCapturaTextoUI />,
   },
   {
-    id: 'CFibrasPorDistritoFalc',
-    label: 'CFibrasPorDistritoFalc',
-    fase: 5,
-    nivel: 'COMPLEJO',
-    magikSource: 'adiciones_layout/source/c_fibras_por_distrito_falc.magik',
-    element: <CFibrasPorDistritoFalcUI />,
-  },
-  {
-    id: 'CElementoEmpalmeDerivacionG',
-    label: 'CElementoEmpalmeDerivacionG',
+    id: 'CInventarioDto',
+    label: 'c_inventario_dto',
     fase: 2,
     nivel: 'MODERADO',
-    magikSource: 'adiciones_layout/source/Sellos/Utilerias/Tramo/c_elemento_empalme_derivacion_g.magik',
-    element: <CElementoEmpalmeDerivacionGUI />,
+    magikSource: 'adiciones_layout/source/c_inventario_dto.magik',
+    element: <CInventarioDtoShowcase />,
+  },
+  {
+    id: 'CElementoNodoG',
+    label: 'c_elemento_nodo_g',
+    fase: 5,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/Tramo/c_elemento_nodo_g.magik',
+    element: <CElementoNodoGShowcase />,
+  },
+  {
+    id: 'CGuiEditaSelloResumenProyecto',
+    label: 'c_gui_edita_sello_resumen_proyecto',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/c_gui_edita_sello_resumen_proyecto.magik',
+    element: <CGuiEditaSelloResumenProyectoShowcase />,
+  },
+  {
+    id: 'CTituloDelPlano',
+    label: 'c_titulo_de_plano',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/c_titulo_de_plano.magik',
+    element: <CTituloDelPlanoShowcase />,
+  },
+  {
+    id: 'CResumenProyecto',
+    label: 'c_resumen_proyecto',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_resumen_proyecto.magik',
+    element: <CResumenProyectoShowcase />,
+  },
+  {
+    id: 'CSelloFibraOpticaAcometida',
+    label: 'c_sello_fibra_optica_acometida',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_sello_fibra_optica_acometida.magik',
+    element: <CSelloFibraOpticaAcometidaShowcase />,
+  },
+  {
+    id: 'CElementoGrafico',
+    label: 'c_elemento_grafico',
+    fase: 1,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_elemento_grafico.magik',
+    element: <CElementoGraficoUI />,
   },
   {
     id: 'CElementoEmpalmeG',
-    label: 'CElementoEmpalmeG',
-    fase: 2,
+    label: 'c_elemento_empalme_g',
+    fase: 5,
     nivel: 'MODERADO',
     magikSource: 'adiciones_layout/source/Sellos/Utilerias/Tramo/c_elemento_empalme_g.magik',
     element: <CElementoEmpalmeGUI />,
   },
   {
+    id: 'CElementoEmpalmeDerivacionG',
+    label: 'c_elemento_empalme_derivacion_g',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Sellos/Utilerias/Tramo/c_elemento_empalme_derivacion_g.magik',
+    element: <CElementoEmpalmeDerivacionGUI />,
+  },
+  {
     id: 'CSeccionamiento',
-    label: 'CSeccionamiento',
+    label: 'c_seccionamiento',
     fase: 2,
     nivel: 'COMPLEJO',
     magikSource: 'adiciones_layout/source/c_seccionamiento.magik',
     element: <CSeccionamientoUI />,
   },
   {
-    id: 'CElementoGrafico',
-    label: 'CElementoGrafico',
-    fase: 1,
-    nivel: 'MODERADO',
-    magikSource: 'adiciones_layout/source/Sellos/Utilerias/c_elemento_grafico.magik',
-    element: <CElementoGraficoUI />,
-  },
-  {
     id: 'LayoutSeriesPlugin',
-    label: 'LayoutSeriesPlugin',
+    label: 'layout_series_plugin',
     fase: 2,
     nivel: 'COMPLEJO',
     magikSource: 'adiciones_layout/source/layout_series_plugin.magik',
     element: <LayoutSeriesPluginUI />,
+  },
+  {
+    id: 'CSimboloLongitudTrazoGazas',
+    label: 'c_simbolo_longitud_trazo_gazas',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/planos/c_simbolo_longitud_trazo_gazas.magik',
+    element: <CSimboloLongitudTrazoGazasShowcase />,
+  },
+  {
+    id: 'CSimbologiaPlanoReubicacionTerminales',
+    label: 'c_simbologia_plano_reubicacion_terminales',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/c_simbologia_plano_reubicacion_terminales.magik',
+    element: <CSimbologiaPlanoReubicacionTerminalesShowcase />,
+  },
+  {
+    id: 'CPlacaFosc350c',
+    label: 'c_placa_fosc350c',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/c_placa_fosc350c.magik',
+    element: <CPlacaFosc350cShowcase />,
+  },
+  {
+    id: 'COcupacionDeVias',
+    label: 'c_ocupacion_de_vias',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/c_ocupacion_de_vias.magik',
+    element: <COcupacionDeViasShowcase />,
+  },
+  {
+    id: 'CPlanoTopologico',
+    label: 'c_plano_topologico',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/planos/c_plano_topologico.magik',
+    element: <CPlanoTopologicoShowcase />,
+  },
+  {
+    id: 'CSelloFibraOpticaRof',
+    label: 'c_sello_fibra_optica_rof',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_fibra_optica_rof.magik',
+    element: <CSelloFibraOpticaRofShowcase />,
+  },
+  {
+    id: 'CFibrasPorDistritoFalc',
+    label: 'c_fibras_por_distrito_falc',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'adiciones_layout/source/c_fibras_por_distrito_falc.magik',
+    element: <CFibrasPorDistritoFalcUI />,
+  },
+  {
+    id: 'CListaMaterialesEsquema',
+    label: 'c_lista_materiales_esquema',
+    fase: 5,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_lista_materiales_esquema.magik',
+    element: <CListaMaterialesEsquemaShowcase />,
+  },
+  {
+    id: 'CListaMaterialesEsquemaRed',
+    label: 'c_lista_materiales_esquema_red',
+    fase: 5,
+    nivel: 'MODERADO',
+    magikSource: 'adiciones_layout/source/Sellos/c_lista_materiales_esquema_red.magik',
+    element: <CListaMaterialesEsquemaRedShowcase />,
+  },
+  {
+    id: 'CSelloAumentosSecundarios',
+    label: 'c_sello_aumentos_secundarios',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Sellos/c_sello_aumentos_secundarios.magik',
+    element: <CSelloAumentosSecundariosShowcase />,
+  },
+  {
+    id: 'CPlanoDesmontageCd',
+    label: 'c_plano_desmontaje_cd',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/planos/c_plano_desmontaje_cd.magik',
+    element: <CPlanoDesmontageCdShowcase />,
+  },
+  {
+    id: 'CSelloListaCables',
+    label: 'c_sello_lista_cables',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/planos/c_sello_lista_cables.magik',
+    element: <CSelloListaCablesShowcase />,
+  },
+  {
+    id: 'CCorteGeografico',
+    label: 'c_Corte_Geografico',
+    fase: 5,
+    nivel: 'SIMPLE',
+    magikSource: 'adiciones_layout/source/Corte/c_Corte_Geografico.magik',
+    element: <CCorteGeograficoShowcase />,
   },
   {
     id: 'CResumenMateriales',
@@ -724,5 +891,45 @@ export const SHOWCASE_REGISTRY: ShowcaseEntry[] = [
     nivel: 'MUY COMPLEJO',
     magikSource: 'planos_fo/source/detalles_construccion/sellos/estudio_transmision/c_diagrama_conexion_empalme.magik',
     element: <CDiagramaConexionEmpalmeShowcase />,
+  },
+  {
+    id: 'CArbolTba',
+    label: 'CArbolTba',
+    fase: 4,
+    nivel: 'MODERADO',
+    magikSource: 'planos_fo/source/montaje_tba/gui/c_arbol_tba.magik',
+    element: <CArbolTbaUI />,
+  },
+  {
+    id: 'CPlanoDetallesAcometida',
+    label: 'CPlanoDetallesAcometida',
+    fase: 5,
+    nivel: 'MUY COMPLEJO',
+    magikSource: 'planos_fo/source/detalles_construccion/factory/c_plano_detalles_acometida.magik',
+    element: <CPlanoDetallesAcometidaUI />,
+  },
+  {
+    id: 'CBuildingPerfilEIsometricoPlugin',
+    label: 'CBuildingPerfilEIsometricoPlugin',
+    fase: 5,
+    nivel: 'COMPLEJO',
+    magikSource: 'planos_fo/source/detalles_construccion/gui/c_building_perfil_e_isometrico_plugin.magik',
+    element: <CBuildingPerfilEIsometricoPluginUI />,
+  },
+  {
+    id: 'CEnlaceGrafico',
+    label: 'CEnlaceGrafico',
+    fase: 5,
+    nivel: 'MODERADO',
+    magikSource: 'planos_fo/source/detalles_construccion/sellos/estudio_transmision/c_enlace_grafico.magik',
+    element: <CEnlaceGraficoUI />,
+  },
+  {
+    id: 'CEstructuraRutaCables',
+    label: 'CEstructuraRutaCables',
+    fase: 2,
+    nivel: 'COMPLEJO',
+    magikSource: 'planos_fo/source/ruta_cables/engine/c_estructura_ruta_cables.magik',
+    element: <CEstructuraRutaCablesUI />,
   },
 ]
